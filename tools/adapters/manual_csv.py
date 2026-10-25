@@ -23,7 +23,9 @@ Use this when a restaurant's allergen guide can't be read automatically
   section_original  The section name in the menu's own language (optional)
 
 Guide details (title, version date, end date, source) go in restaurant.json
-under "guide".
+under "guide". Warnings printed in the menu (cross-contact, "may contain",
+recipe changes, nutrition notes) go in restaurant.json under "notices" as
+{"label": "Cross-contact", "text": "<exact wording>", "page": 1}.
 """
 import csv
 from pathlib import Path
@@ -77,6 +79,9 @@ def build(folder, config):
         raise SystemExit(f"ERROR: {path} has no rows")
     guide = config.get("guide", {})
     return {
+        "notices": [{"kind": n.get("kind", "other"), "label": n.get("label", "From the menu"), "text": n["text"],
+                     "pages": [n["page"]] if n.get("page") else [], "pagesTotal": 1 if n.get("page") else 0}
+                    for n in config.get("notices", [])],
         "source": guide.get("source") or path.name,
         "guide": {k: guide.get(k) for k in ("title", "runs", "version", "validUntil")},
         "rule": config.get("rule") or "Checked by hand against the restaurant's allergen information.",

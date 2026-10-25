@@ -20,7 +20,7 @@
   const SHOW_KEY = "gf-show";
   const THEME_KEY = "gf-theme";
   let show = Object.assign({ straight: true, change: true, gluten: true }, JSON.parse(store.get(SHOW_KEY) || "{}"));
-  // straight up = asis/any/except (fine as served, or with any milk but the ones named); change = swap/modify
+  // "straight" = no gluten ingredients as served: asis/any/except (fine as served, or with any milk but the ones named); change = swap/modify
   const kindOf = (i) => (!i.order ? "gluten" : (i.order === "swap" || i.order === "modify") ? "change" : "straight");
 
   // ---------- helpers ----------
@@ -57,7 +57,7 @@
   function tagFor(r, i) {
     const label = r.optionLabel || "option";
     switch (i.order) {
-      case "asis": return ["t-asis", "Straight up"];
+      case "asis": return ["t-asis", "No gluten ingredients"];
       case "any": return ["t-any", "Any " + label];
       case "swap": return ["t-swap", "Swap " + label];
       case "modify": return ["t-swap", "Ask"];
@@ -74,7 +74,7 @@
         (i.sectionOriginal ? ' under <span lang="' + esc(r.language || "") + '">' + esc(i.sectionOriginal) + "</span>" : "") + "</div>");
     }
     if (i.info) out.push("<div>" + esc(i.info) + "</div>");
-    if (i.order === "asis") out.push("<div>Gluten free as listed. No changes needed.</div>");
+    if (i.order === "asis") out.push("<div>No gluten ingredients as listed. No changes needed.</div>");
     if (i.order === "modify") out.push("<div><b>Ask for:</b> " + esc(i.note) + "</div>");
     if (i.order === "swap") {
       const std = i.standard || "";
@@ -105,7 +105,19 @@
       esc(label) + "</span>" + chev + '</summary><div class="detail">' + detailFor(r, i) + "</div></details>";
   }
 
-  const matches = (i, q) => !q || [i.name, i.sub, i.note, i.original, i.info].filter(Boolean).join(" ").toLowerCase().includes(q);
+  // Search: every word must match (in English or the original language). Words like "gluten free" / "gf" are
+  // ignored because everything listed is already sorted by gluten; plurals match singulars ("toasties" -> "toastie").
+  const STOP = new Set(["gluten", "free", "gf", "glutenfree", "gluten-free", "no", "without", "and", "with"]);
+  const stem = (w) => w.replace(/ies$/, "ie").replace(/(ches|shes|xes)$/, (m) => m.slice(0, -2)).replace(/([^s])s$/, "$1");
+  const norm = (t) => t.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+  function terms(q) { return norm(q).split(/[^a-z0-9ßäöü]+/).filter((w) => w && !STOP.has(w)).map(stem); }
+  const matches = (i, q) => {
+    const ts = typeof q === "string" ? terms(q) : q;
+    if (!ts.length) return true;
+    // match at the start of words, so "latte" doesn't find "platter"
+    const words = norm([i.name, i.sub, i.note, i.original, i.info, i.section].filter(Boolean).join(" ")).split(/[^a-z0-9ßäöü]+/).map(stem);
+    return ts.every((t) => words.some((w) => w.startsWith(t)));
+  };
   const areas = () => [...new Set(data.restaurants.map((r) => r.area).filter(Boolean))];
   const scope = () => (selected === ALL ? data.restaurants : [byId(selected)].filter(Boolean));
 
@@ -184,10 +196,12 @@
         }
       }
     }
-    let empty = "No gluten free match";
-    if (!show.straight || !show.change) empty = "Nothing to show with these filters. Tap Straight up or Needs change above to show more.";
+    let empty = "No matches with no gluten ingredients";
+    const glutenHits = rs.reduce((n, r) => n + r.avoid.filter((a) => matches(a, q)).length, 0);
     if (filter === "fav") empty = favs.size ? "No saved favourites here yet" : "No favourites yet. Open an item and tap ☆ Save.";
-    else if (q) empty = 'No gluten free match for "' + esc(q) + '". Check the list below.';
+    else if (q) empty = 'No items with no gluten ingredients match "' + esc(q) + '".' +
+      (glutenHits ? " " + glutenHits + (glutenHits === 1 ? " match contains" : " matches contain") + " gluten" + (show.gluten ? " (listed below)." : ". Tap Contains gluten above to see " + (glutenHits === 1 ? "it." : "them.")) : "");
+    if (!show.straight || !show.change) empty += " Some items are hidden by the buttons above.";
     $("list").innerHTML = html || '<p class="empty">' + empty + "</p>";
 
     let avoidHtml = "";
@@ -225,7 +239,7 @@
     }
     const b = (k, cls, label) => '<button type="button" data-k="' + k + '" aria-pressed="' + show[k] + '"><span class="dot ' + cls + '"></span>' +
       label + " <small>" + n[k] + "</small></button>";
-    $("status").innerHTML = b("straight", "d-ok", "Straight up") + b("change", "d-swap", "Needs change") + b("gluten", "d-bad", "Gluten");
+    $("status").innerHTML = b("straight", "d-ok", "No gluten ingredients") + b("change", "d-swap", "Needs a change") + b("gluten", "d-bad", "Contains gluten");
   }
 
   const THEMES = [
@@ -272,7 +286,7 @@
     const line = (r) => {
       const g = r.guide || {};
       return "<p><b>" + esc(r.name) + ":</b> " + esc(r.covers ? r.covers + ". " : "") + "From " + esc(r.source) +
-        (g.version ? " (version " + esc(fmtDate(g.version)) + ")" : "") + ". " + esc(r.stats.items) + " gluten free, " + esc(r.stats.avoid) +
+        (g.version ? " (version " + esc(fmtDate(g.version)) + ")" : "") + ". " + esc(r.stats.items) + " with no gluten ingredients, " + esc(r.stats.avoid) +
         " to avoid." + (r.officialUrl ? ' <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">Official site</a>' : "") + "</p>";
     };
     $("sources").innerHTML = scope().map(line).join("");
@@ -303,6 +317,7 @@
     renderHeader();
     renderChips();
     renderBanners();
+    renderWarnCount();
     renderStatus();
     renderList();
     renderSources();
@@ -318,7 +333,54 @@
     window.scrollTo({ top: 0 });
   }
 
-  // ---------- gluten free card (phrases for staff) ----------
+  // ---------- warnings page ----------
+  function warningsFor(r) {
+    const groups = {};
+    (r.notices || []).forEach((n) => { (groups[n.label] = groups[n.label] || []).push(n); });
+    let html = "";
+    if (selected === ALL) html += '<h3 class="w-rest">' + esc(r.name) + "</h3>";
+    html += '<p class="muted">From ' + esc(r.source) + (r.guide && r.guide.version ? ", version " + esc(fmtDate(r.guide.version)) : "") + ".</p>";
+    const labels = Object.keys(groups);
+    if (labels.length) {
+      html += "<h4>What " + esc(r.name) + "'s guide says</h4>";
+      for (const l of labels) {
+        html += '<div class="w-group"><div class="w-label">' + esc(l) + "</div>" + groups[l].map((n) =>
+          '<blockquote class="w-quote">' + esc(n.text) + "<cite>" + esc(n.pages && n.pages.length
+            ? "Guide page " + n.pages[0] + (n.pagesTotal > 1 ? ", repeated on " + n.pagesTotal + " pages" : "") : "From the menu") +
+          "</cite></blockquote>").join("") + "</div>";
+      }
+    } else {
+      html += '<p class="muted">No warnings were found in this guide. That doesn\'t mean there aren\'t any risks.</p>';
+    }
+    if (r.gaps && r.gaps.length) {
+      html += "<h4>What the guide doesn't tell you</h4><ul class=\"w-gaps\">" + r.gaps.map((g) => "<li>" + esc(g) + "</li>").join("") + "</ul>";
+    }
+    if (r.warnings && r.warnings.length) {
+      html += "<h4>Notes from reading the guide</h4><ul class=\"notes\">" + r.warnings.map((w) => "<li>" + esc(w) + "</li>").join("") + "</ul>";
+    }
+    if (isStale(r)) html += '<p class="w-stale">This guide covered up to ' + esc(fmtDate(r.guide.validUntil)) + ". A newer one may be out.</p>";
+    return html;
+  }
+  function openWarnings() {
+    if (!data) return;
+    const r = byId(selected);
+    $("warnTitle").textContent = r ? r.name + ": warnings" : "Warnings";
+    $("warnBody").innerHTML =
+      '<div class="w-intro"><p><b>"No gluten ingredients" means the restaurant\'s guide lists no gluten cereal for that item.</b> ' +
+      "It isn't a gluten free claim: none of these guides use the words \"gluten free\", and they don't test for gluten or promise " +
+      "there's been no contact with it. If you have coeliac disease, ask staff about shared equipment such as toasters, fryers and tongs.</p></div>" +
+      scope().map(warningsFor).join('<hr class="w-sep">');
+    if ($("info").open) $("info").close();
+    openDialog($("warnings"));
+  }
+  function renderWarnCount() {
+    const n = scope().reduce((t, r) => t + (r.notices || []).length + (r.gaps || []).length, 0);
+    $("warnCount").textContent = n ? "(" + n + ")" : "";
+  }
+  $("openWarnings").addEventListener("click", openWarnings);
+  $("openWarnings2").addEventListener("click", openWarnings);
+
+  // ---------- coeliac card (phrases for staff) ----------
   let phrases = {};
   async function loadPhrases() {
     try {
@@ -335,12 +397,12 @@
     const el = $("cardLaunch");
     el.hidden = !langs.length;
     el.innerHTML = langs.map((l) => '<button type="button" class="pill-btn" data-lang="' + esc(l) + '">Show ' + esc(phrases[l].language) +
-      " gluten free card</button>").join("");
+      " coeliac card</button>").join("");
   }
   function openCard(lang) {
     const p = phrases[lang];
     if (!p) return;
-    $("cardTitle").textContent = p.language + " gluten free card";
+    $("cardTitle").textContent = p.language + " coeliac card";
     $("cardBody").innerHTML = '<div class="phrase-list" lang="' + esc(lang) + '">' + p.card.map((c) =>
       '<div class="phrase"><p class="ph-text">' + esc(c.text) + '</p><p class="ph-en" lang="en-GB">' + esc(c.en) + "</p></div>").join("") + "</div>" +
       "<h3>Words to look for</h3><dl class=\"words\">" + p.words.map(([w, en]) =>
@@ -544,12 +606,12 @@
     select(b.dataset.r);
   });
   $("infoBtn").addEventListener("click", () => openDialog($("info")));
-  ["picker", "info", "gfcard"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
+  ["picker", "info", "gfcard", "warnings"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
   $("refreshBtn").addEventListener("click", () => load(true));
   $("shareBtn").addEventListener("click", async () => {
     const r = byId(selected);
     const url = location.origin + location.pathname.replace(/index\.html$/, "") + (r ? "#" + r.id : "");
-    const text = r ? "Gluten free food and drinks at " + r.name : "Gluten free food and drinks at restaurants and coffee shops";
+    const text = r ? "Food and drinks with no gluten ingredients at " + r.name : "Food and drinks with no gluten ingredients at restaurants and coffee shops";
     if (navigator.share) {
       try { await navigator.share({ title: "Twoo's Treat Temple", text, url }); } catch (e) { /* share sheet closed */ }
       return;
@@ -560,6 +622,27 @@
     const id = decodeURIComponent(location.hash.slice(1));
     if (data && id && byId(id) && id !== selected) select(id);
   });
+
+  // Reserve space for the floating header at its full (expanded) height.
+  const topEl = document.querySelector(".top");
+  const reserve = () => { if (!topEl.classList.contains("collapsed")) document.body.style.setProperty("--top-h", topEl.offsetHeight + "px"); };
+  if (window.ResizeObserver) new ResizeObserver(reserve).observe(topEl);
+  reserve();
+  // Hide the filter rows while scrolling down the list; bring them back on scrolling up.
+  let lastY = window.scrollY;
+  let ticking = false;
+  window.addEventListener("scroll", () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const y = window.scrollY;
+      const top = document.querySelector(".top");
+      if (y > 160 && y > lastY + 6) top.classList.add("collapsed");
+      else if (y < lastY - 6 || y < 160) top.classList.remove("collapsed");
+      lastY = y;
+      ticking = false;
+    });
+  }, { passive: true });
 
   // install tip: iPhone/iPad in Safari, not yet on the Home Screen
   const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -576,8 +659,11 @@
   }
   loadPhrases();
   load(false).then(() => {
-    // first visit with one restaurant: open it directly
-    if (data && !hashId && !store.get(SEL_KEY) && data.restaurants.length === 1) select(data.restaurants[0].id);
+    // first visit: one restaurant opens directly; several, the picker opens so you start somewhere specific
+    if (data && !hashId && !store.get(SEL_KEY)) {
+      if (data.restaurants.length === 1) select(data.restaurants[0].id);
+      else { renderPicker(); openDialog($("picker")); }
+    }
   });
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") load(false); });
   if ("serviceWorker" in navigator) {

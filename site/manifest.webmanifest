@@ -1,7 +1,7 @@
 {
   "name": "Twoo's Treat Temple",
   "short_name": "Treat Temple",
-  "description": "Gluten free food and drinks at restaurants and coffee shops, from their published allergen guides, and how to order them.",
+  "description": "Food and drinks with no gluten ingredients at restaurants and coffee shops, from their published allergen guides, and how to order them.",
   "lang": "en-GB",
   "start_url": "./",
   "scope": "./",

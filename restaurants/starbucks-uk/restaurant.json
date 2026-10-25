@@ -11,5 +11,10 @@
     "Never oat drink: the guide lists oats as a gluten cereal.",
     "Any other milk is fine: skimmed, semi-skimmed, whole, almond, soya or coconut.",
     "Swap means the drink normally comes with oat drink, so ask for another milk."
+  ],
+  "gaps": [
+    "Starbucks doesn't call any drink gluten free. This app lists drinks whose ingredients contain no gluten cereals.",
+    "The guide lists ingredients only. It says nothing about which drinks may contain traces of gluten.",
+    "Food isn't covered. This guide is for drinks, syrups and toppings only."
   ]
 }

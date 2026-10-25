@@ -1,6 +1,6 @@
 # Twoo's Treat Temple
 
-An iPhone home-screen app that lists the gluten free food and drinks at restaurants and coffee shops, built from each restaurant's own allergen guide, and shows how to order each one.
+An iPhone home-screen app that lists the food and drinks with no gluten ingredients at restaurants and coffee shops, built from each restaurant's own allergen guide, and shows how to order each one.
 
 Live at **https://t-800isinevitable.github.io/gf-drinks/**
 
@@ -8,13 +8,15 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 
 - **Pick a restaurant** by tapping its name at the top, or choose **All restaurants** to browse and search everything at once.
 - **Filter** with the chips under the search box: menu sections for one restaurant, or restaurants when viewing all.
-- **Show or hide by status:** the three buttons under the filters toggle **Straight up** (gluten free as served, or with any milk except those named), **Needs change** (ask for a swap or change) and **Gluten** (contains gluten whatever you order).
+- **Show or hide by status:** the three buttons under the filters toggle **No gluten ingredients** (as served, or with any milk except those named), **Needs a change** (ask for a swap or change) and **Contains gluten** (whatever you order).
+- **Warnings page:** each restaurant's own allergen warnings, word for word with page numbers (cross-contact, allergen updates, recipe changes, delivery, nutrition), plus what its guide doesn't tell you.
+- **Wording:** the app says "no gluten ingredients", not "gluten free". In UK law "gluten free" means tested below 20 parts per million, and these restaurants make no such claim.
 - **Themes:** ⓘ → Appearance: Match phone, Light, Dark, Pink light, Pink dark.
 - **Favourites:** open any item and tap **☆ Save**. The **★ Favourites** chip shows them. They're stored on your phone only.
 - **Out-of-date warning:** if a restaurant's guide has passed its end date, a banner says so.
 - **Share** sends a link to the restaurant you're viewing (for example `…/gf-drinks/#starbucks-uk`).
 - **Menus in other languages** show each item in English with the original name underneath, so you can point to it when ordering. Searching works in either language.
-- **Gluten free card:** a set of phrases to show staff (currently German), with a list of words to look for on menus. Works offline.
+- **Coeliac card:** a set of phrases to show staff (currently German), with a list of words to look for on menus. Works offline.
 - **Install:** in Safari, tap **•••** (or **Share** on older iPhones), then **Add to Home Screen**, and keep **Open as Web App** switched on (otherwise you get a bookmark). It works without signal using the last menus it downloaded.
 
 ## Updating a restaurant's menu

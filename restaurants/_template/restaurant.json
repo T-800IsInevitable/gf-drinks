@@ -19,5 +19,15 @@
   "reviewed": {
     "by": "Who checked it",
     "date": "2026-10-01"
-  }
+  },
+  "notices": [
+    {
+      "label": "Cross-contact",
+      "text": "Exact wording of a warning printed in the menu",
+      "page": 1
+    }
+  ],
+  "gaps": [
+    "Something the menu doesn't tell you, e.g. no 'may contain' information"
+  ]
 }

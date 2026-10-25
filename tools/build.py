@@ -59,8 +59,9 @@ def build_one(folder):
         "area": config.get("area", ""),
         "language": config.get("language", "en"),
         "reviewed": config.get("reviewed"),
+        "gaps": config.get("gaps", []),
     }
-    print(f"  {data['stats']['rows']} rows -> {data['stats']['items']} gluten free, {data['stats']['avoid']} to avoid")
+    print(f"  {data['stats']['rows']} rows -> {data['stats']['items']} with no gluten ingredients, {data['stats']['avoid']} to avoid")
     for w in data.get("warnings", []):
         print("  WARNING:", w)
     return meta, data
