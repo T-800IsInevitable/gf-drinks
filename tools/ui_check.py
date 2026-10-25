@@ -143,6 +143,9 @@ def main():
         page.locator("#q").fill(cities[cid]["places"][0]["name"])
         if page.locator("#cityList .row").count() < 1:
             problems.append(f"{cid}: searching for the first place found nothing")
+        if page.locator("#cityCard").is_visible():
+            problems.append(f"{cid}: the coeliac card button still shows while searching")
+        page.locator("#q").fill("")  # the card button comes back once the search is cleared
         page.locator("#cityCard").click()
         page.wait_for_selector("#gfcard[open]")
         page.locator("#gfcard .link-btn").click()
@@ -153,6 +156,29 @@ def main():
         if not page.locator("#cityView").is_hidden():
             problems.append(f"switching back to UK left {cid} showing")
         print(f"switch: UK -> {cid} (search, card, reload) -> UK")
+        ctx.close()
+
+        # search: the first result sits above the iPhone keyboard (about 340pt tall), and a ruled-out milk is explained
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        for url, query, rows in ((f"#{ids[0]}", "a", "#list .row"), ("#pret-uk", "fruit", "#list .row"), (f"#{cid}", "café", "#cityList .row")):
+            page.goto(base + url)
+            page.wait_for_selector(rows)
+            page.locator("#q").fill(query)
+            page.wait_for_timeout(300)
+            top = page.locator(rows).first.bounding_box()["y"] if page.locator(rows).count() else None
+            if top is None or top > IPHONE["viewport"]["height"] - 340 - 50:
+                problems.append(f"search {query!r} on {url}: first result at y={top}, hidden behind the keyboard")
+        page.goto(base + "#starbucks-uk")
+        page.wait_for_selector("#list .row")
+        page.locator("#q").fill("oat milk latte")
+        page.wait_for_timeout(300)
+        note = page.locator("#searchNote")
+        if not note.is_visible() or "Oat milk" not in note.inner_text():
+            problems.append("search 'oat milk latte': no note explaining oat milk")
+        if not page.locator("#list .row").count():
+            problems.append("search 'oat milk latte': no lattes listed")
+        print(f"search: results above the keyboard; 'oat milk latte' -> {page.locator('#list .row').count()} rows")
         ctx.close()
 
         # tap through one restaurant

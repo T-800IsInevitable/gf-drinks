@@ -17,6 +17,7 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 - **What changed:** when a restaurant's guide is updated, a note lists what's new, what's gone, what's ordered differently and anything that now contains gluten. Changed items are marked in the list until the next guide.
 - **Out-of-date warning:** if a restaurant's guide has passed its end date, a banner says so.
 - **Share** sends a link to the restaurant you're viewing (for example `…/gf-drinks/#starbucks-uk`).
+- **Search** hides the tips and notes while you type, so results sit just under the box. Searching for a milk that's ruled out ("oat milk latte") explains why and lists the drinks that are fine with another milk.
 - **Menus in other languages** show each item in English with the original name underneath, so you can point to it when ordering. Searching works in either language.
 - **Coeliac card:** a set of phrases to show staff (currently German), with a list of words to look for on menus. Works offline.
 - **Berlin:** tap **Berlin** under the title to switch from the UK menus to places in Berlin that are all gluten free, by their own word or the Berlin coeliac support groups' (plus one pizzeria with a separate gluten free kitchen). Each place's tag says who makes the claim, and its row shows any warning, such as oats. Each place shows its own words with an English translation, the Berlin coeliac support groups' description, the app's notes (for example where oats are used), and its addresses with a map link. Tap **UK** to go back. Links work too: `…/gf-drinks/#berlin`.

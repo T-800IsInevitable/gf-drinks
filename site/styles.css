@@ -323,3 +323,12 @@ body { padding-top: var(--top-h, 250px); }
 .place-links { display: flex; flex-wrap: wrap; gap: 6px 16px; }
 .place-links a { display: inline-flex; align-items: center; min-height: 36px; }
 .detail .w-quote { margin: 0; }
+
+/* ---- search: switch beside the box, notes out of the way while typing ---- */
+.searchrow { display: flex; gap: 8px; align-items: stretch; }
+.searchrow .search { flex: 1; min-width: 0; }
+.searchrow .region { display: flex; flex: none; }
+.searchrow .region button { padding: 6px 10px; }
+body.searching .hide-searching { display: none !important; }
+.search-note { background: var(--swap-bg); color: var(--swap); border-radius: 12px; padding: 10px 14px; font-size: 14px; }
+.search-note b { color: inherit; }

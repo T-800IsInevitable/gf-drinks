@@ -301,16 +301,35 @@
       : "These restaurants don't claim their food is gluten free, and don't guarantee against cross-contact.");
   }
 
+  // A search word that names an option ruled out everywhere it appears (e.g. "oat" milk) would find nothing,
+  // so it's taken out of the search and explained instead: "oat milk latte" lists the lattes, with a note.
+  function searchTerms(rs, q) {
+    let ts = terms(q);
+    const words = (arr) => (arr || []).flatMap((o) => terms(o));
+    const out = ts.map((t) => ({ t, rs: rs.filter((r) => r.items.some((i) => words(i.not).includes(t))) }))
+      .filter((o) => o.rs.length && !o.rs.some((r) => r.items.some((i) => words(i.ok).includes(t))));
+    if (!out.length) return { ts, note: "" };
+    const label = out[0].rs[0].optionLabel || "option";
+    ts = ts.filter((t) => !out.some((o) => o.t === t) && !terms(label).includes(t));
+    const note = out.map((o) => "<b>" + esc(cap(o.t) + " " + label) + " isn't an option at " + esc(listOr(o.rs.map((r) => r.name))) + ".</b> " +
+      (o.t === "oat" ? "Oats count as gluten here, because " + (o.rs.length === 1 ? "its guide lists" : "their guides list") + " them as a gluten cereal." : (o.rs.length === 1 ? "Its guide doesn't" : "Their guides don't") + " show it free from gluten.")).join(" ") +
+      (ts.length ? " These have no gluten ingredients with another " + esc(label) + ":" : "");
+    return { ts, note };
+  }
+
   function renderList() {
     const q = $("q").value.trim().toLowerCase();
     const multi = selected === ALL;
     let rs = scope();
     if (filter.startsWith("r:")) rs = rs.filter((r) => r.id === filter.slice(2));
     if (filter.startsWith("a:")) rs = rs.filter((r) => r.area === filter.slice(2));
+    const { ts, note } = searchTerms(rs, q);
+    $("searchNote").hidden = !note;
+    $("searchNote").innerHTML = note;
     let html = "";
     let shown = 0;
     for (const r of rs) {
-      let items = r.items.filter((i) => matches(i, q) && visible(kindOf(i)));
+      let items = r.items.filter((i) => matches(i, ts) && visible(kindOf(i)));
       if (filter === "fav") items = items.filter((i) => favs.has(favKey(r, i)));
       else if (!multi && filter !== "all") items = items.filter((i) => i.section === filter);
       if (!items.length) continue;
@@ -332,7 +351,7 @@
       }
     }
     let empty = "No matches with no gluten ingredients";
-    const glutenHits = rs.reduce((n, r) => n + r.avoid.filter((a) => matches(a, q)).length, 0);
+    const glutenHits = rs.reduce((n, r) => n + r.avoid.filter((a) => matches(a, ts)).length, 0);
     if (filter === "fav") empty = favs.size ? "No saved favourites here yet" : "No favourites yet. Open an item and tap ☆ Save.";
     else if (q) empty = 'No items with no gluten ingredients match "' + esc(q) + '".' +
       (glutenHits ? " " + glutenHits + (glutenHits === 1 ? " match is" : " matches are") + " on the Avoid list" + (visible("gluten") ? " below." : ". Tap Avoid above to see " + (glutenHits === 1 ? "it." : "them.")) : "");
@@ -342,7 +361,7 @@
     let avoidHtml = "";
     if (filter !== "fav" && visible("gluten")) {
       for (const r of rs) {
-        const av = r.avoid.filter((a) => matches(a, q) && (multi || filter === "all" || a.section === filter));
+        const av = r.avoid.filter((a) => matches(a, ts) && (multi || filter === "all" || a.section === filter));
         if (!av.length) continue;
         if (multi) avoidHtml += '<div class="sub-h">' + esc(r.name) + "</div>";
         avoidHtml += '<div class="card">' + av.map((a) => {
@@ -370,9 +389,10 @@
     if (filter.startsWith("r:")) rs = rs.filter((r) => r.id === filter.slice(2));
     if (filter.startsWith("a:")) rs = rs.filter((r) => r.area === filter.slice(2));
     const n = { straight: 0, change: 0, gluten: 0 };
+    const { ts } = searchTerms(rs, q);
     for (const r of rs) {
       for (const i of r.items.concat(r.avoid)) {
-        if (!matches(i, q)) continue;
+        if (!matches(i, ts)) continue;
         if (filter === "fav" && !favs.has(favKey(r, i))) continue;
         if (!multi && !["all", "fav"].includes(filter) && i.section !== filter) continue;
         n[kindOf(i)]++;
@@ -455,6 +475,7 @@
   }
 
   function render() {
+    syncSearching();
     renderRegion();
     if (region !== UK) { renderCity(); return; }
     if (!data) return;
@@ -861,7 +882,11 @@
   }
 
   // ---------- events ----------
+  // While searching, tips and notes step aside so results sit just under the search box, above the keyboard
+  const syncSearching = () => document.body.classList.toggle("searching", !!$("q").value.trim());
   $("q").addEventListener("input", () => {
+    syncSearching();
+    window.scrollTo({ top: 0 });
     if (region !== UK) renderCityList();
     else if (data) { renderStatus(); renderList(); }
   });
