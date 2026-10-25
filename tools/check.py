@@ -56,6 +56,35 @@ for r in index["restaurants"]:
             err(f"{rid}: a warning has no text")
     print(f"{rid}: {len(d['items'])} with no gluten ingredients, {len(d['avoid'])} to avoid, guide valid until {d['guide'].get('validUntil')}")
 
+# cities.json: hand-checked places (not built from guides)
+CITY_KINDS = {"dedicated", "options"}
+cities = json.loads((DATA.parent / "cities.json").read_text(encoding="utf-8"))
+phrases = json.loads((DATA.parent / "phrases.json").read_text(encoding="utf-8"))
+for cid, c in cities.items():
+    for key in ("name", "language", "checked", "list", "tips", "sections", "places"):
+        if not c.get(key):
+            err(f"city {cid}: missing {key}")
+    if c.get("language") not in phrases:
+        err(f"city {cid}: no coeliac card for language {c.get('language')!r}")
+    for p in c.get("places", []):
+        where = f"city {cid}: {p.get('name')!r}"
+        if p.get("section") not in c.get("sections", []):
+            err(f"{where}: section {p.get('section')!r} isn't in sections")
+        if p.get("kind") not in CITY_KINDS:
+            err(f"{where}: bad kind {p.get('kind')!r}")
+        if not p.get("says") and not p.get("listed"):
+            err(f"{where}: no words from the place or the list")
+        if p.get("says") and p["says"].get("lang") != "en" and not p["says"].get("en"):
+            err(f"{where}: quote isn't in English and has no translation")
+        if p.get("status") not in ("confirmed", "unconfirmed") or (p.get("status") == "unconfirmed" and not p.get("statusNote")):
+            err(f"{where}: status must be confirmed, or unconfirmed with a statusNote")
+        if not p.get("locations") or any(not l.get("address") or not l.get("area") for l in p["locations"]):
+            err(f"{where}: every location needs an address and area")
+        for u in [p.get("url"), p.get("listPage")]:
+            if u is not None and not str(u).startswith("https://"):
+                err(f"{where}: link {u!r} isn't https")
+    print(f"city {cid}: {len(c.get('places', []))} places, checked {c.get('checked')}")
+
 if errors:
     print("\nCHECK FAILED:")
     for e in errors:

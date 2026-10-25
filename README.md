@@ -19,6 +19,7 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 - **Share** sends a link to the restaurant you're viewing (for example `…/gf-drinks/#starbucks-uk`).
 - **Menus in other languages** show each item in English with the original name underneath, so you can point to it when ordering. Searching works in either language.
 - **Coeliac card:** a set of phrases to show staff (currently German), with a list of words to look for on menus. Works offline.
+- **Berlin:** tap **Berlin** under the title to switch from the UK menus to places in Berlin that say everything they serve is gluten free (plus one pizzeria with a separate gluten free kitchen). Each place shows its own words with an English translation, the Berlin coeliac support groups' description, the app's notes (for example where oats are used), and its addresses with a map link. Tap **UK** to go back. Links work too: `…/gf-drinks/#berlin`.
 - **Install:** in Safari, tap **•••** (or **Share** on older iPhones), then **Add to Home Screen**, and keep **Open as Web App** switched on (otherwise you get a bookmark). It works without signal using the last menus it downloaded.
 
 ## Updating a restaurant's menu
@@ -35,7 +36,9 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 
 **Restaurants kept by hand (Knoops):** edit that restaurant's `menu.csv` and update the dates in its `restaurant.json`. Knoops' newest guide is from March 2024, so the app shows it as possibly out of date until a newer one appears.
 
-**Reminders:** each morning `.github/workflows/guide-reminders.yml` opens an issue for any guide that has ended or ends within three weeks. Close the issue if there's no newer guide yet; you won't be reminded again until the end date changes.
+**Berlin:** the list is kept by hand in `site/cities.json`, from the [Berlin glutenfrei](https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants) list (run by the Berlin contacts of the German Coeliac Society) checked against each place's own website. Only places that say everything is gluten free, or that make gluten free food in a separate kitchen, are included. Quote each place's words exactly and add an English translation. Mark a place `"status": "unconfirmed"` with a `statusNote` if its opening can't be confirmed, and put anything to watch for (such as oats) in `caution`. Update `checked` after each review. The app warns once `recheckDays` (90) have passed.
+
+**Reminders:** each morning `.github/workflows/guide-reminders.yml` opens an issue for any guide that has ended or ends within three weeks, and for a city list due a re-check. Close the issue if there's no newer guide yet; you won't be reminded again until the end date changes.
 
 ## Adding a menu from the app
 
@@ -123,6 +126,7 @@ python -m http.server -d site 8000               # open http://localhost:8000
 - `tools/SCAN_INSTRUCTIONS.md`: what the daily scan does with uploads
 - `inbox/`: uploads waiting to be scanned
 - `site/phrases.json`: gluten free card phrases (add a language here)
+- `site/cities.json`: hand-checked places in other cities (Berlin)
 - `site/`: the app (HTML, CSS, JavaScript, offline support, icons)
 
 Unofficial. Not affiliated with any restaurant.

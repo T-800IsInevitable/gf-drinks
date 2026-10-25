@@ -16,7 +16,7 @@ import argparse
 import json
 import os
 import urllib.request
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -31,6 +31,12 @@ def due(today):
         end = (r.get("guide") or {}).get("validUntil")
         if end and (date.fromisoformat(end) - today).days <= WARN_DAYS:
             out.append((r, end, (date.fromisoformat(end) - today).days))
+    # city lists (site/cities.json) are checked by hand; remind when a re-check is due
+    cities = json.loads((ROOT / "site" / "cities.json").read_text(encoding="utf-8"))
+    for cid, c in cities.items():
+        end = (date.fromisoformat(c["checked"]) + timedelta(days=c.get("recheckDays", 90))).isoformat()
+        if (date.fromisoformat(end) - today).days <= WARN_DAYS:
+            out.append(({"id": cid, "name": c["name"] + " places", "city": c}, end, (date.fromisoformat(end) - today).days))
     return out
 
 
@@ -45,6 +51,13 @@ def github(method, path, body=None):
 
 
 def issue_body(r, end, days):
+    if "city" in r:
+        c = r["city"]
+        return (f"The **{r['name']}** list in the app was checked on {c['checked']} and is due a re-check by {end}. "
+                "After that, the app warns that it may be out of date.\n\n"
+                f"**To update:** go through {c['list']['url']} and each place's own website. Remove places that have closed or "
+                "no longer say everything is gluten free, add new ones, then update `checked` in `site/cities.json`.\n\n"
+                "_Opened automatically by `.github/workflows/guide-reminders.yml`._")
     folder = f"restaurants/{r['id']}/"
     when = f"ended on {end}" if days < 0 else f"ends on {end} ({days} days)"
     how = (f"Download the newest allergen guide from {r.get('officialUrl') or 'their website'} and upload the PDF to "
@@ -75,8 +88,12 @@ def main():
             if len(batch) < 100:
                 break
     for r, end, days in items:
-        title = f"Guide check: {r['name']} (guide ends {end})"
-        print(f"{r['name']}: guide {'ended' if days < 0 else 'ends'} {end}")
+        if "city" in r:
+            title = f"Places check: {r['name']} (re-check due {end})"
+            print(f"{r['name']}: re-check due {end}")
+        else:
+            title = f"Guide check: {r['name']} (guide ends {end})"
+            print(f"{r['name']}: guide {'ended' if days < 0 else 'ends'} {end}")
         if args.github:
             if title in existing:
                 print("  issue already exists")

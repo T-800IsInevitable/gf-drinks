@@ -41,6 +41,7 @@
       </button>
     </div>
   </div>
+  <div id="region" class="region" role="group" aria-label="Where"></div>
   <label class="search">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     <input id="q" type="search" placeholder="Search" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Search">
@@ -54,6 +55,7 @@
     <p><b>Install on your iPhone:</b> in Safari, tap <b>•••</b> (or <b>Share</b>), then <b>Add to Home Screen</b>. Keep <b>Open as Web App</b> switched on.</p>
     <button type="button" id="installClose" class="link-btn">Dismiss</button>
   </div>
+  <div id="ukView" class="view">
   <div id="stale" class="stale" hidden></div>
   <div id="favAlert" class="fav-alert" role="alert" hidden></div>
   <div id="news" class="news" hidden></div>
@@ -73,6 +75,14 @@
     <div id="sources"></div>
     <p>Unofficial guide made from each restaurant's published allergen information. Not affiliated with any restaurant.</p>
   </footer>
+  </div>
+  <div id="cityView" class="view" hidden>
+    <div class="certnote"><p id="cityIntro"></p></div>
+    <div class="card-launch"><button type="button" id="cityCard" class="pill-btn">Show German coeliac card</button></div>
+    <section id="cityTips" class="rules" aria-label="Tips"></section>
+    <div id="cityList" class="list" aria-live="polite"></div>
+    <footer class="foot" id="cityFoot"></footer>
+  </div>
 </main>
 
 <dialog id="picker" aria-labelledby="pickerTitle">
@@ -121,6 +131,8 @@
     <h3>Warnings</h3>
     <p>Each restaurant's own allergen warnings, word for word, plus what its guide doesn't tell you.</p>
     <p><button type="button" id="openWarnings2" class="pill-btn">Read the warnings</button></p>
+    <h3>Berlin</h3>
+    <p>Tap <b>Berlin</b> at the top for places in Berlin that say everything they serve is gluten free, or that make gluten free food in a separate kitchen. Open a place for its own words, its address with a map link, and anything to ask about, such as oats. Tap <b>UK</b> to go back to the menus.</p>
     <h3>Travelling</h3>
     <p>Menus in other languages show each item in English with the original name underneath, so you can point to it when ordering. A coeliac card you can show staff is available in: <span id="cardLangs"></span>.</p>
     <h3>Add a menu</h3>

@@ -1,0 +1,228 @@
+{
+  "berlin": {
+    "name": "Berlin",
+    "language": "de",
+    "checked": "2026-10-25",
+    "recheckDays": 90,
+    "list": {
+      "name": "Berlin glutenfrei",
+      "by": "the Berlin contacts of the German Coeliac Society (DZG)",
+      "url": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants"
+    },
+    "tips": [
+      "Oats and wheat starch: in Germany, food labelled glutenfrei can contain gluten free oats (Hafer) or gluten free wheat starch (Weizenstärke). This app counts oats as gluten, so ask: Ist da Hafer oder Weizenstärke drin?",
+      "Packaged food: look for glutenfrei or the crossed grain symbol. In Germany the DZG licenses the symbol for products tested at under 20 mg of gluten per kg. Supermarkets, drugstores and organic shops sell gluten free food.",
+      "Before you go: opening times change, and many of these places close one or two days a week or only open in the evening. Check the website first. Some take card only."
+    ],
+    "sections": ["Bakeries and cafés", "Restaurants", "Separate gluten free kitchen"],
+    "places": [
+      {
+        "name": "Oshione",
+        "section": "Bakeries and cafés",
+        "kind": "dedicated",
+        "type": "Bakery and café",
+        "locations": [
+          { "area": "Kreuzberg", "address": "Katzbachstraße 25, 10965 Berlin", "note": "The main bakery, by Viktoriapark" },
+          { "area": "Friedrichshain", "address": "Weichselstraße 25, 10247 Berlin", "note": "Oshione Atelier, baked at the main bakery" },
+          { "area": "Charlottenburg", "address": "Suarezstraße 58, 14057 Berlin" }
+        ],
+        "url": "https://oshione.de/",
+        "says": { "text": "100% gluten free and natural.", "lang": "en" },
+        "listed": "Bakes only gluten free: bread, rolls and sweet pastries. The owner has coeliac disease.",
+        "notes": ["Its website says a fourth branch, at Oranienburger Straße 54 in Mitte, opens in autumn or winter 2026."],
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/oshione",
+        "status": "confirmed"
+      },
+      {
+        "name": "AERA",
+        "section": "Bakeries and cafés",
+        "kind": "dedicated",
+        "type": "Sourdough bakery and café",
+        "locations": [
+          { "area": "Mitte", "address": "Rosenthaler Straße 72, 10119 Berlin" },
+          { "area": "Charlottenburg-Wilmersdorf", "address": "Fasanenstraße 74, 10719 Berlin" }
+        ],
+        "url": "https://aerabread.com/",
+        "says": { "text": "Glutenfreie Bäckerei Berlin", "lang": "de", "en": "Gluten free bakery, Berlin" },
+        "listed": "Bakes only gluten free: sourdough bread, sandwiches and sweet pastries. Card payment only.",
+        "caution": "Its shop sells an oat biscuit (Haferkeks). Ask which items contain oats.",
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/aera-mitte",
+        "status": "confirmed"
+      },
+      {
+        "name": "PURE NOGLUTEN",
+        "section": "Bakeries and cafés",
+        "kind": "dedicated",
+        "type": "Café",
+        "locations": [{ "area": "Mitte", "address": "Holzmarktstraße 67, 10179 Berlin" }],
+        "url": "https://purenogluten.de/",
+        "says": {
+          "text": "Unsere Küche ist vollständig glutenfrei, sodass Menschen mit Zöliakie oder Glutenunverträglichkeit bei uns sicher genießen können.",
+          "lang": "de",
+          "en": "Our kitchen is completely gluten free, so people with coeliac disease or gluten intolerance can eat here safely."
+        },
+        "listed": "Coffee, cakes and pastries baked daily, and savoury snacks. Everything gluten free.",
+        "notes": ["Its notice on gluten says it relies on suppliers' labelling for bought-in products, and takes no responsibility for suppliers' mistakes."],
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/pure-nogluten-cafe",
+        "status": "confirmed"
+      },
+      {
+        "name": "Jute Bäckerei",
+        "section": "Bakeries and cafés",
+        "kind": "dedicated",
+        "type": "Bakery and café",
+        "locations": [{ "area": "Prenzlauer Berg", "address": "Schönhauser Allee 52A, 10437 Berlin" }],
+        "url": "https://www.jute-bäckerei.de/",
+        "listed": "Bakes only gluten free: bread, rolls, baguettes and sweet baked goods. Also sold at some Bio Company organic shops.",
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/jute-baeckerei",
+        "status": "unconfirmed",
+        "statusNote": "Its website didn't load when this list was checked, so it may have closed or changed."
+      },
+      {
+        "name": "Café Prana",
+        "section": "Bakeries and cafés",
+        "kind": "dedicated",
+        "type": "Vegan café, brunch and lunch",
+        "locations": [{ "area": "Prenzlauer Berg", "address": "Pasteurstraße 2, 10407 Berlin" }],
+        "url": "https://www.cafeprana.de/",
+        "says": { "text": "Everything on my menu is gluten-free, safe for coeliacs and those with sensitivities.", "lang": "en" },
+        "listed": "Everything on the menu is gluten free, plant based and sugar free.",
+        "notes": ["Small, and closed on some weekdays."],
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/cafe-prana",
+        "status": "confirmed"
+      },
+      {
+        "name": "EasyPeasy",
+        "section": "Bakeries and cafés",
+        "kind": "dedicated",
+        "type": "Café: breakfast, waffles, pancakes and bowls",
+        "locations": [{ "area": "Prenzlauer Berg", "address": "Wichertstraße 33a, 10439 Berlin" }],
+        "url": "https://www.easypeasyberlin.de/",
+        "listed": "Everything is gluten free and baked in its own kitchen, except the oat milk, which is kept and prepared completely separately. It doesn't use gluten free wheat starch. Gluten free oats are used now and then, and labelled. The owner has coeliac disease.",
+        "caution": "It serves oat milk, and some items have gluten free oats. Ask for them to be left out.",
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/easypeasy",
+        "status": "unconfirmed",
+        "statusNote": "Its website blocked the app's check, so its opening times weren't confirmed."
+      },
+      {
+        "name": "Café Velicious",
+        "section": "Bakeries and cafés",
+        "kind": "dedicated",
+        "type": "Vegan bakery and café",
+        "locations": [{ "area": "Friedenau", "address": "Bundesallee 118, 12161 Berlin" }],
+        "url": "https://www.velicious-cafe.de/",
+        "says": {
+          "text": "Alle unsere Speisen sind für Personen mit Zöliakie geeignet, da wir komplett auf glutenfreie Weizenstärke verzichten.",
+          "lang": "de",
+          "en": "All our food is suitable for people with coeliac disease, because we don't use gluten free wheat starch at all."
+        },
+        "listed": "Everything is gluten free and vegan, made by a trained pastry chef.",
+        "caution": "Some items contain oats (its menu marks them \"Ha\"), and it serves oat drinks. Ask for them to be left out.",
+        "notes": ["Open Thursday to Sunday."],
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/cafe-velicious",
+        "status": "confirmed"
+      },
+      {
+        "name": "Pretty Hill",
+        "section": "Bakeries and cafés",
+        "kind": "dedicated",
+        "type": "Bakery and café",
+        "locations": [{ "area": "Schöneberg", "address": "Naumannstraße 54, 10829 Berlin" }],
+        "url": "https://www.instagram.com/prettyhillberlin/",
+        "listed": "Bakes only gluten free: cakes, tarts, ice cream, sandwiches and some soups. The owner has coeliac disease.",
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/prettyhill",
+        "status": "unconfirmed",
+        "statusNote": "It has no website, only Instagram, so its opening times weren't confirmed."
+      },
+      {
+        "name": "Sinless Cakes",
+        "section": "Bakeries and cafés",
+        "kind": "dedicated",
+        "type": "Cake café, no added sugar",
+        "locations": [{ "area": "Wilmersdorf", "address": "Ludwigkirchstraße 5, 10719 Berlin" }],
+        "url": "https://www.sinlesscakes.com/",
+        "says": {
+          "text": "Wir können mit Stolz sagen, dass alle unsere Kuchen glutenfrei - hauptsächlich mit Mandelmehl gebacken - und ohne zugesetzten Zucker sind.",
+          "lang": "de",
+          "en": "We can proudly say that all our cakes are gluten free (baked mainly with almond flour) and have no added sugar."
+        },
+        "notes": ["Its words cover the cakes. Ask about anything else it serves."],
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/sinless-cakes",
+        "status": "confirmed"
+      },
+      {
+        "name": "Berliner Cantuccini",
+        "section": "Bakeries and cafés",
+        "kind": "dedicated",
+        "type": "Biscuit shop (cantuccini)",
+        "locations": [{ "area": "Prenzlauer Berg", "address": "Kollwitzstraße 90, 10435 Berlin" }],
+        "url": "https://cantuccini.berlin/",
+        "says": { "text": "bio-zertifiziert, glutenfrei und vegan", "lang": "de", "en": "certified organic, gluten free and vegan" },
+        "listed": "The whole range is gluten free. No ingredient containing gluten is used anywhere in the business, and its flours are certified gluten free.",
+        "notes": ["A small shop that's open only at set times, so check before you go. It also sells online."],
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/berliner-cantuccini",
+        "status": "confirmed"
+      },
+      {
+        "name": "Soul Kitchen House",
+        "section": "Restaurants",
+        "kind": "dedicated",
+        "type": "Vegan restaurant",
+        "locations": [{ "area": "Friedrichshain", "address": "Sonntagstraße 25, 10245 Berlin", "note": "Near Ostkreuz station" }],
+        "url": "https://www.soulkitchenhouse.berlin/",
+        "says": { "text": "Dedicated Gluten-Free Kitchen · Celiac-Safe · Allergy-Friendly", "lang": "en" },
+        "listed": "All dishes are vegan and gluten free. Asked by the support groups, it said the whole kitchen uses only gluten free products.",
+        "notes": ["Evenings, Thursday to Saturday only."],
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/soul-kitchen-house",
+        "status": "confirmed"
+      },
+      {
+        "name": "Trattoria Senza",
+        "section": "Restaurants",
+        "kind": "dedicated",
+        "type": "Italian restaurant",
+        "locations": [{ "area": "Mitte", "address": "Hannoversche Straße 1, 10115 Berlin" }],
+        "url": "https://www.trattoriasenza.de/",
+        "says": {
+          "text": "Unsere Gerichte sind für alle geeignet: für Menschen mit Zöliakie oder Laktoseintoleranz ebenso wie für gesundheitsbewusste Genießer",
+          "lang": "de",
+          "en": "Our dishes suit everyone: people with coeliac disease or lactose intolerance as well as health-conscious food lovers"
+        },
+        "listed": "An Italian restaurant that's entirely gluten free and lactose free: pasta, lasagne, tiramisu.",
+        "notes": ["Closed on Mondays. Card payment only."],
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/trattoria-senza",
+        "status": "confirmed"
+      },
+      {
+        "name": "Tapiocaria",
+        "section": "Restaurants",
+        "kind": "dedicated",
+        "type": "Brazilian restaurant",
+        "locations": [{ "area": "Friedrichshain", "address": "Samariterstraße 34A, 10247 Berlin" }],
+        "url": "https://tapiocaria.de/",
+        "listed": "All dishes are gluten free, staff know about it, and the owner is happy to advise. Almond milk for coffee.",
+        "caution": "Only the support groups' list says it's all gluten free. Its own website doesn't mention gluten, so confirm when you order.",
+        "notes": ["Wednesday to Sunday. Book through its website."],
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/tapiocaria",
+        "status": "confirmed"
+      },
+      {
+        "name": "Zeus Pizzeria",
+        "section": "Separate gluten free kitchen",
+        "kind": "options",
+        "type": "Pizzeria",
+        "locations": [{ "area": "Friedrichshain", "address": "Boxhagener Straße 30, 10245 Berlin" }],
+        "url": "https://www.zeuspizzeria.de/",
+        "says": {
+          "text": "Wir sind durch die Deutsche Zöliakie-Gesellschaft e.V. geschult und Geprüft.",
+          "lang": "de",
+          "en": "We have been trained and inspected by the German Coeliac Society."
+        },
+        "listed": "Gluten free pizzas have their own menu. They're topped in a completely separate kitchen, from separately stored ingredients, and baked in a separate oven.",
+        "caution": "Its regular pizzas are made with wheat flour in the same restaurant. Order from the gluten free menu and say you have coeliac disease.",
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/zeuss-pizza-pide",
+        "status": "confirmed"
+      }
+    ]
+  }
+}

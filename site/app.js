@@ -5,7 +5,9 @@
   const FAV_KEY = "gf-favourites";
   const TIP_KEY = "gf-install-tip-dismissed";
   const SEEN_KEY = "gf-changes-seen"; // "<id>@<source>" for each "what's new" banner dismissed
+  const REGION_KEY = "gf-region";
   const ALL = "all";
+  const UK = "uk"; // the restaurant menus; any other region is a city in cities.json
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const store = {
@@ -18,6 +20,10 @@
   let selected = ALL;            // restaurant id or ALL
   let filter = "all";            // "all" | "fav" | section name | "r:<id>"
   let favs = new Set(JSON.parse(store.get(FAV_KEY) || "[]"));
+  let region = store.get(REGION_KEY) || UK;
+  let cities = {};               // { <id>: { name, language, checked, list, tips, sections, places } }
+  let cityFilter = "all";        // "all" | section name
+  const city = () => cities[region];
   const PICK_KEY = "gf-pick";
   const THEME_KEY = "gf-theme";
   // Status buttons start unselected (show everything); selecting some narrows the list to those
@@ -449,6 +455,9 @@
   }
 
   function render() {
+    renderRegion();
+    if (region !== UK) { renderCity(); return; }
+    if (!data) return;
     if (selected !== ALL && !byId(selected)) selected = ALL;
     renderHeader();
     renderChips();
@@ -462,12 +471,105 @@
   function select(id) {
     selected = id;
     filter = "all";
+    region = UK;
+    store.set(REGION_KEY, UK);
     store.set(SEL_KEY, id);
     history.replaceState(null, "", id === ALL ? location.pathname : "#" + id);
     $("q").value = "";
     render();
     window.scrollTo({ top: 0 });
   }
+
+  // ---------- UK / city switch: a city is a hand-checked list of places (cities.json), not menus ----------
+  function renderRegion() {
+    const ids = [UK, ...Object.keys(cities)];
+    $("region").hidden = ids.length < 2;
+    $("region").innerHTML = ids.map((id) => '<button type="button" data-region="' + esc(id) + '" aria-pressed="' + (region === id) + '">' +
+      esc(id === UK ? "UK" : cities[id].name) + "</button>").join("");
+    const inCity = region !== UK;
+    $("ukView").hidden = inCity;
+    $("cityView").hidden = !inCity;
+    $("status").hidden = inCity;
+  }
+  function setRegion(id) {
+    region = id;
+    store.set(REGION_KEY, id);
+    $("q").value = "";
+    cityFilter = "all";
+    history.replaceState(null, "", id !== UK ? "#" + id : selected === ALL ? location.pathname : "#" + selected);
+    render();
+    window.scrollTo({ top: 0 });
+  }
+  $("region").addEventListener("click", (e) => { const b = e.target.closest("[data-region]"); if (b && b.dataset.region !== region) setRegion(b.dataset.region); });
+
+  const mapLink = (p, l) => "https://maps.apple.com/?q=" + encodeURIComponent(p.name) + "&address=" + encodeURIComponent(l.address);
+  const cityStale = (c) => new Date(c.checked + "T12:00:00Z").getTime() + (c.recheckDays || 90) * 864e5 < Date.now();
+  function renderCity() {
+    const c = city();
+    if (!c) { $("cityList").innerHTML = '<p class="empty">Loading…</p>'; return; }
+    $("pickName").textContent = c.name;
+    $("guideLine").textContent = c.places.length + " places · checked " + fmtDate(c.checked);
+    $("q").placeholder = "Search " + c.name;
+    const chips = [["all", "All"]].concat(c.sections.filter((s) => c.places.some((p) => p.section === s)).map((s) => [s, s]));
+    if (!chips.some(([v]) => v === cityFilter)) cityFilter = "all";
+    $("chips").innerHTML = chips.map(([v, l]) =>
+      '<button type="button" data-f="' + esc(v) + '" aria-pressed="' + (v === cityFilter) + '">' + esc(l) + "</button>").join("");
+    const separate = c.places.filter((p) => p.kind !== "dedicated").map((p) => p.name);
+    $("cityIntro").innerHTML = "<b>These places say everything they serve is gluten free</b>" +
+      (separate.length ? ", apart from " + esc(listOr(separate)) + ", which " + (separate.length === 1 ? "makes" : "make") + " gluten free food in a separate kitchen" : "") +
+      ". That's their claim, not the app's. They come from the list kept by " + esc(c.list.by) + ", checked against each place's own website on " +
+      esc(fmtDate(c.checked)) + ". Nobody from this app has seen their kitchens, so tell staff you have coeliac disease.";
+    $("cityCard").hidden = !phrases[c.language];
+    $("cityCard").textContent = phrases[c.language] ? "Show " + phrases[c.language].language + " coeliac card" : "";
+    $("cityTips").innerHTML = (cityStale(c) ? '<div class="stale"><p><b>This list may be out of date.</b> It was checked on ' + esc(fmtDate(c.checked)) +
+      ". Places open, close and change, so check before you go.</p></div>" : "") + c.tips.map((t) => {
+      const m = t.match(/^([^:.]+[:.])\s+(.+)$/);
+      return "<div>" + (m ? "<b>" + esc(m[1]) + "</b> " + esc(m[2]) : esc(t)) + "</div>";
+    }).join("");
+    $("cityFoot").innerHTML = '<p><b>Sources:</b> <a href="' + esc(c.list.url) + '" target="_blank" rel="noopener">' + esc(c.list.name) + "</a>, kept by " +
+      esc(c.list.by) + ", and each place's own website. Checked " + esc(fmtDate(c.checked)) + ".</p>" +
+      "<p>That list also has places with some gluten free dishes. They're left out here because their kitchens also use gluten, unless they make gluten free food separately.</p>" +
+      "<p>Unofficial guide. Not affiliated with any of these places or the DZG.</p>";
+    renderCityList();
+  }
+  function placeHtml(c, p) {
+    const dedicated = p.kind === "dedicated";
+    const subs = [esc(p.type), esc([...new Set(p.locations.map((l) => l.area))].join(", "))];
+    if (p.status !== "confirmed") subs.push('<span class="chg bad">Opening not confirmed</span>');
+    else if (p.caution) subs.push('<span class="chg">Ask first</span>');
+    const out = [];
+    if (p.says) {
+      out.push('<blockquote class="w-quote" lang="' + esc(p.says.lang) + '">' + esc(p.says.text) + "<cite>Its website</cite></blockquote>");
+      if (p.says.en) out.push("<div><b>In English:</b> " + esc(p.says.en) + ' <span class="muted">(the app\'s translation)</span></div>');
+    }
+    if (p.listed) out.push("<div><b>From the coeliac support groups' list:</b> " + esc(p.listed) + "</div>");
+    if (p.caution) out.push('<div class="chg-note"><b>Note from this app:</b> ' + esc(p.caution) + "</div>");
+    if (p.status !== "confirmed") out.push('<div class="chg-note bad"><b>Not confirmed open.</b> ' + esc(p.statusNote || "") + "</div>");
+    (p.notes || []).forEach((n) => out.push("<div>" + esc(n) + "</div>"));
+    out.push('<ul class="locs">' + p.locations.map((l) => '<li><a href="' + esc(mapLink(p, l)) + '" target="_blank" rel="noopener">' + esc(l.address) + "</a>" +
+      "<span>" + esc([l.area, l.note].filter(Boolean).join(" · ")) + "</span></li>").join("") + "</ul>");
+    out.push('<div class="place-links"><a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + (/instagram\.com/.test(p.url) ? "Instagram" : "Website") + "</a>" +
+      (p.listPage ? '<a href="' + esc(p.listPage) + '" target="_blank" rel="noopener">Support groups\' entry</a>' : "") + "</div>");
+    const [cls, label] = dedicated ? ["t-asis", "Says all gluten free"] : ["t-swap", "Separate kitchen"];
+    return '<details class="row"><summary><span class="nm">' + esc(p.name) + "<small>" + subs.join(" · ") + '</small></span><span class="tag ' + cls + '">' +
+      label + "</span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
+  }
+  const placeText = (p) => ({ name: [p.name, p.type, p.listed, p.caution, (p.notes || []).join(" "), p.says && p.says.text, p.says && p.says.en,
+    p.locations.map((l) => [l.area, l.address, l.note].join(" ")).join(" ")].filter(Boolean).join(" ") });
+  function renderCityList() {
+    const c = city();
+    if (!c) return;
+    const ts = terms($("q").value.trim());
+    const places = c.places.filter((p) => (cityFilter === "all" || p.section === cityFilter) && matches(placeText(p), ts));
+    let html = "";
+    for (const s of c.sections) {
+      const inSec = places.filter((p) => p.section === s);
+      if (!inSec.length) continue;
+      html += '<h2 class="group-h">' + esc(s) + "<small>" + inSec.length + "</small></h2>" + '<div class="card">' + inSec.map((p) => placeHtml(c, p)).join("") + "</div>";
+    }
+    $("cityList").innerHTML = html || '<p class="empty">No places match "' + esc($("q").value.trim()) + '".</p>';
+  }
+  $("cityCard").addEventListener("click", () => { const c = city(); if (c) openCard(c.language); });
 
   // ---------- warnings page ----------
   function warningsFor(r) {
@@ -530,6 +632,18 @@
     } catch (e) { /* offline and never cached: no card */ }
     $("cardLangs").textContent = Object.values(phrases).map((p) => p.language).join(", ") || "none yet";
     if (data) renderCardLaunch();
+    if (city()) renderCity();
+  }
+  async function loadCities() {
+    try {
+      const res = await fetch("cities.json", { cache: "no-store" });
+      if (res.ok) cities = await res.json();
+    } catch (e) { /* offline and never cached: UK menus only */ }
+    if (region !== UK && !cities[region]) { // not a city (or the list couldn't load): back to the menus
+      if (region === hashId) selected = region; // the link was to a restaurant after all
+      region = UK;
+    }
+    render();
   }
   function renderCardLaunch() {
     const r = byId(selected);
@@ -743,11 +857,16 @@
   }
 
   // ---------- events ----------
-  $("q").addEventListener("input", () => { if (data) { renderStatus(); renderList(); } });
+  $("q").addEventListener("input", () => {
+    if (region !== UK) renderCityList();
+    else if (data) { renderStatus(); renderList(); }
+  });
   $("chips").addEventListener("click", (e) => {
     const b = e.target.closest("button");
-    if (!b || !data) return;
+    if (!b) return;
     const f = b.dataset.f;
+    if (region !== UK) { cityFilter = f; renderCity(); window.scrollTo({ top: 0 }); return; }
+    if (!data) return;
     if (f.startsWith("r:")) { select(f.slice(2)); return; }
     filter = f;
     renderChips();
@@ -785,9 +904,11 @@
   ["picker", "info", "gfcard", "warnings", "staff", "changes"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
   $("refreshBtn").addEventListener("click", () => load(true));
   $("shareBtn").addEventListener("click", async () => {
-    const r = byId(selected);
-    const url = location.origin + location.pathname.replace(/index\.html$/, "") + (r ? "#" + r.id : "");
-    const text = r ? "Food and drinks with no gluten ingredients at " + r.name : "Food and drinks with no gluten ingredients at restaurants and coffee shops";
+    const r = region === UK && byId(selected);
+    const c = city();
+    const url = location.origin + location.pathname.replace(/index\.html$/, "") + (c ? "#" + region : r ? "#" + r.id : "");
+    const text = c ? "Places in " + c.name + " for coeliacs, from the coeliac support groups' list"
+      : r ? "Food and drinks with no gluten ingredients at " + r.name : "Food and drinks with no gluten ingredients at restaurants and coffee shops";
     if (navigator.share) {
       try { await navigator.share({ title: "Twoo's Treat Temple", text, url }); } catch (e) { /* share sheet closed */ }
       return;
@@ -796,7 +917,8 @@
   });
   window.addEventListener("hashchange", () => {
     const id = decodeURIComponent(location.hash.slice(1));
-    if (data && id && byId(id) && id !== selected) select(id);
+    if (cities[id]) { if (id !== region) setRegion(id); }
+    else if (data && id && byId(id) && (id !== selected || region !== UK)) select(id);
   });
 
   // Reserve space for the floating header at its full (expanded) height.
@@ -828,15 +950,19 @@
 
   // ---------- start ----------
   const hashId = decodeURIComponent(location.hash.slice(1));
-  selected = hashId || store.get(SEL_KEY) || ALL;
   const saved = store.get(DATA_KEY);
   if (saved) {
-    try { data = JSON.parse(saved); render(); } catch (e) { data = null; }
+    try { data = JSON.parse(saved); } catch (e) { data = null; }
   }
+  // a link to a restaurant opens the UK menus; any other link (#berlin) is taken as a city until cities.json says otherwise
+  if (hashId) region = data && byId(hashId) ? UK : hashId;
+  selected = (region === UK && hashId) || store.get(SEL_KEY) || ALL;
+  render();
   loadPhrases();
+  loadCities();
   load(false).then(() => {
     // first visit: one restaurant opens directly; several, the picker opens so you start somewhere specific
-    if (data && !hashId && !store.get(SEL_KEY)) {
+    if (data && region === UK && !hashId && !store.get(SEL_KEY)) {
       if (data.restaurants.length === 1) select(data.restaurants[0].id);
       else { renderPicker(); openDialog($("picker")); }
     }
