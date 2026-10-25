@@ -1,0 +1,34 @@
+{
+  "name": "Knoops",
+  "type": "Hot chocolate shop",
+  "covers": "Hot chocolates, milks, sauces, ice cream, bakery and take-home tubes (UK)",
+  "area": "UK",
+  "language": "en",
+  "reader": "manual_csv",
+  "optionLabel": "milk",
+  "officialUrl": "https://knoops.com/pages/our-menu",
+  "guide": {
+    "title": "Allergen guide",
+    "source": "Knoops allergen guide, March 2024 (Knoops_allergen_guide_March_2024.pdf, linked from Knoops' menu page)",
+    "version": "2024-03-01",
+    "validUntil": "2024-05-31"
+  },
+  "rule": "Knoops: checked by hand against the guide's 'Cereals containing gluten' column. Oats, including gluten free oats, and 'may contain traces' count as gluten.",
+  "reviewed": {"by": "Claude, checked against the rendered guide pages", "date": "2026-10-25"},
+  "notices": [
+    {"label": "Cross-contact", "text": "It is important to let you know that we cannot guarantee any of our products are suitable for those with allergies due to a high risk of cross contamination.", "page": 2},
+    {"label": "Cross-contact", "text": "Our vegan chocolates and bakery items are made to a vegan recipe but are not suitable for those with a dairy allergy as there is a risk of cross contamination in our stores due to the number of chocolates we use.", "page": 2},
+    {"label": "What the guide covers", "text": "This guide will provide nutritional and allergen information for core product range in our Knoops Stores and our retail range.", "page": 2}
+  ],
+  "tips": [
+    "Pick any chocolate except 38% Oat M*ilk: the guide marks it as made with gluten free oats.",
+    "Milk: whole, semi-skimmed, skimmed, lacto-free, (barista) soya or organic hazelnut. Not oat, or the barista almond or coconut milks, which the guide marks as containing oats.",
+    "Old guide: this is the newest guide Knoops publishes, but it's from March 2024. Check in store."
+  ],
+  "gaps": [
+    "Knoops doesn't call anything gluten free, apart from 'Gluten Free Ice Cream Cones', which its own guide marks as may contain traces of gluten.",
+    "The guide is from March 2024 and has no end date. Recipes may have changed since.",
+    "The guide marks the cannoli as containing no gluten cereals. Cannoli shells are usually made with wheat flour, so check in store (this is the app's caution, not Knoops' words).",
+    "The guide lists chocolates and milks separately, not finished drinks, so it doesn't say how each drink is made."
+  ]
+}

@@ -9,18 +9,21 @@ import re
 from difflib import SequenceMatcher
 
 KINDS = [
+    # a guide's own gluten free claim (e.g. Coeliac UK accreditation); the app shows it word for word
+    ("accreditation", r"coeliac uk|accredited|20 ?ppm|parts per million"),
     ("update", r"allergen update|now contains"),
     ("delivery", r"deliver|courier"),
     ("diet", r"vegan|not suitable for those"),
     ("cross-contact", r"cross[- ]contact|cross[- ]contamination|shared equipment|cannot guarantee|can.t guarantee|"
                       r"allergen-free|free from any allergen|traces|may contain|handled by|"
-                      r"not suitable for this allergen|preparation methods|cooking methods"),
+                      r"not suitable for this allergen|preparation methods|cooking methods|human error|not free from"),
     ("recipes", r"recipe|formulation|variations may occur|differ shop to shop|ingredient label|working on our"),
-    ("coverage", r"branded products|not be available|only covers|do not see a product|not see a product|"
+    ("coverage", r"branded products|not be available|only covers|do not see a product|not see a product|not all ingredients|"
                  r"participating locations|not available in|halal"),
     ("nutrition", r"kcal|calorie"),
 ]
 LABELS = {
+    "accreditation": "Gluten free accreditation",
     "update": "Allergen updates",
     "cross-contact": "Cross-contact",
     "recipes": "Recipes and ingredients",

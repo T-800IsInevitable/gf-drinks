@@ -1,0 +1,78 @@
+# source: FGUK_allergen_ingredient_nutrition_20261013.pdf
+OK    | Meat | Bacon | asis
+OK    | Meat | Hot Dog | asis
+OK    | Meat | Beef Burger Patty | asis
+OK    | Meat | Sausage Patty | asis
+OK    | Fries Cooked in Peanut Oil | Fries | asis
+OK    | Fries Cooked in Peanut Oil | Cajun Seasoning | asis
+OK    | Fries Cooked in Peanut Oil | Loaded Fries | asis
+OK    | Fries Cooked in Peanut Oil | Loaded Cajun Fries | asis
+OK    | Fries Cooked in Peanut Oil | Hash Browns | asis
+OK    | Toppings | Cheese | asis
+OK    | Toppings | Tomato Ketchup | asis
+OK    | Toppings | Mustard | asis
+OK    | Toppings | Crispy Onions | asis
+OK    | Breakfast | Latte | asis
+OK    | Breakfast | Cappuccino | asis
+OK    | Breakfast | Flat White | asis
+OK    | Breakfast | Americano Black | asis
+OK    | Breakfast | Americano White | asis
+OK    | Breakfast | Double Espresso | asis
+OK    | Breakfast | Breakfast Tea | asis
+OK    | Other Items | Bulk Peanuts Without Shell | asis
+OK    | Other Items | Egg | asis
+AVOID | Bun | Burger Bun | GLUTEN;WHEAT
+AVOID | Bun | Hot Dog Bun | GLUTEN;WHEAT
+AVOID | Toppings | BBQ Sauce | PREPARATION tag=Not suitable
+AVOID | Toppings | Green Peppers | PREPARATION tag=Not suitable
+AVOID | Toppings | Grilled Mushrooms | PREPARATION tag=Not suitable
+AVOID | Toppings | Hot Sauce | PREPARATION tag=Not suitable
+AVOID | Toppings | HP Brown Sauce | BARLEY;RYE
+AVOID | Toppings | Jalapeño Peppers | PREPARATION tag=Not suitable
+AVOID | Toppings | Lettuce | PREPARATION tag=Not suitable
+AVOID | Toppings | Mayonnaise | PREPARATION tag=Not suitable
+AVOID | Toppings | Fresh Onions | PREPARATION tag=Not suitable
+AVOID | Toppings | Grilled Onions | PREPARATION tag=Not suitable
+AVOID | Toppings | Pickles | PREPARATION tag=Not suitable
+AVOID | Toppings | Relish | PREPARATION tag=Not suitable
+AVOID | Toppings | Tomatoes | PREPARATION tag=Not suitable
+AVOID | Toppings | Grilled Toppings | PREPARATION tag=Not suitable
+AVOID | Milkshakes + Mix-ins | Five Guys Milkshake Base | PREPARATION tag=Not suitable
+AVOID | Milkshakes + Mix-ins | Whipped Cream | PREPARATION tag=Not suitable
+AVOID | Milkshakes + Mix-ins | Flake | PREPARATION tag=Not suitable
+AVOID | Milkshakes + Mix-ins | Banana | PREPARATION tag=Not suitable
+AVOID | Milkshakes + Mix-ins | Chocolate | PREPARATION tag=Not suitable
+AVOID | Milkshakes + Mix-ins | Biscoff® Crumb | WHEAT
+AVOID | Milkshakes + Mix-ins | Oreo® Cookie Pieces | WHEAT
+AVOID | Milkshakes + Mix-ins | Jimmy’s Iced Coffee | PREPARATION tag=Not suitable
+AVOID | Milkshakes + Mix-ins | Pistachio | PREPARATION tag=Not suitable
+AVOID | Milkshakes + Mix-ins | Reese's Peanut Butter Cups | PREPARATION tag=Not suitable
+AVOID | Milkshakes + Mix-ins | Peanut Butter | PREPARATION tag=Not suitable
+AVOID | Milkshakes + Mix-ins | Salted Caramel | PREPARATION tag=Not suitable
+AVOID | Milkshakes + Mix-ins | Strawberry | PREPARATION tag=Not suitable
+AVOID | Milkshakes + Mix-ins | Watermelon | PREPARATION tag=Not suitable
+AVOID | Milkshakes + Mix-ins | Myprotein | PREPARATION tag=Not suitable
+AVOID | Milkshakes + Mix-ins | M&Ms® | PREPARATION tag=Not suitable
+AVOID | Burgers | Hamburger | GLUTEN;WHEAT
+AVOID | Burgers | Little Hamburger | GLUTEN;WHEAT
+AVOID | Burgers | Cheeseburger | GLUTEN;WHEAT
+AVOID | Burgers | Little Cheeseburger | GLUTEN;WHEAT
+AVOID | Burgers | Bacon Burger | GLUTEN;WHEAT
+AVOID | Burgers | Little Bacon Burger | GLUTEN;WHEAT
+AVOID | Burgers | Bacon Cheeseburger | GLUTEN;WHEAT
+AVOID | Burgers | Little Bacon Cheeseburger | GLUTEN;WHEAT
+AVOID | Hot Dogs | Hot Dog | GLUTEN;WHEAT
+AVOID | Hot Dogs | Cheese Dog | GLUTEN;WHEAT
+AVOID | Hot Dogs | Bacon Dog | GLUTEN;WHEAT
+AVOID | Hot Dogs | Bacon Cheese Dog | GLUTEN;WHEAT
+AVOID | Sandwiches | Veggie Sandwich | GLUTEN;WHEAT
+AVOID | Sandwiches | Cheese Veggie Sandwich | GLUTEN;WHEAT
+AVOID | Sandwiches | Grilled Cheese | GLUTEN;WHEAT
+AVOID | Sandwiches | BLT | GLUTEN;WHEAT
+AVOID | Sandwiches | Lettuce Wrap | PREPARATION tag=Not suitable
+AVOID | Breakfast | Sausage, Egg & Cheese Sandwich | GLUTEN
+AVOID | Breakfast | Bacon, Egg & Cheese Sandwich | GLUTEN
+AVOID | Breakfast | Little Sausage, Egg and Cheese Sandwich | GLUTEN;WHEAT
+AVOID | Breakfast | Little Bacon, Egg & Cheese Sandwich | GLUTEN
+AVOID | Breakfast | Little Sausage Sandwich | GLUTEN;WHEAT
+AVOID | Breakfast | Little Egg Sandwich | GLUTEN;WHEAT

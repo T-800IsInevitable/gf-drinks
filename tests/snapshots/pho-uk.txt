@@ -1,0 +1,190 @@
+# source: Pho-Allergen-Guide-2026_web.pdf
+OK    | Table sauces | Garlic vinegar | asis
+OK    | Table sauces | Chilli paste in pot | asis
+OK    | Table sauces | Sriracha | asis
+OK    | Table sauces | Fish sauce | asis
+OK    | Table sauces | Soy sauce - kikoman-gluten free | asis
+OK    | Starters & Sides | Nước chấm | asis
+OK    | Starters & Sides | Nước chấm chay | asis
+OK    | Starters & Sides | Peanut sauce | asis
+OK    | Starters & Sides | Sweet chilli | asis
+OK    | Starters & Sides | Sriracha | asis
+OK    | Starters & Sides | Ginger soy | asis
+OK    | Starters & Sides | Summer rolls - veggie | asis
+OK    | Starters & Sides | Summer rolls - chicken | asis
+OK    | Starters & Sides | Summer rolls - THIS™ isn’t chicken | asis
+OK    | Starters & Sides | Summer rolls - prawn | asis
+OK    | Starters & Sides | Chicken wings | asis
+OK    | Starters & Sides | Pork & lemongrass meatballs | asis
+OK    | Starters & Sides | Baby squid | asis
+OK    | Starters & Sides | Beef betel | asis
+OK    | Starters & Sides | Morning glory - classic or spicy | asis
+OK    | Starters & Sides | Stir fried Chinese leaf - classic or spicy | asis
+OK    | Starters & Sides | Vietnamese pancake - tofu | asis
+OK    | Starters & Sides | Vietnamese pancake - THIS™ isn’t chicken | asis
+OK    | Starters & Sides | Vietnamese pancake - chicken & prawn | asis
+OK    | Starters & Sides | Prawn crackers - WITHOUT sauce | asis
+OK    | Starters & Sides | Prawnless crackers - WITHOUT sauce | asis
+OK    | Vietnamese salads | Chicken salad (incl. dressing) | asis
+OK    | Vietnamese salads | Veggie salad - veggie (incl. dressing) | asis
+OK    | Vietnamese salads | Veggie salad - THIS™ isn’t chicken (incl. dressing) | asis
+OK    | Vietnamese salads | Chef’s dressing on chicken & veggie salads | asis
+OK    | Vietnamese salads | Ginger dressing on side of chicken & veggie salads | asis
+OK    | Vietnamese salads | Green papaya salad - chicken | asis
+OK    | Vietnamese salads | Green papaya salad - THIS™ isn’t chicken | asis
+OK    | Vietnamese salads | Green papaya salad - prawn | asis
+OK    | Vietnamese salads | Mango salad | asis
+OK    | Vietnamese salads | Prawn & pomelo salad | asis
+OK    | Vietnamese noodle soup | Chicken stock - alone | asis
+OK    | Vietnamese noodle soup | Beef stock - alone | asis
+OK    | Vietnamese noodle soup | Veggie stock - alone | asis
+OK    | Vietnamese noodle soup | Spicy stock - alone | asis
+OK    | Vietnamese noodle soup | Beef brisket (beef stock) | asis
+OK    | Vietnamese noodle soup | Steak (beef stock) | asis
+OK    | Vietnamese noodle soup | Steak with garlic (beef stock) | asis
+OK    | Vietnamese noodle soup | Beef combo (beef stock) | asis
+OK    | Vietnamese noodle soup | Chicken (chicken stock) | asis
+OK    | Vietnamese noodle soup | King prawns (chicken stock) | asis
+OK    | Vietnamese noodle soup | King prawns (veggie stock) | asis
+OK    | Vietnamese noodle soup | Tofu & button mushrooms (chicken stock) | asis
+OK    | Vietnamese noodle soup | Tofu & button mushrooms (veggie stock) | asis
+OK    | Vietnamese noodle soup | 3 Mushrooms (chicken stock) | asis
+OK    | Vietnamese noodle soup | 3 Mushrooms (veggie stock) | asis
+OK    | Vietnamese noodle soup | Hot & spicy chicken (spicy stock) | asis
+OK    | Vietnamese noodle soup | Hot & spicy beef brisket - incl. shrimp paste (beef stock) | asis
+OK    | Vietnamese noodle soup | Hot & spicy king prawn (spicy stock) | asis
+OK    | Vietnamese noodle soup | Hot & spicy THIS™ isn’t chicken (spicy stock) | asis
+OK    | Vietnamese noodle soup | Hot & spicy tofu & mushroom (spicy stock) | asis
+OK    | Vietnamese noodle soup | Hot & spicy 3 mushrooms (spicy stock) | asis
+OK    | Vietnamese noodle soup | ‘Super Green’ (veggie stock) | asis
+OK    | Vietnamese noodle soup | ‘Spicy Green’ - chicken, THIS™ isn’t chicken or tofu (veggie stock) | asis
+OK    | Vietnamese noodle soup | Brisket & mushroom - incl. egg (beef stock) | asis
+OK    | Vietnamese noodle soup | Crab noodle soup - tomato, crab, steak, tofu, omelette (chicken stock) | asis
+OK    | Vietnamese noodle soup | Omelette added to Crab noodle soup | asis
+OK    | Vietnamese noodle soup | Phở house - prawn, chicken, steak (beef stock) | asis
+OK    | Curry noodle soup | Beef brisket | asis
+OK    | Curry noodle soup | Chicken | asis
+OK    | Curry noodle soup | King prawn | asis
+OK    | Curry noodle soup | THIS™ isn’t chicken | asis
+OK    | Curry noodle soup | Tofu & mushroom | asis
+OK    | Curry noodle soup | 3 Mushroom | asis
+OK    | Curry | Chicken | asis
+OK    | Curry | Beef brisket | asis
+OK    | Curry | King prawn | asis
+OK    | Curry | Fish | asis
+OK    | Curry | Tofu | asis
+OK    | Curry | THIS™ isn’t chicken | asis
+OK    | Rice bowls | Chargrilled chicken thigh | asis
+OK    | Rice bowls | Beef in betel leaf | asis
+OK    | Rice bowls | Chargrilled pork | asis
+OK    | Rice bowls | 3 meat combo | asis
+OK    | Rice bowls | Tofu & veg | asis
+OK    | Rice bowls | THIS™ isn’t chicken & veg | asis
+OK    | Wok fried rice | Chicken & dried shrimp | asis
+OK    | Wok fried rice | THIS™ isn’t chicken | asis
+OK    | Wok fried rice | Shiitake & Thai basil | asis
+OK    | Wok fried noodles | Chicken | asis
+OK    | Wok fried noodles | Beef | asis
+OK    | Wok fried noodles | Chicken and prawn | asis
+OK    | Wok fried noodles | Tofu & mushroom | asis
+OK    | Wok fried noodles | THIS™ isn’t chicken | asis
+OK    | Vermicelli noodles | Chicken | modify note=Without the spring roll, please
+OK    | Vermicelli noodles | Beef | modify note=Without the spring roll, please
+OK    | Vermicelli noodles | King prawn | modify note=Without the spring roll, please
+OK    | Vermicelli noodles | Nem nuong pork balls | modify note=Without the spring roll, please
+OK    | Vermicelli noodles | Tofu & mushroom | modify note=Without the spring roll, please
+OK    | Vermicelli noodles | Veggie spring rolls | modify note=Without the spring roll, please
+OK    | Vermicelli noodles | THIS™ isn’t chicken | modify note=Without the spring roll, please
+OK    | Vermicelli noodles | Chargrilled chicken thigh | modify note=Without the spring roll, please
+OK    | Vermicelli noodles | Chargrilled pork loin | modify note=Without the spring roll, please
+OK    | Vermicelli noodles | Beef in betel leaf | modify note=Without the spring roll, please
+OK    | Vermicelli noodles | 3 Meat combo | modify note=Without the spring roll, please
+OK    | Vermicelli noodles | Chả cá Lã Vọng | asis
+OK    | Vermicelli noodles | Nước chấm | asis
+OK    | Vermicelli noodles | Nước chấm chay | asis
+OK    | Vermicelli noodles | Sweet chilli (bún dish only) | asis
+OK    | Vermicelli noodles | Ginger soy | asis
+OK    | Desserts | Banana fritter | asis
+OK    | Desserts | Pandan waffle | asis
+OK    | Desserts | Chocolate waffle | asis
+OK    | Desserts | Vietnamese affogato | asis
+OK    | Desserts | Honey & Ginger gelato | asis
+OK    | Desserts | Condensed Milk gelato | asis
+OK    | Desserts | Madagascan Vanilla gelato | asis
+OK    | Desserts | Alphonso Mango sorbet | asis
+OK    | Desserts | Dark Chocolate sorbet | asis
+OK    | Desserts | Raspberry sorbet | asis
+OK    | Desserts | Coconut sorbet | asis
+OK    | Kids Noodles | Chicken | asis
+OK    | Kids Noodles | Beef | asis
+OK    | Kids Noodles | Tofu & mushroom | asis
+OK    | Kids Noodles | with Chicken | asis
+OK    | Kids Noodles | with Pork balls | asis
+OK    | Kids Noodles | Nước chấm sauce for bún | asis
+OK    | Kids Noodles | with dipping sauce | asis
+OK    | Kids Noodle soup | Mini pho chicken - in chicken stock | asis
+OK    | Kids Noodle soup | Mini pho beef - in beef stock | asis
+OK    | Kids Noodle soup | Mini pho tofu & mushroom - in veggie stock | asis
+OK    | Kids Rice | Plain | asis
+OK    | Kids Rice | Chicken | asis
+OK    | Kids Rice | Tofu | asis
+OK    | Kids Rice | with Chicken & rice | asis
+OK    | Kids Skewers | Homemade pork balls - with prawn crackers | asis
+OK    | Kids Skewers | + peanut sauce served with pork balls | asis
+OK    | Kids Skewers | + sauce served with nuggets | asis
+OK    | Kids Skewers | + tomato ketchup, if served with nuggets | asis
+OK    | Beer & Cider | Saigon Apple Cider | asis
+OK    | Beer & Cider | Saigon Apple & Ginger Cider | asis
+OK    | Wine & Sparkling | Prosecco Spumante, Venezie, Italy, 10.5% | asis
+OK    | Wine & Sparkling | El Tesoro Verdejo, Castilla y León, Spain, 11% | asis
+OK    | Wine & Sparkling | Piattini Pinot Grigio, Venezie, Italy, 11% | asis
+OK    | Wine & Sparkling | False Bay Slow Chenin Blanc, South Africa, 12.5% | asis
+OK    | Wine & Sparkling | The Cloud Factory Sauvignon Blanc, Marlborough, New Zealand, 12.5% | asis
+OK    | Wine & Sparkling | Piattini Pinot Grigio Blush, Venezie, Italy, 11% | asis
+OK    | Wine & Sparkling | Domaine Boutinot Les Cerisiers Rosé, Rhône, France, 12.5% | asis
+OK    | Wine & Sparkling | Maison de Vigneron Rouge, Vaucluse, France, 13.5% | asis
+OK    | Wine & Sparkling | Bellefontaine Merlot, Languedoc, France, 13% | asis
+OK    | Wine & Sparkling | Estampado Malbec, Mendoza, Argentina, 12.5% | asis
+OK    | Cocktails | Phojito | asis
+OK    | Cocktails | Spicy Lychee Margarita | asis
+OK    | Cocktails | Dragon Fruit & Lime Martini | asis
+OK    | Cocktails | Hà Nội Iced Tea | asis
+OK    | Cocktails | Cà phê Martini | asis
+OK    | Cocktails | Coconut Pineapple Martini | asis
+OK    | Cocktails | Pride Punch | asis
+OK    | Spirits & Mixers | Tanqueray Gin | asis
+OK    | Spirits & Mixers | Vodka Hà Nội | asis
+OK    | Spirits & Mixers | Fever Tree tonic | asis
+OK    | Booze-Free | Nojito | asis
+OK    | Booze-Free | Seedlip & Tonic | asis
+OK    | Booze-Free | Cucumber Fizz | asis
+OK    | TRIP Functional drinks | Sicilian Lemon | asis
+OK    | TRIP Functional drinks | Tropical Mango | asis
+OK    | TRIP Functional drinks | Peach Ginger | asis
+OK    | TRIP Functional drinks | Elderflower Mint | asis
+OK    | Fresh juices & Soft drinks | Freshly squeezed juices - all varieties | asis
+OK    | Fresh juices & Soft drinks | Coconut water - all varieties | asis
+OK    | Fresh juices & Soft drinks | Homemade lemonades - all varieties | asis
+OK    | Fresh juices & Soft drinks | Coke, Diet coke, Coke Zero, Fanta, Sprite | asis
+OK    | Teas & Coffees | Flower teas | asis
+OK    | Teas & Coffees | Herbal teas | asis
+OK    | Teas & Coffees | Fresh mint tea | asis
+OK    | Teas & Coffees | Fresh lemongrass tea | asis
+OK    | Teas & Coffees | Iced tea | asis
+OK    | Teas & Coffees | Vietnamese coffee - black, hot or iced | asis
+OK    | Teas & Coffees | Vietnamese coffee - white, hot or iced | asis
+AVOID | Table sauces | Hoi sin sauce in bottle | WHEAT
+AVOID | Starters & Sides | Crispy spring rolls - veggie | WHEAT
+AVOID | Starters & Sides | Crispy spring rolls - pork | WHEAT
+AVOID | Starters & Sides | Seafood spring roll - king prawn, crab & pork | WHEAT
+AVOID | Vermicelli noodles | Spring roll added to the bún dish | WHEAT
+AVOID | Vermicelli noodles | Spring roll added to the bún dish | WHEAT
+AVOID | Kids Noodles | with Veggie spring rolls | GLUTEN
+AVOID | Kids Skewers | Chicken nuggets - with prawn crackers | GLUTEN
+AVOID | Beer & Cider | Bia Hà Nội | BARLEY
+AVOID | Beer & Cider | Saigon | BARLEY
+AVOID | Beer & Cider | Beer Lao | BARLEY
+AVOID | Beer & Cider | Pho Brewgooder Session IPA | BARLEY
+AVOID | Beer & Cider | Pho Brewgooder Hazy Pale Ale | BARLEY;WHEAT
+AVOID | Beer & Cider | Daura Damm | BARLEY
+AVOID | Beer & Cider | Lucky Saint Alcohol Free Lager | BARLEY

@@ -1,0 +1,87 @@
+# source: Knoops allergen guide, March 2024 (Knoops_allergen_guide_March_2024.pdf, linked from Knoops' menu page)
+OK    | Hot chocolate | 39% Ecuador | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 66% Mexico | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 75% Tanzania | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 80% Dark Blend | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 29% White Blend | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 35% Colombia | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 36% Milk Blend | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 56% Dark Blend | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 65% Colombia | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 72% Peru | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 85% Colombia | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 66% Tabasco | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 73% Philippines | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 75% Solomon | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 100% Philippines | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 100% Solomon | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 30% White Blend | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 34% Milk Blend | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 43% Venezuela | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 55% Dark Blend | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 64% Peru | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 70% Dark Blend | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 80% Uganda | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 96% Dark Blend | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 70% Congo | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 60% Venezuela | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Hot chocolate | 49% Dark Milk | except ok=whole;semi-skimmed;skimmed;lacto-free;soya;organic hazelnut not=oat;almond;coconut
+OK    | Milks and cream | Whole Milk | asis
+OK    | Milks and cream | Semi-Skimmed Milk | asis
+OK    | Milks and cream | Skimmed Milk | asis
+OK    | Milks and cream | Lacto-Free Milk | asis
+OK    | Milks and cream | Barista Soya Milk | asis
+OK    | Milks and cream | Organic Hazelnut Milk | asis
+OK    | Milks and cream | Cream | asis
+OK    | Milks and cream | Vegan Whipped Cream | asis
+OK    | Sauces and ice cream | Milk Choc Sauce | asis
+OK    | Sauces and ice cream | Dark Choc Sauce | asis
+OK    | Sauces and ice cream | 'KNOOPS' Chocolate Plaques | asis
+OK    | Sauces and ice cream | Jersey Gold Ice Cream Mix | asis
+OK    | Bakery | Hazelnut Cannoli | asis
+OK    | Bakery | Ricotta Cannoli | asis
+OK    | Bakery | White Choc Cannoli | asis
+OK    | Bakery | Pistachio Cannoli | asis
+OK    | Bakery | Chocolate Cannoli | asis
+OK    | Bakery | Marshmallow | asis
+OK    | Bakery | 41% Honeycomb | asis
+OK    | Bakery | Hot Cross Bun Marshmallow | asis
+OK    | To take home | 28% Retail Tube | asis
+OK    | To take home | 34% Retail Tube | asis
+OK    | To take home | 43% Retail Tube | asis
+OK    | To take home | 49% Retail Tube | asis
+OK    | To take home | 54% Retail Tube | asis
+OK    | To take home | 60% Retail Tube | asis
+OK    | To take home | 65% Retail Tube | asis
+OK    | To take home | 66% Retail Tube | asis
+OK    | To take home | 70% Retail Tube | asis
+OK    | To take home | 72% Retail Tube | asis
+OK    | To take home | 80% Retail Tube | asis
+OK    | To take home | 100% Retail Tube | asis
+OK    | To take home | Honeycomb Retail Tube | asis
+OK    | To take home | Cacao Tea Tube | asis
+OK    | To take home | Marshmallow Retail Tube | asis
+OK    | To take home | Ground Retail Coffee | asis
+OK    | To take home | Retail Coffee Beans | asis
+OK    | To take home | Festive Spice Pouch | asis
+OK    | To take home | Gingerbread Marshmallow | asis
+AVOID | Hot chocolate | 38% Oat M*ilk | OATS
+AVOID | Milks and cream | Oat Milk | OATS
+AVOID | Milks and cream | Barista Almond Milk | OATS
+AVOID | Milks and cream | Barista Coconut Milk | OATS
+AVOID | Sauces and ice cream | Plain Ice Cream Cones | WHEAT
+AVOID | Sauces and ice cream | Chocolate Ice Cream Cones | WHEAT
+AVOID | Sauces and ice cream | Gluten Free Ice Cream Cones | MAY CONTAIN GLUTEN
+AVOID | Bakery | Blueberry Bakewell | WHEAT
+AVOID | Bakery | Raspberry Bakewell | MAY CONTAIN GLUTEN
+AVOID | Bakery | Raspberry Cheesecake Brownie | WHEAT
+AVOID | Bakery | Banoffee Traycake | WHEAT
+AVOID | Bakery | Lemon Drizzle | WHEAT
+AVOID | Bakery | Honeynut Crunch | WHEAT;OATS
+AVOID | Bakery | Super Granola | OATS
+AVOID | Bakery | Carrot Cake | WHEAT
+AVOID | Bakery | Pastel de Nata | WHEAT
+AVOID | Bakery | 70% Single Origin Sea Salt Brownie (Tanzania) | MAY CONTAIN GLUTEN
+AVOID | Bakery | Cinnamon Bun | WHEAT;RYE
+AVOID | Bakery | Almond Croissant | WHEAT
+AVOID | To take home | 38% Oat M*ilk Retail Tube | OATS

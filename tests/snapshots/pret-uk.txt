@@ -1,0 +1,327 @@
+# source: Pret_Allergen_Guide_8_September_2026_V1.pdf
+OK    | Fruit & Pots | Apple | asis
+OK    | Fruit & Pots | Banana | asis
+OK    | Fruit & Pots | Berries & Nectarine | asis
+OK    | Fruit & Pots | Fruit Salad | asis
+OK    | Fruit & Pots | Mango & Lime | asis
+OK    | Fruit & Pots | Pret's Sweetest Pineapple | asis
+OK    | Fruit & Pots | Superfruit Salad | asis
+OK    | Fruit & Pots | Watermelon & Lime | asis
+OK    | Fruit & Pots | Banana, Honey & Yogurt Pot | asis
+OK    | Fruit & Pots | Kids' Mango & Banana Yogurt Pot | asis
+OK    | Fruit & Pots | Yogurt & Five Berry Pot | asis
+OK    | Breakfast | Banana & Cinnamon Butter Topping | asis
+OK    | Breakfast | Cranberry Seed Topper | asis
+OK    | Breakfast | Five Berry Compote Topping | asis
+OK    | Breakfast | Fresh Berry Topping | asis
+OK    | Breakfast | Honey Topping | asis
+OK    | Breakfast | British Sausages, Beans & Egg Protein Pot | asis
+OK    | Breakfast | Roasted Mushrooms, Beans & Egg Protein Pot | asis
+OK    | Cold Drinks | British Apple Juice | asis
+OK    | Cold Drinks | Cranberry, Raspberry & Pomegranate Pret Still | asis
+OK    | Cold Drinks | Easy Greens | asis
+OK    | Cold Drinks | Ginger Shot | asis
+OK    | Cold Drinks | Green Tea & Peach Pret Still | asis
+OK    | Cold Drinks | Hot Shot | asis
+OK    | Cold Drinks | Lemon & Ginger Pret Still | asis
+OK    | Cold Drinks | Mango Smoothie | asis
+OK    | Cold Drinks | Mango, Passion Fruit & Lime Pret Still | asis
+OK    | Cold Drinks | Orange Juice | asis
+OK    | Cold Drinks | Pret Apple Fizz | asis
+OK    | Cold Drinks | Pret Cucumber & Mint Seltzer | asis
+OK    | Cold Drinks | Pret Ginger Beer | asis
+OK    | Cold Drinks | Pret Ginger Kombucha | asis
+OK    | Cold Drinks | Pret Grape & Elderflower | asis
+OK    | Cold Drinks | Pret Lime & Raspberry Seltzer | asis
+OK    | Cold Drinks | Pret Rhubarb Lemonade | asis
+OK    | Cold Drinks | Pret Still Water 500ml | asis
+OK    | Cold Drinks | Pret Still Water 750ml | asis
+OK    | Cold Drinks | Pret's Sparkling Spring Water | asis
+OK    | Cold Drinks | Reusable Aluminium Water Bottle | asis
+OK    | Cold Drinks | Vitamin Volcano | asis
+OK    | Salads | Butternut & Humous Mezze Bowl | asis
+OK    | Salads | Chef's Italian Chicken Salad | asis
+OK    | Salads | Chicken & Edamame Protein Pot | asis
+OK    | Salads | Chicken & Greens Protein Plate | asis
+OK    | Salads | Chicken Satay Salad | asis
+OK    | Salads | Chipotle Chicken | asis
+OK    | Salads | Egg & Spinach Protein Pot | asis
+OK    | Salads | Kids' Humous & Cucumber Bowl | asis
+OK    | Salads | Korean BBQ Tofu | asis
+OK    | Salads | Miso Chicken Rice Bowl | asis
+OK    | Salads | Miso Salmon | asis
+OK    | Salads | Pret's Chicken Ceasar | asis
+OK    | Salads | Roasted Salmon & Mango Protein Plate | asis
+OK    | Salads | Shawarma Chicken | asis
+OK    | Salads | Smoked Salmon & Egg Protein Plate | asis
+OK    | Salads | Smoked Salmon & Egg Protein Pot | asis
+OK    | Salads | Smoked Salmon Protein Bowl | asis
+OK    | Salads | Tuna Nicoise Salad | asis
+OK    | Salads | Classic Green Side Salad | asis
+OK    | Salads | Crunchy Slaw Side Salad | asis
+OK    | Salads | Butternut & Humous Side Salad | asis
+OK    | Salads | Balsamic Dressing | asis
+OK    | Salads | Chilli & Lime Dressing | asis
+OK    | Salads | French Dressing | asis
+OK    | Salads | Green Dressing | asis
+OK    | Salads | Miso & Orange Dressing | asis
+OK    | Salads | Tamari & Ginger Dressing | asis
+OK    | Sweet Treats | Popcorn Bar | asis
+OK    | Sweet Treats | Dubai Style Chocolate Pot | asis
+OK    | Sweet Treats | Nutty Pistachio & Almond Loaf Cake | asis
+OK    | Sweet Treats | Zingy Lemon & Almond Loaf Cake | asis
+OK    | Pret's Hot | Crispy Potato Bites | asis
+OK    | Pret's Hot | Chicken Laksa | asis
+OK    | Pret's Hot | Butter Chicken Soup | asis
+OK    | Pret's Hot | Creamy Roast Chicken Soup | asis
+OK    | Pret's Hot | Pret's Mushroom Risotto Soup | asis
+OK    | Pret's Hot | Souper Tomato | asis
+OK    | Snacks | Chilli, Bean & Seed Tortilla Chips | asis
+OK    | Snacks | Cranberries in Coats | asis
+OK    | Snacks | Dark Chocolate Corn Cakes | asis
+OK    | Snacks | Dark Chocolate Salted Almonds | asis
+OK    | Snacks | Dark Chocolate with Sea Salt | asis
+OK    | Snacks | Fruit & Seed Bite | asis
+OK    | Snacks | Mature Cheddar & Red Onion Crisps | asis
+OK    | Snacks | Milk Chocolate Bar | asis
+OK    | Snacks | Nuts, Fruit & Chocolate | asis
+OK    | Snacks | Pret A Mango | asis
+OK    | Snacks | Salted Crunchy Corn | asis
+OK    | Snacks | Sea Salt & Cider Vinegar Crisps | asis
+OK    | Snacks | Sea Salt Crisps | asis
+OK    | Snacks | Sea Salt Popcorn | asis
+OK    | Snacks | Smoked Chipotle Crisps | asis
+OK    | Snacks | Smoky Sweet Crunch Mix | asis
+OK    | Snacks | Sweet & Salt Popcorn | asis
+OK    | Platters | Butternut & Humous Mezze Platter | asis
+OK    | Platters | Chef's Italian Chicken Salad Platter | asis
+OK    | Platters | Pret's Chicken Satay Salad Platter | asis
+OK    | Platters | Pret's Fruit Pot Platter | asis
+OK    | Platters | Tuna Nicoise Salad Platter | asis
+OK    | Platters | Pret's Crisp Platter | asis
+OK    | Platters | Pret's Popcorn Platter | asis
+OK    | Platters | Pret's Snack Platter | asis
+OK    | Barista Prepared Drinks | Americano Black | asis
+OK    | Barista Prepared Drinks | Americano | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Cappuccino | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Caramel Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Espresso | asis
+OK    | Barista Prepared Drinks | Filter - Black Coffee (add milk or milk alernative if White Filter) | asis
+OK    | Barista Prepared Drinks | Flat White | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Hazelnut Flat White | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Macchiato | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Mocha | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Vanilla Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Chai Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Matcha Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Vanilla Matcha Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Caramel Hot Chocolate | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Hazelnut Hot Chocolate | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Hot Chocolate | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Hot Chocolate Powder | asis
+OK    | Barista Prepared Drinks | Iced Caramel Hot Chocolate | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Iced Hot Chocolate | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Iced Hot Chocolate Powder | asis
+OK    | Barista Prepared Drinks | Iced Caramel Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Iced Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Iced Mocha | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Iced Vanilla Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Iced Black Americano | asis
+OK    | Barista Prepared Drinks | Iced White Americano | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Iced Chai Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Iced Matcha Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Iced Vanilla Matcha Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Breakfast (add milk or milk alternative if White) | asis
+OK    | Barista Prepared Drinks | Earl Grey (add milk or milk alternative if White) | asis
+OK    | Barista Prepared Drinks | Peppermint | asis
+OK    | Barista Prepared Drinks | Tropical Green | asis
+OK    | Barista Prepared Drinks | Iced Green Tea | asis
+OK    | Barista Prepared Drinks | Iced Tea Lemonade | asis
+OK    | Barista Prepared Drinks | Strawberry Iced Tea Lemonade | asis
+OK    | Barista Prepared Drinks | Caramel Frappe | any ok=skimmed;semi skimmed
+OK    | Barista Prepared Drinks | Classic Frappe | any ok=skimmed;semi skimmed
+OK    | Barista Prepared Drinks | Frozen Hot Chocolate | any ok=semi skimmed;skimmed
+OK    | Barista Prepared Drinks | Hazelnut Frappe | any ok=skimmed;semi skimmed
+OK    | Barista Prepared Drinks | Mocha Frappe | any ok=skimmed;semi skimmed
+OK    | Barista Prepared Drinks | Vanilla Frappe | any ok=skimmed;semi skimmed
+OK    | Barista Prepared Drinks | Vanilla Matcha Frappe | any ok=skimmed;semi skimmed
+OK    | Barista Prepared Drinks | Berries & Banana Smoothie | asis
+OK    | Barista Prepared Drinks | Mango & Peach Smoothie | asis
+OK    | Barista Prepared Drinks | Sweet Greens Smoothie | asis
+OK    | Barista Prepared Drinks | Semi Skimmed milk cup | asis
+OK    | Barista Prepared Drinks | Skimmed milk cup | asis
+OK    | Barista Prepared Drinks | Coconut (instead of milk) cup | asis
+OK    | Barista Prepared Drinks | Soya (instead of milk) cup | asis
+OK    | Barista Prepared Drinks | Babyccino | asis
+OK    | Barista Prepared Drinks | All Syrups | asis
+OK    | Barista Prepared Drinks | Marshmallow Cream | asis
+OK    | Barista Prepared Drinks | Whipped Cream | asis
+OK    | Barista Prepared Drinks | Pumpkin Spiced Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Toasted Marshmallow Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Toasted Marshmallow Hot Chocolate | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Strawberry Matcha Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Iced Strawberry Matcha Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Pistachio Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Pistachio Iced Latte | asis
+OK    | Barista Prepared Drinks | Iced Pistachio Latte | except ok=skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Dubai Style Chocolate Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Iced Dubai Style Chocolate Latte | except ok=semi skimmed;skimmed;coconut not=oat
+OK    | Barista Prepared Drinks | Iced Dubai Style Chocolate Iced Latte | asis
+OK    | Barista Prepared Drinks | Dubai Style Hot Chocolate | except ok=semi skimmed;skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Iced Dubai Style Hot Chocolate | except ok=semi skimmed;skimmed;coconut;soya not=oat
+AVOID | Baguettes & Sandwiches | Avo, Olive & Toms Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | Brie, Tomato & Basil Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | Chicken Caesar Bacon Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | Chicken Salad Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | Coronation Chicken Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | Free Range Egg Mayo & Smoked Salmon Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | Italian Prosciutto Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | Mozzarella, Roasted Tomato & Pesto Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | Mortadella, Mozzarella & Pistachio Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | Pole & Line Caught Tuna Mayo & Cucumber Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | Posh Cheddar & Pickle Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | Chicken Satay Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | The Pret Lobster Roll | WHEAT
+AVOID | Baguettes & Sandwiches | Smoked Salmon, Egg Mayo & Avo Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | Smoked Salmon, Soft Cheese & Dill Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | Wiltshire-Cured Ham & Greve Baguette | WHEAT
+AVOID | Baguettes & Sandwiches | BLT | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Chicken Salad | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Chicken, Avocado & Basil | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Classic Super Club | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Crayfish & Rocket | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Coronation Chicken | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Egg Florentine | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Free-Range Egg Mayo | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Ham & Cheese | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Humous & Veg | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Kids' Cheese & Tomato Triangles | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Kids' Chicken & Cucumber Triangles | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Kids' Ham Triangles | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Mature Cheddar & Pickle | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | New Yorker Club Sandwich | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Scottish Smoked Salmon | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Super Greens & Reds | BARLEY;WHEAT
+AVOID | Baguettes & Sandwiches | Tuna & Cucumber | BARLEY;WHEAT
+AVOID | Rolls & Wraps | Jambon-Buerre | WHEAT
+AVOID | Rolls & Wraps | Avo & Herb Wrap | RYE;WHEAT
+AVOID | Rolls & Wraps | Chicken Pesto & Rocket Wrap | RYE;WHEAT
+AVOID | Rolls & Wraps | Falafel, Avocado & Chipotle Wrap | RYE;WHEAT
+AVOID | Rolls & Wraps | Hoisin Duck Wrap | RYE;WHEAT
+AVOID | Rolls & Wraps | Humous & Chipotle Wrap | RYE;WHEAT
+AVOID | Rolls & Wraps | Chicken Satay Wrap | RYE;WHEAT
+AVOID | Rolls & Wraps | Falafel, Avo & Chipotle Flatbread | WHEAT
+AVOID | Rolls & Wraps | Mediterranean Style Tuna Flatbread | WHEAT
+AVOID | Rolls & Wraps | Shawarma Spiced Chicken Flatbread | WHEAT
+AVOID | Fruit & Pots | Acai & Almond Butter Bowl | OAT
+AVOID | Fruit & Pots | The Big Apple Bowl | OAT
+AVOID | Fruit & Pots | Bircher Muesli Bowl | OAT
+AVOID | Fruit & Pots | Blueberry Balance Bowl | OAT
+AVOID | Fruit & Pots | Five Berry Bowl | OAT
+AVOID | Fruit & Pots | Mango & Banana Sunshine Bowl | OAT
+AVOID | Breakfast | All Butter Croissant | WHEAT
+AVOID | Breakfast | Almond Croissant | WHEAT
+AVOID | Breakfast | Chocolate Croissant | WHEAT
+AVOID | Breakfast | Cinnamon Danish | WHEAT
+AVOID | Breakfast | Pain aux Raisin | WHEAT
+AVOID | Breakfast | Pastel de Nata | WHEAT
+AVOID | Breakfast | Very Berry Croissant | WHEAT
+AVOID | Breakfast | Breakfast Baguette Free-Range Egg Mayo & Avocado | WHEAT
+AVOID | Breakfast | Bacon & Egg Mayo Breakfast Baguette | WHEAT
+AVOID | Breakfast | Breakfast Baguette Roasted Tomatoes & Egg Mayo | WHEAT
+AVOID | Breakfast | Breakfast Baguette Salmon & Egg Mayo | WHEAT
+AVOID | Breakfast | Sausage & Bacon Ciabatta | RYE;WHEAT
+AVOID | Breakfast | Pret's Veggie Breakfast Ciabatta | RYE;WHEAT
+AVOID | Breakfast | Triple Bacon Ciabatta | RYE;WHEAT
+AVOID | Breakfast | Triple Sausage Ciabatta | RYE;WHEAT
+AVOID | Breakfast | Ultimate Breakfast Ciabatta | RYE;WHEAT
+AVOID | Breakfast | Banana & Cinnamon Butter Sourdough Toast | WHEAT
+AVOID | Breakfast | Smashed Avocado Sourdough Toast | WHEAT
+AVOID | Breakfast | Sourdough Toast with Jam & Butter | WHEAT
+AVOID | Breakfast | Ham & Cheese Croissant | WHEAT
+AVOID | Breakfast | Mozzarella & Tomato Croissant | WHEAT
+AVOID | Breakfast | Coconut & Quinoa Porridge | OAT
+AVOID | Breakfast | Pret's Proper Porridge | OAT
+AVOID | Breakfast | Banana Cinnamon Porridge | OAT
+AVOID | Sweet Treats | Pret's Chocolate Brownie Swirl | WHEAT
+AVOID | Sweet Treats | Pret's Cinnamon Crown | BARLEY;WHEAT
+AVOID | Sweet Treats | Chocolate Chunk Cookie | WHEAT
+AVOID | Sweet Treats | Triple Chocolate Cookie | WHEAT
+AVOID | Sweet Treats | Chocolate Hazelnut Praline Cookie | WHEAT
+AVOID | Sweet Treats | Raspberry & White Chocolate Cookie | WHEAT
+AVOID | Sweet Treats | Choc Bar | WHEAT
+AVOID | Sweet Treats | Chocolate Brownie Bar | WHEAT
+AVOID | Sweet Treats | Pret's Gingerbread Biscuit (Annie & Godfrey) | WHEAT
+AVOID | Sweet Treats | Love Bar | OAT
+AVOID | Sweet Treats | Pret Bar | OAT;WHEAT
+AVOID | Sweet Treats | Bannoffee Pot | OAT
+AVOID | Sweet Treats | Loaded Chocolate Chunk Banana Bread | WHEAT
+AVOID | Sweet Treats | Double Berry Muffin | WHEAT
+AVOID | Sweet Treats | Spiced Apple & Pecan Muffin | WHEAT
+AVOID | Pret's Hot | Kale Macaroni Cheese | WHEAT
+AVOID | Pret's Hot | Macaroni Cheese Prosciutto | WHEAT
+AVOID | Pret's Hot | Spinach & Feta Pastry | WHEAT
+AVOID | Pret's Hot | Bacon, Cheese & Jalapeño Pastry | WHEAT
+AVOID | Pret's Hot | Classic Cheese Bloomer Toastie | BARLEY;OAT;RYE;WHEAT
+AVOID | Pret's Hot | Ham & Cheese Bloomer Toastie | BARLEY;OAT;RYE;WHEAT
+AVOID | Pret's Hot | Kids' Pizza Toastie | BARLEY;WHEAT
+AVOID | Pret's Hot | Tuna Melt Bloomer Toastie | BARLEY;OAT;RYE;WHEAT
+AVOID | Pret's Hot | Chipotle Chicken, Feta & Greve Hot Baguette | WHEAT
+AVOID | Pret's Hot | Prosciutto & Mozzarella Hot Baguette | WHEAT
+AVOID | Pret's Hot | Tomato, Red Pepper & Mozzorella Hot Baguette | WHEAT
+AVOID | Pret's Hot | Tuna Melt Hot Baguette | WHEAT
+AVOID | Pret's Hot | Warm Chicken Caesar Bacon Ciabatta | WHEAT
+AVOID | Pret's Hot | Warm Beef Birria & Jalapeño Ciabatta | WHEAT
+AVOID | Pret's Hot | Warm Three Cheese & Tomato Ciabatta | WHEAT
+AVOID | Pret's Hot | British Chicken & Pesto Ciabatta Sub | WHEAT
+AVOID | Pret's Hot | Meatball & Red Pepper Tapenade Ciabatta Sub | WHEAT
+AVOID | Pret's Hot | Pret's Sausage Roll | WHEAT
+AVOID | Pret's Hot | Roasted Tomato & Free-Range Egg Mayo Croissant | WHEAT
+AVOID | Pret's Hot | Scottish Smoked Salmon & Free-Range Egg Mayo Croissant | WHEAT
+AVOID | Pret's Hot | Falafel & Halloumi Hot Wrap | RYE;WHEAT
+AVOID | Pret's Hot | Italian Style Chicken & Basil Hot Wrap | RYE;WHEAT
+AVOID | Pret's Hot | Mexican Style Bean Hot Wrap | RYE;WHEAT
+AVOID | Pret's Hot | Swedish Meatball Hot Wrap | RYE;WHEAT
+AVOID | Pret's Hot | Pret's Lasagne Soup | WHEAT
+AVOID | Pret's Hot | Soup Baguette with Butter | WHEAT
+AVOID | Pret's Hot | Soup Roll with Butter | BARLEY;RYE;WHEAT
+AVOID | Pret's Hot | Sourdough Soup Bread with Butter | WHEAT
+AVOID | Pret's Hot | Mozzarella & Cheddar Sourdough Toastie | WHEAT
+AVOID | Pret's Hot | Pret's Ultimate British Bacon Sourdough Toastie | WHEAT
+AVOID | Pret's Hot | Tuna & Cheddar Melt Sourdough Toastie | WHEAT
+AVOID | Pret's Hot | Wiltshire Ham & Cheddar Melt Sourdough Toastie | WHEAT
+AVOID | Snacks | Salted Caramel Dessert Pot | WHEAT
+AVOID | Platters | Breakfast Baguette Selection Platter | WHEAT
+AVOID | Platters | Five Berry & Bircher Bowl Platter | OAT
+AVOID | Platters | Pret's Mixed Breakfast Ciabatta Platter | RYE;WHEAT
+AVOID | Platters | Pret's Premium Pastries Platter | BARLEY;WHEAT
+AVOID | Platters | Pret's Ultimate Breakfast Ciabatta Platter | RYE;WHEAT
+AVOID | Platters | Pret's Veggie Breakfast Ciabatta Platter | RYE;WHEAT
+AVOID | Platters | Spring Breakfast Bowl Platter | OAT
+AVOID | Platters | Sweet Pastry Selection Box | WHEAT
+AVOID | Platters | Triple Bacon Ciabatta Platter | RYE;WHEAT
+AVOID | Platters | Triple Sausage Ciabatta Platter | RYE;WHEAT
+AVOID | Platters | All Time Classic Platter | BARLEY;WHEAT
+AVOID | Platters | Baguette Selection Platter | WHEAT
+AVOID | Platters | Best Of Pret Platter | BARLEY;WHEAT
+AVOID | Platters | Charcuterie Platter | WHEAT
+AVOID | Platters | Pret's Flatbread Selection Platter | WHEAT
+AVOID | Platters | Kids' Cheese & Tomato Triangles Platter | BARLEY;WHEAT
+AVOID | Platters | Kids' Ham Triangles Platters | BARLEY;WHEAT
+AVOID | Platters | Kids' Mixed Triangles Platter | BARLEY;WHEAT
+AVOID | Platters | Mac & Cheese Hot Platter | WHEAT
+AVOID | Platters | Pret's Classic Salad Wrap Platter | RYE;WHEAT
+AVOID | Platters | Pret's Ploughmans Platter | WHEAT
+AVOID | Platters | Pret's Simple Vegan Friendly Platter | BARLEY;WHEAT
+AVOID | Platters | Pret's Veggie Salad Wrap Platter | RYE;WHEAT
+AVOID | Platters | Veggie Classics Baguette Selection Platter | WHEAT
+AVOID | Platters | Vegetarian Selection Platter | BARLEY;WHEAT
+AVOID | Platters | Brownie Bag | WHEAT
+AVOID | Platters | Chocolate Chunk Cookie Bag | WHEAT
+AVOID | Platters | Cookie Platter | WHEAT
+AVOID | Platters | Love Bar Bag | OAT
+AVOID | Platters | Pastel De Nata Platter | WHEAT
+AVOID | Platters | Pret Bar Platter | OAT;WHEAT
+AVOID | Platters | Raspberry & White Chocolate Cookie Bag | WHEAT
+AVOID | Barista Prepared Drinks | Oat (instead of milk) cup | OAT
