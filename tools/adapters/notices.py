@@ -13,9 +13,11 @@ KINDS = [
     ("delivery", r"deliver|courier"),
     ("diet", r"vegan|not suitable for those"),
     ("cross-contact", r"cross[- ]contact|cross[- ]contamination|shared equipment|cannot guarantee|can.t guarantee|"
-                      r"allergen-free|free from any allergen|traces|may contain|handled by"),
+                      r"allergen-free|free from any allergen|traces|may contain|handled by|"
+                      r"not suitable for this allergen|preparation methods|cooking methods"),
     ("recipes", r"recipe|formulation|variations may occur|differ shop to shop|ingredient label|working on our"),
-    ("coverage", r"branded products|not be available|only covers|do not see a product|not see a product"),
+    ("coverage", r"branded products|not be available|only covers|do not see a product|not see a product|"
+                 r"participating locations|not available in|halal"),
     ("nutrition", r"kcal|calorie"),
 ]
 LABELS = {
@@ -36,6 +38,7 @@ def _clean(s):
 
 
 def _sentences(text):
+    text = re.sub(r"(kcal a day)\s*\n", r"\1.\n", text or "")  # footer line with no full stop
     text = _clean(text)
     text = re.sub(r"^(Introduction|Cross-Contact)\s+", "", text)
     parts = [p.strip() for p in re.split(r"(?<=[.!?])\s+(?=[A-Z“\"(])", text)]

@@ -21,6 +21,8 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 
 ## Updating a restaurant's menu
 
+**Five Guys:** upload the new UK allergen, ingredient and nutrition guide PDF to `restaurants/five-guys-uk/guides/`. The newest date in the guide (FGUK_YYYYMMDD) is used. Anything with a gluten dot **or a "1"** (Five Guys' mark for "not suitable … due to manufacturing and preparation methods") goes in the Avoid list; a "2" (not suitable at breakfast time) shows as needing a change.
+
 **Pret:** upload the new GB allergen guide PDF to `restaurants/pret-uk/guides/`. Pret's guides have no end date, so the app asks for a re-check 91 days after the "valid from" date (change `recheckDays` in `restaurant.json`).
 
 **Starbucks:** upload the new Beverage Allergen Guide PDF to `restaurants/starbucks-uk/guides/` (on GitHub: open the folder, then **Add file → Upload files → Commit changes**). The newest version date is used, so old guides can stay. About a minute later the app updates for everyone.
