@@ -1,34 +1,24 @@
 #!/usr/bin/env python3
 """
-Build site/data/menu.json from a Starbucks UK beverage allergen guide (PDF).
+Reader for Starbucks UK beverage allergen guides (PDF).
 
-Usage:
-    python tools/build_menu.py                # newest PDF in menus/ -> site/data/menu.json
-    python tools/build_menu.py path/to/guide.pdf [out.json]
+Reads every product row, works out which drinks and milk versions contain a
+cereal with gluten, and groups milk versions into one drink each.
 
-How it decides "gluten free":
-  * A drink (or a milk version of a drink) counts as containing gluten if its
-    allergen column OR its ingredient list names a cereal containing gluten in
-    BOLD CAPITALS: WHEAT, OAT(S), BARLEY, RYE, SPELT, KAMUT, GLUTEN or MALT.
-    Oats are included because the guides list them under "cereals containing
-    gluten".
-  * Both columns are checked. If they disagree the row is treated as
-    containing gluten and a warning is recorded, so a parsing slip can only
-    ever hide a drink, never wrongly show one as safe.
-
-The build stops with an error (and the live app keeps its previous menu) if
-the PDF does not look like an allergen guide, so a bad upload can't wipe the
-app.
+  * A row contains gluten if its allergen column OR its ingredient list names,
+    in BOLD CAPITALS: WHEAT, OAT(S), BARLEY, RYE, SPELT, KAMUT, GLUTEN or MALT.
+    Oats count because the guides list them under "cereals containing gluten".
+  * If the two columns disagree the row is treated as containing gluten and a
+    warning is recorded, so a parsing slip can only hide a drink, never show
+    an unsafe one as gluten free.
+  * The build stops with an error if the PDF doesn't look like an allergen
+    guide, so a bad upload can't wipe the live menu.
 """
-import json
 import re
-import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pdfplumber
 
-ROOT = Path(__file__).resolve().parent.parent
 GLUTEN = re.compile(r"\b(WHEAT|OATS?|BARLEY|RYE|SPELT|KAMUT|GLUTEN|MALT)\b")
 MILK_SUFFIX = re.compile(r"^(.*?)\s+[-–]\s+(.*\b(?:milk|drink))\s*(\(standard build\))?$", re.I)
 STANDARD = re.compile(r"\s*\(standard build\)", re.I)
@@ -179,12 +169,12 @@ def group(rows):
         if std is None and re.search(r"\bOat\b", name):
             std = next((v for v in milks if short_milk(v["milk"]) == "oat"), None)
             std_from = "name" if std else None
-        item["okMilks"] = [short_milk(v["milk"]) for v in milks if not v["gluten"]]
-        item["notMilks"] = [short_milk(v["milk"]) for v in milks if v["gluten"]]
+        item["ok"] = [short_milk(v["milk"]) for v in milks if not v["gluten"]]
+        item["not"] = [short_milk(v["milk"]) for v in milks if v["gluten"]]
         if std:
             item["standard"] = short_milk(std["milk"])
             item["standardFrom"] = std_from
-        if not item["notMilks"]:
+        if not item["not"]:
             item["order"] = "any"
         elif std and std["gluten"]:
             item["order"] = "swap"
@@ -209,33 +199,19 @@ def newest_pdf(folder):
     return dated[-1][2]
 
 
-def main():
-    args = sys.argv[1:]
-    pdf_path = Path(args[0]) if args else newest_pdf(ROOT / "menus")
-    out = Path(args[1]) if len(args) > 1 else ROOT / "site" / "data" / "menu.json"
-    print(f"Building from {pdf_path.name}")
+def build(folder, config):
+    """Build one restaurant's menu from the newest guide PDF in its guides/ folder."""
+    pdf_path = newest_pdf(Path(folder) / "guides")
+    print(f"  building from {pdf_path.name}")
     info, rows, warnings = parse_rows(pdf_path)
     ok, avoid = group(rows)
-    sections = list(dict.fromkeys(i["section"] for i in ok + avoid))
-    menu = {
+    return {
         "source": pdf_path.name,
         "guide": info,
-        "built": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "rule": "Excludes anything listing wheat, oats, barley, rye, spelt, kamut, gluten or malt.",
-        "sections": sections,
-        "drinks": ok,
+        "sections": list(dict.fromkeys(i["section"] for i in ok + avoid)),
+        "items": ok,
         "avoid": avoid,
         "warnings": warnings,
-        "stats": {"rows": len(rows), "drinks": len(ok), "avoid": len(avoid)},
+        "stats": {"rows": len(rows), "items": len(ok), "avoid": len(avoid)},
     }
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(menu, indent=1, ensure_ascii=False))
-    print(f"  {len(rows)} rows -> {len(ok)} gluten free drinks/add-ons, {len(avoid)} to avoid")
-    print(f"  guide: {info}")
-    for w in warnings:
-        print("  WARNING:", w)
-    print(f"Wrote {out}")
-
-
-if __name__ == "__main__":
-    main()

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>GF Drinks</title>
-<meta name="description" content="Gluten free drinks from the current Starbucks UK allergen guide, and how to order them.">
+<title>GF Menus</title>
+<meta name="description" content="Gluten free options at restaurants and coffee shops, from their published allergen guides, and how to order them.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="GF Drinks">
+<meta name="apple-mobile-web-app-title" content="GF Menus">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#171412" media="(prefers-color-scheme: dark)">
@@ -19,15 +19,16 @@
 <body>
 <header class="top">
   <div class="titlebar">
-    <div class="titles">
-      <h1>GF Drinks</h1>
-      <p id="guideLine" class="guide">Loading menu…</p>
-    </div>
+    <button type="button" id="pickBtn" class="picker" aria-haspopup="dialog" aria-label="Choose restaurant">
+      <span id="pickName" class="pick-name">GF Menus</span>
+      <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span id="guideLine" class="guide">Loading…</span>
+    </button>
     <div class="actions">
-      <button type="button" id="refreshBtn" class="icon-btn" aria-label="Check for a new menu">
+      <button type="button" id="refreshBtn" class="icon-btn" aria-label="Check for new menus">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <button type="button" id="shareBtn" class="icon-btn" aria-label="Share this app">
+      <button type="button" id="shareBtn" class="icon-btn" aria-label="Share">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <button type="button" id="infoBtn" class="icon-btn" aria-label="About and help">
@@ -37,56 +38,66 @@
   </div>
   <label class="search">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    <input id="q" type="search" placeholder="Search drinks" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Search drinks">
+    <input id="q" type="search" placeholder="Search" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Search">
   </label>
-  <nav id="chips" class="chips" aria-label="Categories"></nav>
+  <nav id="chips" class="chips" aria-label="Filter"></nav>
 </header>
 
 <main>
   <div id="installTip" class="tip" hidden>
-    <p><b>Install on your iPhone:</b> tap <span class="share-glyph" aria-label="Share">Share</span> in Safari, then <b>Add to Home Screen</b>.</p>
+    <p><b>Install on your iPhone:</b> tap <b>Share</b> in Safari, then <b>Add to Home Screen</b>.</p>
     <button type="button" id="installClose" class="link-btn">Dismiss</button>
   </div>
-
-  <section class="rules" aria-label="How to order">
-    <div><b>Never oat drink.</b> The guide lists oats as a gluten cereal.</div>
-    <div><b>Any other milk is fine:</b> skimmed, semi-skimmed, whole, almond, soya or coconut.</div>
-    <div><span class="tag t-swap">Swap</span> means the drink normally comes with oat drink, so ask for another milk.</div>
-  </section>
-
+  <div id="stale" class="stale" hidden></div>
+  <section id="tips" class="rules" aria-label="How to order"></section>
   <div id="list" class="list" aria-live="polite"></div>
-
   <section id="avoidWrap" class="avoid">
-    <h2>Not gluten free with any milk</h2>
+    <h2>Contains gluten whatever you order</h2>
     <div id="avoid" class="list"></div>
   </section>
-
   <footer class="foot">
-    <p><b>Shared equipment:</b> the guide says drinks are made where allergens are handled, so no drink is guaranteed free from gluten. If you're coeliac, tell the barista.</p>
-    <p id="sourceLine"></p>
-    <p>Unofficial guide made from Starbucks UK's published allergen guide. Not affiliated with Starbucks.</p>
+    <p><b>Shared kitchens:</b> restaurants prepare food and drink where allergens are handled, so nothing is guaranteed free from gluten. If you're coeliac, tell the staff when you order.</p>
+    <div id="sources"></div>
+    <p>Unofficial guide made from each restaurant's published allergen information. Not affiliated with any restaurant.</p>
   </footer>
 </main>
+
+<dialog id="picker" aria-labelledby="pickerTitle">
+  <form method="dialog" class="sheet">
+    <div class="sheet-head">
+      <h2 id="pickerTitle">Restaurants</h2>
+      <button class="link-btn" value="close">Done</button>
+    </div>
+    <div id="pickList" class="pick-list"></div>
+  </form>
+</dialog>
 
 <dialog id="info" aria-labelledby="infoTitle">
   <form method="dialog" class="sheet">
     <div class="sheet-head">
-      <h2 id="infoTitle">About GF Drinks</h2>
+      <h2 id="infoTitle">About GF Menus</h2>
       <button class="link-btn" value="close">Done</button>
     </div>
     <h3>Install on iPhone</h3>
     <ol>
       <li>Open this page in <b>Safari</b>.</li>
-      <li>Tap the <b>Share</b> button.</li>
-      <li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+      <li>Tap <b>Share</b>, then <b>Add to Home Screen</b>, then <b>Add</b>.</li>
     </ol>
-    <p>It then opens full screen like an app and works without signal using the last menu it downloaded.</p>
+    <p>It opens full screen and works without signal using the last menus it downloaded.</p>
+    <h3>Reading the tags</h3>
+    <ul class="legend">
+      <li><span class="tag t-asis">As listed</span> gluten free with no changes</li>
+      <li><span class="tag t-any">Any milk</span> fine with any of the options shown</li>
+      <li><span class="tag t-swap">Swap</span> normally comes with an option that has gluten, so ask for another</li>
+      <li><span class="tag t-swap">Ask</span> gluten free only with the change shown</li>
+      <li><span class="tag t-bad">Wheat</span> contains gluten whatever you order</li>
+    </ul>
+    <h3>Favourites</h3>
+    <p>Open any item and tap <b>☆ Save</b>. Favourites stay on this phone.</p>
     <h3>Staying up to date</h3>
-    <p>Each time you open the app with signal it checks for a new menu. Tap <b>↻</b> to check now.</p>
-    <h3>What counts as gluten free</h3>
-    <p id="ruleLine"></p>
-    <h3>This menu</h3>
-    <p id="infoSource"></p>
+    <p>The app checks for new menus each time you open it with signal. Tap <b>↻</b> to check now. If a restaurant's guide has passed its end date, you'll see a warning.</p>
+    <h3>Menus in this app</h3>
+    <div id="infoSources"></div>
     <div id="notesWrap" hidden>
       <h3>Notes from the last update</h3>
       <ul id="notes" class="notes"></ul>
@@ -95,7 +106,6 @@
 </dialog>
 
 <div id="toast" class="toast" role="status" hidden></div>
-
 <script src="app.js"></script>
 </body>
 </html>

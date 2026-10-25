@@ -1,60 +1,84 @@
-# GF Drinks
+# GF Menus
 
-An iPhone home-screen app that lists every gluten free drink in the current Starbucks UK beverage allergen guide, and how to order each one.
+An iPhone home-screen app that lists the gluten free options at restaurants and coffee shops, built from each restaurant's own allergen guide, and shows how to order each one.
 
-The menu is built straight from Starbucks' allergen guide PDF. Add a new guide and the app updates itself for everyone who has it.
+Live at **https://t-800isinevitable.github.io/gf-drinks/**
 
-## Updating to a new menu
+## Using the app
 
-1. Download the new **Beverage Allergen Guide** PDF (Starbucks UK publishes one each season).
-2. In this repository, open the **menus** folder, tap **Add file → Upload files**, choose the PDF and tap **Commit changes**. This works from Safari on an iPhone.
-3. Wait about a minute. GitHub reads the PDF, rebuilds the menu and republishes the app. Everyone gets the new menu the next time they open the app with signal.
+- **Pick a restaurant** by tapping its name at the top, or choose **All restaurants** to browse and search everything at once.
+- **Filter** with the chips under the search box: menu sections for one restaurant, or restaurants when viewing all.
+- **Favourites:** open any item and tap **☆ Save**. The **★ Favourites** chip shows them. They're stored on your phone only.
+- **Out-of-date warning:** if a restaurant's guide has passed its end date, a banner says so.
+- **Share** sends a link to the restaurant you're viewing (for example `…/gf-drinks/#starbucks-uk`).
+- **Install:** open the link in Safari, tap **Share**, then **Add to Home Screen**. It works without signal using the last menus it downloaded.
 
-The app always uses the guide with the **newest version date** in `menus/`, so old guides can stay where they are (or move them to `menus/archive/`).
+## Updating a restaurant's menu
 
-To check a build, open the **Actions** tab. Each run shows how many drinks it found and any notes. If a PDF can't be read, the run fails and the live app keeps its current menu.
+**Starbucks:** upload the new Beverage Allergen Guide PDF to `restaurants/starbucks-uk/guides/` (on GitHub: open the folder, then **Add file → Upload files → Commit changes**). The newest version date is used, so old guides can stay. About a minute later the app updates for everyone.
+
+**Restaurants kept by hand:** edit that restaurant's `menu.csv` and update the dates in its `restaurant.json`.
+
+## Adding a restaurant
+
+Each restaurant is a folder in `restaurants/`. The folder name becomes its id in the app (lower case with hyphens, such as `pret-uk`).
+
+**Option 1: fill in a spreadsheet (works for any restaurant)**
+
+1. Copy `restaurants/_template` to a new folder, for example `restaurants/pret-uk`.
+2. Edit `restaurant.json`: name, type, what it covers, the official allergen page, and under `guide` the source you checked, its date (`version`) and when to re-check it (`validUntil`).
+3. Fill in `menu.csv`, one row per item. The `order` column says how to order it:
+
+   | order | Meaning | Also fill in |
+   | --- | --- | --- |
+   | `asis` | Gluten free as listed | |
+   | `any` | Gluten free with any of the options | `ok` |
+   | `except` | Gluten free except with some options | `ok`, `not` |
+   | `swap` | Normally comes with an option containing gluten | `ok`, `not`, `standard` |
+   | `modify` | Gluten free only with a change | `note`, e.g. "No croutons" |
+   | `avoid` | Contains gluten whatever you order | `contains`, e.g. "wheat" |
+
+   Separate several options with `;` (for example `skimmed;soya`).
+4. Commit. The build checks the file and refuses to publish if anything is missing.
+
+**Option 2: an automatic reader**
+
+If a restaurant publishes a regular PDF guide, a reader can be written for it (like `tools/adapters/starbucks_uk_pdf.py`) so new guides are picked up just by uploading the PDF. Send the guide to Claude and ask for a reader. Set `"reader"` in `restaurant.json` to the new reader's name.
 
 ## How "gluten free" is decided
 
-`tools/build_menu.py` reads every row of the guide and checks two places: the **Allergens** column and the **ingredient list**. A drink or milk version is treated as containing gluten if either one names, in bold capitals, any of: wheat, oats, barley, rye, spelt, kamut, gluten or malt. Oats are included because the guides list them under "cereals containing gluten". If the two places disagree, the drink is left out and the build log says so.
+- **Starbucks:** every row of the guide is read. An item or milk version counts as containing gluten if its **Allergens** column or its **ingredient list** names, in bold capitals, any of wheat, oats, barley, rye, spelt, kamut, gluten or malt. Oats are included because the guide lists them under "cereals containing gluten". If the two places disagree, the item is left out.
+- **Hand-kept restaurants:** whatever is entered in `menu.csv`, checked against the restaurant's allergen information.
 
-Milk versions of the same drink are grouped together, and each drink gets one ordering tag:
+Restaurants prepare food in shared kitchens, so nothing is guaranteed gluten free. The app says this too.
 
-| Tag | Meaning |
-| --- | --- |
-| As listed | Gluten free without changes |
-| Any milk | Every milk option is gluten free |
-| Any milk except oat | Choose any milk other than the ones named |
-| Swap milk | Normally made with oat drink, so ask for another milk |
+## Publishing and safety checks
 
-The guide itself warns that drinks are made on shared equipment, so nothing is guaranteed gluten free. The app says this too.
+Every change to the repository runs `.github/workflows/publish.yml`, which:
 
-## One-time setup
+1. builds every restaurant (`tools/build.py`),
+2. checks the results (`tools/check.py`): every item has a valid ordering tag, options are listed where needed, nothing is both safe and unsafe, and each restaurant has items,
+3. publishes the app to GitHub Pages.
 
-1. Create a new **public** repository on GitHub (for example `gf-drinks`) and add these files to it.
-2. Go to **Settings → Pages** and set **Source** to **GitHub Actions**.
-3. Open the **Actions** tab and run **Build menu and publish app** (or push any change).
-4. The app's address appears in the run and in Settings → Pages, for example `https://<your-username>.github.io/gf-drinks/`.
+If any step fails, nothing is published and the live app keeps its previous menus. The **Actions** tab shows each run's results, including how many items each restaurant has.
 
-Free GitHub accounts can publish Pages sites from public repositories only, so the guide PDFs you upload will be publicly visible in the repository.
-
-## Installing on iPhone
-
-Open the app's address in **Safari**, tap **Share**, then **Add to Home Screen**. It opens full screen and works without signal using the last menu it downloaded. Share it with anyone by sending the same address.
+Free GitHub accounts can publish Pages sites from public repositories only, so everything here, including uploaded guides, is publicly visible.
 
 ## Running it locally
 
 ```
 pip install -r tools/requirements.txt
-python tools/build_menu.py           # writes site/data/menu.json
-python -m http.server -d site 8000   # open http://localhost:8000
+python tools/build.py && python tools/check.py   # writes site/data/
+python -m http.server -d site 8000               # open http://localhost:8000
 ```
 
 ## Files
 
-- `menus/`: allergen guide PDFs (the newest is used)
-- `tools/build_menu.py`: reads a guide and writes `site/data/menu.json`
-- `site/`: the app (HTML, CSS, JavaScript, offline service worker, icons)
-- `.github/workflows/publish.yml`: rebuilds and publishes on every change
+- `restaurants/<id>/`: one folder per restaurant (`restaurant.json`, plus guides or `menu.csv`)
+- `restaurants/_template/`: copy this to add a restaurant by hand
+- `tools/build.py`: builds every restaurant into `site/data/`
+- `tools/check.py`: safety checks run before publishing
+- `tools/adapters/`: readers for each kind of allergen guide
+- `site/`: the app (HTML, CSS, JavaScript, offline support, icons)
 
-Unofficial. Not affiliated with Starbucks.
+Unofficial. Not affiliated with any restaurant.

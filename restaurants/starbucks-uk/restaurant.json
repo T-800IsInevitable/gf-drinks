@@ -1,0 +1,13 @@
+{
+  "name": "Starbucks",
+  "type": "Coffee shop",
+  "covers": "Drinks, syrups and toppings (UK)",
+  "reader": "starbucks_uk_pdf",
+  "optionLabel": "milk",
+  "officialUrl": "https://www.starbucks.co.uk",
+  "tips": [
+    "Never oat drink: the guide lists oats as a gluten cereal.",
+    "Any other milk is fine: skimmed, semi-skimmed, whole, almond, soya or coconut.",
+    "Swap means the drink normally comes with oat drink, so ask for another milk."
+  ]
+}

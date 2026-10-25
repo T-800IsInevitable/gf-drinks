@@ -1,7 +1,10 @@
 (() => {
   "use strict";
-  const STORE_KEY = "gf-menu-v1";
+  const DATA_KEY = "gf-data-v2";
+  const SEL_KEY = "gf-selected";
+  const FAV_KEY = "gf-favourites";
   const TIP_KEY = "gf-install-tip-dismissed";
+  const ALL = "all";
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const store = {
@@ -9,10 +12,17 @@
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } },
   };
 
-  let menu = null;
-  let section = "All";
+  // state
+  let data = null;               // { built, restaurants: [ full restaurant objects ] }
+  let selected = ALL;            // restaurant id or ALL
+  let filter = "all";            // "all" | "fav" | section name | "r:<id>"
+  let favs = new Set(JSON.parse(store.get(FAV_KEY) || "[]"));
 
-  // Shorter chip labels for the guide's long section names.
+  // ---------- helpers ----------
+  const byId = (id) => data && data.restaurants.find((r) => r.id === id);
+  const favKey = (r, i) => r.id + "|" + i.section + "|" + i.name;
+  const today = () => new Date().toISOString().slice(0, 10);
+  const isStale = (r) => !!(r.guide && r.guide.validUntil && r.guide.validUntil < today());
   function shortSection(s) {
     const map = {
       "Iced Teas & Starbucks Refresha® Drink": "Iced Teas & Refreshas",
@@ -27,189 +37,327 @@
     const d = new Date(iso.length === 10 ? iso + "T12:00:00Z" : iso);
     return isNaN(d) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
   }
-  function listMilks(arr) {
-    if (arr.length < 2) return arr.join("");
-    return arr.slice(0, -1).join(", ") + " or " + arr[arr.length - 1];
+  const shortRuns = (s) => (s || "").replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*/g, "$1");
+  function listOr(arr) {
+    return arr.length < 2 ? arr.join("") : arr.slice(0, -1).join(", ") + " or " + arr[arr.length - 1];
   }
-  function tagFor(d) {
-    switch (d.order) {
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  function guideLine(r) {
+    const g = r.guide || {};
+    const season = (g.title || "").replace(/\s*Beverages$/, "");
+    return [season && season !== "Allergen guide" ? season + " menu" : "", shortRuns(g.runs) || (g.version ? "Guide " + fmtDate(g.version) : "")]
+      .filter(Boolean).join(" · ");
+  }
+  function tagFor(r, i) {
+    const label = r.optionLabel || "option";
+    switch (i.order) {
       case "asis": return ["t-asis", "As listed"];
-      case "any": return ["t-any", "Any milk"];
-      case "swap": return ["t-swap", "Swap milk"];
-      default: return ["t-any", "Any milk except " + d.notMilks.join(", ")];
+      case "any": return ["t-any", "Any " + label];
+      case "swap": return ["t-swap", "Swap " + label];
+      case "modify": return ["t-swap", "Ask"];
+      default: return ["t-any", "Any " + label + " except " + i.not.join(", ")];
     }
   }
-  const pageText = (p) => (p.length > 1 ? "Guide pages " : "Guide page ") + p.join(", ");
+  const pageText = (p) => (!p || !p.length ? "" : (p.length > 1 ? "Guide pages " : "Guide page ") + p.join(", "));
   const chev = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  function detailFor(d) {
-    const parts = [];
-    if (d.order === "asis") {
-      parts.push("<div>Gluten free as listed. No changes needed.</div>");
-    } else {
-      if (d.order === "swap") {
-        parts.push(d.standardFrom === "guide"
-          ? "<div><b>Comes with oat drink as standard.</b> Ask for " + esc(listMilks(d.okMilks)) + ".</div>"
-          : "<div><b>Usually made with oat drink</b> (going by its name). Ask for " + esc(listMilks(d.okMilks)) + ".</div>");
-      }
-      parts.push('<div class="milks">' + d.okMilks.map((m) => '<span class="milk">' + esc(m) + "</span>").join("") +
-        d.notMilks.map((m) => '<span class="milk no" aria-label="not ' + esc(m) + '">' + esc(m) + "</span>").join("") + "</div>");
+  function detailFor(r, i) {
+    const out = [];
+    if (i.order === "asis") out.push("<div>Gluten free as listed. No changes needed.</div>");
+    if (i.order === "modify") out.push("<div><b>Ask for:</b> " + esc(i.note) + "</div>");
+    if (i.order === "swap") {
+      const std = i.standard || "";
+      out.push(i.standardFrom === "guide"
+        ? "<div><b>Comes with " + esc(std) + " as standard.</b> Ask for " + esc(listOr(i.ok)) + ".</div>"
+        : "<div><b>Usually made with " + esc(std) + "</b> (going by its name). Ask for " + esc(listOr(i.ok)) + ".</div>");
     }
-    parts.push("<div>" + pageText(d.pages) + "</div>");
-    return parts.join("");
+    if (i.ok) {
+      out.push('<div class="milks">' + i.ok.map((m) => '<span class="milk">' + esc(m) + "</span>").join("") +
+        (i.not || []).map((m) => '<span class="milk no" aria-label="not ' + esc(m) + '">' + esc(m) + "</span>").join("") + "</div>");
+    }
+    const k = favKey(r, i);
+    const on = favs.has(k);
+    out.push('<div class="detail-foot"><span>' + esc(pageText(i.pages)) + '</span><button type="button" class="fav-btn" data-fav="' + esc(k) +
+      '" aria-pressed="' + on + '">' + (on ? "★ Saved" : "☆ Save") + "</button></div>");
+    return out.join("");
   }
 
-  function matches(d, q) {
-    return !q || (d.name + " " + (d.sub || "")).toLowerCase().includes(q);
+  function rowHtml(r, i, showRestaurant) {
+    const [cls, label] = tagFor(r, i);
+    const star = favs.has(favKey(r, i)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
+    const sub = i.order === "modify" ? '<small>' + esc(i.note) + "</small>" : (showRestaurant ? "<small>" + esc(r.name) + "</small>" : "");
+    return '<details class="row"><summary><span class="nm">' + star + esc(i.name) + sub + '</span><span class="tag ' + cls + '">' +
+      esc(label) + "</span>" + chev + '</summary><div class="detail">' + detailFor(r, i) + "</div></details>";
+  }
+
+  const matches = (i, q) => !q || (i.name + " " + (i.sub || "") + " " + (i.note || "")).toLowerCase().includes(q);
+  const scope = () => (selected === ALL ? data.restaurants : [byId(selected)].filter(Boolean));
+
+  // ---------- rendering ----------
+  function renderHeader() {
+    const r = byId(selected);
+    if (r) {
+      $("pickName").textContent = r.name;
+      $("guideLine").textContent = guideLine(r) || r.covers;
+      $("q").placeholder = "Search " + r.name;
+    } else {
+      $("pickName").textContent = "All restaurants";
+      const n = data.restaurants.length;
+      $("guideLine").textContent = n + (n === 1 ? " restaurant" : " restaurants") + " · tap to choose";
+      $("q").placeholder = "Search all restaurants";
+    }
   }
 
   function renderChips() {
-    const secs = ["All", ...menu.sections.filter((s) => menu.drinks.some((d) => d.section === s))];
-    if (!secs.includes(section)) section = "All";
-    $("chips").innerHTML = secs.map((s) =>
-      '<button type="button" data-s="' + esc(s) + '" aria-pressed="' + (s === section) + '">' + esc(s === "All" ? "All" : shortSection(s)) + "</button>").join("");
+    const chips = [["all", "All"], ["fav", "★ Favourites"]];
+    if (selected === ALL) {
+      if (data.restaurants.length > 1) data.restaurants.forEach((r) => chips.push(["r:" + r.id, r.name]));
+    } else {
+      const r = byId(selected);
+      r.sections.filter((s) => r.items.some((i) => i.section === s)).forEach((s) => chips.push([s, shortSection(s)]));
+    }
+    if (!chips.some(([v]) => v === filter)) filter = "all";
+    $("chips").innerHTML = chips.map(([v, l]) =>
+      '<button type="button" data-f="' + esc(v) + '" aria-pressed="' + (v === filter) + '">' + esc(l) + "</button>").join("");
+  }
+
+  function renderBanners() {
+    const stale = scope().filter(isStale);
+    $("stale").hidden = !stale.length;
+    $("stale").innerHTML = stale.map((r) =>
+      "<p><b>" + esc(r.name) + " guide may be out of date.</b> It covered up to " + esc(fmtDate(r.guide.validUntil)) +
+      ". Check in store before ordering" + (r.officialUrl ? ', or see <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">their allergen info</a>' : "") + ".</p>").join("");
+    const r = byId(selected);
+    $("tips").hidden = !(r && r.tips && r.tips.length);
+    $("tips").innerHTML = r && r.tips ? r.tips.map((t) => {
+      const m = t.match(/^([^:.]+[:.])\s+(.+)$/);
+      return "<div>" + (m ? "<b>" + esc(m[1]) + "</b> " + esc(m[2]) : esc(t)) + "</div>";
+    }).join("") : "";
   }
 
   function renderList() {
     const q = $("q").value.trim().toLowerCase();
+    const multi = selected === ALL;
+    let rs = scope();
+    if (filter.startsWith("r:")) rs = rs.filter((r) => r.id === filter.slice(2));
     let html = "";
     let shown = 0;
-    for (const s of menu.sections) {
-      if (section !== "All" && section !== s) continue;
-      const items = menu.drinks.filter((d) => d.section === s && matches(d, q));
+    for (const r of rs) {
+      let items = r.items.filter((i) => matches(i, q));
+      if (filter === "fav") items = items.filter((i) => favs.has(favKey(r, i)));
+      else if (!multi && filter !== "all") items = items.filter((i) => i.section === filter);
       if (!items.length) continue;
       shown += items.length;
-      html += '<h2 class="group-h">' + esc(shortSection(s)) + "<small>" + items.length + "</small></h2>";
-      // One card per sub-heading (e.g. Reserve: Cold coffee / Hot coffee)
-      let i = 0;
-      while (i < items.length) {
-        const sub = items[i].sub || "";
-        let card = "";
-        while (i < items.length && (items[i].sub || "") === sub) {
-          const d = items[i++];
-          const [cls, label] = tagFor(d);
-          card += '<details class="row"><summary><span class="nm">' + esc(d.name) + '</span><span class="tag ' + cls + '">' +
-            esc(label) + "</span>" + chev + '</summary><div class="detail">' + detailFor(d) + "</div></details>";
+      if (multi) html += '<h2 class="rest-h">' + esc(r.name) + "<small>" + items.length + "</small></h2>";
+      for (const s of r.sections) {
+        const inSec = items.filter((i) => i.section === s);
+        if (!inSec.length) continue;
+        html += multi ? '<div class="sub-h">' + esc(shortSection(s)) + "</div>"
+          : '<h2 class="group-h">' + esc(shortSection(s)) + "<small>" + inSec.length + "</small></h2>";
+        let k = 0;
+        while (k < inSec.length) {
+          const sub = inSec[k].sub || "";
+          let card = "";
+          while (k < inSec.length && (inSec[k].sub || "") === sub) card += rowHtml(r, inSec[k++], false);
+          if (sub && !multi) html += '<div class="sub-h">' + esc(cap(sub)) + "</div>";
+          html += '<div class="card">' + card + "</div>";
         }
-        if (sub) html += '<div class="sub-h">' + esc(sub.toLowerCase().replace(/^\w/, (c) => c.toUpperCase())) + "</div>";
-        html += '<div class="card">' + card + "</div>";
       }
     }
-    $("list").innerHTML = html || '<p class="empty">No gluten free drink matches "' + esc(q) + '". Check the list below.</p>';
+    let empty = "No gluten free match";
+    if (filter === "fav") empty = favs.size ? "No saved favourites here yet" : "No favourites yet. Open an item and tap ☆ Save.";
+    else if (q) empty = 'No gluten free match for "' + esc(q) + '". Check the list below.';
+    $("list").innerHTML = html || '<p class="empty">' + empty + "</p>";
 
-    const avoid = menu.avoid.filter((d) => (section === "All" || d.section === section) && matches(d, q));
-    $("avoidWrap").hidden = !avoid.length;
-    $("avoid").innerHTML = avoid.length ? '<div class="card">' + avoid.map((d) =>
-      '<details class="row"><summary><span class="nm">' + esc(d.name) + '</span><span class="tag t-bad">' +
-      esc(d.gluten.map((g) => g.charAt(0) + g.slice(1).toLowerCase()).join(" & ")) + "</span>" + chev +
-      '</summary><div class="detail"><div>Every version contains ' + esc(d.gluten.join(" and ").toLowerCase()) +
-      ".</div><div>" + pageText(d.pages) + "</div></div></details>").join("") + "</div>" : "";
+    let avoidHtml = "";
+    if (filter !== "fav") {
+      for (const r of rs) {
+        const av = r.avoid.filter((a) => matches(a, q) && (multi || filter === "all" || a.section === filter));
+        if (!av.length) continue;
+        if (multi) avoidHtml += '<div class="sub-h">' + esc(r.name) + "</div>";
+        avoidHtml += '<div class="card">' + av.map((a) =>
+          '<details class="row"><summary><span class="nm">' + esc(a.name) + '</span><span class="tag t-bad">' +
+          esc(a.gluten.map(cap).join(" & ")) + "</span>" + chev + '</summary><div class="detail"><div>Every version contains ' +
+          esc(a.gluten.join(" and ").toLowerCase()) + ".</div><div>" + esc(pageText(a.pages)) + "</div></div></details>").join("") + "</div>";
+      }
+    }
+    $("avoidWrap").hidden = !avoidHtml;
+    $("avoid").innerHTML = avoidHtml;
     return shown;
   }
 
-  function renderMeta() {
-    const g = menu.guide || {};
-    const season = (g.title || "").replace(/\s*Beverages$/, "");
-    const runs = (g.runs || "").replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*/g, "$1");
-    $("guideLine").textContent = [season ? season + " menu" : "Current menu", runs].filter(Boolean).join(" · ");
-    const src = "Built from Starbucks UK allergen guide " + (menu.source || "") +
-      (g.version ? " (version " + fmtDate(g.version) + ")" : "") + " on " + fmtDate(menu.built) + ".";
-    $("sourceLine").textContent = src;
-    $("infoSource").textContent = src + " " + menu.stats.drinks + " gluten free drinks and add-ons, " + menu.stats.avoid + " to avoid.";
-    $("ruleLine").textContent = menu.rule + " Both the allergen column and the ingredient list are checked; if they disagree, the drink is left out.";
-    $("notesWrap").hidden = !(menu.warnings && menu.warnings.length);
-    $("notes").innerHTML = (menu.warnings || []).map((w) => "<li>" + esc(w) + "</li>").join("");
+  function renderSources() {
+    const line = (r) => {
+      const g = r.guide || {};
+      return "<p><b>" + esc(r.name) + ":</b> " + esc(r.covers ? r.covers + ". " : "") + "From " + esc(r.source) +
+        (g.version ? " (version " + esc(fmtDate(g.version)) + ")" : "") + ". " + esc(r.stats.items) + " gluten free, " + esc(r.stats.avoid) +
+        " to avoid." + (r.officialUrl ? ' <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">Official site</a>' : "") + "</p>";
+    };
+    $("sources").innerHTML = scope().map(line).join("");
+    $("infoSources").innerHTML = data.restaurants.map(line).join("") + "<p>Rules: " + esc([...new Set(data.restaurants.map((r) => r.rule))].join(" ")) +
+      " If the allergen column and ingredients disagree, the item is left out.</p><p>Last built " + esc(fmtDate(data.built)) + ".</p>";
+    const notes = data.restaurants.flatMap((r) => (r.warnings || []).map((w) => r.name + ": " + w));
+    $("notesWrap").hidden = !notes.length;
+    $("notes").innerHTML = notes.map((w) => "<li>" + esc(w) + "</li>").join("");
+  }
+
+  function renderPicker() {
+    const opt = (id, name, line, meta, stale) =>
+      '<button type="button" class="pick-opt" data-r="' + esc(id) + '" aria-pressed="' + (selected === id) + '"><span class="po-main"><b>' +
+      esc(name) + "</b><span>" + esc(line) + "</span></span>" + (stale ? '<span class="tag t-swap">Out of date</span>' : '<span class="po-meta">' + esc(meta) + "</span>") + "</button>";
+    const total = data.restaurants.reduce((n, r) => n + r.stats.items, 0);
+    $("pickList").innerHTML = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false) +
+      data.restaurants.map((r) => opt(r.id, r.name, [r.type, guideLine(r)].filter(Boolean).join(" · "), r.stats.items + " items", isStale(r))).join("") +
+      '<p class="pick-note">More restaurants can be added by the app\'s owner from each restaurant\'s allergen guide.</p>';
   }
 
   function render() {
-    renderMeta();
+    if (selected !== ALL && !byId(selected)) selected = ALL;
+    renderHeader();
     renderChips();
+    renderBanners();
     renderList();
+    renderSources();
   }
 
+  function select(id) {
+    selected = id;
+    filter = "all";
+    store.set(SEL_KEY, id);
+    history.replaceState(null, "", id === ALL ? location.pathname : "#" + id);
+    $("q").value = "";
+    render();
+    window.scrollTo({ top: 0 });
+  }
+
+  // ---------- toast ----------
   let toastTimer;
   function toast(msg) {
     const t = $("toast");
     t.textContent = msg;
     t.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
+    toastTimer = setTimeout(() => { t.hidden = true; }, 3400);
+  }
+
+  // ---------- loading ----------
+  async function getJSON(url) {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(url + " " + res.status);
+    return { json: await res.json(), offline: res.headers.get("X-GF-Offline") === "1" };
   }
 
   async function load(manual) {
     const btn = $("refreshBtn");
     btn.classList.add("spin");
     try {
-      const res = await fetch("data/menu.json", { cache: "no-store" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const offline = res.headers.get("X-GF-Offline") === "1";
-      const fresh = await res.json();
-      const prev = menu;
+      const idx = await getJSON("data/restaurants.json");
+      const full = await Promise.all(idx.json.restaurants.map((r) => getJSON(r.file)));
+      const offline = idx.offline || full.some((f) => f.offline);
+      const fresh = { built: idx.json.built, restaurants: full.map((f) => f.json) };
+      const prev = data;
       const changed = !prev || prev.built !== fresh.built;
       if (changed) {
-        menu = fresh;
-        store.set(STORE_KEY, JSON.stringify(fresh));
+        data = fresh;
+        store.set(DATA_KEY, JSON.stringify(fresh));
         render();
       }
       if (offline) {
-        if (manual) toast("No connection. Showing the menu saved on this phone.");
-      } else if (prev && prev.source !== fresh.source) {
-        toast("New menu loaded: " + ((fresh.guide && fresh.guide.title) || fresh.source));
-      } else if (manual) {
-        toast(changed ? "Menu refreshed" : "You have the latest menu");
+        if (manual) toast("No connection. Showing the menus saved on this phone.");
+      } else if (prev) {
+        const news = fresh.restaurants.filter((r) => {
+          const old = prev.restaurants.find((o) => o.id === r.id);
+          return !old || old.source !== r.source;
+        });
+        if (news.length) toast("New: " + news.map((r) => r.name + (r.guide && r.guide.title ? " (" + r.guide.title + ")" : "")).join(", "));
+        else if (manual) toast(changed ? "Menus refreshed" : "You have the latest menus");
       }
     } catch (e) {
-      if (menu) {
-        if (manual) toast("No connection. Showing the menu saved on this phone.");
+      if (data) {
+        if (manual) toast("No connection. Showing the menus saved on this phone.");
       } else {
-        $("guideLine").textContent = "Couldn't load the menu";
-        $("list").innerHTML = '<p class="empty">Couldn\'t load the menu. Check your connection and tap ↻.</p>';
+        $("guideLine").textContent = "Couldn't load menus";
+        $("list").innerHTML = '<p class="empty">Couldn\'t load the menus. Check your connection and tap ↻.</p>';
       }
     } finally {
       btn.classList.remove("spin");
     }
   }
 
-  // Events
-  $("q").addEventListener("input", () => menu && renderList());
+  // ---------- events ----------
+  $("q").addEventListener("input", () => data && renderList());
   $("chips").addEventListener("click", (e) => {
     const b = e.target.closest("button");
-    if (!b || !menu) return;
-    section = b.dataset.s;
+    if (!b || !data) return;
+    const f = b.dataset.f;
+    if (f.startsWith("r:")) { select(f.slice(2)); return; }
+    filter = f;
     renderChips();
     renderList();
     window.scrollTo({ top: 0 });
   });
-  $("refreshBtn").addEventListener("click", () => load(true));
-  $("infoBtn").addEventListener("click", () => {
-    const dlg = $("info");
-    if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
+  $("list").addEventListener("click", onFav);
+  function onFav(e) {
+    const b = e.target.closest(".fav-btn");
+    if (!b) return;
+    e.preventDefault();
+    const k = b.dataset.fav;
+    if (favs.has(k)) favs.delete(k); else favs.add(k);
+    store.set(FAV_KEY, JSON.stringify([...favs]));
+    const on = favs.has(k);
+    b.setAttribute("aria-pressed", on);
+    b.textContent = on ? "★ Saved" : "☆ Save";
+    const nm = b.closest(".row").querySelector(".nm");
+    const star = nm.querySelector(".star");
+    if (on && !star) nm.insertAdjacentHTML("afterbegin", '<span class="star" aria-label="Favourite">★</span>');
+    if (!on && star) star.remove();
+    toast(on ? "Saved to favourites" : "Removed from favourites");
+  }
+  function openDialog(d) { if (typeof d.showModal === "function") d.showModal(); else d.setAttribute("open", ""); }
+  $("pickBtn").addEventListener("click", () => { if (!data) return; renderPicker(); openDialog($("picker")); });
+  $("pickList").addEventListener("click", (e) => {
+    const b = e.target.closest(".pick-opt");
+    if (!b) return;
+    e.preventDefault();
+    $("picker").close();
+    select(b.dataset.r);
   });
-  $("info").addEventListener("click", (e) => { if (e.target === $("info")) $("info").close(); });
+  $("infoBtn").addEventListener("click", () => openDialog($("info")));
+  ["picker", "info"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
+  $("refreshBtn").addEventListener("click", () => load(true));
   $("shareBtn").addEventListener("click", async () => {
-    const url = location.href.split("#")[0].replace(/index\.html$/, "");
-    const data = { title: "GF Drinks", text: "Gluten free drinks from the current Starbucks UK allergen guide", url };
+    const r = byId(selected);
+    const url = location.origin + location.pathname.replace(/index\.html$/, "") + (r ? "#" + r.id : "");
+    const text = r ? "Gluten free options at " + r.name : "Gluten free options at restaurants and coffee shops";
     if (navigator.share) {
-      try { await navigator.share(data); } catch (e) { /* share sheet closed */ }
+      try { await navigator.share({ title: "GF Menus", text, url }); } catch (e) { /* share sheet closed */ }
       return;
     }
     try { await navigator.clipboard.writeText(url); toast("Link copied"); } catch (e) { toast(url); }
   });
+  window.addEventListener("hashchange", () => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    if (data && id && byId(id) && id !== selected) select(id);
+  });
 
-  // Install tip: iPhone/iPad in Safari, not yet on the Home Screen.
+  // install tip: iPhone/iPad in Safari, not yet on the Home Screen
   const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const standalone = window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
   if (isIOS && !standalone && store.get(TIP_KEY) !== "1") $("installTip").hidden = false;
   $("installClose").addEventListener("click", () => { $("installTip").hidden = true; store.set(TIP_KEY, "1"); });
 
-  // Start: show the saved menu instantly, then check for a newer one.
-  const saved = store.get(STORE_KEY);
+  // ---------- start ----------
+  const hashId = decodeURIComponent(location.hash.slice(1));
+  selected = hashId || store.get(SEL_KEY) || ALL;
+  const saved = store.get(DATA_KEY);
   if (saved) {
-    try { menu = JSON.parse(saved); render(); } catch (e) { menu = null; }
+    try { data = JSON.parse(saved); render(); } catch (e) { data = null; }
   }
-  load(false);
+  load(false).then(() => {
+    // first visit with one restaurant: open it directly
+    if (data && !hashId && !store.get(SEL_KEY) && data.restaurants.length === 1) select(data.restaurants[0].id);
+  });
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") load(false); });
-
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
   }

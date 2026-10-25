@@ -1,0 +1,17 @@
+{
+  "name": "Restaurant name",
+  "type": "e.g. Burger restaurant",
+  "covers": "e.g. Main menu (UK)",
+  "reader": "manual_csv",
+  "optionLabel": "option",
+  "officialUrl": "https://example.com/allergens",
+  "guide": {
+    "title": "Allergen guide",
+    "source": "Name of the allergen document or web page you checked",
+    "version": "2026-10-01",
+    "validUntil": "2027-01-31"
+  },
+  "tips": [
+    "Optional short ordering tips shown above this restaurant's list."
+  ]
+}
