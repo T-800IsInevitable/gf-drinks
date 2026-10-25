@@ -23,6 +23,7 @@ import argparse
 import functools
 import json
 import math
+import re
 import sys
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -196,10 +197,20 @@ def main():
         page.goto(base + f"#{cid}")
         page.wait_for_selector("#cityList .row")
         shown = lambda: [n.split("\n")[0].strip().lstrip("★").strip() for n in page.locator("#cityList .row .nm").all_inner_texts()]
+        # at 19:00 on Sunday, "still open today" means open now or opening later, not already shut for the day
+        closes = lambda h: int(re.findall(r"(\d{1,2}):(\d{2})", h)[-1][0]) * 60 + int(re.findall(r"(\d{1,2}):(\d{2})", h)[-1][1]) if h else 0
+        sunday = lambda pl: [(l.get("hours") or [""] * 7)[6] for l in pl["locations"]]
+        for pl in cities[cid]["places"]:
+            row = page.locator("#cityList .row", has=page.locator(".nm", has_text=pl["name"])).first.inner_text()
+            hrs = [h for h in sunday(pl) if h]
+            if hrs and max(closes(h) for h in hrs) > 19 * 60 and "Open now" not in row:
+                problems.append(f"{cid} Sunday 19:00: {pl['name']} ({hrs}) doesn't say Open now")
+            if hrs and max(closes(h) for h in hrs) <= 19 * 60 and "Closed now" not in row:
+                problems.append(f"{cid} Sunday 19:00: {pl['name']} ({hrs}) doesn't say Closed now")
         page.locator('#chips [data-f="open"]').click()
-        want = sorted(pl["name"] for pl in cities[cid]["places"] if any((l.get("hours") or [""] * 7)[6] for l in pl["locations"]))
+        want = sorted(pl["name"] for pl in cities[cid]["places"] if any(closes(h) > 19 * 60 for h in sunday(pl)))
         if sorted(shown()) != want:
-            problems.append(f"{cid} open today (Sunday): shows {sorted(shown())}, expected {want}")
+            problems.append(f"{cid} still open today (Sunday 19:00): shows {sorted(shown())}, expected {want}")
         page.locator('#chips [data-f="all"]').click()
         page.locator("#chips [data-near]").click()
         page.wait_for_timeout(500)
@@ -223,6 +234,111 @@ def main():
         if page.locator("#cityList .row").count() != 1:
             problems.append(f"{cid}: after saving one place and reloading, Saved shows {page.locator('#cityList .row').count()}")
         print(f"{cid}: open on Sunday {len(want)}, nearest to Alexanderplatz {shown()[:1] and nearest[0]['name']}, saving works")
+        ctx.close()
+
+        # final review: allowed-milk search, the app's own doubts, branch hours, resuming, filters, staff card detail
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        page.goto(base + "#starbucks-uk")
+        page.wait_for_selector("#list .row")
+        for q in ("soya latte", "almond milk latte", "skimmed latte"):
+            page.locator("#q").fill(q)
+            if not page.locator("#list .row").count():
+                problems.append(f"starbucks-uk: searching {q!r} finds nothing")
+        page.goto(base + "#knoops-uk")
+        page.wait_for_selector("#list .row")
+        page.locator("#q").fill("cannoli")
+        if page.locator("#list .row").count():
+            problems.append("knoops-uk: cannoli still listed with no gluten ingredients despite the app's caution")
+        if "Check in store" not in page.locator("#avoid").inner_text():
+            problems.append("knoops-uk: cannoli aren't on the Avoid list marked 'Check in store'")
+        page.locator("#q").fill("")
+        page.goto(base + "#pho-uk")
+        page.wait_for_selector("#list .row")
+        page.locator("#q").fill("chicken")
+        row = page.locator("#list .row", has=page.locator(".nm", has_text=re.compile(r"^\s*Chicken\s*$"))).first  # six dishes are just "Chicken"
+        row.locator("summary").click()
+        row.locator(".staff-btn").click()
+        page.wait_for_selector("#staff[open]")
+        sec = page.locator("#staff .staff-sec").inner_text().strip() if page.locator("#staff .staff-sec").count() else ""
+        if not sec or sec == "Chicken":
+            problems.append(f"pho-uk: the staff card for 'Chicken' doesn't say which dish ({sec!r})")
+        page.locator("#staff .link-btn").click()
+        page.goto(base)
+        page.wait_for_selector("#list .row")
+        page.locator(f'#pickBtn').click()
+        page.locator('#pickList [data-r="all"]').click()
+        if page.locator("#cardLaunch").is_visible():
+            problems.append("UK all restaurants: shows the German coeliac card button")
+        ctx.close()
+
+        ctx = browser.new_context(color_scheme="light", geolocation={"latitude": 52.50936, "longitude": 13.29682}, permissions=["geolocation"], **IPHONE)
+        page = ctx.new_page()
+        page.clock.set_fixed_time("2026-11-03T15:00:00+01:00")  # Tuesday 15:00, beside Oshione's Suarezstraße branch (shut 14:30)
+        page.goto(base + f"#{cid}")
+        page.wait_for_selector("#cityList .row")
+        page.locator("#chips [data-near]").click()
+        page.wait_for_timeout(500)
+        osh = page.locator("#cityList .row", has=page.locator(".nm", has_text="Oshione")).first.inner_text()
+        if "Open now" in osh:
+            problems.append(f"{cid} near me: Oshione says open, but the nearest branch shut at 14:30 ({osh.splitlines()[1]!r})")
+        page.locator("#chips [data-near]").click()
+        page.locator('#chips [data-f="open"]').click()
+        page.evaluate("window.scrollTo(0, 0)")
+        top = page.locator("#cityList .row").first.bounding_box()["y"] if page.locator("#cityList .row").count() else 0
+        if top > 450:
+            problems.append(f"{cid}: after choosing a filter the first result is at y={top:.0f}, below the fold")
+        page.locator('#chips [data-f="all"]').click()
+        page.clock.set_fixed_time("2026-11-02T13:00:00+01:00")  # Monday 13:00
+        page.reload()
+        page.wait_for_selector("#cityList .row")
+        tap = page.locator("#cityList .row", has=page.locator(".nm", has_text="Tapiocaria")).first.inner_text()
+        if "Closed today" in tap:
+            problems.append(f"{cid}: Tapiocaria says 'Closed today' on Monday, but its hours for Monday aren't known")
+        page.clock.set_fixed_time("2026-11-03T13:00:00+01:00")  # Tuesday 13:00: Prana open until 15:00
+        page.reload()
+        page.wait_for_selector("#cityList .row")
+        pra = page.locator("#cityList .row", has=page.locator(".nm", has_text="Café Prana")).first.inner_text()
+        if "Open now" not in pra:
+            problems.append(f"{cid}: Café Prana doesn't say open at 13:00 on Tuesday")
+        page.clock.set_fixed_time("2026-11-03T16:00:00+01:00")  # back in the app at 16:00: Prana shut at 15:00
+        page.evaluate("document.dispatchEvent(new Event('visibilitychange'))")
+        page.wait_for_timeout(800)
+        pra = page.locator("#cityList .row", has=page.locator(".nm", has_text="Café Prana")).first.inner_text()
+        if "Open now" in pra:
+            problems.append(f"{cid}: after resuming at 16:00, Café Prana still says open")
+        page.clock.set_fixed_time("2026-11-01T21:30:00+01:00")  # Sunday 21:30: Senza's kitchen closed at 21:00
+        page.reload()
+        page.wait_for_selector("#cityList .row")
+        sen = page.locator("#cityList .row", has=page.locator(".nm", has_text="Trattoria Senza")).first.inner_text()
+        if "Open now" in sen:
+            problems.append(f"{cid}: Trattoria Senza says open at 21:30, after its kitchen closes")
+        print("final review checks: search milks, cannoli, staff card detail, branch hours, resume, kitchen times")
+        ctx.close()
+
+        # Add a menu without a key: a way for anyone to send photos, and a real link for the owner's key
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        page.goto(base + "#starbucks-uk")
+        page.wait_for_selector("#list .row")
+        tips = page.locator("#tips > div")
+        if tips.count() != tips.locator("b").count():
+            problems.append(f"starbucks-uk: {tips.count() - tips.locator('b').count()} tips have no bold lead-in")
+        page.goto(base + "#knoops-uk")
+        page.wait_for_selector("#list .row")
+        if "latest" not in page.locator("#stale").inner_text():
+            problems.append("knoops-uk: the out-of-date banner doesn't say whether a newer guide exists")
+        page.locator("#infoBtn").click()
+        page.locator("#openUpload").click()
+        page.wait_for_selector("#upload[open]")
+        if not page.locator("#shareSend").is_visible():
+            problems.append("Add a menu: no way to send a menu without the owner's key")
+        page.locator("#shareSend").click()
+        if "Pick" not in page.locator("#shareStatus").inner_text():
+            problems.append("Add a menu: sending with no files gives no guidance")
+        if not page.locator('#upload a[href="https://github.com/settings/personal-access-tokens/new"]').count():
+            problems.append("Add a menu: the GitHub key address isn't a link")
+        print("add a menu: send without a key, key link; tips bold; Knoops banner")
         ctx.close()
 
         # staff card wording, the German card, and saying when it's offline

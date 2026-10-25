@@ -4,6 +4,7 @@ Sanity checks on the built data before it is published. Run after build.py.
 Fails (and so blocks publishing) if anything looks wrong.
 """
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -45,8 +46,15 @@ for r in index["restaurants"]:
         if i.get("order") == "modify" and not i.get("note"):
             err(f"{where}: 'modify' without a note")
     for a in d["avoid"]:
-        if not a.get("gluten"):
+        if not a.get("gluten") and not a.get("reason"):
             err(f"{rid}: avoid item {a.get('name')!r} has no reason")
+    # the same words in another order ("Pistachio Iced Latte" / "Iced Pistachio Latte") is one drink split in two
+    seen_words = {}
+    for i in d["items"] + d["avoid"]:
+        k = (i["section"], i.get("sub") or "", tuple(sorted(set(i["name"].lower().split()))))
+        if k in seen_words and seen_words[k] != i["name"]:
+            err(f"{rid}: {seen_words[k]!r} and {i['name']!r} look like one item split in two")
+        seen_words.setdefault(k, i["name"])
     names = {(i["section"], i["name"]) for i in d["items"]}
     clash = names & {(a["section"], a["name"]) for a in d["avoid"]}
     if clash:
@@ -93,8 +101,18 @@ for cid, c in cities.items():
             if not (box["lat"][0] < l.get("lat", 0) < box["lat"][1] and box["lon"][0] < l.get("lon", 0) < box["lon"][1]):
                 err(f"{where}: {l.get('address')} has no coordinates inside {cid}")
             h = l.get("hours")
-            if h is not None and (len(h) != 7 or not all(isinstance(x, str) for x in h)):
-                err(f"{where}: {l.get('address')} hours must be 7 strings, Monday to Sunday ('' = closed)")
+            if h is not None and (len(h) != 7 or not all(x is None or isinstance(x, str) for x in h)):
+                err(f"{where}: {l.get('address')} hours must be 7 entries, Monday to Sunday ('' = closed, null = not known)")
+            if l.get("kitchenCloses") and not re.fullmatch(r"\d{2}:\d{2}", l["kitchenCloses"]):
+                err(f"{where}: {l.get('address')} kitchenCloses {l['kitchenCloses']!r} isn't HH:MM")
+            for day, x in zip("Mon Tue Wed Thu Fri Sat Sun".split(), h or []):
+                x = x or ""
+                # the app reads "HH:MM–HH:MM" (a note may follow); a time it can't read would show the place as closed
+                m = re.match(r"(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})", x)
+                if x and not m:
+                    err(f"{where}: {l.get('address')} {day} hours {x!r} aren't HH:MM–HH:MM")
+                elif m and int(m[3]) * 60 + int(m[4]) <= int(m[1]) * 60 + int(m[2]):
+                    err(f"{where}: {l.get('address')} {day} closes before it opens ({x!r}); past midnight isn't supported")
         for u in [p.get("url"), p.get("listPage")]:
             if u is not None and not str(u).startswith("https://"):
                 err(f"{where}: link {u!r} isn't https")

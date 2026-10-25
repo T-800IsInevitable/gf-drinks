@@ -13,6 +13,8 @@ Use this when a restaurant's allergen guide can't be read automatically
               swap    normally comes with a "not" option, so ask for an "ok" one
               modify  gluten free only with a change, written in "note"
               avoid   contains gluten whatever you do
+              doubt   the source shows no gluten, but the app doubts it (say why in "note");
+                      listed under Avoid as "Check in store", labelled as the app's caution
   ok        Options that are fine, separated by ";" (e.g. "skimmed;soya")
   not       Options to avoid, separated by ";" (e.g. "oat")
   standard  The option it normally comes with (for swap)
@@ -30,7 +32,7 @@ recipe changes, nutrition notes) go in restaurant.json under "notices" as
 import csv
 from pathlib import Path
 
-ORDERS = {"asis", "any", "except", "swap", "modify", "avoid"}
+ORDERS = {"asis", "any", "except", "swap", "modify", "avoid", "doubt"}
 
 
 def _split(v):
@@ -56,6 +58,12 @@ def build(folder, config):
                 item["original"] = row["original"]
             if row.get("section_original") and row["section_original"] != item["section"]:
                 item["sectionOriginal"] = row["section_original"]
+            if order == "doubt":
+                if not row.get("note"):
+                    raise SystemExit(f"ERROR: {path.name} line {n} ({name}): 'doubt' needs a 'note' saying why")
+                item.update({"gluten": [], "tag": "Check in store", "reason": "Note from this app: " + row["note"]})
+                avoid.append(item)
+                continue
             if row.get("note") and order != "modify":
                 item["info"] = row["note"]
             if order == "avoid":
