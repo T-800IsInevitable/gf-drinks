@@ -1,20 +1,22 @@
 {
   "name": "Starbucks",
   "type": "Coffee shop",
-  "covers": "Drinks, syrups and toppings (UK)",
+  "covers": "Drinks, syrups, toppings and food (UK)",
   "area": "UK",
   "language": "en",
-  "reader": "starbucks_uk_pdf",
+  "readers": ["starbucks_uk_pdf", "starbucks_uk_food_pdf"],
   "optionLabel": "milk",
   "officialUrl": "https://www.starbucks.co.uk",
   "tips": [
     "Never oat drink: the guide lists oats as a gluten cereal.",
     "Any other milk is fine: skimmed, semi-skimmed, whole, almond, soya or coconut.",
-    "Swap means the drink normally comes with oat drink, so ask for another milk."
+    "Swap means the drink normally comes with oat drink, so ask for another milk.",
+    "Food: almost all the bakery, breakfast and sandwiches contain wheat. Snacks and bottled drinks are where to look."
   ],
   "gaps": [
     "Starbucks doesn't call any drink gluten free. This app lists drinks whose ingredients contain no gluten cereals.",
-    "The guide lists ingredients only. It says nothing about which drinks may contain traces of gluten.",
-    "Food isn't covered. This guide is for drinks, syrups and toppings only."
+    "The drinks guide lists ingredients only. It says nothing about which drinks may contain traces of gluten.",
+    "The food guide names two products as gluten free: a granola bar made with oats, and colas made with barley malt. They're on the Avoid list here because the guide lists oats and barley as gluten cereals.",
+    "Food handled by baristas may come into contact with gluten, and the food guide says there's no guarantee any item is allergen free."
   ]
 }

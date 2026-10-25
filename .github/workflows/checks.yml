@@ -1,0 +1,43 @@
+name: Check pull request
+
+# The same build and checks as publishing, on every pull request, so problems
+# show up before merging. Nothing is published from here.
+on:
+  pull_request:
+    paths-ignore:
+      - "inbox/**"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install PDF reader and browser
+        run: |
+          pip install -r tools/requirements.txt -r tools/requirements-dev.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Download the menus that are live now
+        run: python tools/fetch_previous.py
+
+      - name: Build and check every restaurant's menu
+        run: |
+          set -o pipefail
+          { python -m unittest discover -s tests && python tools/build.py && python tools/check.py && python tools/snapshot.py; } | tee build.log
+          {
+            echo "## Menu build"
+            echo '```'
+            cat build.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check the app at iPhone size, light and dark
+        run: python tools/ui_check.py

@@ -186,15 +186,22 @@ def group(rows):
     return ok, avoid
 
 
+def is_food_guide(pdf):
+    """The food guide sits in the same folder; its cover says Food and never Beverages."""
+    cover = pdf.pages[0].extract_text() or ""
+    return bool(re.search(r"\bFood\b", cover)) and not re.search(r"Beverage", cover, re.I)
+
+
 def newest_pdf(folder):
-    pdfs = [p for p in folder.glob("*.pdf")]
-    if not pdfs:
-        raise SystemExit(f"ERROR: no PDF found in {folder}")
     dated = []
-    for p in pdfs:
+    for p in folder.glob("*.pdf"):
         with pdfplumber.open(p) as pdf:
+            if is_food_guide(pdf):
+                continue
             v = guide_info(pdf)["version"] or "0000-00-00"
         dated.append((v, p.stat().st_mtime, p))
+    if not dated:
+        raise SystemExit(f"ERROR: no beverage guide PDF found in {folder}")
     dated.sort()
     for v, _, p in dated:
         print(f"  found {p.name} (version {v})")

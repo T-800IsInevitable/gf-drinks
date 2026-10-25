@@ -55,9 +55,11 @@
     <button type="button" id="installClose" class="link-btn">Dismiss</button>
   </div>
   <div id="stale" class="stale" hidden></div>
+  <div id="favAlert" class="fav-alert" role="alert" hidden></div>
+  <div id="news" class="news" hidden></div>
   <section id="tips" class="rules" aria-label="How to order"></section>
   <div class="certnote" id="certNote">
-    <p><b>No gluten ingredients isn't the same as certified gluten free.</b> These restaurants don't claim their food is gluten free, and don't guarantee against cross-contact.</p>
+    <p id="certText"><b>No gluten ingredients isn't the same as certified gluten free.</b> These restaurants don't claim their food is gluten free, and don't guarantee against cross-contact.</p>
     <button type="button" id="openWarnings" class="pill-btn pill-warn">Read the warnings <span id="warnCount"></span></button>
   </div>
   <div id="cardLaunch" class="card-launch" hidden></div>
@@ -100,7 +102,7 @@
     </ol>
     <p>It opens full screen and works without signal using the last menus it downloaded.</p>
     <h3>Show or hide</h3>
-    <p>The buttons under the search box hide or show items with <b>No gluten ingredients</b> (as served, or with any milk except the ones named), items that <b>Need a change</b> (ask for a swap or a change), and items to <b>Avoid</b> (they contain gluten, or the restaurant says they aren't suitable because of how they're prepared).</p>
+    <p>Everything shows until you choose. Tap the buttons under the search box to show only items with <b>No gluten ingredients</b> (as served, or with any milk except the ones named), items that <b>Need a change</b> (ask for a swap or a change), and items to <b>Avoid</b> (they contain gluten, or the restaurant says they aren't suitable because of how they're prepared).</p>
     <h3>Reading the tags</h3>
     <ul class="legend">
       <li><span class="tag t-asis">No gluten ingredients</span> as served, no changes needed</li>
@@ -111,9 +113,11 @@
       <li><span class="tag t-bad">Not suitable</span> the restaurant says it isn't suitable for coeliacs because of how it's prepared</li>
     </ul>
     <h3>Favourites</h3>
-    <p>Open any item and tap <b>☆ Save</b>. Favourites stay on this phone.</p>
+    <p>Open any item and tap <b>☆ Save</b>. Favourites stay on this phone. If a new guide puts a favourite on the Avoid list, or drops it, you'll see a warning at the top until you remove it.</p>
+    <h3>Show staff</h3>
+    <p>Open any item and tap <b>Show staff</b> for a large-print card with the item, how to order it, and that you have coeliac disease.</p>
     <h3>Staying up to date</h3>
-    <p>The app checks for new menus each time you open it with signal. Tap <b>↻</b> to check now. If a restaurant's guide has passed its end date, you'll see a warning.</p>
+    <p>The app checks for new menus each time you open it with signal. Tap <b>↻</b> to check now. When a restaurant's guide changes, a note shows what's new, what's gone and anything that now contains gluten, and changed items are marked in the list. If a guide has passed its end date, you'll see a warning.</p>
     <h3>Warnings</h3>
     <p>Each restaurant's own allergen warnings, word for word, plus what its guide doesn't tell you.</p>
     <p><button type="button" id="openWarnings2" class="pill-btn">Read the warnings</button></p>
@@ -148,6 +152,26 @@
       <button class="link-btn" value="close">Done</button>
     </div>
     <div id="cardBody"></div>
+  </form>
+</dialog>
+
+<dialog id="staff" class="full" aria-labelledby="staffTitle">
+  <form method="dialog" class="sheet">
+    <div class="sheet-head">
+      <h2 id="staffTitle">Show staff</h2>
+      <button class="link-btn" value="close">Done</button>
+    </div>
+    <div id="staffBody" class="staff"></div>
+  </form>
+</dialog>
+
+<dialog id="changes" class="full" aria-labelledby="changesTitle">
+  <form method="dialog" class="sheet">
+    <div class="sheet-head">
+      <h2 id="changesTitle">What changed</h2>
+      <button class="link-btn" value="close">Done</button>
+    </div>
+    <div id="changesBody"></div>
   </form>
 </dialog>
 

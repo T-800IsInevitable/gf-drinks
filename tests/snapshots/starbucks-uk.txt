@@ -1,0 +1,233 @@
+# source: AUT_26_UK_AllergenBook_CORE_BEVERAGE_v04.pdf and AUT_26_UK_AllergenBook_CORE_FOOD_v04.pdf
+OK    | Seasonal | Pumpkin Spice Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Seasonal | Iced Pumpkin Spice Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Seasonal | Pumpkin Spice Caramel Macchiato | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Seasonal | Iced Pumpkin Spice Caramel Macchiato | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Seasonal | Maple Pecan Macchiato | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Seasonal | Iced Maple Pecan Macchiato | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Seasonal | Pumpkin Spice Cream Frappuccino® | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Seasonal | Pumpkin Spice Coffee Frappuccino® | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Seasonal | Apple Crisp Inspired Macchiato | swap ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Seasonal | Iced Apple Crisp Inspired Macchiato | swap ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Seasonal | Iced Oat Shaken Apple Espresso | swap ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Seasonal | Aerocano | asis
+OK    | Seasonal | Caramel Aerocano | asis
+OK    | Espresso | Americano | asis
+OK    | Espresso | Caffe Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Espresso | Cappuccino | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Espresso | Caramel Macchiato | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Espresso | Cortado | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Espresso | Espresso | asis
+OK    | Espresso | Espresso Macchiato | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Espresso | Flat White | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Espresso | Freshly Brewed Coffee | asis
+OK    | Espresso | Latte Macchiato | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Espresso | Ristretto Bianco | except ok=semi-skimmed;whole;skimmed;almond;soya;coconut not=oat
+OK    | Mocha & Chocolate | Classic Hot Chocolate | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Mocha & Chocolate | Iced Chocolate | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Mocha & Chocolate | Iced Mocha | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Mocha & Chocolate | Iced White Mocha | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Mocha & Chocolate | Mocha | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Mocha & Chocolate | White Mocha | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Hot Teas | Chai Tea | asis
+OK    | Hot Teas | Chamomile | asis
+OK    | Hot Teas | Earl Grey Tea | asis
+OK    | Hot Teas | Emperor's Clouds & Mist Tea | asis
+OK    | Hot Teas | English Breakfast Tea | asis
+OK    | Hot Teas | Hibiscus Tea | asis
+OK    | Hot Teas | Jasmine Pearls Tea | asis
+OK    | Hot Teas | Mint Citrus Green Tea | asis
+OK    | Hot Teas | Mint Herbal Blend | asis
+OK    | Hot Teas | Youthberry Tea | asis
+OK    | Hot Teas | Chai Tea Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Hot Teas | Matcha Green Tea Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Iced Teas & Starbucks Refresha® Drink | Classic Shaken Iced Black Tea | asis
+OK    | Iced Teas & Starbucks Refresha® Drink | Classic Shaken Iced Black Tea Lemonade | asis
+OK    | Iced Teas & Starbucks Refresha® Drink | Classic Shaken Iced Green Tea | asis
+OK    | Iced Teas & Starbucks Refresha® Drink | Classic Shaken Iced Green Tea Lemonade | asis
+OK    | Iced Teas & Starbucks Refresha® Drink | Classic Shaken Hibiscus Tea | asis
+OK    | Iced Teas & Starbucks Refresha® Drink | Classic Shaken Hibiscus Tea Lemonade | asis
+OK    | Iced Teas & Starbucks Refresha® Drink | Lemon Iced Tea | asis
+OK    | Iced Teas & Starbucks Refresha® Drink | Peach Iced Tea | asis
+OK    | Iced Teas & Starbucks Refresha® Drink | Strawberry Acai Starbucks Refresha® Drink | asis
+OK    | Iced Teas & Starbucks Refresha® Drink | Cool Lime Starbucks Refresha® Drink | asis
+OK    | Iced Teas & Starbucks Refresha® Drink | Mango Dragonfruit Starbucks Refresha® Drink | asis
+OK    | Iced Teas & Starbucks Refresha® Drink | Dragon Coconut Starbucks Refresha® Drink | asis
+OK    | Iced Teas & Starbucks Refresha® Drink | Pink Coconut Starbucks Refresha® | asis
+OK    | Iced Teas & Starbucks Refresha® Drink | Iced Chai Tea Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Iced Teas & Starbucks Refresha® Drink | Iced Matcha Green Tea Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Cold Brew | Cold Brew | asis
+OK    | Iced Coffee | Classic Iced Cappuccino | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Iced Coffee | Iced Americano | asis
+OK    | Iced Coffee | Iced Brown Sugar Oat Shaken Espresso | swap ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Iced Coffee | Iced Caramel Macchiato | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Iced Coffee | Iced Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Iced Coffee | Iced Latte Macchiato | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Iced Coffee | Starbucks Doubleshot™ Iced Coffee | asis
+OK    | Iced Coffee | Starbucks Doubleshot™ Vanilla Iced Coffee | asis
+OK    | Iced Coffee | Vanilla Iced Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Iced Coffee | Iced Caramelised Macadamia Oat Shaken Espresso | swap ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Iced Coffee | Iced Toasted Vanilla Oat Shaken Espresso | swap ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Protein Beverages | Caramel Protein Americano | asis
+OK    | Protein Beverages | Caramel Protein Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Protein Beverages | Vanilla Protein Matcha Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Protein Beverages | Iced Caramel Protein Americano | asis
+OK    | Protein Beverages | Iced Caramel Protein Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Protein Beverages | Iced Vanilla Protein Matcha Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Frappuccino® Blended Beverage | Caramel Frappuccino® | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Frappuccino® Blended Beverage | Caramel Cream Frappuccino® | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Frappuccino® Blended Beverage | Chocolate Cream Frappuccino® | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Frappuccino® Blended Beverage | Coffee Frappuccino® | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Frappuccino® Blended Beverage | Matcha Cream Frappuccino® | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Frappuccino® Blended Beverage | Mocha Frappuccino® | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Frappuccino® Blended Beverage | Strawberries & Cream Frappuccino® | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Frappuccino® Blended Beverage | Vanilla Cream Frappuccino® | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Frappuccino® Blended Beverage | White Chocolate Cream Frappuccino® | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Frappuccino® Blended Beverage | White Mocha Frappuccino® | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Syrups, Drizzles & Cream Cold Foams | Almond flavour syrup | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Brown sugar flavour syrup | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Caramel flavour syrup | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Classic chai syrup | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Hazelnut flavour syrup | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Sugar free caramel flavour syrup | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Sugar free hazelnut flavour syrup | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Sugar free vanilla flavour syrup | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Vanilla flavour syrup | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Simple sugar flavour syrup | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Caramel Drizzle | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Mocha Drizzle | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Mocha sauce | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Strawberry sauce | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | White chocolate mocha sauce | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Caramel Sugar Free Flavour Protein Cold Foam | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Vanilla Sugar Free Flavour Protein Cold Foam | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Hazelnut Sugar Free flavour Protein Cold Foam | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Hazelnut flavour Protein Cold Foam | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Brown Sugar Flavour Protein Cold Foam | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Vanilla flavour Protein Cold Foam | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Caramel flavour Protein Cold Foam | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Simple Sugar flavour Protein Cold Foam | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Protein Cold Foam (no syrup) | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Matcha Cream Cold Foam | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Strawberry Cream Cold Foam | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Cinnamon Powder | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Vanilla flavour Powder | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Cocoa Powder | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Nutmeg Powder | asis
+OK    | Syrups, Drizzles & Cream Cold Foams | Whipped Cream | asis
+OK    | Reserve | Iced Americano | asis
+OK    | Reserve | Iced Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Reserve | Iced Mocha | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Reserve | Iced Mocha Bianco | asis
+OK    | Reserve | Mocha | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Reserve | Mocha Bianco | asis
+OK    | Reserve | Chemex | asis
+OK    | Reserve | Clover | asis
+OK    | Reserve | Pour Over | asis
+OK    | Reserve | French Press | asis
+OK    | Reserve | Americano | asis
+OK    | Reserve | Cappuccino | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Reserve | Espresso | asis
+OK    | Reserve | Espresso Macchiato | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Reserve | Flat White | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Reserve | Latte | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Reserve | Latte Macchiato | except ok=skimmed;semi-skimmed;whole;almond;soya;coconut not=oat
+OK    | Breakfast | Fruit & Seed Porridge Topper | asis
+OK    | Breakfast | Egg White Bites with Three Cheese and Red Pepper | asis
+OK    | Breakfast | Egg Bites with Three Cheese & Ham | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Kettle Lightly Salted Crisps (at selected stores) | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Kettle Mature Cheddar and Red Onion Crisps (at selected stores) | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Kettle Sweet Chilli and Sour Crisps (at selected stores) | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Propercorn Sweet & Salty Popcorn | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Propercorn Sea Salt Popcorn | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Snacking Cheese | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Starbucks® Chocolate Gold Coin | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Acerola and Berries Vitamin D Shot | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Apple & Mango Juice | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Berries Juice Drink | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Cloudy Apple Juice | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Ginger shot | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Mango & Passionfruit Smoothie | asis
+OK    | Chocolate, Snacks & Bottled Drinks | One Water (Still/ Sparkling) | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Peach Iced Tea | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Pip Organic Blackcurrant, Raspberry and Apple Juice | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Raspberry Lemonade | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Smooth Orange Juice | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Starbucks Tripleshot™ Espresso (at selected stores) | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Starbucks® Strawberry Matcha Latte (at selected stores) | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Starbucks® Caramel Macchiato (at selected stores) | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Still Lemonade | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Strawberry and Watermelon Vitwater | asis
+OK    | Chocolate, Snacks & Bottled Drinks | Turmeric Shot | asis
+AVOID | Seasonal | Iced Apple Crumble Matcha Latte | OAT;WHEAT
+AVOID | Seasonal | Mummy Frappuccino® | WHEAT
+AVOID | Frappuccino® Blended Beverage | Cookies & Cream Frappuccino® | WHEAT
+AVOID | Frappuccino® Blended Beverage | Double Chocolatey Chip Cream Frappuccino® | WHEAT
+AVOID | Frappuccino® Blended Beverage | Java Chip Frappuccino® | WHEAT
+AVOID | Syrups, Drizzles & Cream Cold Foams | Cookies & Cream Cold Foam | WHEAT
+AVOID | Seasonal food | Pumpkin Marble Loaf Cake | WHEAT
+AVOID | Seasonal food | Apple Crumble Muffin | OAT;WHEAT
+AVOID | Seasonal food | Loaded Double Chocolate Chunk Cookie | WHEAT
+AVOID | Seasonal food | Loaded Triple Chocolate & Hazelnut Cookie | WHEAT
+AVOID | Seasonal food | Pumpkin Spice Cake Pop | WHEAT
+AVOID | Seasonal food | Mummy Cake Pop | WHEAT
+AVOID | Seasonal food | Charred Chickpea & Chimichurri Wrap | WHEAT
+AVOID | Seasonal food | Chicken & Chorizo Focaccia | BARLEY;WHEAT
+AVOID | Bakery | All-Butter Croissant (Freshly Baked) | WHEAT
+AVOID | Bakery | Almond Croissant | WHEAT
+AVOID | Bakery | Almond Croissant (at selected stores) | WHEAT
+AVOID | Bakery | Almond Croissant (Freshly Baked) | WHEAT
+AVOID | Bakery | Butter Croissant | WHEAT
+AVOID | Bakery | Butter Croissant (at selected stores) | WHEAT
+AVOID | Bakery | Cheese Twist | WHEAT
+AVOID | Bakery | Chocolate Twist | WHEAT
+AVOID | Bakery | Chocolate Twist (at selected stores) | WHEAT
+AVOID | Bakery | Cinnamon Bun | WHEAT
+AVOID | Bakery | Danish-Style Apple Cinnamon Swirl (Freshly Baked) | WHEAT
+AVOID | Bakery | Luxury Fruit Toast | WHEAT
+AVOID | Bakery | Pain au Chocolat | WHEAT
+AVOID | Bakery | Pain Au Chocolat (at selected stores) | WHEAT
+AVOID | Bakery | Blackberry & Vanilla Cream Danish (Freshly Baked) | WHEAT
+AVOID | Bakery | Pain au Chocolat (Freshly Baked) | WHEAT
+AVOID | Bakery | Banana Nut Loaf Cake | WHEAT
+AVOID | Bakery | Birthday Cake Pop | WHEAT
+AVOID | Bakery | Carrot Cake | WHEAT
+AVOID | Bakery | Lemon Loaf Cake | WHEAT
+AVOID | Bakery | Victoria Sponge | WHEAT
+AVOID | Bakery | Loaded Double Chocolate Chunk Cookie (Freshly Baked) | WHEAT
+AVOID | Bakery | Loaded Triple Chocolate & Hazelnut Cookie (Freshly Baked) | WHEAT
+AVOID | Bakery | Belgian Chocolate Chunk Cookie | WHEAT
+AVOID | Bakery | Blueberry Muffin | WHEAT
+AVOID | Bakery | Chocolate Muffin | BARLEY;WHEAT
+AVOID | Bakery | Belgian Chocolate Caramel Shortbread | WHEAT
+AVOID | Bakery | Triple Chocolate Brownie | WHEAT
+AVOID | Bakery | Pistachio Scroll | BARLEY;WHEAT
+AVOID | Bakery | Raspberry Jam & Custard Doughnut | WHEAT
+AVOID | Breakfast | All Day Breakfast Wrap | WHEAT
+AVOID | Breakfast | Beyond Meat® Breakfast Sandwich | RYE;WHEAT
+AVOID | Breakfast | Ham & Cheese Croissant | WHEAT
+AVOID | Breakfast | Smoked Bacon Roll | BARLEY;WHEAT
+AVOID | Breakfast | Traditional Sausage Sandwich | BARLEY;WHEAT
+AVOID | Breakfast | Classic Porridge | OAT
+AVOID | Breakfast | Greek Style Yogurt with Berries & Granola | OAT
+AVOID | Breakfast | Mango & Passionfruit Overnight Oats | OAT
+AVOID | Sandwiches & Toasties | Chicken & Bacon Caesar Wrap | WHEAT
+AVOID | Sandwiches & Toasties | Free Range Egg and Mayo Sandwich | BARLEY;WHEAT
+AVOID | Sandwiches & Toasties | Smoked Ham and Cheddar Sandwich | BARLEY;WHEAT
+AVOID | Sandwiches & Toasties | Cheese & Marmite® Mini Ciabatta | BARLEY;OAT;RYE;WHEAT
+AVOID | Sandwiches & Toasties | Signature Grilled Cheese Toastie | RYE;SPELT;WHEAT
+AVOID | Sandwiches & Toasties | Signature Smoked Ham & Cheese Toastie | RYE;SPELT;WHEAT
+AVOID | Sandwiches & Toasties | Signature Tomato & Mozzarella Panini | WHEAT
+AVOID | Sandwiches & Toasties | Signature Tuna Melt Panini | WHEAT
+AVOID | Chocolate, Snacks & Bottled Drinks | Acorn Gingerbread Biscuit | WHEAT
+AVOID | Chocolate, Snacks & Bottled Drinks | Caramelised Biscuit Chocolate Bar | WHEAT
+AVOID | Chocolate, Snacks & Bottled Drinks | Caramel Waffle Duos | WHEAT
+AVOID | Chocolate, Snacks & Bottled Drinks | Cookie Straw | WHEAT
+AVOID | Chocolate, Snacks & Bottled Drinks | Ginger Biscuit | WHEAT
+AVOID | Chocolate, Snacks & Bottled Drinks | Granola Bar (Gluten Free & Plant Based) | OAT
+AVOID | Chocolate, Snacks & Bottled Drinks | Kettle Sea Salt and Balsamic Vinegar Crisps (at selected stores) | BARLEY
+AVOID | Chocolate, Snacks & Bottled Drinks | Mini Caramel Waffles | WHEAT
+AVOID | Chocolate, Snacks & Bottled Drinks | Shortbread Biscuits | WHEAT
+AVOID | Chocolate, Snacks & Bottled Drinks | Starbucks® Iced Gingerbread Cookie - Bearista or Latte | WHEAT
+AVOID | Chocolate, Snacks & Bottled Drinks | Karma Organic Cola (at selected stores) | BARLEY
+AVOID | Chocolate, Snacks & Bottled Drinks | Karma Sugar-Free Cola (at selected stores) | BARLEY

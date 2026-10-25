@@ -8,11 +8,13 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 
 - **Pick a restaurant** by tapping its name at the top, or choose **All restaurants** to browse and search everything at once.
 - **Filter** with the chips under the search box: menu sections for one restaurant, or restaurants when viewing all.
-- **Show or hide by status:** the three buttons under the filters toggle **No gluten ingredients** (as served, or with any milk except those named), **Needs a change** (ask for a swap or change) and **Contains gluten** (whatever you order).
+- **Show or hide by status:** everything shows until you choose. Tap any of the three buttons under the filters to show only those: **No gluten ingredients** (as served, or with any milk except those named), **Needs a change** (ask for a swap or change) and **Contains gluten** (whatever you order).
 - **Warnings page:** each restaurant's own allergen warnings, word for word with page numbers (cross-contact, allergen updates, recipe changes, delivery, nutrition), plus what its guide doesn't tell you.
-- **Wording:** the app says "no gluten ingredients", not "gluten free". In UK law "gluten free" means tested below 20 parts per million, and these restaurants make no such claim.
+- **Wording:** the app says "no gluten ingredients", not "gluten free". In UK law "gluten free" means tested below 20 parts per million. Apart from Pho, which is accredited by Coeliac UK, these restaurants make no such claim, and even for Pho the app lists items by their ingredients and quotes Pho's own words.
 - **Themes:** ⓘ → Appearance: Match phone, Light, Dark, Pink light, Pink dark.
-- **Favourites:** open any item and tap **☆ Save**. The **★ Favourites** chip shows them. They're stored on your phone only.
+- **Favourites:** open any item and tap **☆ Save**. The **★ Favourites** chip shows them. They're stored on your phone only. If a new guide puts a favourite on the Avoid list, or drops it, a warning stays at the top until you remove it.
+- **Show staff:** open any item and tap **Show staff** for a large-print card with the item, how to order it and that you have coeliac disease.
+- **What changed:** when a restaurant's guide is updated, a note lists what's new, what's gone, what's ordered differently and anything that now contains gluten. Changed items are marked in the list until the next guide.
 - **Out-of-date warning:** if a restaurant's guide has passed its end date, a banner says so.
 - **Share** sends a link to the restaurant you're viewing (for example `…/gf-drinks/#starbucks-uk`).
 - **Menus in other languages** show each item in English with the original name underneath, so you can point to it when ordering. Searching works in either language.
@@ -25,9 +27,15 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 
 **Pret:** upload the new GB allergen guide PDF to `restaurants/pret-uk/guides/`. Pret's guides have no end date, so the app asks for a re-check 91 days after the "valid from" date (change `recheckDays` in `restaurant.json`).
 
-**Starbucks:** upload the new Beverage Allergen Guide PDF to `restaurants/starbucks-uk/guides/` (on GitHub: open the folder, then **Add file → Upload files → Commit changes**). The newest version date is used, so old guides can stay. About a minute later the app updates for everyone.
+**Starbucks:** upload the new Beverage Allergen Guide and Food Allergen Guide PDFs to `restaurants/starbucks-uk/guides/` (on GitHub: open the folder, then **Add file → Upload files → Commit changes**). Each reader takes the newest of its own kind (the food guide's cover says Food), so old guides can stay. About a minute later the app updates for everyone.
 
-**Restaurants kept by hand:** edit that restaurant's `menu.csv` and update the dates in its `restaurant.json`.
+**Pho:** upload the new allergen guide PDF (linked as "Allergens" at the foot of phocafe.co.uk) to `restaurants/pho-uk/guides/`. Its "accurate as of" month is the version; the app asks for a re-check 183 days later.
+
+**Blank Street:** upload the new UK allergen guide PDF (linked from blankstreet.com) to `restaurants/blank-street-uk/guides/`. The guide has no date in it, so keep the season in the file name (for example `...Autumn26.pdf`); the PDF's creation date is used as the version.
+
+**Restaurants kept by hand (Knoops):** edit that restaurant's `menu.csv` and update the dates in its `restaurant.json`. Knoops' newest guide is from March 2024, so the app shows it as possibly out of date until a newer one appears.
+
+**Reminders:** each morning `.github/workflows/guide-reminders.yml` opens an issue for any guide that has ended or ends within three weeks. Close the issue if there's no newer guide yet; you won't be reminded again until the end date changes.
 
 ## Adding a menu from the app
 
@@ -66,7 +74,10 @@ If a restaurant publishes a regular PDF guide, a reader can be written for it (l
 ## How "gluten free" is decided
 
 - **Starbucks:** every row of the guide is read. An item or milk version counts as containing gluten if its **Allergens** column or its **ingredient list** names, in bold capitals, any of wheat, oats, barley, rye, spelt, kamut, gluten or malt. Oats are included because the guide lists them under "cereals containing gluten". If the two places disagree, the item is left out.
-- **Hand-kept restaurants:** whatever is entered in `menu.csv`, checked against the restaurant's allergen information.
+- **Starbucks food:** the same rule as the drinks, using each product's ingredients and its Allergens column.
+- **Pho:** the guide's "Cereals containing gluten" column. A dot means avoid. A dot on a pink cell means the restaurant can remove the gluten on request, so the app says what to ask for. A cereal named without a dot (Daura Damm, a beer made from barley malt with the gluten removed) is treated as containing gluten. Pho is accredited by Coeliac UK, and its own words about that are on the Warnings page.
+- **Blank Street:** each item's ingredients and its "May Contain" line. "May contain" oats or gluten counts as gluten, which puts every milk drink on the Avoid list: the dairy versions may contain oat, and the oat versions contain it.
+- **Hand-kept restaurants (Knoops):** whatever is entered in `menu.csv`, checked against the restaurant's allergen information. For Knoops, oats (including gluten free oats) and "MCT" (may contain traces) count as gluten.
 
 Restaurants prepare food in shared kitchens, so nothing is guaranteed gluten free. The app says this too.
 
@@ -74,19 +85,27 @@ Restaurants prepare food in shared kitchens, so nothing is guaranteed gluten fre
 
 Every change to the repository runs `.github/workflows/publish.yml`, which:
 
-1. builds every restaurant (`tools/build.py`),
-2. checks the results (`tools/check.py`): every item has a valid ordering tag, options are listed where needed, nothing is both safe and unsafe, and each restaurant has items,
-3. publishes the app to GitHub Pages.
+1. downloads the menus that are live now (`tools/fetch_previous.py`), so the build can say what changed in a new guide,
+2. runs the unit tests (`tests/`) and builds every restaurant (`tools/build.py`),
+3. checks the results (`tools/check.py`): every item has a valid ordering tag, options are listed where needed, nothing is both safe and unsafe, and each restaurant has items,
+4. compares each menu with its snapshot (`tools/snapshot.py`, saved in `tests/snapshots/`), so a change to a reader can't quietly change what the same guide gives. A new guide is reported, not failed,
+5. opens the app in a real browser at iPhone size, in light and dark (`tools/ui_check.py`): no errors, nothing wider than the screen, and the buttons work,
+6. publishes the app to GitHub Pages.
 
-If any step fails, nothing is published and the live app keeps its previous menus. The **Actions** tab shows each run's results, including how many items each restaurant has.
+If any step fails, nothing is published and the live app keeps its previous menus. The **Actions** tab shows each run's results, including how many items each restaurant has. Pull requests run the same checks (`.github/workflows/checks.yml`) without publishing.
+
+When a reader's output is meant to change (a fix, or a new guide), check the differences against the guide, then run `python tools/snapshot.py --update` and commit the snapshots.
 
 Free GitHub accounts can publish Pages sites from public repositories only, so everything here, including uploaded guides, is publicly visible.
 
 ## Running it locally
 
 ```
-pip install -r tools/requirements.txt
+pip install -r tools/requirements.txt -r tools/requirements-dev.txt
+python -m playwright install chromium            # once, for the UI checks
+python tools/fetch_previous.py                   # optional: the live menus, to see what changed
 python tools/build.py && python tools/check.py   # writes site/data/
+python tools/snapshot.py && python tools/ui_check.py
 python -m http.server -d site 8000               # open http://localhost:8000
 ```
 
@@ -96,6 +115,10 @@ python -m http.server -d site 8000               # open http://localhost:8000
 - `restaurants/_template/`: copy this to add a restaurant by hand
 - `tools/build.py`: builds every restaurant into `site/data/`
 - `tools/check.py`: safety checks run before publishing
+- `tools/changes.py`, `tools/fetch_previous.py`: what changed since the live menus
+- `tools/snapshot.py`, `tests/snapshots/`: each reader's output, to catch unintended changes
+- `tools/ui_check.py`: the app in a real browser at iPhone size
+- `tools/reminders.py`: guides ending soon (opens GitHub issues each morning)
 - `tools/adapters/`: readers for each kind of allergen guide
 - `tools/SCAN_INSTRUCTIONS.md`: what the daily scan does with uploads
 - `inbox/`: uploads waiting to be scanned

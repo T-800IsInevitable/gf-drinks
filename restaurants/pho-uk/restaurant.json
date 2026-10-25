@@ -1,0 +1,28 @@
+{
+  "name": "Pho",
+  "type": "Vietnamese restaurant",
+  "covers": "Main, kids and drinks menus in UK restaurants",
+  "area": "UK",
+  "language": "en",
+  "reader": "pho_uk_pdf",
+  "optionLabel": "option",
+  "officialUrl": "https://phocafe.co.uk/gluten-free/",
+  "recheckDays": 183,
+  "removeNotes": {
+    "Vermicelli noodles": {
+      "note": "Without the spring roll, please",
+      "why": "Bún dishes come with a spring roll, which contains wheat."
+    }
+  },
+  "tips": [
+    "Coeliac UK accredited: Pho says it's audited and tested by Coeliac UK. Its own words are on the Warnings page.",
+    "Bún (vermicelli) dishes come with a wheat spring roll: ask for them without it.",
+    "Avoid: crispy and seafood spring rolls, hoisin sauce, kids' chicken nuggets and the beers.",
+    "Sauces: the guide lists most dishes without sauce, so check the sauce too."
+  ],
+  "gaps": [
+    "The guide shows allergens per dish, not per ingredient, so it doesn't say which part of a dish contains gluten.",
+    "Daura Damm is a beer made from barley malt with the gluten removed. The guide names barley without its usual mark, so it's on the Avoid list here.",
+    "Pho says staff can make mistakes and that all allergens are present in its kitchens."
+  ]
+}
