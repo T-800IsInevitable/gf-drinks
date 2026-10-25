@@ -23,6 +23,8 @@ from pathlib import Path
 
 import pdfplumber
 
+from . import notices
+
 TICK = ""
 GLUTEN_COLS = {"Barley": "BARLEY", "Kamut": "KAMUT", "Oats": "OAT", "Rye": "RYE", "Spelt": "SPELT", "Wheat": "WHEAT"}
 RED = (0.624, 0.106, 0.196)
@@ -204,11 +206,15 @@ def build(folder, config):
     print(f"  building from {pdf_path.name}")
     info, rows, warnings = parse_rows(pdf_path)
     ok, avoid = group(rows)
+    with pdfplumber.open(pdf_path) as pdf:
+        first_table = next((i + 1 for i, pg in enumerate(pdf.pages) if "Product" in (pg.extract_text() or "")), 3)
+        guide_notices = notices.collect(pdf, list(range(1, first_table)), columns_for=tuple(range(2, first_table)))
     # Pret guides have no end date. Ask for a re-check after the number of days in restaurant.json.
     if info["version"]:
         days = int(config.get("recheckDays", 91))
         info["validUntil"] = (date.fromisoformat(info["version"]) + timedelta(days=days)).isoformat()
     return {
+        "notices": guide_notices,
         "source": pdf_path.name,
         "guide": {k: info.get(k) for k in ("title", "runs", "version", "validUntil")},
         "rule": "Excludes anything ticked for barley, kamut, oats, rye, spelt or wheat.",

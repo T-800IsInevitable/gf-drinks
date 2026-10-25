@@ -245,7 +245,38 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 .app-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pick-name { font-size: clamp(20px, 6.4vw, 26px); }
 @media (max-width: 380px) {
-  .icon-btn { width: 36px; height: 36px; }
   .actions { gap: 2px; }
   .status button { font-size: 12.5px; }
 }
+
+/* ---- warnings, certification note, collapsing header, tap targets ---- */
+.certnote { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+.certnote p { margin: 0; color: var(--muted); }
+.certnote b { color: var(--fg); }
+.pill-warn { align-self: flex-start; background: var(--swap-bg); color: var(--swap); }
+dialog.full { max-height: 94vh; height: 94vh; }
+.w-intro { background: var(--bg); border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: 14px; }
+.w-intro p { margin: 0; }
+.w-rest { font-family: var(--display); font-size: 18px; margin: 18px 0 2px !important; }
+.sheet h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin: 18px 0 6px; }
+.w-group { margin-bottom: 10px; }
+.w-label { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.w-quote { margin: 0 0 8px; padding: 8px 12px; border-left: 3px solid var(--accent); background: var(--bg); border-radius: 0 8px 8px 0; font-size: 14.5px; color: var(--fg); }
+.w-quote cite { display: block; font-style: normal; font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.w-gaps { padding-left: 18px; font-size: 14.5px; display: flex; flex-direction: column; gap: 6px; }
+.w-sep { border: 0; border-top: 1px solid var(--line); margin: 20px 0 0; }
+.w-stale { color: var(--swap) !important; font-weight: 600; margin-top: 10px !important; }
+.top .chips, .top .status { transition: max-height 0.2s ease, opacity 0.2s ease, margin 0.2s ease; max-height: 80px; }
+.top.collapsed .chips, .top.collapsed .status { max-height: 0; opacity: 0; overflow: hidden; margin-top: -10px; pointer-events: none; }
+.icon-btn { width: 44px; height: 44px; }
+.fav-btn { min-height: 44px; padding: 8px 14px; }
+.chips button { min-height: 38px; }
+@media (max-width: 380px) { .icon-btn { width: 40px; height: 40px; } }
+
+/* header floats over the page so collapsing it never moves the list */
+.top { position: fixed; left: 0; right: 0; top: 0; }
+body { padding-top: var(--top-h, 250px); }
+/* long labels wrap instead of clipping or crowding names */
+.status button { white-space: normal; }
+.row .tag { white-space: normal; max-width: 8.5em; text-align: center; line-height: 1.2; padding: 4px 9px; }
+.t-asis { background: var(--ok-bg); color: var(--ok); }

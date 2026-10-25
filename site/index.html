@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Twoo's Treat Temple</title>
-<meta name="description" content="Gluten free food and drinks at restaurants and coffee shops, from their published allergen guides, and how to order them.">
+<meta name="description" content="Food and drinks with no gluten ingredients at restaurants and coffee shops, from their published allergen guides, and how to order them.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Treat Temple">
@@ -56,6 +56,10 @@
   </div>
   <div id="stale" class="stale" hidden></div>
   <section id="tips" class="rules" aria-label="How to order"></section>
+  <div class="certnote" id="certNote">
+    <p><b>No gluten ingredients isn't the same as certified gluten free.</b> These restaurants don't test for gluten or guarantee against cross-contact.</p>
+    <button type="button" id="openWarnings" class="pill-btn pill-warn">Read the warnings <span id="warnCount"></span></button>
+  </div>
   <div id="cardLaunch" class="card-launch" hidden></div>
   <div id="list" class="list" aria-live="polite"></div>
   <section id="avoidWrap" class="avoid">
@@ -96,21 +100,24 @@
     </ol>
     <p>It opens full screen and works without signal using the last menus it downloaded.</p>
     <h3>Show or hide</h3>
-    <p>The buttons under the search box hide or show items that are <b>Straight up</b> (gluten free as served, or with any milk except the ones named), <b>Needs change</b> (ask for a swap or a change), or contain <b>Gluten</b>.</p>
+    <p>The buttons under the search box hide or show items with <b>No gluten ingredients</b> (as served, or with any milk except the ones named), items that <b>Need a change</b> (ask for a swap or a change), and items that <b>Contain gluten</b>.</p>
     <h3>Reading the tags</h3>
     <ul class="legend">
-      <li><span class="tag t-asis">Straight up</span> gluten free with no changes</li>
-      <li><span class="tag t-any">Any milk</span> fine with any of the options shown</li>
+      <li><span class="tag t-asis">No gluten ingredients</span> as served, no changes needed</li>
+      <li><span class="tag t-any">Any milk</span> no gluten ingredients with any of the options shown</li>
       <li><span class="tag t-swap">Swap</span> normally comes with an option that has gluten, so ask for another</li>
-      <li><span class="tag t-swap">Ask</span> gluten free only with the change shown</li>
+      <li><span class="tag t-swap">Ask</span> no gluten ingredients only with the change shown</li>
       <li><span class="tag t-bad">Wheat</span> contains gluten whatever you order</li>
     </ul>
     <h3>Favourites</h3>
     <p>Open any item and tap <b>☆ Save</b>. Favourites stay on this phone.</p>
     <h3>Staying up to date</h3>
     <p>The app checks for new menus each time you open it with signal. Tap <b>↻</b> to check now. If a restaurant's guide has passed its end date, you'll see a warning.</p>
+    <h3>Warnings</h3>
+    <p>Each restaurant's own allergen warnings, word for word, plus what its guide doesn't tell you.</p>
+    <p><button type="button" id="openWarnings2" class="pill-btn">Read the warnings</button></p>
     <h3>Travelling</h3>
-    <p>Menus in other languages show each item in English with the original name underneath, so you can point to it when ordering. A gluten free card you can show staff is available in: <span id="cardLangs"></span>.</p>
+    <p>Menus in other languages show each item in English with the original name underneath, so you can point to it when ordering. A coeliac card you can show staff is available in: <span id="cardLangs"></span>.</p>
     <h3>Add a menu</h3>
     <p id="uploadInfo">Upload a restaurant's allergen menu (PDF or photos). It's checked within a day and added once approved.</p>
     <p><button type="button" id="openUpload" class="pill-btn">Add a menu</button></p>
@@ -123,10 +130,20 @@
   </form>
 </dialog>
 
+<dialog id="warnings" class="full" aria-labelledby="warnTitle">
+  <form method="dialog" class="sheet">
+    <div class="sheet-head">
+      <h2 id="warnTitle">Warnings</h2>
+      <button class="link-btn" value="close">Done</button>
+    </div>
+    <div id="warnBody"></div>
+  </form>
+</dialog>
+
 <dialog id="gfcard" aria-labelledby="cardTitle">
   <form method="dialog" class="sheet">
     <div class="sheet-head">
-      <h2 id="cardTitle">Gluten free card</h2>
+      <h2 id="cardTitle">Coeliac card</h2>
       <button class="link-btn" value="close">Done</button>
     </div>
     <div id="cardBody"></div>

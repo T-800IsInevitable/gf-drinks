@@ -31,7 +31,7 @@ for r in index["restaurants"]:
         continue
     d = json.loads(path.read_text(encoding="utf-8"))
     if not d["items"]:
-        err(f"{rid}: no gluten free items")
+        err(f"{rid}: no items without gluten ingredients")
     for i in d["items"]:
         where = f"{rid}: {i.get('name')!r}"
         if not i.get("name") or not i.get("section"):
@@ -39,7 +39,7 @@ for r in index["restaurants"]:
         if i.get("order") not in ORDERS:
             err(f"{where}: bad order {i.get('order')!r}")
         if i.get("order") in ("any", "except", "swap") and not i.get("ok"):
-            err(f"{where}: no gluten free options listed")
+            err(f"{where}: no options without gluten listed")
         if i.get("order") == "except" and not i.get("not"):
             err(f"{where}: 'except' with nothing excluded")
         if i.get("order") == "modify" and not i.get("note"):
@@ -50,8 +50,11 @@ for r in index["restaurants"]:
     names = {(i["section"], i["name"]) for i in d["items"]}
     clash = names & {(a["section"], a["name"]) for a in d["avoid"]}
     if clash:
-        err(f"{rid}: listed as both gluten free and to avoid: {sorted(clash)}")
-    print(f"{rid}: {len(d['items'])} gluten free, {len(d['avoid'])} to avoid, guide valid until {d['guide'].get('validUntil')}")
+        err(f"{rid}: listed as both safe and to avoid: {sorted(clash)}")
+    for n in d.get("notices", []):
+        if not n.get("text"):
+            err(f"{rid}: a warning has no text")
+    print(f"{rid}: {len(d['items'])} with no gluten ingredients, {len(d['avoid'])} to avoid, guide valid until {d['guide'].get('validUntil')}")
 
 if errors:
     print("\nCHECK FAILED:")

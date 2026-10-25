@@ -10,6 +10,12 @@
   "recheckDays": 91,
   "tips": [
     "Oat milk: the guide marks oats as a gluten cereal, so choose another milk.",
+    "Branded products: the guide doesn't list them, so check the packet.",
     "Check the label: the guide says recipes change and can differ shop to shop."
+  ],
+  "gaps": [
+    "Pret doesn't call any item gluten free. This app lists items with no gluten cereal ticked.",
+    "A tick means a product contains an allergen. There's no column for 'may contain' or traces.",
+    "Branded products (packaged snacks and drinks made by other companies) aren't listed. Check the packet."
   ]
 }

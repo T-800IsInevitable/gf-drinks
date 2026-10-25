@@ -19,6 +19,8 @@ from pathlib import Path
 
 import pdfplumber
 
+from . import notices
+
 GLUTEN = re.compile(r"\b(WHEAT|OATS?|BARLEY|RYE|SPELT|KAMUT|GLUTEN|MALT)\b")
 MILK_SUFFIX = re.compile(r"^(.*?)\s+[-–]\s+(.*\b(?:milk|drink))\s*(\(standard build\))?$", re.I)
 STANDARD = re.compile(r"\s*\(standard build\)", re.I)
@@ -205,7 +207,16 @@ def build(folder, config):
     print(f"  building from {pdf_path.name}")
     info, rows, warnings = parse_rows(pdf_path)
     ok, avoid = group(rows)
+    with pdfplumber.open(pdf_path) as pdf:
+        table = [i + 1 for i, pg in enumerate(pdf.pages) if "Product" in (pg.extract_text() or "")[:200]]
+        intro = [n for n in range(2, (table[0] if table else 3)) if n not in table]
+        regions = {}
+        for n in table:
+            w, h = pdf.pages[n - 1].width, pdf.pages[n - 1].height
+            regions[n] = [(0, 40, w * 0.45, 98), (0, h - 60, w, h)]  # allergen-update banner, footer
+        guide_notices = notices.collect(pdf, intro, regions=regions)
     return {
+        "notices": guide_notices,
         "source": pdf_path.name,
         "guide": info,
         "rule": "Excludes anything listing wheat, oats, barley, rye, spelt, kamut, gluten or malt.",
