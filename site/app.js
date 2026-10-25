@@ -127,7 +127,7 @@
     }
     if (i.ok) {
       out.push('<div class="milks">' + i.ok.map((m) => '<span class="milk">' + esc(m) + "</span>").join("") +
-        (i.not || []).map((m) => '<span class="milk no" aria-label="not ' + esc(m) + '">' + esc(m) + "</span>").join("") + "</div>");
+        (i.not || []).map((m) => '<span class="milk no"><span class="vh">not </span>' + esc(m) + "</span>").join("") + "</div>");
     }
     const k = favKey(r, i);
     const on = favs.has(k);
@@ -172,10 +172,12 @@
     const r = byId(selected);
     if (r) {
       $("pickName").textContent = r.name;
+      $("pickBtn").setAttribute("aria-label", r.name + ". Choose where to eat");
       $("guideLine").textContent = guideLine(r) || r.covers;
       $("q").placeholder = "Search " + r.name;
     } else {
       $("pickName").textContent = "All restaurants";
+      $("pickBtn").setAttribute("aria-label", "All restaurants. Choose where to eat");
       const n = data.restaurants.length;
       $("guideLine").textContent = n + (n === 1 ? " restaurant" : " restaurants") + " · tap to choose";
       $("q").placeholder = "Search all restaurants";
@@ -537,6 +539,7 @@
     const c = city();
     if (!c) { $("cityList").innerHTML = '<p class="empty">Loading…</p>'; return; }
     $("pickName").textContent = c.name;
+    $("pickBtn").setAttribute("aria-label", c.name + ". Choose where to eat");
     $("guideLine").textContent = c.places.length + " places · checked " + fmtDate(c.checked);
     $("q").placeholder = "Search " + c.name;
     const chips = [["all", "All"], ["open", "Open today"], ["fav", "★ Saved"]].concat(c.sections.filter((s) => c.places.some((p) => p.section === s)).map((s) => [s, s]));

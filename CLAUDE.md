@@ -28,6 +28,7 @@ An iPhone home-screen web app (PWA) listing food and drinks with **no gluten ing
 
 ## Working conventions
 
+- Accessibility (enforced by `ui_check.py`): font sizes in rem so iPhone Larger Text works, tap targets at least 44pt, text contrast at least 4.5:1 (no fading with opacity), VoiceOver-only words in a `.vh` span rather than `aria-label` on plain spans.
 - **British English, no em-dashes**, plain warm wording in anything user-facing (app text, README, PR descriptions).
 - Changes go through a branch and pull request, then merge; the publish workflow deploys from `main`.
 - Before publishing: `pip install -r tools/requirements.txt -r tools/requirements-dev.txt`, then `python tools/build.py && python tools/check.py && python tools/snapshot.py && python tools/ui_check.py` (the last needs `python -m playwright install chromium` once). `ui_check.py --shots DIR` saves screenshots to look at.

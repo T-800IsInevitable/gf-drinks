@@ -31,6 +31,32 @@ SITE = Path(__file__).resolve().parent.parent / "site"
 IPHONE = {"viewport": {"width": 393, "height": 852}, "device_scale_factor": 3, "is_mobile": True, "has_touch": True}
 # Berlin row tags by who makes the claim (cities.json "claim"; "place-part" uses the place's own claimLabel)
 CLAIM_TAGS = {"place-all": "Says all gluten free", "list-all": "Listed as all gluten free", "separate": "Separate kitchen"}
+# visible buttons in the header and lists (and place links) smaller than Apple's 44pt minimum
+TAPS_JS = """() => {
+    const out = [];
+    for (const el of document.querySelectorAll('.top button, main button, .place-links a')) {
+        const r = el.getBoundingClientRect();
+        if (!r.width || el.closest('[hidden]') || getComputedStyle(el).visibility === 'hidden') continue;
+        if (r.height < 43.5 || r.width < 43.5) out.push((el.id || el.className || el.tagName) + ' ' + JSON.stringify(el.textContent.trim().slice(0, 20)) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height));
+    }
+    return [...new Set(out)].slice(0, 8);
+}"""
+# lowest text contrast among the matching elements, against the page background (opacity included)
+CONTRAST_JS = """(sel) => {
+    const rgb = (s) => s.match(/[\\d.]+/g).map(Number);
+    const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; })
+        .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+    let worst = 21;
+    for (const el of document.querySelectorAll(sel)) {
+        let op = 1;
+        for (let e = el; e; e = e.parentElement) op *= parseFloat(getComputedStyle(e).opacity);
+        const bg = rgb(getComputedStyle(document.body).backgroundColor), fg = rgb(getComputedStyle(el).color);
+        const mix = fg.slice(0, 3).map((v, i) => v * op * (fg[3] ?? 1) + bg[i] * (1 - op * (fg[3] ?? 1)));
+        const [a, b] = [lum(mix), lum(bg)].sort((x, y) => y - x);
+        worst = Math.min(worst, (a + 0.05) / (b + 0.05));
+    }
+    return worst;
+}"""
 # anything wider than the screen (sideways scrolling); the chip row scrolls sideways on purpose
 WIDE_JS = """() => {
     const w = document.documentElement.clientWidth, out = [];
@@ -195,6 +221,36 @@ def main():
             problems.append(f"{cid}: after saving one place and reloading, Saved shows {page.locator('#cityList .row').count()}")
         print(f"{cid}: open on Sunday {len(want)}, nearest to Alexanderplatz {shown()[:1] and nearest[0]['name']}, saving works")
         ctx.close()
+
+        # accessibility: Larger Text, contrast, tap targets, VoiceOver labels
+        for url, rows in (("#starbucks-uk", "#list .row"), (f"#{cid}", "#cityList .row")):
+            ctx = browser.new_context(color_scheme="light", **IPHONE)
+            page = ctx.new_page()
+            page.goto(base + url)
+            page.wait_for_selector(rows)
+            page.locator(rows).first.locator("summary").click()
+            if url == "#starbucks-uk":
+                page.locator('#status [data-k="straight"]').click()  # the other two buttons are now unselected
+            small = page.evaluate(TAPS_JS)
+            problems += [f"{url}: tap target too small: {s}" for s in small]
+            if url == "#starbucks-uk":
+                ratio = page.evaluate(CONTRAST_JS, '#status button[aria-pressed="false"]')
+                if ratio < 4.5:
+                    problems.append(f"{url}: unselected status buttons have contrast {ratio:.2f}:1, under 4.5:1")
+                label = page.locator("#pickBtn").get_attribute("aria-label") or ""
+                if "Starbucks" not in label:
+                    problems.append(f"{url}: the title button's VoiceOver label {label!r} doesn't say which restaurant")
+                if page.locator(".milk.no").count() and "not" not in page.locator(".milk.no").first.text_content():
+                    problems.append(f"{url}: a crossed-out milk isn't read as 'not' by VoiceOver")
+            before = page.evaluate(f"parseFloat(getComputedStyle(document.querySelector('{rows} .nm')).fontSize)")
+            page.add_style_tag(content="html { font-size: 22px !important; }")  # iPhone Larger Text
+            page.wait_for_timeout(300)
+            after = page.evaluate(f"parseFloat(getComputedStyle(document.querySelector('{rows} .nm')).fontSize)")
+            if after <= before:
+                problems.append(f"{url}: text doesn't grow with Larger Text ({before}px -> {after}px)")
+            problems += [f"{url} with Larger Text: too wide: {w}" for w in page.evaluate(WIDE_JS)]
+            print(f"accessibility {url}: {len(small)} small tap targets, text {before}px -> {after}px with Larger Text")
+            ctx.close()
 
         # first visit: no "what changed" banner (nothing has changed for a new user), and the chooser offers Berlin
         ctx = browser.new_context(color_scheme="light", **IPHONE)
