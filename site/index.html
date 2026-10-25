@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>GF Menus</title>
-<meta name="description" content="Gluten free options at restaurants and coffee shops, from their published allergen guides, and how to order them.">
+<title>Twoo's Treat Temple</title>
+<meta name="description" content="Gluten free food and drinks at restaurants and coffee shops, from their published allergen guides, and how to order them.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="GF Menus">
+<meta name="apple-mobile-web-app-title" content="Treat Temple">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#171412" media="(prefers-color-scheme: dark)">
@@ -15,11 +15,16 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/favicon.png">
 <link rel="stylesheet" href="styles.css">
+<script>
+  // apply the saved theme before first paint to avoid a flash
+  try { var t = localStorage.getItem("gf-theme"); if (t && t !== "auto") document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+</script>
 </head>
 <body>
 <header class="top">
   <div class="titlebar">
     <button type="button" id="pickBtn" class="picker" aria-haspopup="dialog" aria-label="Choose restaurant">
+      <span class="app-name">Twoo's Treat Temple</span>
       <span id="pickName" class="pick-name">GF Menus</span>
       <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span id="guideLine" class="guide">Loading…</span>
@@ -41,6 +46,7 @@
     <input id="q" type="search" placeholder="Search" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Search">
   </label>
   <nav id="chips" class="chips" aria-label="Filter"></nav>
+  <div id="status" class="status" role="group" aria-label="Show items that are"></div>
 </header>
 
 <main>
@@ -76,9 +82,11 @@
 <dialog id="info" aria-labelledby="infoTitle">
   <form method="dialog" class="sheet">
     <div class="sheet-head">
-      <h2 id="infoTitle">About GF Menus</h2>
+      <h2 id="infoTitle">About Twoo's Treat Temple</h2>
       <button class="link-btn" value="close">Done</button>
     </div>
+    <h3>Appearance</h3>
+    <div id="themes" class="themes" role="group" aria-label="Theme"></div>
     <h3>Install on iPhone</h3>
     <ol>
       <li>Open this page in <b>Safari</b>.</li>
@@ -87,9 +95,11 @@
       <li>Keep <b>Open as Web App</b> switched on, then tap <b>Add</b>. If it's off, you get a plain bookmark instead.</li>
     </ol>
     <p>It opens full screen and works without signal using the last menus it downloaded.</p>
+    <h3>Show or hide</h3>
+    <p>The buttons under the search box hide or show items that are <b>Straight up</b> (gluten free as served, or with any milk except the ones named), <b>Needs change</b> (ask for a swap or a change), or contain <b>Gluten</b>.</p>
     <h3>Reading the tags</h3>
     <ul class="legend">
-      <li><span class="tag t-asis">As listed</span> gluten free with no changes</li>
+      <li><span class="tag t-asis">Straight up</span> gluten free with no changes</li>
       <li><span class="tag t-any">Any milk</span> fine with any of the options shown</li>
       <li><span class="tag t-swap">Swap</span> normally comes with an option that has gluten, so ask for another</li>
       <li><span class="tag t-swap">Ask</span> gluten free only with the change shown</li>

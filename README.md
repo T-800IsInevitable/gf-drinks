@@ -1,6 +1,6 @@
-# GF Menus
+# Twoo's Treat Temple
 
-An iPhone home-screen app that lists the gluten free options at restaurants and coffee shops, built from each restaurant's own allergen guide, and shows how to order each one.
+An iPhone home-screen app that lists the gluten free food and drinks at restaurants and coffee shops, built from each restaurant's own allergen guide, and shows how to order each one.
 
 Live at **https://t-800isinevitable.github.io/gf-drinks/**
 
@@ -8,6 +8,8 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 
 - **Pick a restaurant** by tapping its name at the top, or choose **All restaurants** to browse and search everything at once.
 - **Filter** with the chips under the search box: menu sections for one restaurant, or restaurants when viewing all.
+- **Show or hide by status:** the three buttons under the filters toggle **Straight up** (gluten free as served, or with any milk except those named), **Needs change** (ask for a swap or change) and **Gluten** (contains gluten whatever you order).
+- **Themes:** ⓘ → Appearance: Match phone, Light, Dark, Pink light, Pink dark.
 - **Favourites:** open any item and tap **☆ Save**. The **★ Favourites** chip shows them. They're stored on your phone only.
 - **Out-of-date warning:** if a restaurant's guide has passed its end date, a banner says so.
 - **Share** sends a link to the restaurant you're viewing (for example `…/gf-drinks/#starbucks-uk`).
@@ -16,6 +18,8 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 - **Install:** in Safari, tap **•••** (or **Share** on older iPhones), then **Add to Home Screen**, and keep **Open as Web App** switched on (otherwise you get a bookmark). It works without signal using the last menus it downloaded.
 
 ## Updating a restaurant's menu
+
+**Pret:** upload the new GB allergen guide PDF to `restaurants/pret-uk/guides/`. Pret's guides have no end date, so the app asks for a re-check 91 days after the "valid from" date (change `recheckDays` in `restaurant.json`).
 
 **Starbucks:** upload the new Beverage Allergen Guide PDF to `restaurants/starbucks-uk/guides/` (on GitHub: open the folder, then **Add file → Upload files → Commit changes**). The newest version date is used, so old guides can stay. About a minute later the app updates for everyone.
 
