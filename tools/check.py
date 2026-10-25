@@ -4,6 +4,7 @@ Sanity checks on the built data before it is published. Run after build.py.
 Fails (and so blocks publishing) if anything looks wrong.
 """
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -95,6 +96,13 @@ for cid, c in cities.items():
             h = l.get("hours")
             if h is not None and (len(h) != 7 or not all(isinstance(x, str) for x in h)):
                 err(f"{where}: {l.get('address')} hours must be 7 strings, Monday to Sunday ('' = closed)")
+            for day, x in zip("Mon Tue Wed Thu Fri Sat Sun".split(), h or []):
+                # the app reads "HH:MM–HH:MM" (a note may follow); a time it can't read would show the place as closed
+                m = re.match(r"(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})", x)
+                if x and not m:
+                    err(f"{where}: {l.get('address')} {day} hours {x!r} aren't HH:MM–HH:MM")
+                elif m and int(m[3]) * 60 + int(m[4]) <= int(m[1]) * 60 + int(m[2]):
+                    err(f"{where}: {l.get('address')} {day} closes before it opens ({x!r}); past midnight isn't supported")
         for u in [p.get("url"), p.get("listPage")]:
             if u is not None and not str(u).startswith("https://"):
                 err(f"{where}: link {u!r} isn't https")
