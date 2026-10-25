@@ -332,3 +332,9 @@ body { padding-top: var(--top-h, 250px); }
 body.searching .hide-searching { display: none !important; }
 .search-note { background: var(--swap-bg); color: var(--swap); border-radius: 12px; padding: 10px 14px; font-size: 14px; }
 .search-note b { color: inherit; }
+
+/* ---- city places: today's hours ---- */
+.row .nm small .today { color: var(--ok); font-weight: 600; }
+.row .nm small .today.shut { color: var(--muted); font-weight: 400; }
+.place-links { align-items: center; }
+.place-links .fav-btn { margin-left: auto; }

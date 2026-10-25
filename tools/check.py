@@ -87,6 +87,14 @@ for cid, c in cities.items():
             err(f"{where}: status must be confirmed, or unconfirmed with a statusNote")
         if not p.get("locations") or any(not l.get("address") or not l.get("area") for l in p["locations"]):
             err(f"{where}: every location needs an address and area")
+        for l in p.get("locations", []):
+            # coordinates for "Near me": must fall inside the city (catches swapped or mistyped numbers)
+            box = c.get("bounds", {"lat": [52.3, 52.7], "lon": [13.0, 13.8]})
+            if not (box["lat"][0] < l.get("lat", 0) < box["lat"][1] and box["lon"][0] < l.get("lon", 0) < box["lon"][1]):
+                err(f"{where}: {l.get('address')} has no coordinates inside {cid}")
+            h = l.get("hours")
+            if h is not None and (len(h) != 7 or not all(isinstance(x, str) for x in h)):
+                err(f"{where}: {l.get('address')} hours must be 7 strings, Monday to Sunday ('' = closed)")
         for u in [p.get("url"), p.get("listPage")]:
             if u is not None and not str(u).startswith("https://"):
                 err(f"{where}: link {u!r} isn't https")

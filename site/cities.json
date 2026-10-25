@@ -2,6 +2,7 @@
   "berlin": {
     "name": "Berlin",
     "language": "de",
+    "timeZone": "Europe/Berlin",
     "checked": "2026-10-25",
     "recheckDays": 90,
     "list": {
@@ -29,16 +30,49 @@
           {
             "area": "Kreuzberg",
             "address": "Katzbachstraße 25, 10965 Berlin",
-            "note": "The main bakery, by Viktoriapark"
+            "note": "The main bakery, by Viktoriapark",
+            "lat": 52.48608,
+            "lon": 13.37639,
+            "hours": [
+              "09:00–17:00",
+              "09:00–17:00",
+              "09:00–17:00",
+              "09:00–17:00",
+              "09:00–17:00",
+              "09:00–17:00",
+              "09:00–17:00"
+            ]
           },
           {
             "area": "Friedrichshain",
             "address": "Weichselstraße 25, 10247 Berlin",
-            "note": "Oshione Atelier, baked at the main bakery"
+            "note": "Oshione Atelier, baked at the main bakery",
+            "lat": 52.51047,
+            "lon": 13.46834,
+            "hours": [
+              "09:30–14:30",
+              "09:30–14:30",
+              "09:30–14:30",
+              "09:30–14:30",
+              "09:30–18:30",
+              "09:00–16:00",
+              "09:00–16:00"
+            ]
           },
           {
             "area": "Charlottenburg",
-            "address": "Suarezstraße 58, 14057 Berlin"
+            "address": "Suarezstraße 58, 14057 Berlin",
+            "lat": 52.50936,
+            "lon": 13.29682,
+            "hours": [
+              "09:30–14:30",
+              "09:30–14:30",
+              "09:30–14:30",
+              "09:30–14:30",
+              "09:30–18:30",
+              "09:00–16:00",
+              "09:00–16:00"
+            ]
           }
         ],
         "url": "https://oshione.de/",
@@ -61,11 +95,15 @@
         "locations": [
           {
             "area": "Mitte",
-            "address": "Rosenthaler Straße 72, 10119 Berlin"
+            "address": "Rosenthaler Straße 72, 10119 Berlin",
+            "lat": 52.52936,
+            "lon": 13.40192
           },
           {
             "area": "Charlottenburg-Wilmersdorf",
-            "address": "Fasanenstraße 74, 10719 Berlin"
+            "address": "Fasanenstraße 74, 10719 Berlin",
+            "lat": 52.50233,
+            "lon": 13.32791
           }
         ],
         "url": "https://aerabread.com/",
@@ -88,7 +126,18 @@
         "locations": [
           {
             "area": "Mitte",
-            "address": "Holzmarktstraße 67, 10179 Berlin"
+            "address": "Holzmarktstraße 67, 10179 Berlin",
+            "lat": 52.51556,
+            "lon": 13.41979,
+            "hours": [
+              "08:00–17:00",
+              "08:00–17:00",
+              "08:00–17:00",
+              "08:00–17:00",
+              "08:00–17:00",
+              "10:00–17:00",
+              "10:00–17:00"
+            ]
           }
         ],
         "url": "https://purenogluten.de/",
@@ -112,7 +161,9 @@
         "locations": [
           {
             "area": "Prenzlauer Berg",
-            "address": "Schönhauser Allee 52A, 10437 Berlin"
+            "address": "Schönhauser Allee 52A, 10437 Berlin",
+            "lat": 52.543,
+            "lon": 13.41265
           }
         ],
         "url": "https://www.jute-bäckerei.de/",
@@ -129,7 +180,18 @@
         "locations": [
           {
             "area": "Prenzlauer Berg",
-            "address": "Pasteurstraße 2, 10407 Berlin"
+            "address": "Pasteurstraße 2, 10407 Berlin",
+            "lat": 52.53426,
+            "lon": 13.43148,
+            "hours": [
+              "",
+              "09:00–15:00",
+              "09:00–15:00",
+              "09:00–15:00",
+              "",
+              "09:30–17:00",
+              "09:30–17:00"
+            ]
           }
         ],
         "url": "https://www.cafeprana.de/",
@@ -139,7 +201,7 @@
         },
         "listed": "Everything on the menu is gluten free, plant based and sugar free.",
         "notes": [
-          "Small, and closed on some weekdays."
+          "A small café."
         ],
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/cafe-prana",
         "status": "confirmed"
@@ -152,7 +214,9 @@
         "locations": [
           {
             "area": "Prenzlauer Berg",
-            "address": "Wichertstraße 33a, 10439 Berlin"
+            "address": "Wichertstraße 33a, 10439 Berlin",
+            "lat": 52.54695,
+            "lon": 13.4244
           }
         ],
         "url": "https://www.easypeasyberlin.de/",
@@ -171,7 +235,18 @@
         "locations": [
           {
             "area": "Friedenau",
-            "address": "Bundesallee 118, 12161 Berlin"
+            "address": "Bundesallee 118, 12161 Berlin",
+            "lat": 52.46837,
+            "lon": 13.32866,
+            "hours": [
+              "",
+              "",
+              "",
+              "10:00–18:00",
+              "10:00–18:00",
+              "10:00–18:00",
+              "10:00–18:00"
+            ]
           }
         ],
         "url": "https://www.velicious-cafe.de/",
@@ -183,9 +258,6 @@
         "listed": "Everything is gluten free and vegan, made by a trained pastry chef.",
         "caution": "Some items contain oats (its menu marks them \"Ha\"), and it serves oat drinks. Ask for them to be left out.",
         "flag": "Has oats: ask",
-        "notes": [
-          "Open Thursday to Sunday."
-        ],
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/cafe-velicious",
         "status": "confirmed"
       },
@@ -197,7 +269,9 @@
         "locations": [
           {
             "area": "Schöneberg",
-            "address": "Naumannstraße 54, 10829 Berlin"
+            "address": "Naumannstraße 54, 10829 Berlin",
+            "lat": 52.48096,
+            "lon": 13.36325
           }
         ],
         "url": "https://www.instagram.com/prettyhillberlin/",
@@ -215,7 +289,18 @@
         "locations": [
           {
             "area": "Wilmersdorf",
-            "address": "Ludwigkirchstraße 5, 10719 Berlin"
+            "address": "Ludwigkirchstraße 5, 10719 Berlin",
+            "lat": 52.49817,
+            "lon": 13.32492,
+            "hours": [
+              "",
+              "12:00–18:00",
+              "12:00–18:00",
+              "12:00–18:00",
+              "12:00–18:00",
+              "12:00–18:00",
+              "12:00–18:00"
+            ]
           }
         ],
         "url": "https://www.sinlesscakes.com/",
@@ -238,7 +323,19 @@
         "locations": [
           {
             "area": "Prenzlauer Berg",
-            "address": "Kollwitzstraße 90, 10435 Berlin"
+            "address": "Kollwitzstraße 90, 10435 Berlin",
+            "lat": 52.53842,
+            "lon": 13.42069,
+            "hours": [
+              "",
+              "11:00–13:00",
+              "11:00–13:00",
+              "11:00–17:00",
+              "11:00–17:00",
+              "10:00–17:00 (market stall on Kollwitzplatz)",
+              ""
+            ],
+            "hoursNote": "Closed on public holidays."
           }
         ],
         "url": "https://cantuccini.berlin/",
@@ -249,7 +346,7 @@
         },
         "listed": "The whole range is gluten free. No ingredient containing gluten is used anywhere in the business, and its flours are certified gluten free.",
         "notes": [
-          "A small shop that's open only at set times, so check before you go. It also sells online."
+          "A small shop. It also sells online."
         ],
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/berliner-cantuccini",
         "status": "confirmed"
@@ -263,7 +360,18 @@
           {
             "area": "Friedrichshain",
             "address": "Sonntagstraße 25, 10245 Berlin",
-            "note": "Near Ostkreuz station"
+            "note": "Near Ostkreuz station",
+            "lat": 52.50647,
+            "lon": 13.46515,
+            "hours": [
+              "",
+              "",
+              "",
+              "18:00–22:00",
+              "18:00–22:00",
+              "18:00–22:00",
+              ""
+            ]
           }
         ],
         "url": "https://www.soulkitchenhouse.berlin/",
@@ -272,9 +380,6 @@
           "lang": "en"
         },
         "listed": "All dishes are vegan and gluten free. Asked by the support groups, it said the whole kitchen uses only gluten free products.",
-        "notes": [
-          "Evenings, Thursday to Saturday only."
-        ],
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/soul-kitchen-house",
         "status": "confirmed"
       },
@@ -286,7 +391,19 @@
         "locations": [
           {
             "area": "Mitte",
-            "address": "Hannoversche Straße 1, 10115 Berlin"
+            "address": "Hannoversche Straße 1, 10115 Berlin",
+            "lat": 52.52716,
+            "lon": 13.38597,
+            "hours": [
+              "",
+              "17:00–22:00",
+              "17:00–22:00",
+              "17:00–22:00",
+              "12:30–22:30",
+              "12:30–22:30",
+              "12:30–22:00"
+            ],
+            "hoursNote": "The kitchen closes at 21:00. Its website gives slightly different times in one place."
           }
         ],
         "url": "https://www.trattoriasenza.de/",
@@ -297,7 +414,7 @@
         },
         "listed": "An Italian restaurant that's entirely gluten free and lactose free: pasta, lasagne, tiramisu.",
         "notes": [
-          "Closed on Mondays. Card payment only."
+          "Card payment only."
         ],
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/trattoria-senza",
         "status": "confirmed"
@@ -310,7 +427,19 @@
         "locations": [
           {
             "area": "Friedrichshain",
-            "address": "Samariterstraße 34A, 10247 Berlin"
+            "address": "Samariterstraße 34A, 10247 Berlin",
+            "lat": 52.51632,
+            "lon": 13.46488,
+            "hours": [
+              "",
+              "",
+              "18:00–23:00",
+              "18:00–23:00",
+              "18:00–23:00",
+              "12:00–23:00",
+              "12:00–21:00"
+            ],
+            "hoursNote": "Its website lists no hours for Monday or Tuesday."
           }
         ],
         "url": "https://tapiocaria.de/",
@@ -318,7 +447,7 @@
         "caution": "Only the support groups' list says it's all gluten free. Its own website doesn't mention gluten, so confirm when you order.",
         "flag": "Its site doesn't mention gluten",
         "notes": [
-          "Wednesday to Sunday. Book through its website."
+          "Book through its website."
         ],
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/tapiocaria",
         "status": "confirmed"
@@ -331,7 +460,18 @@
         "locations": [
           {
             "area": "Friedrichshain",
-            "address": "Boxhagener Straße 30, 10245 Berlin"
+            "address": "Boxhagener Straße 30, 10245 Berlin",
+            "lat": 52.51241,
+            "lon": 13.459,
+            "hours": [
+              "16:00–23:00",
+              "16:00–23:00",
+              "16:00–23:00",
+              "16:00–23:00",
+              "16:00–23:00",
+              "16:00–23:00",
+              "14:00–23:00"
+            ]
           }
         ],
         "url": "https://www.zeuspizzeria.de/",

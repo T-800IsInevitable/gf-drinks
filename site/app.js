@@ -23,7 +23,9 @@
   const firstVisit = !store.get(DATA_KEY); // a new user has nothing to compare, so no "what changed" banners
   let region = store.get(REGION_KEY) || UK;
   let cities = {};               // { <id>: { name, language, checked, list, tips, sections, places } }
-  let cityFilter = "all";        // "all" | section name
+  let cityFilter = "all";        // "all" | "open" | "fav" | section name
+  let nearSort = false;          // city places sorted by distance from here
+  let here = null;               // { lat, lon } from the phone, once asked
   const city = () => cities[region];
   const PICK_KEY = "gf-pick";
   const THEME_KEY = "gf-theme";
@@ -537,9 +539,9 @@
     $("pickName").textContent = c.name;
     $("guideLine").textContent = c.places.length + " places · checked " + fmtDate(c.checked);
     $("q").placeholder = "Search " + c.name;
-    const chips = [["all", "All"]].concat(c.sections.filter((s) => c.places.some((p) => p.section === s)).map((s) => [s, s]));
+    const chips = [["all", "All"], ["open", "Open today"], ["fav", "★ Saved"]].concat(c.sections.filter((s) => c.places.some((p) => p.section === s)).map((s) => [s, s]));
     if (!chips.some(([v]) => v === cityFilter)) cityFilter = "all";
-    $("chips").innerHTML = chips.map(([v, l]) =>
+    $("chips").innerHTML = '<button type="button" data-near aria-pressed="' + nearSort + '">Near me</button>' + chips.map(([v, l]) =>
       '<button type="button" data-f="' + esc(v) + '" aria-pressed="' + (v === cityFilter) + '">' + esc(l) + "</button>").join("");
     const n = (claim) => c.places.filter((p) => p.claim === claim).length;
     $("cityIntro").innerHTML = "<b>Each place's tag says who calls it gluten free.</b> " +
@@ -562,8 +564,36 @@
   }
   // Who says it's gluten free: the place itself, only the support groups' list, or the place for part of its range
   const CLAIM_TAGS = { "place-all": "Says all gluten free", "list-all": "Listed as all gluten free", separate: "Separate kitchen" };
+  // Opening hours come from each place's website: hours[0..6] = Monday..Sunday, "" = closed, no hours = not known.
+  // "Today" is the city's day (cities.json timeZone), wherever the phone is.
+  const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const cityDay = (c) => DAYS.indexOf(new Intl.DateTimeFormat("en-GB", { timeZone: c.timeZone || "Europe/Berlin", weekday: "short" }).format(new Date()));
+  const openOn = (p, d) => p.locations.some((l) => l.hours && l.hours[d]);
+  function todayLine(c, p) {
+    const d = cityDay(c);
+    if (!p.locations.some((l) => l.hours)) return "";
+    const times = [...new Set(p.locations.filter((l) => l.hours && l.hours[d]).map((l) => l.hours[d]))];
+    return !times.length ? "Closed today" : times.length === 1 ? "Today " + times[0] : "Open today, times vary by branch";
+  }
+  function weekText(hours) {
+    const out = [];
+    for (let i = 0; i < 7;) {
+      let j = i;
+      while (j < 6 && hours[j + 1] === hours[i]) j++;
+      out.push((i === j ? DAYS[i] : DAYS[i] + "–" + DAYS[j]) + " " + (hours[i] || "closed"));
+      i = j + 1;
+    }
+    return out.join(", ");
+  }
+  // distance in km, near enough for "nearest first" within a city
+  const kmTo = (l, at) => Math.hypot((l.lat - at.lat) * 111.2, (l.lon - at.lon) * 111.2 * Math.cos(at.lat * Math.PI / 180));
+  const placeKm = (p) => Math.min(...p.locations.map((l) => kmTo(l, here)));
+  const placeFav = (p) => "city:" + region + "|" + p.name;
   function placeHtml(c, p) {
     const subs = [esc(p.type), esc([...new Set(p.locations.map((l) => l.area))].join(", "))];
+    if (nearSort && here) subs.unshift(placeKm(p).toFixed(1) + " km");
+    const today = todayLine(c, p);
+    if (today) subs.push('<span class="today' + (today === "Closed today" ? " shut" : "") + '">' + esc(today) + "</span>");
     if (p.caution) subs.push('<span class="chg">' + esc(p.flag) + "</span>");
     if (p.status !== "confirmed") subs.push('<span class="chg bad">Opening not confirmed</span>');
     const out = [];
@@ -576,31 +606,56 @@
     if (p.status !== "confirmed") out.push('<div class="chg-note bad"><b>Not confirmed open.</b> ' + esc(p.statusNote || "") + "</div>");
     (p.notes || []).forEach((n) => out.push("<div>" + esc(n) + "</div>"));
     out.push('<ul class="locs">' + p.locations.map((l) => '<li><a href="' + esc(mapLink(p, l)) + '" target="_blank" rel="noopener">' + esc(l.address) + "</a>" +
-      "<span>" + esc([l.area, l.note].filter(Boolean).join(" · ")) + "</span></li>").join("") + "</ul>");
+      "<span>" + esc([l.area, l.note].filter(Boolean).join(" · ")) + "</span>" +
+      "<span>" + (l.hours ? "<b>Hours:</b> " + esc(weekText(l.hours)) + (l.hoursNote ? ". " + esc(l.hoursNote) : "") + " (from its website, " + esc(fmtDate(c.checked)) + ")"
+        : "<b>Hours not known.</b> Check its website before going.") + "</span></li>").join("") + "</ul>");
     out.push('<div class="place-links"><a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + (/instagram\.com/.test(p.url) ? "Instagram" : "Website") + "</a>" +
-      (p.listPage ? '<a href="' + esc(p.listPage) + '" target="_blank" rel="noopener">Support groups\' entry</a>' : "") + "</div>");
+      (p.listPage ? '<a href="' + esc(p.listPage) + '" target="_blank" rel="noopener">Support groups\' entry</a>' : "") +
+      '<button type="button" class="fav-btn" data-fav="' + esc(placeFav(p)) + '" aria-pressed="' + favs.has(placeFav(p)) + '">' + (favs.has(placeFav(p)) ? "★ Saved" : "☆ Save") + "</button></div>");
     // green only when the place itself says everything is gluten free and the app has nothing to add
     const cls = p.claim === "place-all" && !p.caution ? "t-asis" : "t-swap";
     const label = p.claimLabel || CLAIM_TAGS[p.claim];
-    return '<details class="row"><summary><span class="nm">' + esc(p.name) + "<small>" + subs.join(" · ") + '</small></span><span class="tag ' + cls + '">' +
+    const star = favs.has(placeFav(p)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
+    return '<details class="row"><summary><span class="nm">' + star + esc(p.name) + "<small>" + subs.join(" · ") + '</small></span><span class="tag ' + cls + '">' +
       label + "</span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
   }
-  const placeText = (p) => ({ name: [p.name, p.type, p.listed, p.caution, (p.notes || []).join(" "), p.says && p.says.text, p.says && p.says.en,
-    p.locations.map((l) => [l.area, l.address, l.note].join(" ")).join(" ")].filter(Boolean).join(" ") });
+  // search what a place is and where it is, not street names or notes ("Sonntag" shouldn't find Sonntagstraße)
+  const placeText = (p) => ({ name: [p.name, p.type, p.listed, p.says && p.says.text, p.says && p.says.en,
+    p.locations.map((l) => l.area).join(" ")].filter(Boolean).join(" ") });
   function renderCityList() {
     const c = city();
     if (!c) return;
     const ts = terms($("q").value.trim());
-    const places = c.places.filter((p) => (cityFilter === "all" || p.section === cityFilter) && matches(placeText(p), ts));
+    const d = cityDay(c);
+    const places = c.places.filter((p) => matches(placeText(p), ts) && (cityFilter === "all" || (cityFilter === "open" ? openOn(p, d)
+      : cityFilter === "fav" ? favs.has(placeFav(p)) : p.section === cityFilter)));
     let html = "";
-    for (const s of c.sections) {
+    if (nearSort && here && places.length) {
+      const near = places.slice().sort((a, b) => placeKm(a) - placeKm(b));
+      html = '<h2 class="group-h">Nearest first<small>' + near.length + "</small></h2>" + '<div class="card">' + near.map((p) => placeHtml(c, p)).join("") + "</div>";
+    } else for (const s of c.sections) {
       const inSec = places.filter((p) => p.section === s);
       if (!inSec.length) continue;
       html += '<h2 class="group-h">' + esc(s) + "<small>" + inSec.length + "</small></h2>" + '<div class="card">' + inSec.map((p) => placeHtml(c, p)).join("") + "</div>";
     }
-    $("cityList").innerHTML = html || '<p class="empty">No places match "' + esc($("q").value.trim()) + '".</p>';
+    const unknown = c.places.filter((p) => !p.locations.some((l) => l.hours)).length;
+    const empty = cityFilter === "fav" ? "No saved places yet. Open a place and tap ☆ Save."
+      : cityFilter === "open" ? "None of the places with known hours are open today."
+      : 'No places match "' + esc($("q").value.trim()) + '".';
+    $("cityList").innerHTML = (html || '<p class="empty">' + empty + "</p>") +
+      (cityFilter === "open" && unknown ? '<p class="muted">' + unknown + " places with unknown hours aren't shown.</p>" : "");
   }
   $("cityCard").addEventListener("click", () => { const c = city(); if (c) openCard(c.language); });
+  function toggleNear() {
+    if (nearSort) { nearSort = false; renderCity(); return; }
+    if (!navigator.geolocation) { toast("This phone can't share its location here"); return; }
+    navigator.geolocation.getCurrentPosition((pos) => {
+      here = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+      nearSort = true;
+      renderCity();
+      window.scrollTo({ top: 0 });
+    }, () => toast("Couldn't get your location. Check Location Services for Safari in Settings."), { timeout: 10000, maximumAge: 300000 });
+  }
 
   // ---------- warnings page ----------
   function warningsFor(r) {
@@ -902,7 +957,13 @@
     const b = e.target.closest("button");
     if (!b) return;
     const f = b.dataset.f;
-    if (region !== UK) { cityFilter = f; renderCity(); window.scrollTo({ top: 0 }); return; }
+    if (region !== UK) {
+      if (b.hasAttribute("data-near")) { toggleNear(); return; }
+      cityFilter = f;
+      renderCity();
+      window.scrollTo({ top: 0 });
+      return;
+    }
     if (!data) return;
     if (f.startsWith("r:")) { select(f.slice(2)); return; }
     filter = f;
@@ -912,6 +973,7 @@
     window.scrollTo({ top: 0 });
   });
   $("list").addEventListener("click", onFav);
+  $("cityList").addEventListener("click", onFav);
   function onFav(e) {
     const b = e.target.closest(".fav-btn");
     if (!b) return;

@@ -19,6 +19,7 @@ Usage:
 import argparse
 import functools
 import json
+import math
 import sys
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -156,6 +157,43 @@ def main():
         if not page.locator("#cityView").is_hidden():
             problems.append(f"switching back to UK left {cid} showing")
         print(f"switch: UK -> {cid} (search, card, reload) -> UK")
+        ctx.close()
+
+        # Berlin on a Sunday evening at Alexanderplatz: open today, nearest first, saving a place
+        alex = {"latitude": 52.5219, "longitude": 13.4132}
+        ctx = browser.new_context(color_scheme="light", geolocation=alex, permissions=["geolocation"], **IPHONE)
+        page = ctx.new_page()
+        page.clock.set_fixed_time("2026-11-01T19:00:00+01:00")  # Sunday 1 November, 19:00 in Berlin
+        page.goto(base + f"#{cid}")
+        page.wait_for_selector("#cityList .row")
+        shown = lambda: [n.split("\n")[0].strip().lstrip("★").strip() for n in page.locator("#cityList .row .nm").all_inner_texts()]
+        page.locator('#chips [data-f="open"]').click()
+        want = sorted(pl["name"] for pl in cities[cid]["places"] if any((l.get("hours") or [""] * 7)[6] for l in pl["locations"]))
+        if sorted(shown()) != want:
+            problems.append(f"{cid} open today (Sunday): shows {sorted(shown())}, expected {want}")
+        page.locator('#chips [data-f="all"]').click()
+        page.locator("#chips [data-near]").click()
+        page.wait_for_timeout(500)
+        dist = lambda l: math.hypot((l["lat"] - alex["latitude"]) * 111.2, (l["lon"] - alex["longitude"]) * 111.2 * math.cos(math.radians(52.5)))
+        nearest = sorted(cities[cid]["places"], key=lambda pl: min(dist(l) for l in pl["locations"]))
+        if shown()[:3] != [pl["name"] for pl in nearest[:3]]:
+            problems.append(f"{cid} near me: starts {shown()[:3]}, expected {[pl['name'] for pl in nearest[:3]]}")
+        page.locator("#chips [data-near]").click()
+        page.locator("#q").fill("Sonntag")  # a street name isn't a day: Sonntagstraße shouldn't match
+        if "Soul Kitchen House" in shown():
+            problems.append(f"{cid}: searching 'Sonntag' finds Soul Kitchen House by its street name")
+        page.locator("#q").fill("")
+        first = page.locator("#cityList .row").first
+        first.locator("summary").click()
+        first.locator(".fav-btn").click()
+        page.reload()
+        page.wait_for_selector("#cityList .row")
+        page.evaluate("window.scrollTo(0, 0)")  # the reload keeps the scroll position, with the header folded away
+        page.wait_for_selector(".top:not(.collapsed)")
+        page.locator('#chips [data-f="fav"]').click()
+        if page.locator("#cityList .row").count() != 1:
+            problems.append(f"{cid}: after saving one place and reloading, Saved shows {page.locator('#cityList .row').count()}")
+        print(f"{cid}: open on Sunday {len(want)}, nearest to Alexanderplatz {shown()[:1] and nearest[0]['name']}, saving works")
         ctx.close()
 
         # first visit: no "what changed" banner (nothing has changed for a new user), and the chooser offers Berlin
