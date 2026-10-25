@@ -8,6 +8,7 @@
       { "text": "Welche Gerichte sind glutenfrei?", "en": "Which dishes are gluten free?" },
       { "text": "Haben Sie eine Allergenliste?", "en": "Do you have an allergen list?" },
       { "text": "Bitte keine Hafermilch.", "en": "No oat milk, please." },
+      { "text": "Ist da Hafer oder Weizenstärke drin?", "en": "Does this contain oats or wheat starch?" },
       { "text": "Vielen Dank für Ihre Hilfe!", "en": "Thank you for your help!" }
     ],
     "words": [
@@ -20,6 +21,7 @@
       ["Mehl", "flour"],
       ["Paniermehl / paniert", "breadcrumbs / breaded"],
       ["Malz", "malt"],
+      ["Weizenstärke", "wheat starch"],
       ["kann Spuren enthalten", "may contain traces"],
       ["Fritteuse", "deep fryer"]
     ]

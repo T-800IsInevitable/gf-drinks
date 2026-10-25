@@ -309,3 +309,17 @@ body { padding-top: var(--top-h, 250px); }
 .sheet .staff-order { font-size: 25px; line-height: 1.25; font-weight: 700; color: var(--fg); background: var(--ok-bg); border-radius: 12px; padding: 12px 14px; }
 .sheet .staff-coeliac { font-size: 20px; line-height: 1.3; color: var(--fg); }
 @media (max-width: 380px) { .foot-btns { flex-direction: column; align-items: flex-end; } }
+
+/* ---- UK / city switch and city places ---- */
+.region { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; background: var(--chip); border-radius: 10px; padding: 3px; }
+.region button { border: 0; background: transparent; border-radius: 8px; padding: 6px 8px; min-height: 36px; font-size: 14.5px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.region button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line), 0 1px 3px rgba(0, 0, 0, 0.12); }
+.view { display: flex; flex-direction: column; gap: 18px; }
+.view .stale { margin-bottom: 4px; }
+.locs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.locs li { display: flex; flex-direction: column; }
+.locs a, .place-links a { color: var(--accent); font-weight: 600; overflow-wrap: anywhere; }
+.locs span { font-size: 13px; }
+.place-links { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.place-links a { display: inline-flex; align-items: center; min-height: 36px; }
+.detail .w-quote { margin: 0; }

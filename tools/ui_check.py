@@ -7,8 +7,10 @@ For every restaurant page and the "All restaurants" page it checks:
   * no JavaScript errors or console errors
   * nothing wider than the screen (no sideways scrolling)
   * the list shows items
-and on one restaurant it taps through: opening an item, the Show staff card,
-a status button and saving a favourite.
+the same for each city page in cities.json (every place shown and opened), then
+it switches UK -> city (search, coeliac card, reload) -> UK, and on one
+restaurant it taps through: opening an item, the Show staff card, a status
+button and saving a favourite.
 
 Usage:
   pip install -r tools/requirements-dev.txt && python -m playwright install chromium
@@ -26,6 +28,17 @@ from playwright.sync_api import sync_playwright
 
 SITE = Path(__file__).resolve().parent.parent / "site"
 IPHONE = {"viewport": {"width": 393, "height": 852}, "device_scale_factor": 3, "is_mobile": True, "has_touch": True}
+# anything wider than the screen (sideways scrolling); the chip row scrolls sideways on purpose
+WIDE_JS = """() => {
+    const w = document.documentElement.clientWidth, out = [];
+    if (document.documentElement.scrollWidth > w + 1) out.push('page ' + document.documentElement.scrollWidth + 'px wide');
+    for (const el of document.querySelectorAll('main *, .top *')) {
+        const r = el.getBoundingClientRect();
+        if (r.width && r.right > w + 1 && !el.closest('.chips') && getComputedStyle(el).visibility !== 'hidden')
+            out.push(el.tagName.toLowerCase() + '.' + el.className + ' ends at ' + Math.round(r.right) + 'px');
+    }
+    return out.slice(0, 5);
+}"""
 
 
 class Quiet(SimpleHTTPRequestHandler):
@@ -66,16 +79,7 @@ def main():
                 page.wait_for_selector("#list .row, #list .empty", timeout=15000)
                 page.wait_for_timeout(300)
                 rows = page.locator("#list .row").count()
-                wide = page.evaluate("""() => {
-                    const w = document.documentElement.clientWidth, out = [];
-                    if (document.documentElement.scrollWidth > w + 1) out.push('page ' + document.documentElement.scrollWidth + 'px wide');
-                    for (const el of document.querySelectorAll('main *, .top *')) {
-                        const r = el.getBoundingClientRect();
-                        if (r.width && r.right > w + 1 && !el.closest('.chips') && getComputedStyle(el).visibility !== 'hidden')
-                            out.push(el.tagName.toLowerCase() + '.' + el.className + ' ends at ' + Math.round(r.right) + 'px');
-                    }
-                    return out.slice(0, 5);
-                }""")
+                wide = page.evaluate(WIDE_JS)
                 problems += [f"{where}: {e}" for e in errors]
                 problems += [f"{where}: too wide: {w}" for w in wide]
                 if not rows:
@@ -84,6 +88,56 @@ def main():
                     page.screenshot(path=str(args.shots / f"{rid or 'all'}-{scheme}.png"))
                 print(f"{where}: {rows} rows, {len(errors)} errors, {len(wide)} too wide")
                 ctx.close()
+
+        # the Berlin page, in light and dark, then switching to it and back
+        cities = json.loads((SITE / "cities.json").read_text(encoding="utf-8"))
+        for scheme in ("light", "dark"):
+            for cid, c in cities.items():
+                where = f"{cid} ({scheme})"
+                ctx = browser.new_context(color_scheme=scheme, **IPHONE)
+                page = ctx.new_page()
+                errors = []
+                page.on("pageerror", lambda e, errors=errors: errors.append(f"page error: {e}"))
+                page.on("console", lambda m, errors=errors: errors.append(f"console {m.type}: {m.text}") if m.type in ("error", "warning") else None)
+                page.goto(base + f"#{cid}")
+                page.wait_for_selector("#cityList .row", timeout=15000)
+                for d in page.locator("#cityList details").all():  # open every place so its details are checked too
+                    d.evaluate("el => el.open = true")
+                page.wait_for_timeout(200)
+                rows = page.locator("#cityList .row").count()
+                wide = page.evaluate(WIDE_JS)
+                problems += [f"{where}: {e}" for e in errors]
+                problems += [f"{where}: too wide: {w}" for w in wide]
+                if rows != len(c["places"]):
+                    problems.append(f"{where}: {rows} places shown, expected {len(c['places'])}")
+                if not page.locator("#ukView").is_hidden():
+                    problems.append(f"{where}: the UK menus are showing too")
+                if args.shots:
+                    page.screenshot(path=str(args.shots / f"{cid}-{scheme}.png"), full_page=True)
+                print(f"{where}: {rows} places, {len(errors)} errors, {len(wide)} too wide")
+                ctx.close()
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+        page = ctx.new_page()
+        page.goto(base)
+        page.wait_for_selector("#list .row")
+        cid = next(iter(cities))
+        page.locator(f'#region [data-region="{cid}"]').click()
+        page.wait_for_selector("#cityList .row")
+        page.locator("#q").fill(cities[cid]["places"][0]["name"])
+        if page.locator("#cityList .row").count() < 1:
+            problems.append(f"{cid}: searching for the first place found nothing")
+        page.locator("#cityCard").click()
+        page.wait_for_selector("#gfcard[open]")
+        page.locator("#gfcard .link-btn").click()
+        page.reload()
+        page.wait_for_selector("#cityList .row")  # the choice is remembered
+        page.locator('#region [data-region="uk"]').click()
+        page.wait_for_selector("#list .row")
+        if not page.locator("#cityView").is_hidden():
+            problems.append(f"switching back to UK left {cid} showing")
+        print(f"switch: UK -> {cid} (search, card, reload) -> UK")
+        ctx.close()
 
         # tap through one restaurant
         ctx = browser.new_context(color_scheme="light", **IPHONE)

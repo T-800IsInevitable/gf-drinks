@@ -1,8 +1,8 @@
 // Offline support. Always tries the network first so the newest menu wins;
 // falls back to the last saved copy when there's no signal (or it's slow).
-const CACHE = "gf-menus-v8";
+const CACHE = "gf-menus-v9";
 const SHELL = ["./", "index.html", "styles.css", "app.js", "manifest.webmanifest",
-  "data/restaurants.json", "phrases.json", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/favicon.png"];
+  "data/restaurants.json", "phrases.json", "cities.json", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/favicon.png"];
 const TIMEOUT_MS = 4000;
 
 self.addEventListener("install", (e) => {
