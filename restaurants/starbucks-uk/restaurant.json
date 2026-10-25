@@ -2,6 +2,8 @@
   "name": "Starbucks",
   "type": "Coffee shop",
   "covers": "Drinks, syrups and toppings (UK)",
+  "area": "UK",
+  "language": "en",
   "reader": "starbucks_uk_pdf",
   "optionLabel": "milk",
   "officialUrl": "https://www.starbucks.co.uk",

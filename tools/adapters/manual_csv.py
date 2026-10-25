@@ -19,6 +19,8 @@ Use this when a restaurant's allergen guide can't be read automatically
   contains  For avoid rows: what it contains, separated by ";" (e.g. "wheat")
   note      For modify rows: the change to ask for (e.g. "No croutons")
   page      Where in the source document this came from (optional)
+  original  The item name in the menu's own language, if not English (optional)
+  section_original  The section name in the menu's own language (optional)
 
 Guide details (title, version date, end date, source) go in restaurant.json
 under "guide".
@@ -48,6 +50,12 @@ def build(folder, config):
                 raise SystemExit(f"ERROR: {path.name} line {n} ({name}): order must be one of {sorted(ORDERS)}")
             item = {"name": name, "section": row.get("section") or "Menu", "sub": None,
                     "pages": [row["page"]] if row.get("page") else []}
+            if row.get("original") and row["original"] != name:
+                item["original"] = row["original"]
+            if row.get("section_original") and row["section_original"] != item["section"]:
+                item["sectionOriginal"] = row["section_original"]
+            if row.get("note") and order != "modify":
+                item["info"] = row["note"]
             if order == "avoid":
                 item["gluten"] = [g.upper() for g in _split(row.get("contains"))] or ["GLUTEN"]
                 avoid.append(item)

@@ -1,5 +1,5 @@
-section,name,order,ok,not,standard,contains,note,page
-Example section,Example item served as listed,asis,,,,,,1
-Example section,Example item with a choice of bun,swap,gluten free bun,brioche bun,brioche bun,,,1
-Example section,Example salad,modify,,,,,No croutons,2
-Example section,Example item that contains gluten,avoid,,,,wheat,,2
+section,name,order,ok,not,standard,contains,note,page,original,section_original
+Example section,Example item served as listed,asis,,,,,,1,,
+Example section,Example item with a choice of bun,swap,gluten free bun,brioche bun,brioche bun,,,1,,
+Example section,Example salad,modify,,,,,No croutons,2,,
+Example section,Example item that contains gluten,avoid,,,,wheat,,2,,

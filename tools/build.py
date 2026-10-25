@@ -56,6 +56,9 @@ def build_one(folder):
         "optionLabel": config.get("optionLabel", "option"),
         "officialUrl": config.get("officialUrl", ""),
         "tips": config.get("tips", []),
+        "area": config.get("area", ""),
+        "language": config.get("language", "en"),
+        "reviewed": config.get("reviewed"),
     }
     print(f"  {data['stats']['rows']} rows -> {data['stats']['items']} gluten free, {data['stats']['avoid']} to avoid")
     for w in data.get("warnings", []):

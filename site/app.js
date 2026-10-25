@@ -63,6 +63,11 @@
 
   function detailFor(r, i) {
     const out = [];
+    if (i.original) {
+      out.push('<div>On the menu as <b lang="' + esc(r.language || "") + '">' + esc(i.original) + "</b>" +
+        (i.sectionOriginal ? ' under <span lang="' + esc(r.language || "") + '">' + esc(i.sectionOriginal) + "</span>" : "") + "</div>");
+    }
+    if (i.info) out.push("<div>" + esc(i.info) + "</div>");
     if (i.order === "asis") out.push("<div>Gluten free as listed. No changes needed.</div>");
     if (i.order === "modify") out.push("<div><b>Ask for:</b> " + esc(i.note) + "</div>");
     if (i.order === "swap") {
@@ -85,12 +90,17 @@
   function rowHtml(r, i, showRestaurant) {
     const [cls, label] = tagFor(r, i);
     const star = favs.has(favKey(r, i)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
-    const sub = i.order === "modify" ? '<small>' + esc(i.note) + "</small>" : (showRestaurant ? "<small>" + esc(r.name) + "</small>" : "");
+    const subs = [];
+    if (i.order === "modify") subs.push(esc(i.note));
+    if (i.original) subs.push('<span lang="' + esc(r.language || "") + '">' + esc(i.original) + "</span>");
+    if (showRestaurant) subs.push(esc(r.name));
+    const sub = subs.length ? "<small>" + subs.join(" · ") + "</small>" : "";
     return '<details class="row"><summary><span class="nm">' + star + esc(i.name) + sub + '</span><span class="tag ' + cls + '">' +
       esc(label) + "</span>" + chev + '</summary><div class="detail">' + detailFor(r, i) + "</div></details>";
   }
 
-  const matches = (i, q) => !q || (i.name + " " + (i.sub || "") + " " + (i.note || "")).toLowerCase().includes(q);
+  const matches = (i, q) => !q || [i.name, i.sub, i.note, i.original, i.info].filter(Boolean).join(" ").toLowerCase().includes(q);
+  const areas = () => [...new Set(data.restaurants.map((r) => r.area).filter(Boolean))];
   const scope = () => (selected === ALL ? data.restaurants : [byId(selected)].filter(Boolean));
 
   // ---------- rendering ----------
@@ -111,6 +121,8 @@
   function renderChips() {
     const chips = [["all", "All"], ["fav", "★ Favourites"]];
     if (selected === ALL) {
+      const as = areas();
+      if (as.length > 1) as.forEach((a) => chips.push(["a:" + a, a]));
       if (data.restaurants.length > 1) data.restaurants.forEach((r) => chips.push(["r:" + r.id, r.name]));
     } else {
       const r = byId(selected);
@@ -127,6 +139,7 @@
     $("stale").innerHTML = stale.map((r) =>
       "<p><b>" + esc(r.name) + " guide may be out of date.</b> It covered up to " + esc(fmtDate(r.guide.validUntil)) +
       ". Check in store before ordering" + (r.officialUrl ? ', or see <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">their allergen info</a>' : "") + ".</p>").join("");
+    renderCardLaunch();
     const r = byId(selected);
     $("tips").hidden = !(r && r.tips && r.tips.length);
     $("tips").innerHTML = r && r.tips ? r.tips.map((t) => {
@@ -140,6 +153,7 @@
     const multi = selected === ALL;
     let rs = scope();
     if (filter.startsWith("r:")) rs = rs.filter((r) => r.id === filter.slice(2));
+    if (filter.startsWith("a:")) rs = rs.filter((r) => r.area === filter.slice(2));
     let html = "";
     let shown = 0;
     for (const r of rs) {
@@ -176,7 +190,8 @@
         if (!av.length) continue;
         if (multi) avoidHtml += '<div class="sub-h">' + esc(r.name) + "</div>";
         avoidHtml += '<div class="card">' + av.map((a) =>
-          '<details class="row"><summary><span class="nm">' + esc(a.name) + '</span><span class="tag t-bad">' +
+          '<details class="row"><summary><span class="nm">' + esc(a.name) +
+          (a.original ? '<small lang="' + esc(r.language || "") + '">' + esc(a.original) + "</small>" : "") + '</span><span class="tag t-bad">' +
           esc(a.gluten.map(cap).join(" & ")) + "</span>" + chev + '</summary><div class="detail"><div>Every version contains ' +
           esc(a.gluten.join(" and ").toLowerCase()) + ".</div><div>" + esc(pageText(a.pages)) + "</div></div></details>").join("") + "</div>";
       }
@@ -206,8 +221,13 @@
       '<button type="button" class="pick-opt" data-r="' + esc(id) + '" aria-pressed="' + (selected === id) + '"><span class="po-main"><b>' +
       esc(name) + "</b><span>" + esc(line) + "</span></span>" + (stale ? '<span class="tag t-swap">Out of date</span>' : '<span class="po-meta">' + esc(meta) + "</span>") + "</button>";
     const total = data.restaurants.reduce((n, r) => n + r.stats.items, 0);
-    $("pickList").innerHTML = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false) +
-      data.restaurants.map((r) => opt(r.id, r.name, [r.type, guideLine(r)].filter(Boolean).join(" · "), r.stats.items + " items", isStale(r))).join("") +
+    const as = areas();
+    const grouped = as.length > 1
+      ? as.map((a) => '<div class="sub-h">' + esc(a) + "</div>" + data.restaurants.filter((r) => r.area === a)
+          .map((r) => opt(r.id, r.name, [r.type, guideLine(r)].filter(Boolean).join(" · "), r.stats.items + " items", isStale(r))).join("")).join("") +
+        data.restaurants.filter((r) => !r.area).map((r) => opt(r.id, r.name, r.type, r.stats.items + " items", isStale(r))).join("")
+      : data.restaurants.map((r) => opt(r.id, r.name, [r.type, r.area, guideLine(r)].filter(Boolean).join(" · "), r.stats.items + " items", isStale(r))).join("");
+    $("pickList").innerHTML = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false) + grouped +
       '<p class="pick-note">More restaurants can be added by the app\'s owner from each restaurant\'s allergen guide.</p>';
   }
 
@@ -229,6 +249,138 @@
     render();
     window.scrollTo({ top: 0 });
   }
+
+  // ---------- gluten free card (phrases for staff) ----------
+  let phrases = {};
+  async function loadPhrases() {
+    try {
+      const res = await fetch("phrases.json", { cache: "no-store" });
+      if (res.ok) phrases = await res.json();
+    } catch (e) { /* offline and never cached: no card */ }
+    $("cardLangs").textContent = Object.values(phrases).map((p) => p.language).join(", ") || "none yet";
+    if (data) renderCardLaunch();
+  }
+  function renderCardLaunch() {
+    const r = byId(selected);
+    let langs = Object.keys(phrases);
+    if (r) langs = langs.filter((l) => l === r.language);
+    const el = $("cardLaunch");
+    el.hidden = !langs.length;
+    el.innerHTML = langs.map((l) => '<button type="button" class="pill-btn" data-lang="' + esc(l) + '">Show ' + esc(phrases[l].language) +
+      " gluten free card</button>").join("");
+  }
+  function openCard(lang) {
+    const p = phrases[lang];
+    if (!p) return;
+    $("cardTitle").textContent = p.language + " gluten free card";
+    $("cardBody").innerHTML = '<div class="phrase-list" lang="' + esc(lang) + '">' + p.card.map((c) =>
+      '<div class="phrase"><p class="ph-text">' + esc(c.text) + '</p><p class="ph-en" lang="en-GB">' + esc(c.en) + "</p></div>").join("") + "</div>" +
+      "<h3>Words to look for</h3><dl class=\"words\">" + p.words.map(([w, en]) =>
+        '<div><dt lang="' + esc(lang) + '">' + esc(w) + "</dt><dd>" + esc(en) + "</dd></div>").join("") + "</dl>" +
+      '<p class="muted">Turn the screen towards staff. Phrases written by Claude and not yet checked by a native speaker.</p>';
+    openDialog($("gfcard"));
+  }
+  $("cardLaunch").addEventListener("click", (e) => { const b = e.target.closest("[data-lang]"); if (b) openCard(b.dataset.lang); });
+
+  // ---------- add a menu (owner only, uploads to inbox/ on GitHub) ----------
+  const KEY_KEY = "gf-github-key";
+  const repo = (() => {
+    const m = location.hostname.match(/^([^.]+)\.github\.io$/);
+    const seg = location.pathname.split("/").filter(Boolean)[0];
+    return m && seg ? { owner: m[1], name: seg } : { owner: "T-800IsInevitable", name: "gf-drinks" };
+  })();
+  const api = (path, opts = {}) => fetch("https://api.github.com/repos/" + repo.owner + "/" + repo.name + path, {
+    ...opts,
+    headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + store.get(KEY_KEY), "X-GitHub-Api-Version": "2022-11-28", ...(opts.headers || {}) },
+  });
+  function showUploadState() {
+    const has = !!store.get(KEY_KEY);
+    $("keySetup").hidden = has;
+    $("uploadFields").hidden = !has;
+    $("repoName").textContent = repo.name;
+  }
+  $("openUpload").addEventListener("click", () => { $("info").close(); showUploadState(); $("upStatus").textContent = ""; openDialog($("upload")); });
+  $("uploadClose").addEventListener("click", () => $("upload").close());
+  $("upload").addEventListener("click", (e) => { if (e.target === $("upload")) $("upload").close(); });
+  $("keySave").addEventListener("click", async () => {
+    const k = $("keyInput").value.trim();
+    if (!k) { toast("Paste your GitHub key first"); return; }
+    store.set(KEY_KEY, k);
+    try {
+      const res = await api("");
+      const info = res.ok ? await res.json() : null;
+      if (!info || !(info.permissions && info.permissions.push)) throw new Error(res.status);
+      $("keyInput").value = "";
+      toast("Key saved");
+      showUploadState();
+    } catch (e) {
+      localStorage.removeItem(KEY_KEY);
+      toast("That key can't upload to " + repo.name + ". Check it has Contents: Read and write.");
+    }
+  });
+  $("keyForget").addEventListener("click", () => { try { localStorage.removeItem(KEY_KEY); } catch (e) {} showUploadState(); toast("Key removed from this phone"); });
+
+  const slug = (s) => s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "menu";
+  const toB64 = (blob) => new Promise((ok, bad) => {
+    const fr = new FileReader();
+    fr.onload = () => ok(String(fr.result).split(",")[1]);
+    fr.onerror = () => bad(fr.error);
+    fr.readAsDataURL(blob);
+  });
+  // Photos (including iPhone HEIC) are re-saved as JPEG, max 2400px, so they're readable and small.
+  async function toJpeg(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = url; });
+      const scale = Math.min(1, 2400 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * scale);
+      c.height = Math.round(img.naturalHeight * scale);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      return await new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.88));
+    } finally { URL.revokeObjectURL(url); }
+  }
+  async function putFile(path, b64, message) {
+    const res = await api("/contents/" + path.split("/").map(encodeURIComponent).join("/"), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, content: b64 }),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || "HTTP " + res.status);
+  }
+  $("uploadForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = $("upName").value.trim();
+    const area = $("upArea").value.trim();
+    const files = [...$("upFiles").files];
+    const status = $("upStatus");
+    if (!name || !area || !files.length) { status.textContent = "Add the restaurant, the city or country, and at least one file."; return; }
+    const btn = $("upSend");
+    btn.disabled = true;
+    const now = new Date();
+    const stamp = now.toISOString().slice(0, 16).replace(/:/g, "");
+    const folder = "inbox/" + stamp + "-" + slug(name) + "-" + slug(area);
+    try {
+      let n = 0;
+      for (const f of files) {
+        n++;
+        status.textContent = "Uploading " + n + " of " + files.length + "…";
+        const isPdf = f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+        const blob = isPdf ? f : await toJpeg(f);
+        const fname = isPdf ? (files.length > 1 ? "menu-" + n + ".pdf" : "menu.pdf") : "page-" + n + ".jpg";
+        await putFile(folder + "/" + fname, await toB64(blob), "Upload " + name + " menu (" + fname + ")");
+      }
+      const meta = { restaurant: name, area, notes: $("upNotes").value.trim(), files: files.length, uploadedAt: now.toISOString(), uploadedFrom: "GF Menus app" };
+      await putFile(folder + "/upload.json", btoa(unescape(encodeURIComponent(JSON.stringify(meta, null, 2)))), "Upload " + name + " menu details");
+      status.textContent = "Uploaded. It'll be scanned within a day and sent to GitHub for you to approve.";
+      $("uploadForm").reset();
+      toast("Menu uploaded");
+    } catch (err) {
+      status.textContent = "Upload failed: " + err.message + ". Nothing was lost; try again with signal.";
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   // ---------- toast ----------
   let toastTimer;
@@ -323,7 +475,7 @@
     select(b.dataset.r);
   });
   $("infoBtn").addEventListener("click", () => openDialog($("info")));
-  ["picker", "info"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
+  ["picker", "info", "gfcard"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
   $("refreshBtn").addEventListener("click", () => load(true));
   $("shareBtn").addEventListener("click", async () => {
     const r = byId(selected);
@@ -353,6 +505,7 @@
   if (saved) {
     try { data = JSON.parse(saved); render(); } catch (e) { data = null; }
   }
+  loadPhrases();
   load(false).then(() => {
     // first visit with one restaurant: open it directly
     if (data && !hashId && !store.get(SEL_KEY) && data.restaurants.length === 1) select(data.restaurants[0].id);
