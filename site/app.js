@@ -206,7 +206,8 @@
     $("stale").hidden = !stale.length;
     $("stale").innerHTML = stale.map((r) =>
       "<p><b>" + esc(r.name) + " guide may be out of date.</b> It covered up to " + esc(fmtDate(r.guide.validUntil)) +
-      ". Check in store before ordering" + (r.officialUrl ? ', or see <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">their allergen info</a>' : "") + ".</p>").join("");
+      ". Check in store before ordering" + (r.officialUrl ? ', or see <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">their allergen info</a>' : "") + "." +
+      (r.latestGuide ? " " + esc(r.latestGuide.note) + " (checked " + esc(fmtDate(r.latestGuide.checked)) + ")" : "") + "</p>").join("");
     renderFavAlerts();
     renderNews();
     renderCertNote();
@@ -544,7 +545,7 @@
     $("pickBtn").setAttribute("aria-label", c.name + ". Choose where to eat");
     $("guideLine").textContent = c.places.length + " places · checked " + fmtDate(c.checked) + offlineTag();
     $("q").placeholder = "Search " + c.name;
-    const chips = [["all", "All"], ["open", "Open today"], ["fav", "★ Saved"]].concat(c.sections.filter((s) => c.places.some((p) => p.section === s)).map((s) => [s, s]));
+    const chips = [["all", "All"], ["open", "Still open today"], ["fav", "★ Saved"]].concat(c.sections.filter((s) => c.places.some((p) => p.section === s)).map((s) => [s, s]));
     if (!chips.some(([v]) => v === cityFilter)) cityFilter = "all";
     $("chips").innerHTML = '<button type="button" data-near aria-pressed="' + nearSort + '">Near me</button>' + chips.map(([v, l]) =>
       '<button type="button" data-f="' + esc(v) + '" aria-pressed="' + (v === cityFilter) + '">' + esc(l) + "</button>").join("");
@@ -572,13 +573,26 @@
   // Opening hours come from each place's website: hours[0..6] = Monday..Sunday, "" = closed, no hours = not known.
   // "Today" is the city's day (cities.json timeZone), wherever the phone is.
   const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const cityDay = (c) => DAYS.indexOf(new Intl.DateTimeFormat("en-GB", { timeZone: c.timeZone || "Europe/Berlin", weekday: "short" }).format(new Date()));
-  const openOn = (p, d) => p.locations.some((l) => l.hours && l.hours[d]);
+  function cityNow(c) {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: c.timeZone || "Europe/Berlin", weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+      .formatToParts(new Date()).map((x) => [x.type, x.value]));
+    return { day: DAYS.indexOf(parts.weekday), min: +parts.hour * 60 + +parts.minute };
+  }
+  const cityDay = (c) => cityNow(c).day;
+  // "09:30–14:30" (perhaps with a note after it) -> [570, 870]; "" -> null
+  const span = (h) => { const m = (h || "").match(/(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/); return m ? [m[1] * 60 + +m[2], m[3] * 60 + +m[4]] : null; };
+  const hhmm = (n) => String(Math.floor(n / 60)).padStart(2, "0") + ":" + String(n % 60).padStart(2, "0");
+  // still open today: open now, or opening later today
+  const stillOpen = (c, p) => { const { day, min } = cityNow(c); return p.locations.some((l) => { const s = l.hours && span(l.hours[day]); return s && s[1] > min; }); };
   function todayLine(c, p) {
-    const d = cityDay(c);
     if (!p.locations.some((l) => l.hours)) return "";
-    const times = [...new Set(p.locations.filter((l) => l.hours && l.hours[d]).map((l) => l.hours[d]))];
-    return !times.length ? "Closed today" : times.length === 1 ? "Today " + times[0] : "Open today, times vary by branch";
+    const { day, min } = cityNow(c);
+    const spans = p.locations.map((l) => l.hours && span(l.hours[day])).filter(Boolean);
+    const now = spans.filter(([a, b]) => a <= min && min < b);
+    if (now.length) return "Open now, until " + hhmm(Math.max(...now.map((s) => s[1])));
+    const later = spans.filter(([a]) => a > min);
+    if (later.length) return "Opens at " + hhmm(Math.min(...later.map((s) => s[0])));
+    return spans.length ? "Closed now" : "Closed today";
   }
   function weekText(hours) {
     const out = [];
@@ -598,7 +612,7 @@
     const subs = [esc(p.type), esc([...new Set(p.locations.map((l) => l.area))].join(", "))];
     if (nearSort && here) subs.unshift(placeKm(p).toFixed(1) + " km");
     const today = todayLine(c, p);
-    if (today) subs.push('<span class="today' + (today === "Closed today" ? " shut" : "") + '">' + esc(today) + "</span>");
+    if (today) subs.push('<span class="today' + (/^Closed/.test(today) ? " shut" : "") + '">' + esc(today) + "</span>");
     if (p.caution) subs.push('<span class="chg">' + esc(p.flag) + "</span>");
     if (p.status !== "confirmed") subs.push('<span class="chg bad">Opening not confirmed</span>');
     const out = [];
@@ -631,8 +645,7 @@
     const c = city();
     if (!c) return;
     const ts = terms($("q").value.trim());
-    const d = cityDay(c);
-    const places = c.places.filter((p) => matches(placeText(p), ts) && (cityFilter === "all" || (cityFilter === "open" ? openOn(p, d)
+    const places = c.places.filter((p) => matches(placeText(p), ts) && (cityFilter === "all" || (cityFilter === "open" ? stillOpen(c, p)
       : cityFilter === "fav" ? favs.has(placeFav(p)) : p.section === cityFilter)));
     let html = "";
     if (nearSort && here && places.length) {
@@ -645,7 +658,7 @@
     }
     const unknown = c.places.filter((p) => !p.locations.some((l) => l.hours)).length;
     const empty = cityFilter === "fav" ? "No saved places yet. Open a place and tap ☆ Save."
-      : cityFilter === "open" ? "None of the places with known hours are open today."
+      : cityFilter === "open" ? "None of the places with known hours are open for the rest of today."
       : 'No places match "' + esc($("q").value.trim()) + '".';
     $("cityList").innerHTML = (html || '<p class="empty">' + empty + "</p>") +
       (cityFilter === "open" && unknown ? '<p class="muted">' + unknown + " places with unknown hours aren't shown.</p>" : "");
@@ -833,6 +846,24 @@
     } catch (e) {
       localStorage.removeItem(KEY_KEY);
       toast("That key can't upload to " + repo.name + ". Check it has Contents: Read and write.");
+    }
+  });
+  // Anyone without the key sends the menu to the owner through the iPhone share sheet (Messages, WhatsApp, Mail…)
+  $("shareSend").addEventListener("click", async () => {
+    const files = [...$("shareFiles").files];
+    const status = $("shareStatus");
+    if (!files.length) { status.textContent = "Pick at least one photo or PDF of the allergen menu first."; return; }
+    const name = $("shareName").value.trim();
+    const msg = { files, title: "Allergen menu", text: "Allergen menu" + (name ? " for " + name : "") + ", for Twoo's Treat Temple" };
+    if (!(navigator.canShare && navigator.canShare({ files }))) {
+      status.textContent = "This phone can't send files from here. Send the photos by message instead.";
+      return;
+    }
+    try {
+      await navigator.share(msg);
+      status.textContent = "Sent. Thank you!";
+    } catch (e) {
+      if (e.name !== "AbortError") status.textContent = "Couldn't send: " + e.message + ". Send the photos by message instead.";
     }
   });
   $("keyForget").addEventListener("click", () => { try { localStorage.removeItem(KEY_KEY); } catch (e) {} showUploadState(); toast("Key removed from this phone"); });

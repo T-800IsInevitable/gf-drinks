@@ -135,11 +135,11 @@
     <p>Each restaurant's own allergen warnings, word for word, plus what its guide doesn't tell you.</p>
     <p><button type="button" id="openWarnings2" class="pill-btn">Read the warnings</button></p>
     <h3>Berlin</h3>
-    <p>Tap <b>Berlin</b> at the top for places in Berlin that say everything they serve is gluten free, or that make gluten free food in a separate kitchen. Open a place for its own words, its address with a map link, and anything to ask about, such as oats. Tap <b>UK</b> to go back to the menus.</p>
+    <p>Tap <b>Berlin</b> at the top for places in Berlin that say everything they serve is gluten free, or that make gluten free food in a separate kitchen. Each row says whether it's open now (Berlin time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Still open today</b>, <b>Near me</b> and <b>★ Saved</b> narrow the list. Tap <b>UK</b> to go back to the menus.</p>
     <h3>Travelling</h3>
     <p>Menus in other languages show each item in English with the original name underneath, so you can point to it when ordering. A coeliac card you can show staff is available in: <span id="cardLangs"></span>.</p>
     <h3>Add a menu</h3>
-    <p id="uploadInfo">Upload a restaurant's allergen menu (PDF or photos). It's checked within a day and added once approved.</p>
+    <p id="uploadInfo">Send a restaurant's allergen menu (PDF or photos) to whoever shared this app, so they can add it. The app's owner can upload it straight to the app, where it's checked within a day and added once approved.</p>
     <p><button type="button" id="openUpload" class="pill-btn">Add a menu</button></p>
     <h3>Menus in this app</h3>
     <div id="infoSources"></div>
@@ -197,9 +197,16 @@
       <button type="button" class="link-btn" id="uploadClose">Close</button>
     </div>
     <div id="keySetup" hidden>
-      <p>Uploading needs a one-time GitHub key for this app's project. It's saved on this phone only.</p>
+      <p>Take photos of the restaurant's allergen menu (or save its PDF), then send them to whoever shared this app with you. They'll add it.</p>
+      <label class="field">Photos or PDF<input id="shareFiles" type="file" accept="application/pdf,image/*" multiple></label>
+      <label class="field">Restaurant and city<input id="shareName" placeholder="e.g. Café Name, Berlin" autocomplete="off"></label>
+      <p><button type="button" id="shareSend" class="pill-btn">Send…</button></p>
+      <p id="shareStatus" class="muted" role="status"></p>
+      <details class="owner">
+      <summary>I'm the app's owner</summary>
+      <p>Uploading straight to the app needs a one-time GitHub key for this app's project. It's saved on this phone only.</p>
       <ol>
-        <li>In Safari, open <b>github.com/settings/personal-access-tokens/new</b>.</li>
+        <li>In Safari, open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
         <li>Name it <b>GF Menus upload</b> and pick an expiry.</li>
         <li>Under <b>Repository access</b>, choose <b>Only select repositories</b> and pick <b id="repoName">gf-drinks</b>.</li>
         <li>Under <b>Permissions → Repository permissions</b>, set <b>Contents</b> to <b>Read and write</b>.</li>
@@ -207,7 +214,7 @@
       </ol>
       <label class="field">GitHub key<input id="keyInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></label>
       <p><button type="button" id="keySave" class="pill-btn">Save key</button></p>
-      <p class="muted">Not the owner? Send menus to whoever shared this app with you.</p>
+      </details>
     </div>
     <div id="uploadFields" hidden>
       <label class="field">Restaurant<input id="upName" required placeholder="e.g. Café Name" autocomplete="off"></label>

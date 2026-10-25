@@ -7,6 +7,7 @@
   "reader": "manual_csv",
   "optionLabel": "milk",
   "officialUrl": "https://knoops.com/pages/our-menu",
+  "latestGuide": { "checked": "2026-10-25", "note": "Knoops' help centre still links this March 2024 guide as its latest." },
   "guide": {
     "title": "Allergen guide",
     "source": "Knoops allergen guide, March 2024 (Knoops_allergen_guide_March_2024.pdf, linked from Knoops' menu page)",
@@ -22,8 +23,7 @@
   ],
   "tips": [
     "Pick any chocolate except 38% Oat M*ilk: the guide marks it as made with gluten free oats.",
-    "Milk: whole, semi-skimmed, skimmed, lacto-free, (barista) soya or organic hazelnut. Not oat, or the barista almond or coconut milks, which the guide marks as containing oats.",
-    "Old guide: this is the newest guide Knoops publishes, but it's from March 2024. Check in store."
+    "Milk: whole, semi-skimmed, skimmed, lacto-free, (barista) soya or organic hazelnut. Not oat, or the barista almond or coconut milks, which the guide marks as containing oats."
   ],
   "gaps": [
     "Knoops doesn't call anything gluten free, apart from 'Gluten Free Ice Cream Cones', which its own guide marks as may contain traces of gluten.",

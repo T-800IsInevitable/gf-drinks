@@ -20,7 +20,7 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 - **Search** hides the tips and notes while you type, so results sit just under the box. Searching for a milk that's ruled out ("oat milk latte") explains why and lists the drinks that are fine with another milk.
 - **Menus in other languages** show each item in English with the original name underneath, so you can point to it when ordering. Searching works in either language.
 - **Coeliac card:** a set of phrases to show staff (currently German), with a list of words to look for on menus. Works offline.
-- **Berlin:** tap **Berlin** under the title to switch from the UK menus to places in Berlin that are all gluten free, by their own word or the Berlin coeliac support groups' (plus one pizzeria with a separate gluten free kitchen). Each place's tag says who makes the claim, and its row shows any warning, such as oats. Each place shows its own words with an English translation, the Berlin coeliac support groups' description, the app's notes (for example where oats are used), its addresses with a map link, and its opening hours. Rows show today's hours (Berlin time). **Open today** shows only places open today, **Near me** sorts by distance from your phone, and **☆ Save** keeps places under **★ Saved**. Tap **UK** to go back. Links work too: `…/gf-drinks/#berlin`.
+- **Berlin:** tap **Berlin** under the title to switch from the UK menus to places in Berlin that are all gluten free, by their own word or the Berlin coeliac support groups' (plus one pizzeria with a separate gluten free kitchen). Each place's tag says who makes the claim, and its row shows any warning, such as oats. Each place shows its own words with an English translation, the Berlin coeliac support groups' description, the app's notes (for example where oats are used), its addresses with a map link, and its opening hours. Rows say whether each place is open now, opens later or is closed (Berlin time). **Still open today** shows places open now or opening later today, **Near me** sorts by distance from your phone, and **☆ Save** keeps places under **★ Saved**. Tap **UK** to go back. Links work too: `…/gf-drinks/#berlin`.
 - **Install:** in Safari, tap **•••** (or **Share** on older iPhones), then **Add to Home Screen**, and keep **Open as Web App** switched on (otherwise you get a bookmark). It works without signal using the last menus it downloaded.
 
 ## Updating a restaurant's menu
@@ -35,7 +35,7 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 
 **Blank Street:** upload the new UK allergen guide PDF (linked from blankstreet.com) to `restaurants/blank-street-uk/guides/`. The guide has no date in it, so keep the season in the file name (for example `...Autumn26.pdf`); the PDF's creation date is used as the version.
 
-**Restaurants kept by hand (Knoops):** edit that restaurant's `menu.csv` and update the dates in its `restaurant.json`. Knoops' newest guide is from March 2024, so the app shows it as possibly out of date until a newer one appears.
+**Restaurants kept by hand (Knoops):** edit that restaurant's `menu.csv` and update the dates in its `restaurant.json`. When you look for a newer guide and there isn't one, record it in `latestGuide` (`checked` date and a `note`); the out-of-date banner shows it. Knoops' newest guide is from March 2024, so the app shows it as possibly out of date until a newer one appears.
 
 **Berlin:** the list is kept by hand in `site/cities.json`, from the [Berlin glutenfrei](https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants) list (run by the Berlin contacts of the German Coeliac Society) checked against each place's own website. Only places that say everything is gluten free, or that make gluten free food in a separate kitchen, are included. Set `claim` to who says it's gluten free: `place-all` (its own words), `list-all` (only the list says so), `place-part` (with a `claimLabel` such as "Says its cakes are gluten free") or `separate` (a separate gluten free kitchen). Quote each place's words exactly and add an English translation. Mark a place `"status": "unconfirmed"` with a `statusNote` if its opening can't be confirmed, and put anything to watch for (such as oats) in `caution`, with a short `flag` for the row (such as "Has oats: ask"). Each location needs `lat` and `lon` (for Near me; OpenStreetMap's Nominatim gives them from the address) and, where the place's website gives them, `hours`: seven strings from Monday to Sunday, `""` for closed, plus an optional `hoursNote`. Leave `hours` out when they aren't known. Update `checked` after each review. The app warns once `recheckDays` (90) have passed.
 
@@ -43,7 +43,9 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 
 ## Adding a menu from the app
 
-1. Open **ⓘ → Add a menu**.
+Anyone can open **ⓘ → Add a menu**, pick photos or a PDF of a restaurant's allergen menu and tap **Send…** to send them to the app's owner through the iPhone share sheet (Messages, WhatsApp, Mail). The owner can upload them straight to the app:
+
+1. Open **ⓘ → Add a menu → I'm the app's owner**.
 2. The first time, paste a GitHub key (the app shows how to create one; it only needs **Contents: Read and write** on this repository). It's stored on that phone only.
 3. Enter the restaurant and city, choose the PDF or photos, and tap **Upload**. Files go into `inbox/`.
 4. Every day a scheduled Claude task follows `tools/SCAN_INSTRUCTIONS.md`: it reads each upload in any language, works out the gluten free options conservatively, translates them, and opens a **pull request**.

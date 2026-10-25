@@ -100,6 +100,7 @@ def build_one(folder):
         "language": config.get("language", "en"),
         "reviewed": config.get("reviewed"),
         "gaps": config.get("gaps", []),
+        "latestGuide": config.get("latestGuide"),  # when we last looked for a newer guide, and what we found
     }
     print(f"  {data['stats']['rows']} rows -> {data['stats']['items']} with no gluten ingredients, {data['stats']['avoid']} to avoid")
     for w in data.get("warnings", []):

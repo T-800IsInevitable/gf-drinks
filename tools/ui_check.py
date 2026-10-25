@@ -23,6 +23,7 @@ import argparse
 import functools
 import json
 import math
+import re
 import sys
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -196,10 +197,20 @@ def main():
         page.goto(base + f"#{cid}")
         page.wait_for_selector("#cityList .row")
         shown = lambda: [n.split("\n")[0].strip().lstrip("★").strip() for n in page.locator("#cityList .row .nm").all_inner_texts()]
+        # at 19:00 on Sunday, "still open today" means open now or opening later, not already shut for the day
+        closes = lambda h: int(re.findall(r"(\d{1,2}):(\d{2})", h)[-1][0]) * 60 + int(re.findall(r"(\d{1,2}):(\d{2})", h)[-1][1]) if h else 0
+        sunday = lambda pl: [(l.get("hours") or [""] * 7)[6] for l in pl["locations"]]
+        for pl in cities[cid]["places"]:
+            row = page.locator("#cityList .row", has=page.locator(".nm", has_text=pl["name"])).first.inner_text()
+            hrs = [h for h in sunday(pl) if h]
+            if hrs and max(closes(h) for h in hrs) > 19 * 60 and "Open now" not in row:
+                problems.append(f"{cid} Sunday 19:00: {pl['name']} ({hrs}) doesn't say Open now")
+            if hrs and max(closes(h) for h in hrs) <= 19 * 60 and "Closed now" not in row:
+                problems.append(f"{cid} Sunday 19:00: {pl['name']} ({hrs}) doesn't say Closed now")
         page.locator('#chips [data-f="open"]').click()
-        want = sorted(pl["name"] for pl in cities[cid]["places"] if any((l.get("hours") or [""] * 7)[6] for l in pl["locations"]))
+        want = sorted(pl["name"] for pl in cities[cid]["places"] if any(closes(h) > 19 * 60 for h in sunday(pl)))
         if sorted(shown()) != want:
-            problems.append(f"{cid} open today (Sunday): shows {sorted(shown())}, expected {want}")
+            problems.append(f"{cid} still open today (Sunday 19:00): shows {sorted(shown())}, expected {want}")
         page.locator('#chips [data-f="all"]').click()
         page.locator("#chips [data-near]").click()
         page.wait_for_timeout(500)
@@ -223,6 +234,31 @@ def main():
         if page.locator("#cityList .row").count() != 1:
             problems.append(f"{cid}: after saving one place and reloading, Saved shows {page.locator('#cityList .row').count()}")
         print(f"{cid}: open on Sunday {len(want)}, nearest to Alexanderplatz {shown()[:1] and nearest[0]['name']}, saving works")
+        ctx.close()
+
+        # Add a menu without a key: a way for anyone to send photos, and a real link for the owner's key
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        page.goto(base + "#starbucks-uk")
+        page.wait_for_selector("#list .row")
+        tips = page.locator("#tips > div")
+        if tips.count() != tips.locator("b").count():
+            problems.append(f"starbucks-uk: {tips.count() - tips.locator('b').count()} tips have no bold lead-in")
+        page.goto(base + "#knoops-uk")
+        page.wait_for_selector("#list .row")
+        if "latest" not in page.locator("#stale").inner_text():
+            problems.append("knoops-uk: the out-of-date banner doesn't say whether a newer guide exists")
+        page.locator("#infoBtn").click()
+        page.locator("#openUpload").click()
+        page.wait_for_selector("#upload[open]")
+        if not page.locator("#shareSend").is_visible():
+            problems.append("Add a menu: no way to send a menu without the owner's key")
+        page.locator("#shareSend").click()
+        if "Pick" not in page.locator("#shareStatus").inner_text():
+            problems.append("Add a menu: sending with no files gives no guidance")
+        if not page.locator('#upload a[href="https://github.com/settings/personal-access-tokens/new"]').count():
+            problems.append("Add a menu: the GitHub key address isn't a link")
+        print("add a menu: send without a key, key link; tips bold; Knoops banner")
         ctx.close()
 
         # staff card wording, the German card, and saying when it's offline
