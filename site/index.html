@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GF Drinks</title>
+<meta name="description" content="Gluten free drinks from the current Starbucks UK allergen guide, and how to order them.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GF Drinks">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#171412" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="titlebar">
+    <div class="titles">
+      <h1>GF Drinks</h1>
+      <p id="guideLine" class="guide">Loading menu…</p>
+    </div>
+    <div class="actions">
+      <button type="button" id="refreshBtn" class="icon-btn" aria-label="Check for a new menu">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button type="button" id="shareBtn" class="icon-btn" aria-label="Share this app">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button type="button" id="infoBtn" class="icon-btn" aria-label="About and help">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v6M12 7.5v.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+  <label class="search">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <input id="q" type="search" placeholder="Search drinks" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Search drinks">
+  </label>
+  <nav id="chips" class="chips" aria-label="Categories"></nav>
+</header>
+
+<main>
+  <div id="installTip" class="tip" hidden>
+    <p><b>Install on your iPhone:</b> tap <span class="share-glyph" aria-label="Share">Share</span> in Safari, then <b>Add to Home Screen</b>.</p>
+    <button type="button" id="installClose" class="link-btn">Dismiss</button>
+  </div>
+
+  <section class="rules" aria-label="How to order">
+    <div><b>Never oat drink.</b> The guide lists oats as a gluten cereal.</div>
+    <div><b>Any other milk is fine:</b> skimmed, semi-skimmed, whole, almond, soya or coconut.</div>
+    <div><span class="tag t-swap">Swap</span> means the drink normally comes with oat drink, so ask for another milk.</div>
+  </section>
+
+  <div id="list" class="list" aria-live="polite"></div>
+
+  <section id="avoidWrap" class="avoid">
+    <h2>Not gluten free with any milk</h2>
+    <div id="avoid" class="list"></div>
+  </section>
+
+  <footer class="foot">
+    <p><b>Shared equipment:</b> the guide says drinks are made where allergens are handled, so no drink is guaranteed free from gluten. If you're coeliac, tell the barista.</p>
+    <p id="sourceLine"></p>
+    <p>Unofficial guide made from Starbucks UK's published allergen guide. Not affiliated with Starbucks.</p>
+  </footer>
+</main>
+
+<dialog id="info" aria-labelledby="infoTitle">
+  <form method="dialog" class="sheet">
+    <div class="sheet-head">
+      <h2 id="infoTitle">About GF Drinks</h2>
+      <button class="link-btn" value="close">Done</button>
+    </div>
+    <h3>Install on iPhone</h3>
+    <ol>
+      <li>Open this page in <b>Safari</b>.</li>
+      <li>Tap the <b>Share</b> button.</li>
+      <li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+    </ol>
+    <p>It then opens full screen like an app and works without signal using the last menu it downloaded.</p>
+    <h3>Staying up to date</h3>
+    <p>Each time you open the app with signal it checks for a new menu. Tap <b>↻</b> to check now.</p>
+    <h3>What counts as gluten free</h3>
+    <p id="ruleLine"></p>
+    <h3>This menu</h3>
+    <p id="infoSource"></p>
+    <div id="notesWrap" hidden>
+      <h3>Notes from the last update</h3>
+      <ul id="notes" class="notes"></ul>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
