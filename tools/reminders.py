@@ -65,7 +65,8 @@ def issue_body(r, end, days):
            "The publish workflow builds it, and the app shows what changed.")
     config = json.loads((ROOT / folder / "restaurant.json").read_text(encoding="utf-8"))
     if config.get("reader") == "manual_csv":
-        how = f"Check the restaurant's allergen information, then update `{folder}menu.csv` and the dates in `{folder}restaurant.json`."
+        how = (f"Check the restaurant's allergen information, then update `{folder}menu.csv` and the dates in `{folder}restaurant.json`. "
+               f"If there's nothing newer, record the check in `latestGuide` in `{folder}restaurant.json` so the app can say so.")
     return (f"The **{r['name']}** guide in the app ({r.get('source')}) {when}. After that, the app warns that it may be out of date.\n\n"
             f"**To update:** {how}\n\n"
             "If there's no newer guide yet, close this issue. You won't be reminded again until the end date changes.\n\n"
