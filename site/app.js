@@ -20,10 +20,15 @@
   let selected = ALL;            // restaurant id or ALL
   let filter = "all";            // "all" | "fav" | section name | "r:<id>"
   let favs = new Set(JSON.parse(store.get(FAV_KEY) || "[]"));
+  const firstVisit = !store.get(DATA_KEY); // a new user has nothing to compare, so no "what changed" banners
   let region = store.get(REGION_KEY) || UK;
   let cities = {};               // { <id>: { name, language, checked, list, tips, sections, places } }
-  let cityFilter = "all";        // "all" | section name
+  let cityFilter = "all";        // "all" | "open" | "fav" | section name
+  let nearSort = false;          // city places sorted by distance from here
+  let here = null;               // { lat, lon } from the phone, once asked
   const city = () => cities[region];
+  let offlineNow = false;        // showing the copy saved on the phone because there's no signal
+  const offlineTag = () => (offlineNow ? " · Offline: saved copy" : "");
   const PICK_KEY = "gf-pick";
   const THEME_KEY = "gf-theme";
   // Status buttons start unselected (show everything); selecting some narrows the list to those
@@ -124,7 +129,7 @@
     }
     if (i.ok) {
       out.push('<div class="milks">' + i.ok.map((m) => '<span class="milk">' + esc(m) + "</span>").join("") +
-        (i.not || []).map((m) => '<span class="milk no" aria-label="not ' + esc(m) + '">' + esc(m) + "</span>").join("") + "</div>");
+        (i.not || []).map((m) => '<span class="milk no"><span class="vh">not </span>' + esc(m) + "</span>").join("") + "</div>");
     }
     const k = favKey(r, i);
     const on = favs.has(k);
@@ -169,12 +174,14 @@
     const r = byId(selected);
     if (r) {
       $("pickName").textContent = r.name;
-      $("guideLine").textContent = guideLine(r) || r.covers;
+      $("pickBtn").setAttribute("aria-label", r.name + ". Choose where to eat");
+      $("guideLine").textContent = (guideLine(r) || r.covers) + offlineTag();
       $("q").placeholder = "Search " + r.name;
     } else {
       $("pickName").textContent = "All restaurants";
+      $("pickBtn").setAttribute("aria-label", "All restaurants. Choose where to eat");
       const n = data.restaurants.length;
-      $("guideLine").textContent = n + (n === 1 ? " restaurant" : " restaurants") + " · tap to choose";
+      $("guideLine").textContent = n + (n === 1 ? " restaurant" : " restaurants") + (offlineNow ? "" : " · tap to choose") + offlineTag();
       $("q").placeholder = "Search all restaurants";
     }
   }
@@ -296,9 +303,25 @@
     const names = (arr) => listOr(arr.map((r) => r.name)).replace(/ or /, " and ");
     $("certText").innerHTML = "<b>No gluten ingredients isn't the same as certified gluten free.</b> " + (claim.length
       ? esc(names(claim)) + (claim.length === 1 ? " says it's" : " say they're") + " accredited by Coeliac UK: see " +
-        (claim.length === 1 ? "its" : "their") + " own words in the warnings." + (claim.length < rs.length ? " The others don't claim their food is gluten free." : "") +
+        (claim.length === 1 ? "its" : "their") + " own words in the warnings." + (claim.length < rs.length ? " The others don't call the items listed here gluten free." : "") +
         " No restaurant here guarantees against cross-contact."
-      : "These restaurants don't claim their food is gluten free, and don't guarantee against cross-contact.");
+      : "These restaurants don't call the items listed here gluten free, and don't guarantee against cross-contact.");
+  }
+
+  // A search word that names an option ruled out everywhere it appears (e.g. "oat" milk) would find nothing,
+  // so it's taken out of the search and explained instead: "oat milk latte" lists the lattes, with a note.
+  function searchTerms(rs, q) {
+    let ts = terms(q);
+    const words = (arr) => (arr || []).flatMap((o) => terms(o));
+    const out = ts.map((t) => ({ t, rs: rs.filter((r) => r.items.some((i) => words(i.not).includes(t))) }))
+      .filter((o) => o.rs.length && !o.rs.some((r) => r.items.some((i) => words(i.ok).includes(t))));
+    if (!out.length) return { ts, note: "" };
+    const label = out[0].rs[0].optionLabel || "option";
+    ts = ts.filter((t) => !out.some((o) => o.t === t) && !terms(label).includes(t));
+    const note = out.map((o) => "<b>" + esc(cap(o.t) + " " + label) + " isn't an option at " + esc(listOr(o.rs.map((r) => r.name))) + ".</b> " +
+      (o.t === "oat" ? "Oats count as gluten here, because " + (o.rs.length === 1 ? "its guide lists" : "their guides list") + " them as a gluten cereal." : (o.rs.length === 1 ? "Its guide doesn't" : "Their guides don't") + " show it free from gluten.")).join(" ") +
+      (ts.length ? " These have no gluten ingredients with another " + esc(label) + ":" : "");
+    return { ts, note };
   }
 
   function renderList() {
@@ -307,10 +330,13 @@
     let rs = scope();
     if (filter.startsWith("r:")) rs = rs.filter((r) => r.id === filter.slice(2));
     if (filter.startsWith("a:")) rs = rs.filter((r) => r.area === filter.slice(2));
+    const { ts, note } = searchTerms(rs, q);
+    $("searchNote").hidden = !note;
+    $("searchNote").innerHTML = note;
     let html = "";
     let shown = 0;
     for (const r of rs) {
-      let items = r.items.filter((i) => matches(i, q) && visible(kindOf(i)));
+      let items = r.items.filter((i) => matches(i, ts) && visible(kindOf(i)));
       if (filter === "fav") items = items.filter((i) => favs.has(favKey(r, i)));
       else if (!multi && filter !== "all") items = items.filter((i) => i.section === filter);
       if (!items.length) continue;
@@ -332,7 +358,7 @@
       }
     }
     let empty = "No matches with no gluten ingredients";
-    const glutenHits = rs.reduce((n, r) => n + r.avoid.filter((a) => matches(a, q)).length, 0);
+    const glutenHits = rs.reduce((n, r) => n + r.avoid.filter((a) => matches(a, ts)).length, 0);
     if (filter === "fav") empty = favs.size ? "No saved favourites here yet" : "No favourites yet. Open an item and tap ☆ Save.";
     else if (q) empty = 'No items with no gluten ingredients match "' + esc(q) + '".' +
       (glutenHits ? " " + glutenHits + (glutenHits === 1 ? " match is" : " matches are") + " on the Avoid list" + (visible("gluten") ? " below." : ". Tap Avoid above to see " + (glutenHits === 1 ? "it." : "them.")) : "");
@@ -342,7 +368,7 @@
     let avoidHtml = "";
     if (filter !== "fav" && visible("gluten")) {
       for (const r of rs) {
-        const av = r.avoid.filter((a) => matches(a, q) && (multi || filter === "all" || a.section === filter));
+        const av = r.avoid.filter((a) => matches(a, ts) && (multi || filter === "all" || a.section === filter));
         if (!av.length) continue;
         if (multi) avoidHtml += '<div class="sub-h">' + esc(r.name) + "</div>";
         avoidHtml += '<div class="card">' + av.map((a) => {
@@ -370,9 +396,10 @@
     if (filter.startsWith("r:")) rs = rs.filter((r) => r.id === filter.slice(2));
     if (filter.startsWith("a:")) rs = rs.filter((r) => r.area === filter.slice(2));
     const n = { straight: 0, change: 0, gluten: 0 };
+    const { ts } = searchTerms(rs, q);
     for (const r of rs) {
       for (const i of r.items.concat(r.avoid)) {
-        if (!matches(i, q)) continue;
+        if (!matches(i, ts)) continue;
         if (filter === "fav" && !favs.has(favKey(r, i))) continue;
         if (!multi && !["all", "fav"].includes(filter) && i.section !== filter) continue;
         n[kindOf(i)]++;
@@ -441,7 +468,7 @@
 
   function renderPicker() {
     const opt = (id, name, line, meta, stale) =>
-      '<button type="button" class="pick-opt" data-r="' + esc(id) + '" aria-pressed="' + (selected === id) + '"><span class="po-main"><b>' +
+      '<button type="button" class="pick-opt" data-r="' + esc(id) + '" aria-pressed="' + (region === UK && selected === id) + '"><span class="po-main"><b>' +
       esc(name) + "</b><span>" + esc(line) + "</span></span>" + (stale ? '<span class="tag t-swap">Out of date</span>' : '<span class="po-meta">' + esc(meta) + "</span>") + "</button>";
     const total = data.restaurants.reduce((n, r) => n + r.stats.items, 0);
     const as = areas();
@@ -450,11 +477,17 @@
           .map((r) => opt(r.id, r.name, [r.type, guideLine(r)].filter(Boolean).join(" · "), r.stats.items + " items", isStale(r))).join("")).join("") +
         data.restaurants.filter((r) => !r.area).map((r) => opt(r.id, r.name, r.type, r.stats.items + " items", isStale(r))).join("")
       : data.restaurants.map((r) => opt(r.id, r.name, [r.type, r.area, guideLine(r)].filter(Boolean).join(" · "), r.stats.items + " items", isStale(r))).join("");
-    $("pickList").innerHTML = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false) + grouped +
+    // other cities (cities.json) are lists of places rather than menus, so they switch region instead of restaurant
+    const others = Object.entries(cities).map(([cid, c]) => '<div class="sub-h">' + esc(c.name) + "</div>" +
+      '<button type="button" class="pick-opt" data-region="' + esc(cid) + '" aria-pressed="' + (region === cid) + '"><span class="po-main"><b>' +
+      esc(c.name) + "</b><span>Places that are all gluten free, by their own word or the coeliac support groups'</span></span>" +
+      '<span class="po-meta">' + c.places.length + " places</span></button>").join("");
+    $("pickList").innerHTML = '<div class="sub-h">UK</div>' + opt(ALL, "All restaurants", "Search and browse everything", total + " items", false) + grouped + others +
       '<p class="pick-note">More restaurants can be added by the app\'s owner from each restaurant\'s allergen guide.</p>';
   }
 
   function render() {
+    syncSearching();
     renderRegion();
     if (region !== UK) { renderCity(); return; }
     if (!data) return;
@@ -508,17 +541,19 @@
     const c = city();
     if (!c) { $("cityList").innerHTML = '<p class="empty">Loading…</p>'; return; }
     $("pickName").textContent = c.name;
-    $("guideLine").textContent = c.places.length + " places · checked " + fmtDate(c.checked);
+    $("pickBtn").setAttribute("aria-label", c.name + ". Choose where to eat");
+    $("guideLine").textContent = c.places.length + " places · checked " + fmtDate(c.checked) + offlineTag();
     $("q").placeholder = "Search " + c.name;
-    const chips = [["all", "All"]].concat(c.sections.filter((s) => c.places.some((p) => p.section === s)).map((s) => [s, s]));
+    const chips = [["all", "All"], ["open", "Open today"], ["fav", "★ Saved"]].concat(c.sections.filter((s) => c.places.some((p) => p.section === s)).map((s) => [s, s]));
     if (!chips.some(([v]) => v === cityFilter)) cityFilter = "all";
-    $("chips").innerHTML = chips.map(([v, l]) =>
+    $("chips").innerHTML = '<button type="button" data-near aria-pressed="' + nearSort + '">Near me</button>' + chips.map(([v, l]) =>
       '<button type="button" data-f="' + esc(v) + '" aria-pressed="' + (v === cityFilter) + '">' + esc(l) + "</button>").join("");
-    const separate = c.places.filter((p) => p.kind !== "dedicated").map((p) => p.name);
-    $("cityIntro").innerHTML = "<b>These places say everything they serve is gluten free</b>" +
-      (separate.length ? ", apart from " + esc(listOr(separate)) + ", which " + (separate.length === 1 ? "makes" : "make") + " gluten free food in a separate kitchen" : "") +
-      ". That's their claim, not the app's. They come from the list kept by " + esc(c.list.by) + ", checked against each place's own website on " +
-      esc(fmtDate(c.checked)) + ". Nobody from this app has seen their kitchens, so tell staff you have coeliac disease.";
+    const n = (claim) => c.places.filter((p) => p.claim === claim).length;
+    $("cityIntro").innerHTML = "<b>Each place's tag says who calls it gluten free.</b> " +
+      [n("place-all") && n("place-all") + " say so themselves", n("list-all") && n("list-all") + " are listed as all gluten free by the support groups but don't say so on their own websites",
+        n("place-part") && n("place-part") + " says only part of its range is", n("separate") && n("separate") + " makes gluten free food in a separate kitchen"]
+        .filter(Boolean).join("; ") + ". That's their claim, not the app's. They come from the list kept by " + esc(c.list.by) +
+      ", checked against each place's own website on " + esc(fmtDate(c.checked)) + ". Nobody from this app has seen their kitchens, so tell staff you have coeliac disease.";
     $("cityCard").hidden = !phrases[c.language];
     $("cityCard").textContent = phrases[c.language] ? "Show " + phrases[c.language].language + " coeliac card" : "";
     $("cityTips").innerHTML = (cityStale(c) ? '<div class="stale"><p><b>This list may be out of date.</b> It was checked on ' + esc(fmtDate(c.checked)) +
@@ -532,11 +567,40 @@
       "<p>Unofficial guide. Not affiliated with any of these places or the DZG.</p>";
     renderCityList();
   }
+  // Who says it's gluten free: the place itself, only the support groups' list, or the place for part of its range
+  const CLAIM_TAGS = { "place-all": "Says all gluten free", "list-all": "Listed as all gluten free", separate: "Separate kitchen" };
+  // Opening hours come from each place's website: hours[0..6] = Monday..Sunday, "" = closed, no hours = not known.
+  // "Today" is the city's day (cities.json timeZone), wherever the phone is.
+  const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const cityDay = (c) => DAYS.indexOf(new Intl.DateTimeFormat("en-GB", { timeZone: c.timeZone || "Europe/Berlin", weekday: "short" }).format(new Date()));
+  const openOn = (p, d) => p.locations.some((l) => l.hours && l.hours[d]);
+  function todayLine(c, p) {
+    const d = cityDay(c);
+    if (!p.locations.some((l) => l.hours)) return "";
+    const times = [...new Set(p.locations.filter((l) => l.hours && l.hours[d]).map((l) => l.hours[d]))];
+    return !times.length ? "Closed today" : times.length === 1 ? "Today " + times[0] : "Open today, times vary by branch";
+  }
+  function weekText(hours) {
+    const out = [];
+    for (let i = 0; i < 7;) {
+      let j = i;
+      while (j < 6 && hours[j + 1] === hours[i]) j++;
+      out.push((i === j ? DAYS[i] : DAYS[i] + "–" + DAYS[j]) + " " + (hours[i] || "closed"));
+      i = j + 1;
+    }
+    return out.join(", ");
+  }
+  // distance in km, near enough for "nearest first" within a city
+  const kmTo = (l, at) => Math.hypot((l.lat - at.lat) * 111.2, (l.lon - at.lon) * 111.2 * Math.cos(at.lat * Math.PI / 180));
+  const placeKm = (p) => Math.min(...p.locations.map((l) => kmTo(l, here)));
+  const placeFav = (p) => "city:" + region + "|" + p.name;
   function placeHtml(c, p) {
-    const dedicated = p.kind === "dedicated";
     const subs = [esc(p.type), esc([...new Set(p.locations.map((l) => l.area))].join(", "))];
+    if (nearSort && here) subs.unshift(placeKm(p).toFixed(1) + " km");
+    const today = todayLine(c, p);
+    if (today) subs.push('<span class="today' + (today === "Closed today" ? " shut" : "") + '">' + esc(today) + "</span>");
+    if (p.caution) subs.push('<span class="chg">' + esc(p.flag) + "</span>");
     if (p.status !== "confirmed") subs.push('<span class="chg bad">Opening not confirmed</span>');
-    else if (p.caution) subs.push('<span class="chg">Ask first</span>');
     const out = [];
     if (p.says) {
       out.push('<blockquote class="w-quote" lang="' + esc(p.says.lang) + '">' + esc(p.says.text) + "<cite>Its website</cite></blockquote>");
@@ -547,29 +611,56 @@
     if (p.status !== "confirmed") out.push('<div class="chg-note bad"><b>Not confirmed open.</b> ' + esc(p.statusNote || "") + "</div>");
     (p.notes || []).forEach((n) => out.push("<div>" + esc(n) + "</div>"));
     out.push('<ul class="locs">' + p.locations.map((l) => '<li><a href="' + esc(mapLink(p, l)) + '" target="_blank" rel="noopener">' + esc(l.address) + "</a>" +
-      "<span>" + esc([l.area, l.note].filter(Boolean).join(" · ")) + "</span></li>").join("") + "</ul>");
+      "<span>" + esc([l.area, l.note].filter(Boolean).join(" · ")) + "</span>" +
+      "<span>" + (l.hours ? "<b>Hours:</b> " + esc(weekText(l.hours)) + (l.hoursNote ? ". " + esc(l.hoursNote) : "") + " (from its website, " + esc(fmtDate(c.checked)) + ")"
+        : "<b>Hours not known.</b> Check its website before going.") + "</span></li>").join("") + "</ul>");
     out.push('<div class="place-links"><a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + (/instagram\.com/.test(p.url) ? "Instagram" : "Website") + "</a>" +
-      (p.listPage ? '<a href="' + esc(p.listPage) + '" target="_blank" rel="noopener">Support groups\' entry</a>' : "") + "</div>");
-    const [cls, label] = dedicated ? ["t-asis", "Says all gluten free"] : ["t-swap", "Separate kitchen"];
-    return '<details class="row"><summary><span class="nm">' + esc(p.name) + "<small>" + subs.join(" · ") + '</small></span><span class="tag ' + cls + '">' +
+      (p.listPage ? '<a href="' + esc(p.listPage) + '" target="_blank" rel="noopener">Support groups\' entry</a>' : "") +
+      '<button type="button" class="fav-btn" data-fav="' + esc(placeFav(p)) + '" aria-pressed="' + favs.has(placeFav(p)) + '">' + (favs.has(placeFav(p)) ? "★ Saved" : "☆ Save") + "</button></div>");
+    // green only when the place itself says everything is gluten free and the app has nothing to add
+    const cls = p.claim === "place-all" && !p.caution ? "t-asis" : "t-swap";
+    const label = p.claimLabel || CLAIM_TAGS[p.claim];
+    const star = favs.has(placeFav(p)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
+    return '<details class="row"><summary><span class="nm">' + star + esc(p.name) + "<small>" + subs.join(" · ") + '</small></span><span class="tag ' + cls + '">' +
       label + "</span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
   }
-  const placeText = (p) => ({ name: [p.name, p.type, p.listed, p.caution, (p.notes || []).join(" "), p.says && p.says.text, p.says && p.says.en,
-    p.locations.map((l) => [l.area, l.address, l.note].join(" ")).join(" ")].filter(Boolean).join(" ") });
+  // search what a place is and where it is, not street names or notes ("Sonntag" shouldn't find Sonntagstraße)
+  const placeText = (p) => ({ name: [p.name, p.type, p.listed, p.says && p.says.text, p.says && p.says.en,
+    p.locations.map((l) => l.area).join(" ")].filter(Boolean).join(" ") });
   function renderCityList() {
     const c = city();
     if (!c) return;
     const ts = terms($("q").value.trim());
-    const places = c.places.filter((p) => (cityFilter === "all" || p.section === cityFilter) && matches(placeText(p), ts));
+    const d = cityDay(c);
+    const places = c.places.filter((p) => matches(placeText(p), ts) && (cityFilter === "all" || (cityFilter === "open" ? openOn(p, d)
+      : cityFilter === "fav" ? favs.has(placeFav(p)) : p.section === cityFilter)));
     let html = "";
-    for (const s of c.sections) {
+    if (nearSort && here && places.length) {
+      const near = places.slice().sort((a, b) => placeKm(a) - placeKm(b));
+      html = '<h2 class="group-h">Nearest first<small>' + near.length + "</small></h2>" + '<div class="card">' + near.map((p) => placeHtml(c, p)).join("") + "</div>";
+    } else for (const s of c.sections) {
       const inSec = places.filter((p) => p.section === s);
       if (!inSec.length) continue;
       html += '<h2 class="group-h">' + esc(s) + "<small>" + inSec.length + "</small></h2>" + '<div class="card">' + inSec.map((p) => placeHtml(c, p)).join("") + "</div>";
     }
-    $("cityList").innerHTML = html || '<p class="empty">No places match "' + esc($("q").value.trim()) + '".</p>';
+    const unknown = c.places.filter((p) => !p.locations.some((l) => l.hours)).length;
+    const empty = cityFilter === "fav" ? "No saved places yet. Open a place and tap ☆ Save."
+      : cityFilter === "open" ? "None of the places with known hours are open today."
+      : 'No places match "' + esc($("q").value.trim()) + '".';
+    $("cityList").innerHTML = (html || '<p class="empty">' + empty + "</p>") +
+      (cityFilter === "open" && unknown ? '<p class="muted">' + unknown + " places with unknown hours aren't shown.</p>" : "");
   }
   $("cityCard").addEventListener("click", () => { const c = city(); if (c) openCard(c.language); });
+  function toggleNear() {
+    if (nearSort) { nearSort = false; renderCity(); return; }
+    if (!navigator.geolocation) { toast("This phone can't share its location here"); return; }
+    navigator.geolocation.getCurrentPosition((pos) => {
+      here = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+      nearSort = true;
+      renderCity();
+      window.scrollTo({ top: 0 });
+    }, () => toast("Couldn't get your location. Check Location Services for Safari in Settings."), { timeout: 10000, maximumAge: 300000 });
+  }
 
   // ---------- warnings page ----------
   function warningsFor(r) {
@@ -609,7 +700,7 @@
       (claim.length
         ? "It isn't the app's gluten free claim. " + esc(listOr(claim)) + " says it's accredited by Coeliac UK, in its own words below; " +
           "the app still lists items by their ingredients. "
-        : "It isn't a gluten free claim: none of these guides use the words \"gluten free\", and none claim to test for gluten or promise " +
+        : "It isn't a gluten free claim: these guides don't call the items listed here \"gluten free\", and none claim to test for gluten or promise " +
           "there's been no contact with it. ") +
       "If you have coeliac disease, ask staff about shared equipment such as toasters, fryers and tongs.</p></div>" +
       scope().map(warningsFor).join('<hr class="w-sep">');
@@ -644,6 +735,7 @@
       region = UK;
     }
     render();
+    if (data && $("picker").open) renderPicker(); // the first-visit chooser may have opened before the cities arrived
   }
   function renderCardLaunch() {
     const r = byId(selected);
@@ -674,8 +766,13 @@
     switch (i.order) {
       case "asis": return "As it comes, please.";
       case "any": return "As it comes, please. Any " + label + " is fine.";
-      case "except": return "Please don't use " + listOr(i.not.map(opt)) + ".";
-      case "swap": return "With " + listOr(i.ok.map(opt)) + " instead of " + opt(i.standard || i.not[0]) + ", please.";
+      case "except": return "Please don't use " + listOr(i.not.map(opt)) + ". Any other " + label + " is fine.";
+      case "swap": {
+        const std = i.standard || i.not[0];
+        if (i.ok.length <= 2) return "With " + listOr(i.ok.map(opt)) + " instead of " + opt(std) + ", please.";
+        const also = i.not.filter((n) => n !== std);
+        return "Any other " + label + " instead of " + opt(std) + (also.length ? " (not " + listOr(also.map(opt)) + ")" : "") + ", please.";
+      }
       default: return i.note.replace(/[.!]?$/, ".");
     }
   }
@@ -829,9 +926,14 @@
       const fresh = { built: idx.json.built, restaurants: full.map((f) => f.json) };
       const prev = data;
       const changed = !prev || prev.built !== fresh.built;
-      if (changed) {
-        data = fresh;
-        store.set(DATA_KEY, JSON.stringify(fresh));
+      const wasOffline = offlineNow;
+      offlineNow = offline;
+      if (changed || wasOffline !== offlineNow) {
+        if (changed) {
+          if (!prev && firstVisit && !store.get(SEEN_KEY)) store.set(SEEN_KEY, JSON.stringify(fresh.restaurants.map((r) => r.id + "@" + r.source)));
+          data = fresh;
+          store.set(DATA_KEY, JSON.stringify(fresh));
+        }
         render();
       }
       if (offline) {
@@ -846,6 +948,7 @@
       }
     } catch (e) {
       if (data) {
+        if (!offlineNow) { offlineNow = true; render(); }
         if (manual) toast("No connection. Showing the menus saved on this phone.");
       } else {
         $("guideLine").textContent = "Couldn't load menus";
@@ -857,7 +960,11 @@
   }
 
   // ---------- events ----------
+  // While searching, tips and notes step aside so results sit just under the search box, above the keyboard
+  const syncSearching = () => document.body.classList.toggle("searching", !!$("q").value.trim());
   $("q").addEventListener("input", () => {
+    syncSearching();
+    window.scrollTo({ top: 0 });
     if (region !== UK) renderCityList();
     else if (data) { renderStatus(); renderList(); }
   });
@@ -865,7 +972,13 @@
     const b = e.target.closest("button");
     if (!b) return;
     const f = b.dataset.f;
-    if (region !== UK) { cityFilter = f; renderCity(); window.scrollTo({ top: 0 }); return; }
+    if (region !== UK) {
+      if (b.hasAttribute("data-near")) { toggleNear(); return; }
+      cityFilter = f;
+      renderCity();
+      window.scrollTo({ top: 0 });
+      return;
+    }
     if (!data) return;
     if (f.startsWith("r:")) { select(f.slice(2)); return; }
     filter = f;
@@ -875,6 +988,7 @@
     window.scrollTo({ top: 0 });
   });
   $("list").addEventListener("click", onFav);
+  $("cityList").addEventListener("click", onFav);
   function onFav(e) {
     const b = e.target.closest(".fav-btn");
     if (!b) return;
@@ -898,7 +1012,8 @@
     if (!b) return;
     e.preventDefault();
     $("picker").close();
-    select(b.dataset.r);
+    if (b.dataset.region) setRegion(b.dataset.region);
+    else select(b.dataset.r);
   });
   $("infoBtn").addEventListener("click", () => openDialog($("info")));
   ["picker", "info", "gfcard", "warnings", "staff", "changes"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));

@@ -41,30 +41,33 @@
       </button>
     </div>
   </div>
-  <div id="region" class="region" role="group" aria-label="Where"></div>
+  <div class="searchrow">
   <label class="search">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     <input id="q" type="search" placeholder="Search" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Search">
   </label>
+  <div id="region" class="region" role="group" aria-label="Where"></div>
+  </div>
   <nav id="chips" class="chips" aria-label="Filter"></nav>
   <div id="status" class="status" role="group" aria-label="Show items that are"></div>
 </header>
 
 <main>
-  <div id="installTip" class="tip" hidden>
+  <div id="installTip" class="tip hide-searching" hidden>
     <p><b>Install on your iPhone:</b> in Safari, tap <b>•••</b> (or <b>Share</b>), then <b>Add to Home Screen</b>. Keep <b>Open as Web App</b> switched on.</p>
     <button type="button" id="installClose" class="link-btn">Dismiss</button>
   </div>
   <div id="ukView" class="view">
   <div id="stale" class="stale" hidden></div>
   <div id="favAlert" class="fav-alert" role="alert" hidden></div>
-  <div id="news" class="news" hidden></div>
-  <section id="tips" class="rules" aria-label="How to order"></section>
-  <div class="certnote" id="certNote">
-    <p id="certText"><b>No gluten ingredients isn't the same as certified gluten free.</b> These restaurants don't claim their food is gluten free, and don't guarantee against cross-contact.</p>
+  <div id="news" class="news hide-searching" hidden></div>
+  <section id="tips" class="rules hide-searching" aria-label="How to order"></section>
+  <div class="certnote hide-searching" id="certNote">
+    <p id="certText"><b>No gluten ingredients isn't the same as certified gluten free.</b> These restaurants don't call the items listed here gluten free, and don't guarantee against cross-contact.</p>
     <button type="button" id="openWarnings" class="pill-btn pill-warn">Read the warnings <span id="warnCount"></span></button>
   </div>
-  <div id="cardLaunch" class="card-launch" hidden></div>
+  <div id="cardLaunch" class="card-launch hide-searching" hidden></div>
+  <div id="searchNote" class="search-note" role="status" hidden></div>
   <div id="list" class="list" aria-live="polite"></div>
   <section id="avoidWrap" class="avoid">
     <h2>Avoid: contains gluten or not suitable</h2>
@@ -77,9 +80,9 @@
   </footer>
   </div>
   <div id="cityView" class="view" hidden>
-    <div class="certnote"><p id="cityIntro"></p></div>
-    <div class="card-launch"><button type="button" id="cityCard" class="pill-btn">Show German coeliac card</button></div>
-    <section id="cityTips" class="rules" aria-label="Tips"></section>
+    <div class="certnote hide-searching"><p id="cityIntro"></p></div>
+    <div class="card-launch hide-searching"><button type="button" id="cityCard" class="pill-btn">Show German coeliac card</button></div>
+    <section id="cityTips" class="rules hide-searching" aria-label="Tips"></section>
     <div id="cityList" class="list" aria-live="polite"></div>
     <footer class="foot" id="cityFoot"></footer>
   </div>
@@ -88,7 +91,7 @@
 <dialog id="picker" aria-labelledby="pickerTitle">
   <form method="dialog" class="sheet">
     <div class="sheet-head">
-      <h2 id="pickerTitle">Restaurants</h2>
+      <h2 id="pickerTitle">Where to eat</h2>
       <button class="link-btn" value="close">Done</button>
     </div>
     <div id="pickList" class="pick-list"></div>
