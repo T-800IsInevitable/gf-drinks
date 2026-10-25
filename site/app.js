@@ -200,7 +200,7 @@
     const glutenHits = rs.reduce((n, r) => n + r.avoid.filter((a) => matches(a, q)).length, 0);
     if (filter === "fav") empty = favs.size ? "No saved favourites here yet" : "No favourites yet. Open an item and tap ☆ Save.";
     else if (q) empty = 'No items with no gluten ingredients match "' + esc(q) + '".' +
-      (glutenHits ? " " + glutenHits + (glutenHits === 1 ? " match contains" : " matches contain") + " gluten" + (show.gluten ? " (listed below)." : ". Tap Contains gluten above to see " + (glutenHits === 1 ? "it." : "them.")) : "");
+      (glutenHits ? " " + glutenHits + (glutenHits === 1 ? " match is" : " matches are") + " on the Avoid list" + (show.gluten ? " below." : ". Tap Avoid above to see " + (glutenHits === 1 ? "it." : "them.")) : "");
     if (!show.straight || !show.change) empty += " Some items are hidden by the buttons above.";
     $("list").innerHTML = html || '<p class="empty">' + empty + "</p>";
 
@@ -213,8 +213,9 @@
         avoidHtml += '<div class="card">' + av.map((a) =>
           '<details class="row"><summary><span class="nm">' + esc(a.name) +
           (a.original ? '<small lang="' + esc(r.language || "") + '">' + esc(a.original) + "</small>" : "") + '</span><span class="tag t-bad">' +
-          esc(a.gluten.map(cap).join(" & ")) + "</span>" + chev + '</summary><div class="detail"><div>Every version contains ' +
-          esc(a.gluten.join(" and ").toLowerCase()) + ".</div><div>" + esc(pageText(a.pages)) + "</div></div></details>").join("") + "</div>";
+          esc(a.tag || a.gluten.map(cap).join(" & ")) + "</span>" + chev + '</summary><div class="detail"><div>' +
+          (a.reason ? esc(a.reason) : "Every version contains " + esc(a.gluten.join(" and ").toLowerCase()) + ".") + "</div>" +
+          (a.info ? "<div>" + esc(a.info) + "</div>" : "") + "<div>" + esc(pageText(a.pages)) + "</div></div></details>").join("") + "</div>";
       }
     }
     $("avoidWrap").hidden = !avoidHtml;
@@ -239,7 +240,7 @@
     }
     const b = (k, cls, label) => '<button type="button" data-k="' + k + '" aria-pressed="' + show[k] + '"><span class="dot ' + cls + '"></span>' +
       label + " <small>" + n[k] + "</small></button>";
-    $("status").innerHTML = b("straight", "d-ok", "No gluten ingredients") + b("change", "d-swap", "Needs a change") + b("gluten", "d-bad", "Contains gluten");
+    $("status").innerHTML = b("straight", "d-ok", "No gluten ingredients") + b("change", "d-swap", "Needs a change") + b("gluten", "d-bad", "Avoid");
   }
 
   const THEMES = [
@@ -342,7 +343,7 @@
     html += '<p class="muted">From ' + esc(r.source) + (r.guide && r.guide.version ? ", version " + esc(fmtDate(r.guide.version)) : "") + ".</p>";
     const labels = Object.keys(groups);
     if (labels.length) {
-      html += "<h4>What " + esc(r.name) + "'s guide says</h4>";
+      html += "<h4>What " + esc(r.name) + (/s$/.test(r.name) ? "'" : "'s") + " guide says</h4>";
       for (const l of labels) {
         html += '<div class="w-group"><div class="w-label">' + esc(l) + "</div>" + groups[l].map((n) =>
           '<blockquote class="w-quote">' + esc(n.text) + "<cite>" + esc(n.pages && n.pages.length
@@ -367,7 +368,7 @@
     $("warnTitle").textContent = r ? r.name + ": warnings" : "Warnings";
     $("warnBody").innerHTML =
       '<div class="w-intro"><p><b>"No gluten ingredients" means the restaurant\'s guide lists no gluten cereal for that item.</b> ' +
-      "It isn't a gluten free claim: none of these guides use the words \"gluten free\", and they don't test for gluten or promise " +
+      "It isn't a gluten free claim: none of these guides use the words \"gluten free\", and none claim to test for gluten or promise " +
       "there's been no contact with it. If you have coeliac disease, ask staff about shared equipment such as toasters, fryers and tongs.</p></div>" +
       scope().map(warningsFor).join('<hr class="w-sep">');
     if ($("info").open) $("info").close();
