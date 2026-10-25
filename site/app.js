@@ -163,7 +163,8 @@
     const ts = typeof q === "string" ? terms(q) : q;
     if (!ts.length) return true;
     // match at the start of words, so "latte" doesn't find "platter"
-    const words = norm([i.name, i.sub, i.note, i.original, i.info, i.section].filter(Boolean).join(" ")).split(/[^a-z0-9ßäöü]+/).map(stem);
+    // notes ("info") aren't searched: "wheat" shouldn't find dishes whose note merely mentions wheat
+    const words = norm([i.name, i.sub, i.note, i.original, i.section, ...(i.ok || [])].filter(Boolean).join(" ")).split(/[^a-z0-9ßäöü]+/).map(stem);
     return ts.every((t) => words.some((w) => w.startsWith(t)));
   };
   const areas = () => [...new Set(data.restaurants.map((r) => r.area).filter(Boolean))];
@@ -237,7 +238,7 @@
         continue;
       }
       const a = r.avoid.find((x) => x.section === section && x.name === name) || r.avoid.find((x) => norm(x.name) === norm(name));
-      out.push({ k, r, name, avoid: a });
+      out.push({ k, r, name, section, avoid: a });
     }
     if (moved) store.set(FAV_KEY, JSON.stringify([...favs]));
     return out;
@@ -246,8 +247,8 @@
     const ids = new Set(scope().map((r) => r.id));
     const probs = favProblems().filter((p) => ids.has(p.r.id));
     $("favAlert").hidden = !probs.length;
-    $("favAlert").innerHTML = probs.map((p) => "<div class=\"fa-row\"><p>★ <b>" + esc(p.name) + "</b> at " + esc(p.r.name) + (p.avoid
-      ? " is now on the Avoid list: " + esc(p.avoid.reason || "contains " + p.avoid.gluten.join(" and ").toLowerCase()) + "."
+    $("favAlert").innerHTML = probs.map((p) => "<div class=\"fa-row\"><p>★ <b>" + esc(p.name) + "</b> (" + esc(shortSection(p.section)) + ") at " + esc(p.r.name) + (p.avoid
+      ? " is now on the Avoid list: " + esc((p.avoid.reason || "contains " + p.avoid.gluten.join(" and ").toLowerCase()).replace(/\.$/, "")) + "."
       : " isn't in the latest guide. Check in store before ordering it.") +
       '</p><button type="button" class="link-btn" data-unfav="' + esc(p.k) + '">Remove from favourites</button></div>').join("");
   }
@@ -305,7 +306,8 @@
     $("certText").innerHTML = "<b>No gluten ingredients isn't the same as certified gluten free.</b> " + (claim.length
       ? esc(names(claim)) + (claim.length === 1 ? " says it's" : " say they're") + " accredited by Coeliac UK: see " +
         (claim.length === 1 ? "its" : "their") + " own words in the warnings." + (claim.length < rs.length ? " The others don't call the items listed here gluten free." : "") +
-        " No restaurant here guarantees against cross-contact."
+        (rs.length === 1 ? " It doesn't guarantee against cross-contact." : " No restaurant here guarantees against cross-contact.")
+      : rs.length === 1 ? esc(rs[0].name) + " doesn't call the items listed here gluten free, and doesn't guarantee against cross-contact."
       : "These restaurants don't call the items listed here gluten free, and don't guarantee against cross-contact.");
   }
 
@@ -316,7 +318,12 @@
     const words = (arr) => (arr || []).flatMap((o) => terms(o));
     const out = ts.map((t) => ({ t, rs: rs.filter((r) => r.items.some((i) => words(i.not).includes(t))) }))
       .filter((o) => o.rs.length && !o.rs.some((r) => r.items.some((i) => words(i.ok).includes(t))));
-    if (!out.length) return { ts, note: "" };
+    if (!out.length) {
+      // "soya milk latte": soya is searched among the milks that are fine, and "milk" itself is dropped
+      const labels = new Set(rs.flatMap((r) => terms(r.optionLabel || "")));
+      const rest = ts.filter((t) => !labels.has(t));
+      return { ts: rest.length ? rest : ts, note: "" };
+    }
     const label = out[0].rs[0].optionLabel || "option";
     ts = ts.filter((t) => !out.some((o) => o.t === t) && !terms(label).includes(t));
     const note = out.map((o) => "<b>" + esc(cap(o.t) + " " + label) + " isn't an option at " + esc(listOr(o.rs.map((r) => r.name))) + ".</b> " +
@@ -481,7 +488,8 @@
     // other cities (cities.json) are lists of places rather than menus, so they switch region instead of restaurant
     const others = Object.entries(cities).map(([cid, c]) => '<div class="sub-h">' + esc(c.name) + "</div>" +
       '<button type="button" class="pick-opt" data-region="' + esc(cid) + '" aria-pressed="' + (region === cid) + '"><span class="po-main"><b>' +
-      esc(c.name) + "</b><span>Places that are all gluten free, by their own word or the coeliac support groups'</span></span>" +
+      esc(c.name) + "</b><span>Places that are all gluten free, by their own word or the coeliac support groups'" +
+      (c.places.some((p) => p.claim === "separate") ? ", and with a separate gluten free kitchen" : "") + "</span></span>" +
       '<span class="po-meta">' + c.places.length + " places</span></button>").join("");
     $("pickList").innerHTML = '<div class="sub-h">UK</div>' + opt(ALL, "All restaurants", "Search and browse everything", total + " items", false) + grouped + others +
       '<p class="pick-note">More restaurants can be added by the app\'s owner from each restaurant\'s allergen guide.</p>';
@@ -541,6 +549,7 @@
   function renderCity() {
     const c = city();
     if (!c) { $("cityList").innerHTML = '<p class="empty">Loading…</p>'; return; }
+    syncSearching();
     $("pickName").textContent = c.name;
     $("pickBtn").setAttribute("aria-label", c.name + ". Choose where to eat");
     $("guideLine").textContent = c.places.length + " places · checked " + fmtDate(c.checked) + offlineTag();
@@ -583,23 +592,37 @@
   const span = (h) => { const m = (h || "").match(/(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/); return m ? [m[1] * 60 + +m[2], m[3] * 60 + +m[4]] : null; };
   const hhmm = (n) => String(Math.floor(n / 60)).padStart(2, "0") + ":" + String(n % 60).padStart(2, "0");
   // still open today: open now, or opening later today
-  const stillOpen = (c, p) => { const { day, min } = cityNow(c); return p.locations.some((l) => { const s = l.hours && span(l.hours[day]); return s && s[1] > min; }); };
+  // The branches that matter: the nearest one when sorting by distance, otherwise all of them.
+  // A branch's day is: a span [open, close] (close = when the kitchen stops, if earlier), "closed", or unknown (no hours, or null).
+  const branches = (p) => (nearSort && here ? [p.locations.slice().sort((a, b) => kmTo(a, here) - kmTo(b, here))[0]] : p.locations);
+  function branchToday(l, day) {
+    if (!l.hours || l.hours[day] == null) return { unknown: true };
+    const s = span(l.hours[day]);
+    if (!s) return { closed: true };
+    const kitchen = span("00:00–" + (l.kitchenCloses || "24:00"));
+    return { open: s[0], close: Math.min(s[1], kitchen[1]), kitchen: !!l.kitchenCloses && kitchen[1] < s[1] };
+  }
+  const stillOpen = (c, p) => { const { day, min } = cityNow(c); return branches(p).some((l) => { const b = branchToday(l, day); return b.close > min; }); };
   function todayLine(c, p) {
-    if (!p.locations.some((l) => l.hours)) return "";
     const { day, min } = cityNow(c);
-    const spans = p.locations.map((l) => l.hours && span(l.hours[day])).filter(Boolean);
-    const now = spans.filter(([a, b]) => a <= min && min < b);
-    if (now.length) return "Open now, until " + hhmm(Math.max(...now.map((s) => s[1])));
-    const later = spans.filter(([a]) => a > min);
-    if (later.length) return "Opens at " + hhmm(Math.min(...later.map((s) => s[0])));
-    return spans.length ? "Closed now" : "Closed today";
+    const ls = branches(p);
+    const bs = ls.map((l) => ({ l, ...branchToday(l, day) }));
+    if (bs.every((b) => b.unknown)) return "";
+    const where = (list) => (ls.length > 1 && list.length < ls.length ? " at " + listOr([...new Set(list.map((b) => b.l.area))]) : "");
+    const now = bs.filter((b) => b.open <= min && min < b.close);
+    if (now.length) return "Open now" + where(now) + ", " + (now.some((b) => b.kitchen) ? "kitchen until " : "until ") + hhmm(Math.max(...now.map((b) => b.close)));
+    const later = bs.filter((b) => b.open > min);
+    if (later.length) return "Opens at " + hhmm(Math.min(...later.map((b) => b.open))) + where(later);
+    if (bs.some((b) => b.open != null && b.kitchen && min < span(b.l.hours[day])[1])) return "Kitchen closed";
+    if (bs.some((b) => b.open != null)) return "Closed now";
+    return bs.some((b) => b.unknown) ? "" : "Closed today";
   }
   function weekText(hours) {
     const out = [];
     for (let i = 0; i < 7;) {
       let j = i;
       while (j < 6 && hours[j + 1] === hours[i]) j++;
-      out.push((i === j ? DAYS[i] : DAYS[i] + "–" + DAYS[j]) + " " + (hours[i] || "closed"));
+      out.push((i === j ? DAYS[i] : DAYS[i] + "–" + DAYS[j]) + " " + (hours[i] == null ? "not known" : hours[i] || "closed"));
       i = j + 1;
     }
     return out.join(", ");
@@ -610,9 +633,9 @@
   const placeFav = (p) => "city:" + region + "|" + p.name;
   function placeHtml(c, p) {
     const subs = [esc(p.type), esc([...new Set(p.locations.map((l) => l.area))].join(", "))];
-    if (nearSort && here) subs.unshift(placeKm(p).toFixed(1) + " km");
+    if (nearSort && here) subs.unshift(placeKm(p).toFixed(1) + " km" + (p.locations.length > 1 ? " (" + esc(branches(p)[0].area) + ")" : ""));
     const today = todayLine(c, p);
-    if (today) subs.push('<span class="today' + (/^Closed/.test(today) ? " shut" : "") + '">' + esc(today) + "</span>");
+    if (today) subs.push('<span class="today' + (/^(Closed|Kitchen closed)/.test(today) ? " shut" : "") + '">' + esc(today) + "</span>");
     if (p.caution) subs.push('<span class="chg">' + esc(p.flag) + "</span>");
     if (p.status !== "confirmed") subs.push('<span class="chg bad">Opening not confirmed</span>');
     const out = [];
@@ -626,7 +649,8 @@
     (p.notes || []).forEach((n) => out.push("<div>" + esc(n) + "</div>"));
     out.push('<ul class="locs">' + p.locations.map((l) => '<li><a href="' + esc(mapLink(p, l)) + '" target="_blank" rel="noopener">' + esc(l.address) + "</a>" +
       "<span>" + esc([l.area, l.note].filter(Boolean).join(" · ")) + "</span>" +
-      "<span>" + (l.hours ? "<b>Hours:</b> " + esc(weekText(l.hours)) + (l.hoursNote ? ". " + esc(l.hoursNote) : "") + " (from its website, " + esc(fmtDate(c.checked)) + ")"
+      "<span>" + (l.hours ? "<b>Hours:</b> " + esc(weekText(l.hours)) + (l.kitchenCloses ? ". Kitchen closes at " + esc(l.kitchenCloses) : "") +
+        (l.hoursNote ? ". " + esc(l.hoursNote) : "") + " (from its website, " + esc(fmtDate(c.checked)) + ")"
         : "<b>Hours not known.</b> Check its website before going.") + "</span></li>").join("") + "</ul>");
     out.push('<div class="place-links"><a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + (/instagram\.com/.test(p.url) ? "Instagram" : "Website") + "</a>" +
       (p.listPage ? '<a href="' + esc(p.listPage) + '" target="_blank" rel="noopener">Support groups\' entry</a>' : "") +
@@ -635,11 +659,11 @@
     const cls = p.claim === "place-all" && !p.caution ? "t-asis" : "t-swap";
     const label = p.claimLabel || CLAIM_TAGS[p.claim];
     const star = favs.has(placeFav(p)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
-    return '<details class="row"><summary><span class="nm">' + star + esc(p.name) + "<small>" + subs.join(" · ") + '</small></span><span class="tag ' + cls + '">' +
+    return '<details class="row" data-place="' + esc(p.name) + '"><summary><span class="nm">' + star + esc(p.name) + "<small>" + subs.join(" · ") + '</small></span><span class="tag ' + cls + '">' +
       label + "</span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
   }
   // search what a place is and where it is, not street names or notes ("Sonntag" shouldn't find Sonntagstraße)
-  const placeText = (p) => ({ name: [p.name, p.type, p.listed, p.says && p.says.text, p.says && p.says.en,
+  const placeText = (p) => ({ name: [p.name, p.type, p.listed, p.flag, p.caution, p.says && p.says.text, p.says && p.says.en,
     p.locations.map((l) => l.area).join(" ")].filter(Boolean).join(" ") });
   function renderCityList() {
     const c = city();
@@ -753,7 +777,7 @@
   function renderCardLaunch() {
     const r = byId(selected);
     let langs = Object.keys(phrases);
-    if (r) langs = langs.filter((l) => l === r.language);
+    langs = r ? langs.filter((l) => l === r.language) : [];
     const el = $("cardLaunch");
     el.hidden = !langs.length;
     el.innerHTML = langs.map((l) => '<button type="button" class="pill-btn" data-lang="' + esc(l) + '">Show ' + esc(phrases[l].language) +
@@ -793,6 +817,7 @@
     const local = phrases[r.language];
     $("staffBody").innerHTML = '<p class="staff-where">' + esc(r.name) + "</p>" +
       '<p class="staff-name">' + esc(i.name) + "</p>" +
+      '<p class="staff-sec">' + esc([shortSection(i.section), i.sub && cap(i.sub)].filter(Boolean).join(" · ")) + "</p>" +
       (i.original ? '<p class="staff-orig" lang="' + esc(r.language || "") + '">' + esc(i.original) + "</p>" : "") +
       '<p class="staff-order">' + esc(orderLine(r, i)) + "</p>" +
       (local ? local.card.slice(0, 2).map((c) => '<p class="staff-coeliac" lang="' + esc(r.language) + '">' + esc(c.text) + "</p>").join("") : "") +
@@ -918,7 +943,7 @@
         const fname = isPdf ? (files.length > 1 ? "menu-" + n + ".pdf" : "menu.pdf") : "page-" + n + ".jpg";
         await putFile(folder + "/" + fname, await toB64(blob), "Upload " + name + " menu (" + fname + ")");
       }
-      const meta = { restaurant: name, area, notes: $("upNotes").value.trim(), files: files.length, uploadedAt: now.toISOString(), uploadedFrom: "GF Menus app" };
+      const meta = { restaurant: name, area, notes: $("upNotes").value.trim(), files: files.length, uploadedAt: now.toISOString(), uploadedFrom: "Twoo's Treat Temple app" };
       await putFile(folder + "/upload.json", btoa(unescape(encodeURIComponent(JSON.stringify(meta, null, 2)))), "Upload " + name + " menu details");
       status.textContent = "Uploaded. It'll be scanned within a day and sent to GitHub for you to approve.";
       $("uploadForm").reset();
@@ -992,7 +1017,7 @@
 
   // ---------- events ----------
   // While searching, tips and notes step aside so results sit just under the search box, above the keyboard
-  const syncSearching = () => document.body.classList.toggle("searching", !!$("q").value.trim());
+  const syncSearching = () => document.body.classList.toggle("searching", !!$("q").value.trim() || (region !== UK && (cityFilter !== "all" || nearSort)));
   $("q").addEventListener("input", () => {
     syncSearching();
     window.scrollTo({ top: 0 });
@@ -1108,12 +1133,29 @@
   loadCities();
   load(false).then(() => {
     // first visit: one restaurant opens directly; several, the picker opens so you start somewhere specific
+    if (data && region === UK && hashId && byId(hashId)) store.set(SEL_KEY, hashId);
     if (data && region === UK && !hashId && !store.get(SEL_KEY)) {
       if (data.restaurants.length === 1) select(data.restaurants[0].id);
       else { renderPicker(); openDialog($("picker")); }
     }
   });
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") load(false); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    load(false);
+    if (city()) renderCityList(); // open or closed may have changed while the app was in the background
+  });
+  // Every minute, bring each place's "Open now / Closed now" up to date without closing the one you're reading
+  setInterval(() => {
+    const c = city();
+    if (!c || document.visibilityState !== "visible") return;
+    if (cityFilter === "open" && !document.querySelector("#cityList details[open]")) { renderCityList(); return; }
+    document.querySelectorAll("#cityList details[data-place]").forEach((d) => {
+      const p = c.places.find((x) => x.name === d.dataset.place);
+      const el = d.querySelector(".today");
+      const t = p && todayLine(c, p);
+      if (el && t) { el.textContent = t; el.classList.toggle("shut", /^(Closed|Kitchen closed)/.test(t)); }
+    });
+  }, 60000);
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
   }

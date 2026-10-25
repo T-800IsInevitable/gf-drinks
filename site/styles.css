@@ -353,3 +353,7 @@ body.searching .hide-searching { display: none !important; }
 .owner { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 6px; }
 .owner summary { min-height: 44px; display: flex; align-items: center; font-weight: 600; color: var(--accent); cursor: pointer; }
 .sheet a { color: var(--accent); }
+
+/* ---- final review: which dish on the staff card; subtitle wraps with Larger Text ---- */
+.sheet .staff-sec { font-size: 1.125rem; color: var(--muted); margin-top: -8px !important; }
+.picker .guide { white-space: normal; }

@@ -22,7 +22,7 @@ An iPhone home-screen web app (PWA) listing food and drinks with **no gluten ing
 - Five Guys "1" (not suitable due to preparation) in the gluten column = Avoid, with the reason shown.
 - "May contain" gluten or oats (Blank Street's "May Contain" lines, Knoops' "MCT") = Avoid, with the reason shown. Gluten free oats still count as oats.
 - Never call anything "gluten free". Say "no gluten ingredients". Pho is the exception that makes a claim (Coeliac UK accredited): quote its words, don't adopt them. The other guides make no gluten free claim.
-- Where the app adds its own caution to a restaurant's data (for example Knoops' cannoli), label it as the app's, not the restaurant's.
+- Where the app adds its own caution to a restaurant's data (for example Knoops' cannoli), label it as the app's, not the restaurant's. If the caution means the item may contain gluten, it goes on the Avoid list (`doubt` in a hand-kept `menu.csv`), not on the green list with a note.
 - Readers must fail the build (`SystemExit`) rather than publish if the layout looks different (missing headings, unmatched marks, too few rows). A failed build keeps the previous live menus.
 - Quote restaurant warnings word for word; don't paraphrase them as if they were the restaurant's words.
 

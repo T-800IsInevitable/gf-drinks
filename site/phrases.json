@@ -24,6 +24,13 @@
       ["Paniermehl / paniert", "breadcrumbs / breaded"],
       ["Malz", "malt"],
       ["Weizenstärke", "wheat starch"],
+      ["Seitan", "wheat gluten (common in vegan dishes)"],
+      ["Grieß", "semolina, usually wheat"],
+      ["Grünkern", "green spelt"],
+      ["Graupen", "pearl barley"],
+      ["Bulgur", "bulgur wheat"],
+      ["Couscous", "couscous (wheat)"],
+      ["Emmer / Einkorn", "old kinds of wheat"],
       ["kann Spuren enthalten", "may contain traces"],
       ["Fritteuse", "deep fryer"]
     ]
