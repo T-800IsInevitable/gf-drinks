@@ -161,6 +161,9 @@ def main():
         if "Saved" not in first.locator(".fav-btn").inner_text():
             problems.append("Save: the button didn't change to Saved")
         before = page.locator("#list .row").count()
+        page.evaluate("window.scrollTo(0, 0)")  # scrolling down folds the filters away; scroll up as a person would
+        page.wait_for_selector(".top:not(.collapsed)")
+        page.wait_for_timeout(300)
         page.locator('#status [data-k="change"]').click()
         after = page.locator("#list .row").count()
         if after > before:
