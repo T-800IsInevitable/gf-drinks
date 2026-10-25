@@ -57,7 +57,8 @@ for r in index["restaurants"]:
     print(f"{rid}: {len(d['items'])} with no gluten ingredients, {len(d['avoid'])} to avoid, guide valid until {d['guide'].get('validUntil')}")
 
 # cities.json: hand-checked places (not built from guides)
-CITY_KINDS = {"dedicated", "options"}
+# who says it's gluten free: the place (all or part of its range), only the support groups' list, or a separate kitchen
+CITY_CLAIMS = {"place-all", "list-all", "place-part", "separate"}
 cities = json.loads((DATA.parent / "cities.json").read_text(encoding="utf-8"))
 phrases = json.loads((DATA.parent / "phrases.json").read_text(encoding="utf-8"))
 for cid, c in cities.items():
@@ -70,8 +71,14 @@ for cid, c in cities.items():
         where = f"city {cid}: {p.get('name')!r}"
         if p.get("section") not in c.get("sections", []):
             err(f"{where}: section {p.get('section')!r} isn't in sections")
-        if p.get("kind") not in CITY_KINDS:
-            err(f"{where}: bad kind {p.get('kind')!r}")
+        if p.get("claim") not in CITY_CLAIMS:
+            err(f"{where}: bad claim {p.get('claim')!r}")
+        if p.get("claim") == "place-part" and not p.get("claimLabel"):
+            err(f"{where}: a part claim needs a claimLabel saying which part")
+        if p.get("claim") == "list-all" and p.get("says"):
+            err(f"{where}: quotes the place, so its claim isn't the list's alone")
+        if p.get("caution") and not p.get("flag"):
+            err(f"{where}: a caution needs a short flag to show on the row")
         if not p.get("says") and not p.get("listed"):
             err(f"{where}: no words from the place or the list")
         if p.get("says") and p["says"].get("lang") != "en" and not p["says"].get("en"):

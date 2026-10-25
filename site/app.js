@@ -514,11 +514,12 @@
     if (!chips.some(([v]) => v === cityFilter)) cityFilter = "all";
     $("chips").innerHTML = chips.map(([v, l]) =>
       '<button type="button" data-f="' + esc(v) + '" aria-pressed="' + (v === cityFilter) + '">' + esc(l) + "</button>").join("");
-    const separate = c.places.filter((p) => p.kind !== "dedicated").map((p) => p.name);
-    $("cityIntro").innerHTML = "<b>These places say everything they serve is gluten free</b>" +
-      (separate.length ? ", apart from " + esc(listOr(separate)) + ", which " + (separate.length === 1 ? "makes" : "make") + " gluten free food in a separate kitchen" : "") +
-      ". That's their claim, not the app's. They come from the list kept by " + esc(c.list.by) + ", checked against each place's own website on " +
-      esc(fmtDate(c.checked)) + ". Nobody from this app has seen their kitchens, so tell staff you have coeliac disease.";
+    const n = (claim) => c.places.filter((p) => p.claim === claim).length;
+    $("cityIntro").innerHTML = "<b>Each place's tag says who calls it gluten free.</b> " +
+      [n("place-all") && n("place-all") + " say so themselves", n("list-all") && n("list-all") + " are listed as all gluten free by the support groups but don't say so on their own websites",
+        n("place-part") && n("place-part") + " says only part of its range is", n("separate") && n("separate") + " makes gluten free food in a separate kitchen"]
+        .filter(Boolean).join("; ") + ". That's their claim, not the app's. They come from the list kept by " + esc(c.list.by) +
+      ", checked against each place's own website on " + esc(fmtDate(c.checked)) + ". Nobody from this app has seen their kitchens, so tell staff you have coeliac disease.";
     $("cityCard").hidden = !phrases[c.language];
     $("cityCard").textContent = phrases[c.language] ? "Show " + phrases[c.language].language + " coeliac card" : "";
     $("cityTips").innerHTML = (cityStale(c) ? '<div class="stale"><p><b>This list may be out of date.</b> It was checked on ' + esc(fmtDate(c.checked)) +
@@ -532,11 +533,12 @@
       "<p>Unofficial guide. Not affiliated with any of these places or the DZG.</p>";
     renderCityList();
   }
+  // Who says it's gluten free: the place itself, only the support groups' list, or the place for part of its range
+  const CLAIM_TAGS = { "place-all": "Says all gluten free", "list-all": "Listed as all gluten free", separate: "Separate kitchen" };
   function placeHtml(c, p) {
-    const dedicated = p.kind === "dedicated";
     const subs = [esc(p.type), esc([...new Set(p.locations.map((l) => l.area))].join(", "))];
+    if (p.caution) subs.push('<span class="chg">' + esc(p.flag) + "</span>");
     if (p.status !== "confirmed") subs.push('<span class="chg bad">Opening not confirmed</span>');
-    else if (p.caution) subs.push('<span class="chg">Ask first</span>');
     const out = [];
     if (p.says) {
       out.push('<blockquote class="w-quote" lang="' + esc(p.says.lang) + '">' + esc(p.says.text) + "<cite>Its website</cite></blockquote>");
@@ -550,7 +552,9 @@
       "<span>" + esc([l.area, l.note].filter(Boolean).join(" · ")) + "</span></li>").join("") + "</ul>");
     out.push('<div class="place-links"><a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + (/instagram\.com/.test(p.url) ? "Instagram" : "Website") + "</a>" +
       (p.listPage ? '<a href="' + esc(p.listPage) + '" target="_blank" rel="noopener">Support groups\' entry</a>' : "") + "</div>");
-    const [cls, label] = dedicated ? ["t-asis", "Says all gluten free"] : ["t-swap", "Separate kitchen"];
+    // green only when the place itself says everything is gluten free and the app has nothing to add
+    const cls = p.claim === "place-all" && !p.caution ? "t-asis" : "t-swap";
+    const label = p.claimLabel || CLAIM_TAGS[p.claim];
     return '<details class="row"><summary><span class="nm">' + esc(p.name) + "<small>" + subs.join(" · ") + '</small></span><span class="tag ' + cls + '">' +
       label + "</span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
   }

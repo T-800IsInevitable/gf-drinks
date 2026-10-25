@@ -28,6 +28,8 @@ from playwright.sync_api import sync_playwright
 
 SITE = Path(__file__).resolve().parent.parent / "site"
 IPHONE = {"viewport": {"width": 393, "height": 852}, "device_scale_factor": 3, "is_mobile": True, "has_touch": True}
+# Berlin row tags by who makes the claim (cities.json "claim"; "place-part" uses the place's own claimLabel)
+CLAIM_TAGS = {"place-all": "Says all gluten free", "list-all": "Listed as all gluten free", "separate": "Separate kitchen"}
 # anything wider than the screen (sideways scrolling); the chip row scrolls sideways on purpose
 WIDE_JS = """() => {
     const w = document.documentElement.clientWidth, out = [];
@@ -105,6 +107,20 @@ def main():
                     d.evaluate("el => el.open = true")
                 page.wait_for_timeout(200)
                 rows = page.locator("#cityList .row").count()
+                for i, pl in enumerate(c["places"]):  # each row says who claims what, and shows its warning without opening
+                    summary = page.locator("#cityList .row summary").nth(i)
+                    text = summary.inner_text()
+                    tag = summary.locator(".tag")
+                    want = pl.get("claimLabel") or CLAIM_TAGS[pl["claim"]]
+                    if want not in tag.inner_text():
+                        problems.append(f"{where}: {pl['name']} tag is {tag.inner_text()!r}, expected {want!r}")
+                    green = "t-asis" in tag.get_attribute("class")
+                    if green != (pl["claim"] == "place-all" and not pl.get("caution")):
+                        problems.append(f"{where}: {pl['name']} tag is {'green' if green else 'not green'}")
+                    if pl.get("caution") and pl["flag"] not in text:
+                        problems.append(f"{where}: {pl['name']} row doesn't show {pl['flag']!r}")
+                    if pl["status"] != "confirmed" and "Opening not confirmed" not in text:
+                        problems.append(f"{where}: {pl['name']} row doesn't say its opening isn't confirmed")
                 wide = page.evaluate(WIDE_JS)
                 problems += [f"{where}: {e}" for e in errors]
                 problems += [f"{where}: too wide: {w}" for w in wide]
