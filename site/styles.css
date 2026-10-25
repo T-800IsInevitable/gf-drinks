@@ -227,8 +227,8 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 }
 .status button .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .status button[aria-pressed="true"] { color: var(--fg); border-color: var(--fg); font-weight: 600; }
-.status button[aria-pressed="false"] .dot { opacity: 0.35; }
-.status button[aria-pressed="false"] { text-decoration: line-through; }
+.status.picking button[aria-pressed="false"] .dot { opacity: 0.35; }
+.status.picking button[aria-pressed="false"] { opacity: 0.6; }
 .dot.d-ok { background: var(--ok); } .dot.d-swap { background: var(--swap); } .dot.d-bad { background: var(--bad); }
 .status small { font-weight: 400; color: var(--muted); }
 .app-name { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); grid-column: 1 / -1; }
@@ -280,3 +280,32 @@ body { padding-top: var(--top-h, 250px); }
 .status button { white-space: normal; }
 .row .tag { white-space: normal; max-width: 8.5em; text-align: center; line-height: 1.2; padding: 4px 9px; }
 .t-asis { background: var(--ok-bg); color: var(--ok); }
+
+/* ---- what changed, favourite warnings, staff card ---- */
+.fav-alert, .news { display: flex; flex-direction: column; gap: 8px; }
+.fa-row, .news-row { border-radius: 12px; padding: 10px 14px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.fa-row { background: var(--bad-bg); color: var(--bad); }
+.fa-row p, .news-row p { margin: 0; }
+.fa-row .link-btn { align-self: flex-start; color: inherit; text-decoration: underline; padding: 6px 0; min-height: 36px; }
+.news-row { background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+.news-row b { color: var(--fg); }
+.news-row.bad { border-color: var(--bad); }
+.news-btns { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px !important; }
+.chg { color: var(--accent); font-weight: 600; }
+.chg.bad { color: var(--bad); }
+.chg-note { background: var(--bg); border-radius: 8px; padding: 6px 10px; }
+.chg-note.bad { background: var(--bad-bg); color: var(--bad); }
+.chg-note.bad b { color: inherit; }
+.chg-list { padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.chg-list li { color: var(--fg); }
+.sheet h3.bad { color: var(--bad); }
+.foot-btns { display: flex; gap: 8px; flex: none; }
+.staff-btn { border: 1px solid var(--line); background: var(--bg); border-radius: 999px; padding: 8px 14px; min-height: 44px; font-size: 13.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
+.staff { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+.sheet .staff p { margin: 0; }
+.sheet .staff-where { font-size: 15px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); font-weight: 700; }
+.sheet .staff-name { font-family: var(--display); font-size: 32px; line-height: 1.15; font-weight: 800; color: var(--fg); }
+.sheet .staff-orig { font-size: 22px; color: var(--fg); }
+.sheet .staff-order { font-size: 25px; line-height: 1.25; font-weight: 700; color: var(--fg); background: var(--ok-bg); border-radius: 12px; padding: 12px 14px; }
+.sheet .staff-coeliac { font-size: 20px; line-height: 1.3; color: var(--fg); }
+@media (max-width: 380px) { .foot-btns { flex-direction: column; align-items: flex-end; } }

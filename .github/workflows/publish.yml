@@ -29,16 +29,28 @@ jobs:
       - name: Install PDF reader
         run: pip install -r tools/requirements.txt
 
+      # The live menus, so the build can say what changed in a new guide (tools/changes.py)
+      - name: Download the menus that are live now
+        run: python tools/fetch_previous.py
+
       - name: Build every restaurant's menu
         run: |
           set -o pipefail
-          { python tools/build.py && python tools/check.py; } | tee build.log
+          { python -m unittest discover -s tests && python tools/build.py && python tools/check.py && python tools/snapshot.py; } | tee build.log
           {
             echo "## Menu build"
             echo '```'
             cat build.log
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install the browser for UI checks
+        run: |
+          pip install -r tools/requirements-dev.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Check the app at iPhone size, light and dark
+        run: python tools/ui_check.py
 
       - uses: actions/configure-pages@v6
 

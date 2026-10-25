@@ -4,6 +4,7 @@
   const SEL_KEY = "gf-selected";
   const FAV_KEY = "gf-favourites";
   const TIP_KEY = "gf-install-tip-dismissed";
+  const SEEN_KEY = "gf-changes-seen"; // "<id>@<source>" for each "what's new" banner dismissed
   const ALL = "all";
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -17,9 +18,17 @@
   let selected = ALL;            // restaurant id or ALL
   let filter = "all";            // "all" | "fav" | section name | "r:<id>"
   let favs = new Set(JSON.parse(store.get(FAV_KEY) || "[]"));
-  const SHOW_KEY = "gf-show";
+  const PICK_KEY = "gf-pick";
   const THEME_KEY = "gf-theme";
-  let show = Object.assign({ straight: true, change: true, gluten: true }, JSON.parse(store.get(SHOW_KEY) || "{}"));
+  // Status buttons start unselected (show everything); selecting some narrows the list to those
+  let pick = JSON.parse(store.get(PICK_KEY) || "null");
+  if (!pick) { // carry over a choice saved by the older hide-by-tapping buttons ("gf-show")
+    const old = Object.assign({ straight: true, change: true, gluten: true }, JSON.parse(store.get("gf-show") || "{}"));
+    const all = old.straight && old.change && old.gluten;
+    pick = { straight: !all && old.straight, change: !all && old.change, gluten: !all && old.gluten };
+  }
+  const picking = () => pick.straight || pick.change || pick.gluten;
+  const visible = (k) => !picking() || pick[k];
   // "straight" = no gluten ingredients as served: asis/any/except (fine as served, or with any milk but the ones named); change = swap/modify
   const kindOf = (i) => (!i.order ? "gluten" : (i.order === "swap" || i.order === "modify") ? "change" : "straight");
 
@@ -51,7 +60,8 @@
   function guideLine(r) {
     const g = r.guide || {};
     const season = (g.title || "").replace(/\s*Beverages$/, "");
-    return [season && season !== "Allergen guide" ? season + " menu" : "", shortRuns(g.runs) || (g.version ? "Guide " + fmtDate(g.version) : "")]
+    const named = season && season !== "Allergen guide";
+    return [named ? season + " menu" : "", shortRuns(g.runs) || (g.version && !named ? "Guide " + fmtDate(g.version) : "")]
       .filter(Boolean).join(" · ");
   }
   function tagFor(r, i) {
@@ -65,10 +75,34 @@
     }
   }
   const pageText = (p) => (!p || !p.length ? "" : (p.length > 1 ? "Guide pages " : "Guide page ") + p.join(", "));
+
+  // ---------- what changed in the latest guide (built by tools/changes.py) ----------
+  const chgCache = new WeakMap();
+  function changeOf(r, i) {
+    if (!r.changes) return null;
+    let m = chgCache.get(r);
+    if (!m) {
+      m = new Map();
+      for (const kind of ["added", "changed", "nowOk", "nowAvoid"]) (r.changes[kind] || []).forEach((c) => m.set(c.section + "|" + c.name, { kind, ...c }));
+      chgCache.set(r, m);
+    }
+    return m.get(i.section + "|" + i.name) || null;
+  }
+  const howText = (r, h) => tagFor(r, h)[1] + (h.order === "modify" ? ": " + h.note : "");
+  const CHG_LABEL = { added: "New", changed: "Order changed", nowOk: "No longer to avoid", nowAvoid: "Now contains gluten" };
+  function changeNote(r, c) {
+    const since = "the " + esc(r.changes.since) + " guide";
+    if (c.kind === "added") return "<div class=\"chg-note\"><b>New</b> since " + since + ".</div>";
+    if (c.kind === "nowOk") return "<div class=\"chg-note\"><b>No longer to avoid.</b> It was on the Avoid list in " + since + ".</div>";
+    if (c.kind === "nowAvoid") return "<div class=\"chg-note bad\"><b>Now contains gluten.</b> It had no gluten ingredients in " + since + ".</div>";
+    return "<div class=\"chg-note\"><b>Ordered differently since " + since + ":</b> it was " + esc(howText(r, c.was)) + ".</div>";
+  }
   const chev = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   function detailFor(r, i) {
     const out = [];
+    const c = changeOf(r, i);
+    if (c) out.push(changeNote(r, c));
     if (i.original) {
       out.push('<div>On the menu as <b lang="' + esc(r.language || "") + '">' + esc(i.original) + "</b>" +
         (i.sectionOriginal ? ' under <span lang="' + esc(r.language || "") + '">' + esc(i.sectionOriginal) + "</span>" : "") + "</div>");
@@ -88,8 +122,9 @@
     }
     const k = favKey(r, i);
     const on = favs.has(k);
-    out.push('<div class="detail-foot"><span>' + esc(pageText(i.pages)) + '</span><button type="button" class="fav-btn" data-fav="' + esc(k) +
-      '" aria-pressed="' + on + '">' + (on ? "★ Saved" : "☆ Save") + "</button></div>");
+    out.push('<div class="detail-foot"><span>' + esc(pageText(i.pages)) + '</span><span class="foot-btns"><button type="button" class="staff-btn" data-staff="' +
+      esc(k) + '">Show staff</button><button type="button" class="fav-btn" data-fav="' + esc(k) +
+      '" aria-pressed="' + on + '">' + (on ? "★ Saved" : "☆ Save") + "</button></span></div>");
     return out.join("");
   }
 
@@ -97,6 +132,8 @@
     const [cls, label] = tagFor(r, i);
     const star = favs.has(favKey(r, i)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
     const subs = [];
+    const c = changeOf(r, i);
+    if (c) subs.push('<span class="chg">' + CHG_LABEL[c.kind] + "</span>");
     if (i.order === "modify") subs.push(esc(i.note));
     if (i.original) subs.push('<span lang="' + esc(r.language || "") + '">' + esc(i.original) + "</span>");
     if (showRestaurant) subs.push(esc(r.name));
@@ -157,6 +194,9 @@
     $("stale").innerHTML = stale.map((r) =>
       "<p><b>" + esc(r.name) + " guide may be out of date.</b> It covered up to " + esc(fmtDate(r.guide.validUntil)) +
       ". Check in store before ordering" + (r.officialUrl ? ', or see <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">their allergen info</a>' : "") + ".</p>").join("");
+    renderFavAlerts();
+    renderNews();
+    renderCertNote();
     renderCardLaunch();
     const r = byId(selected);
     $("tips").hidden = !(r && r.tips && r.tips.length);
@@ -164,6 +204,95 @@
       const m = t.match(/^([^:.]+[:.])\s+(.+)$/);
       return "<div>" + (m ? "<b>" + esc(m[1]) + "</b> " + esc(m[2]) : esc(t)) + "</div>";
     }).join("") : "";
+  }
+
+  // Saved favourites that are now on the Avoid list, or missing from the latest guide. These stay until removed.
+  function favProblems() {
+    const out = [];
+    let moved = false;
+    for (const k of [...favs]) {
+      const [rid, section, ...rest] = k.split("|");
+      const name = rest.join("|");
+      const r = byId(rid);
+      if (!r || r.items.some((i) => i.section === section && i.name === name)) continue;
+      const same = r.items.filter((i) => norm(i.name) === norm(name));
+      if (same.length === 1) { // only its section was renamed: follow it quietly
+        favs.delete(k);
+        favs.add(favKey(r, same[0]));
+        moved = true;
+        continue;
+      }
+      const a = r.avoid.find((x) => x.section === section && x.name === name) || r.avoid.find((x) => norm(x.name) === norm(name));
+      out.push({ k, r, name, avoid: a });
+    }
+    if (moved) store.set(FAV_KEY, JSON.stringify([...favs]));
+    return out;
+  }
+  function renderFavAlerts() {
+    const ids = new Set(scope().map((r) => r.id));
+    const probs = favProblems().filter((p) => ids.has(p.r.id));
+    $("favAlert").hidden = !probs.length;
+    $("favAlert").innerHTML = probs.map((p) => "<div class=\"fa-row\"><p>★ <b>" + esc(p.name) + "</b> at " + esc(p.r.name) + (p.avoid
+      ? " is now on the Avoid list: " + esc(p.avoid.reason || "contains " + p.avoid.gluten.join(" and ").toLowerCase()) + "."
+      : " isn't in the latest guide. Check in store before ordering it.") +
+      '</p><button type="button" class="link-btn" data-unfav="' + esc(p.k) + '">Remove from favourites</button></div>').join("");
+  }
+  $("favAlert").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-unfav]");
+    if (!b) return;
+    favs.delete(b.dataset.unfav);
+    store.set(FAV_KEY, JSON.stringify([...favs]));
+    render();
+  });
+
+  const seen = () => new Set(JSON.parse(store.get(SEEN_KEY) || "[]"));
+  const counts = (c) => [["nowAvoid", "now contain gluten"], ["nowOk", "no longer to avoid"], ["changed", "ordered differently"],
+    ["added", "new"], ["removed", "gone"]].filter(([k]) => (c[k] || []).length).map(([k, l]) => c[k].length + " " + l);
+  function renderNews() {
+    const s = seen();
+    const news = scope().filter((r) => r.changes && counts(r.changes).length && !s.has(r.id + "@" + r.source));
+    $("news").hidden = !news.length;
+    $("news").innerHTML = news.map((r) => '<div class="news-row' + (r.changes.nowAvoid.length ? " bad" : "") + '"><p><b>' + esc(r.name) +
+      " has a new guide.</b> Since " + esc(r.changes.since) + ": " + esc(counts(r.changes).join(", ")) + '.</p><p class="news-btns">' +
+      '<button type="button" class="pill-btn" data-news="' + esc(r.id) + '">See what changed</button>' +
+      '<button type="button" class="link-btn" data-seen="' + esc(r.id) + '">Dismiss</button></p></div>').join("");
+  }
+  $("news").addEventListener("click", (e) => {
+    const open = e.target.closest("[data-news]");
+    if (open) { openChanges(byId(open.dataset.news)); return; }
+    const b = e.target.closest("[data-seen]");
+    if (!b) return;
+    const r = byId(b.dataset.seen);
+    const s = seen();
+    s.add(r.id + "@" + r.source);
+    store.set(SEEN_KEY, JSON.stringify([...s]));
+    renderNews();
+  });
+  function openChanges(r) {
+    if (!r || !r.changes) return;
+    const c = r.changes;
+    const list = (title, arr, fn, cls) => arr && arr.length ? "<h3" + (cls ? ' class="' + cls + '"' : "") + ">" + title + " (" + arr.length + ")</h3><ul class=\"chg-list\">" +
+      arr.map((x) => "<li><b>" + esc(x.name) + "</b> <span class=\"muted\">" + esc(shortSection(x.section)) + "</span>" + (fn ? fn(x) : "") + "</li>").join("") + "</ul>" : "";
+    $("changesTitle").textContent = r.name + ": what changed";
+    $("changesBody").innerHTML = '<p class="muted">Compared with the ' + esc(c.since) + " guide. Noticed " + esc(fmtDate(c.date)) + ".</p>" +
+      list("Now contain gluten", c.nowAvoid, (x) => x.gluten && x.gluten.length ? ": " + esc(x.gluten.map(cap).join(" & ")) : "", "bad") +
+      list("Ordered differently", c.changed, (x) => ": was " + esc(howText(r, x.was)) + ", now " + esc(howText(r, x.now))) +
+      list("No longer to avoid", c.nowOk) + list("New", c.added) +
+      list("Gone from the guide", c.removed) +
+      (c.newAvoid ? "<p class=\"muted\">Plus " + c.newAvoid + " new " + (c.newAvoid === 1 ? "item" : "items") + " on the Avoid list.</p>" : "");
+    openDialog($("changes"));
+  }
+
+  // The note under the search box, adjusted when a restaurant's own guide makes a gluten free claim.
+  function renderCertNote() {
+    const rs = scope();
+    const claim = rs.filter((r) => (r.notices || []).some((n) => n.kind === "accreditation"));
+    const names = (arr) => listOr(arr.map((r) => r.name)).replace(/ or /, " and ");
+    $("certText").innerHTML = "<b>No gluten ingredients isn't the same as certified gluten free.</b> " + (claim.length
+      ? esc(names(claim)) + (claim.length === 1 ? " says it's" : " say they're") + " accredited by Coeliac UK: see " +
+        (claim.length === 1 ? "its" : "their") + " own words in the warnings." + (claim.length < rs.length ? " The others don't claim their food is gluten free." : "") +
+        " No restaurant here guarantees against cross-contact."
+      : "These restaurants don't claim their food is gluten free, and don't guarantee against cross-contact.");
   }
 
   function renderList() {
@@ -175,7 +304,7 @@
     let html = "";
     let shown = 0;
     for (const r of rs) {
-      let items = r.items.filter((i) => matches(i, q) && show[kindOf(i)]);
+      let items = r.items.filter((i) => matches(i, q) && visible(kindOf(i)));
       if (filter === "fav") items = items.filter((i) => favs.has(favKey(r, i)));
       else if (!multi && filter !== "all") items = items.filter((i) => i.section === filter);
       if (!items.length) continue;
@@ -200,22 +329,27 @@
     const glutenHits = rs.reduce((n, r) => n + r.avoid.filter((a) => matches(a, q)).length, 0);
     if (filter === "fav") empty = favs.size ? "No saved favourites here yet" : "No favourites yet. Open an item and tap ☆ Save.";
     else if (q) empty = 'No items with no gluten ingredients match "' + esc(q) + '".' +
-      (glutenHits ? " " + glutenHits + (glutenHits === 1 ? " match is" : " matches are") + " on the Avoid list" + (show.gluten ? " below." : ". Tap Avoid above to see " + (glutenHits === 1 ? "it." : "them.")) : "");
-    if (!show.straight || !show.change) empty += " Some items are hidden by the buttons above.";
+      (glutenHits ? " " + glutenHits + (glutenHits === 1 ? " match is" : " matches are") + " on the Avoid list" + (visible("gluten") ? " below." : ". Tap Avoid above to see " + (glutenHits === 1 ? "it." : "them.")) : "");
+    if (!visible("straight") || !visible("change")) empty += " Some items are hidden by the buttons above.";
     $("list").innerHTML = html || '<p class="empty">' + empty + "</p>";
 
     let avoidHtml = "";
-    if (filter !== "fav" && show.gluten) {
+    if (filter !== "fav" && visible("gluten")) {
       for (const r of rs) {
         const av = r.avoid.filter((a) => matches(a, q) && (multi || filter === "all" || a.section === filter));
         if (!av.length) continue;
         if (multi) avoidHtml += '<div class="sub-h">' + esc(r.name) + "</div>";
-        avoidHtml += '<div class="card">' + av.map((a) =>
-          '<details class="row"><summary><span class="nm">' + esc(a.name) +
-          (a.original ? '<small lang="' + esc(r.language || "") + '">' + esc(a.original) + "</small>" : "") + '</span><span class="tag t-bad">' +
-          esc(a.tag || a.gluten.map(cap).join(" & ")) + "</span>" + chev + '</summary><div class="detail"><div>' +
-          (a.reason ? esc(a.reason) : "Every version contains " + esc(a.gluten.join(" and ").toLowerCase()) + ".") + "</div>" +
-          (a.info ? "<div>" + esc(a.info) + "</div>" : "") + "<div>" + esc(pageText(a.pages)) + "</div></div></details>").join("") + "</div>";
+        avoidHtml += '<div class="card">' + av.map((a) => {
+          const c = changeOf(r, a);
+          const subs = [];
+          if (c) subs.push('<span class="chg bad">' + CHG_LABEL[c.kind] + "</span>");
+          if (a.original) subs.push('<span lang="' + esc(r.language || "") + '">' + esc(a.original) + "</span>");
+          return '<details class="row"><summary><span class="nm">' + esc(a.name) +
+            (subs.length ? "<small>" + subs.join(" · ") + "</small>" : "") + '</span><span class="tag t-bad">' +
+            esc(a.tag || a.gluten.map(cap).join(" & ")) + "</span>" + chev + '</summary><div class="detail">' + (c ? changeNote(r, c) : "") + "<div>" +
+            (a.reason ? esc(a.reason) : "Every version contains " + esc(a.gluten.join(" and ").toLowerCase()) + ".") + "</div>" +
+            (a.info ? "<div>" + esc(a.info) + "</div>" : "") + "<div>" + esc(pageText(a.pages)) + "</div></div></details>";
+        }).join("") + "</div>";
       }
     }
     $("avoidWrap").hidden = !avoidHtml;
@@ -238,9 +372,10 @@
         n[kindOf(i)]++;
       }
     }
-    const b = (k, cls, label) => '<button type="button" data-k="' + k + '" aria-pressed="' + show[k] + '"><span class="dot ' + cls + '"></span>' +
+    const b = (k, cls, label) => '<button type="button" data-k="' + k + '" aria-pressed="' + pick[k] + '"><span class="dot ' + cls + '"></span>' +
       label + " <small>" + n[k] + "</small></button>";
-    $("status").innerHTML = b("straight", "d-ok", "No gluten ingredients") + b("change", "d-swap", "Needs a change") + b("gluten", "d-bad", "Avoid");
+    $("status").classList.toggle("picking", picking());
+    $("status").innerHTML =b("straight", "d-ok", "No gluten ingredients") + b("change", "d-swap", "Needs a change") + b("gluten", "d-bad", "Avoid");
   }
 
   const THEMES = [
@@ -277,8 +412,8 @@
   $("status").addEventListener("click", (e) => {
     const b = e.target.closest("[data-k]");
     if (!b || !data) return;
-    show[b.dataset.k] = !show[b.dataset.k];
-    store.set(SHOW_KEY, JSON.stringify(show));
+    pick[b.dataset.k] = !pick[b.dataset.k];
+    store.set(PICK_KEY, JSON.stringify(pick));
     renderStatus();
     renderList();
   });
@@ -366,10 +501,15 @@
     if (!data) return;
     const r = byId(selected);
     $("warnTitle").textContent = r ? r.name + ": warnings" : "Warnings";
+    const claim = scope().filter((x) => (x.notices || []).some((n) => n.kind === "accreditation")).map((x) => x.name);
     $("warnBody").innerHTML =
       '<div class="w-intro"><p><b>"No gluten ingredients" means the restaurant\'s guide lists no gluten cereal for that item.</b> ' +
-      "It isn't a gluten free claim: none of these guides use the words \"gluten free\", and none claim to test for gluten or promise " +
-      "there's been no contact with it. If you have coeliac disease, ask staff about shared equipment such as toasters, fryers and tongs.</p></div>" +
+      (claim.length
+        ? "It isn't the app's gluten free claim. " + esc(listOr(claim)) + " says it's accredited by Coeliac UK, in its own words below; " +
+          "the app still lists items by their ingredients. "
+        : "It isn't a gluten free claim: none of these guides use the words \"gluten free\", and none claim to test for gluten or promise " +
+          "there's been no contact with it. ") +
+      "If you have coeliac disease, ask staff about shared equipment such as toasters, fryers and tongs.</p></div>" +
       scope().map(warningsFor).join('<hr class="w-sep">');
     if ($("info").open) $("info").close();
     openDialog($("warnings"));
@@ -412,6 +552,41 @@
     openDialog($("gfcard"));
   }
   $("cardLaunch").addEventListener("click", (e) => { const b = e.target.closest("[data-lang]"); if (b) openCard(b.dataset.lang); });
+
+  // ---------- staff card: one item, how to order it, in large type to show at the counter ----------
+  function orderLine(r, i) {
+    const label = r.optionLabel || "option";
+    const opt = (o) => (new RegExp("\\b" + label + "$", "i").test(o) ? o : o + " " + label);
+    switch (i.order) {
+      case "asis": return "As it comes, please.";
+      case "any": return "As it comes, please. Any " + label + " is fine.";
+      case "except": return "Please don't use " + listOr(i.not.map(opt)) + ".";
+      case "swap": return "With " + listOr(i.ok.map(opt)) + " instead of " + opt(i.standard || i.not[0]) + ", please.";
+      default: return i.note.replace(/[.!]?$/, ".");
+    }
+  }
+  function openStaff(r, i) {
+    const local = phrases[r.language];
+    $("staffBody").innerHTML = '<p class="staff-where">' + esc(r.name) + "</p>" +
+      '<p class="staff-name">' + esc(i.name) + "</p>" +
+      (i.original ? '<p class="staff-orig" lang="' + esc(r.language || "") + '">' + esc(i.original) + "</p>" : "") +
+      '<p class="staff-order">' + esc(orderLine(r, i)) + "</p>" +
+      (local ? local.card.slice(0, 2).map((c) => '<p class="staff-coeliac" lang="' + esc(r.language) + '">' + esc(c.text) + "</p>").join("") : "") +
+      '<p class="staff-coeliac">I have coeliac disease, so I can\'t have any gluten, even a trace.</p>' +
+      '<p class="staff-coeliac">Could you please use clean equipment?</p>' +
+      '<p class="muted">Turn the screen towards staff. From ' + esc(r.name) + (/s$/.test(r.name) ? "'" : "'s") + " allergen guide" +
+      (i.pages && i.pages.length ? ", " + esc(pageText(i.pages).toLowerCase()) : "") + ".</p>";
+    openDialog($("staff"));
+  }
+  $("list").addEventListener("click", (e) => {
+    const b = e.target.closest(".staff-btn");
+    if (!b) return;
+    e.preventDefault();
+    const [rid, section, ...rest] = b.dataset.staff.split("|");
+    const r = byId(rid);
+    const i = r && r.items.find((x) => x.section === section && x.name === rest.join("|"));
+    if (i) openStaff(r, i);
+  });
 
   // ---------- add a menu (owner only, uploads to inbox/ on GitHub) ----------
   const KEY_KEY = "gf-github-key";
@@ -607,7 +782,7 @@
     select(b.dataset.r);
   });
   $("infoBtn").addEventListener("click", () => openDialog($("info")));
-  ["picker", "info", "gfcard", "warnings"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
+  ["picker", "info", "gfcard", "warnings", "staff", "changes"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
   $("refreshBtn").addEventListener("click", () => load(true));
   $("shareBtn").addEventListener("click", async () => {
     const r = byId(selected);
