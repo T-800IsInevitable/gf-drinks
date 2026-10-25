@@ -156,18 +156,25 @@ def parse_rows(pdf_path):
     return info, rows, warnings
 
 
-def group(rows):
+def group(rows, warnings=None):
     drinks = {}
     for r in rows:
         m = MILK.match(r["name"])
         base, milk = (clean(m.group(1)), re.sub(r"(?: milk)?(?: \(instead of [\w ]+\))?$", "", m.group(2).lower())) if m else (r["name"], None)
-        key = (r["section"], r["sub"] or "", base.lower())
-        d = drinks.setdefault(key, {"name": base, "section": r["section"], "sub": r["sub"], "pages": [], "versions": []})
+        # the guide sometimes words one milk version differently ("Pistachio Iced Latte" among "Iced Pistachio Latte"
+        # rows), so versions are grouped by the words in the name, whatever their order
+        key = (r["section"], r["sub"] or "", tuple(sorted(set(base.lower().split()))))
+        d = drinks.setdefault(key, {"name": base, "section": r["section"], "sub": r["sub"], "pages": [], "versions": [], "names": []})
         if r["page"] not in d["pages"]:
             d["pages"].append(r["page"])
         d["versions"].append({"milk": milk, "gluten": r["gluten"]})
+        d["names"].append(base)
     ok, avoid = [], []
     for d in drinks.values():
+        names = d.pop("names")
+        d["name"] = max(dict.fromkeys(names), key=names.count)  # the wording most of its rows use
+        if len(set(names)) > 1 and warnings is not None:
+            warnings.append(f"{d['name']}: the guide also calls one version {', '.join(repr(n) for n in dict.fromkeys(names) if n != d['name'])}; grouped as one drink")
         vs = d.pop("versions")
         good = [v for v in vs if not v["gluten"]]
         bad = [v for v in vs if v["gluten"]]
@@ -205,7 +212,7 @@ def build(folder, config):
     pdf_path = newest_pdf(Path(folder) / "guides")
     print(f"  building from {pdf_path.name}")
     info, rows, warnings = parse_rows(pdf_path)
-    ok, avoid = group(rows)
+    ok, avoid = group(rows, warnings)
     with pdfplumber.open(pdf_path) as pdf:
         first_table = next((i + 1 for i, pg in enumerate(pdf.pages) if "Product" in (pg.extract_text() or "")), 3)
         guide_notices = notices.collect(pdf, list(range(1, first_table)), columns_for=tuple(range(2, first_table)))

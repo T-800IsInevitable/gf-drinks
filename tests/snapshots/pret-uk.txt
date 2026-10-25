@@ -163,11 +163,9 @@ OK    | Barista Prepared Drinks | Toasted Marshmallow Hot Chocolate | except ok=
 OK    | Barista Prepared Drinks | Strawberry Matcha Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
 OK    | Barista Prepared Drinks | Iced Strawberry Matcha Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
 OK    | Barista Prepared Drinks | Pistachio Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
-OK    | Barista Prepared Drinks | Pistachio Iced Latte | asis
-OK    | Barista Prepared Drinks | Iced Pistachio Latte | except ok=skimmed;coconut;soya not=oat
+OK    | Barista Prepared Drinks | Iced Pistachio Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
 OK    | Barista Prepared Drinks | Dubai Style Chocolate Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
-OK    | Barista Prepared Drinks | Iced Dubai Style Chocolate Latte | except ok=semi skimmed;skimmed;coconut not=oat
-OK    | Barista Prepared Drinks | Iced Dubai Style Chocolate Iced Latte | asis
+OK    | Barista Prepared Drinks | Iced Dubai Style Chocolate Latte | except ok=semi skimmed;skimmed;coconut;soya not=oat
 OK    | Barista Prepared Drinks | Dubai Style Hot Chocolate | except ok=semi skimmed;skimmed;coconut;soya not=oat
 OK    | Barista Prepared Drinks | Iced Dubai Style Hot Chocolate | except ok=semi skimmed;skimmed;coconut;soya not=oat
 AVOID | Baguettes & Sandwiches | Avo, Olive & Toms Baguette | WHEAT

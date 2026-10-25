@@ -213,7 +213,10 @@ def build(folder, config):
         item = {"name": r["name"], "section": sec, "sub": None, "pages": [1]}
         info = []
         if paren and "available" in paren.group(1).lower():
-            info.append(paren.group(1)[0].upper() + paren.group(1)[1:].lower().replace("heathrow", "Heathrow") + ".")
+            # "(SANDWICHES AVAILABLE AT HEATHROW ONLY)" is about the sandwiches in the section, not its coffees
+            kind = re.match(r"(\w+?)e?s\s+available", paren.group(1), re.I)
+            if not kind or kind.group(1).lower() in r["name"].lower():
+                info.append(paren.group(1)[0].upper() + paren.group(1)[1:].lower().replace("heathrow", "Heathrow") + ".")
         if r["info"]:
             info.append(r["info"])
         if r["stars"]:
