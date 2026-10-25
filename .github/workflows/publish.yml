@@ -3,6 +3,8 @@ name: Build menu and publish app
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "inbox/**"
   workflow_dispatch:
 
 permissions:

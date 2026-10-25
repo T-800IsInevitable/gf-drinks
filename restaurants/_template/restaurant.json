@@ -2,6 +2,8 @@
   "name": "Restaurant name",
   "type": "e.g. Burger restaurant",
   "covers": "e.g. Main menu (UK)",
+  "area": "City or country, e.g. Berlin",
+  "language": "Two-letter code of the menu's language, e.g. de",
   "reader": "manual_csv",
   "optionLabel": "option",
   "officialUrl": "https://example.com/allergens",
@@ -13,5 +15,9 @@
   },
   "tips": [
     "Optional short ordering tips shown above this restaurant's list."
-  ]
+  ],
+  "reviewed": {
+    "by": "Who checked it",
+    "date": "2026-10-01"
+  }
 }

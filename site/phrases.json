@@ -1,0 +1,27 @@
+{
+  "de": {
+    "language": "German",
+    "card": [
+      { "text": "Ich habe Zöliakie.", "en": "I have coeliac disease." },
+      { "text": "Ich darf kein Gluten essen: keinen Weizen, keine Gerste, keinen Roggen, keinen Hafer und keinen Dinkel.", "en": "I can't eat gluten: no wheat, barley, rye, oats or spelt." },
+      { "text": "Schon kleine Mengen machen mich krank, zum Beispiel Krümel oder Mehl.", "en": "Even small amounts make me ill, such as crumbs or flour." },
+      { "text": "Welche Gerichte sind glutenfrei?", "en": "Which dishes are gluten free?" },
+      { "text": "Haben Sie eine Allergenliste?", "en": "Do you have an allergen list?" },
+      { "text": "Bitte keine Hafermilch.", "en": "No oat milk, please." },
+      { "text": "Vielen Dank für Ihre Hilfe!", "en": "Thank you for your help!" }
+    ],
+    "words": [
+      ["glutenfrei", "gluten free"],
+      ["Weizen", "wheat"],
+      ["Gerste", "barley"],
+      ["Roggen", "rye"],
+      ["Hafer", "oats"],
+      ["Dinkel", "spelt"],
+      ["Mehl", "flour"],
+      ["Paniermehl / paniert", "breadcrumbs / breaded"],
+      ["Malz", "malt"],
+      ["kann Spuren enthalten", "may contain traces"],
+      ["Fritteuse", "deep fryer"]
+    ]
+  }
+}

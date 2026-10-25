@@ -45,11 +45,12 @@
 
 <main>
   <div id="installTip" class="tip" hidden>
-    <p><b>Install on your iPhone:</b> tap <b>Share</b> in Safari, then <b>Add to Home Screen</b>.</p>
+    <p><b>Install on your iPhone:</b> in Safari, tap <b>•••</b> (or <b>Share</b>), then <b>Add to Home Screen</b>. Keep <b>Open as Web App</b> switched on.</p>
     <button type="button" id="installClose" class="link-btn">Dismiss</button>
   </div>
   <div id="stale" class="stale" hidden></div>
   <section id="tips" class="rules" aria-label="How to order"></section>
+  <div id="cardLaunch" class="card-launch" hidden></div>
   <div id="list" class="list" aria-live="polite"></div>
   <section id="avoidWrap" class="avoid">
     <h2>Contains gluten whatever you order</h2>
@@ -81,7 +82,9 @@
     <h3>Install on iPhone</h3>
     <ol>
       <li>Open this page in <b>Safari</b>.</li>
-      <li>Tap <b>Share</b>, then <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+      <li>Tap <b>•••</b> next to the address bar, then <b>Share</b>. (On older iPhones, tap <b>Share</b> directly.)</li>
+      <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
+      <li>Keep <b>Open as Web App</b> switched on, then tap <b>Add</b>. If it's off, you get a plain bookmark instead.</li>
     </ol>
     <p>It opens full screen and works without signal using the last menus it downloaded.</p>
     <h3>Reading the tags</h3>
@@ -96,11 +99,58 @@
     <p>Open any item and tap <b>☆ Save</b>. Favourites stay on this phone.</p>
     <h3>Staying up to date</h3>
     <p>The app checks for new menus each time you open it with signal. Tap <b>↻</b> to check now. If a restaurant's guide has passed its end date, you'll see a warning.</p>
+    <h3>Travelling</h3>
+    <p>Menus in other languages show each item in English with the original name underneath, so you can point to it when ordering. A gluten free card you can show staff is available in: <span id="cardLangs"></span>.</p>
+    <h3>Add a menu</h3>
+    <p id="uploadInfo">Upload a restaurant's allergen menu (PDF or photos). It's checked within a day and added once approved.</p>
+    <p><button type="button" id="openUpload" class="pill-btn">Add a menu</button></p>
     <h3>Menus in this app</h3>
     <div id="infoSources"></div>
     <div id="notesWrap" hidden>
       <h3>Notes from the last update</h3>
       <ul id="notes" class="notes"></ul>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="gfcard" aria-labelledby="cardTitle">
+  <form method="dialog" class="sheet">
+    <div class="sheet-head">
+      <h2 id="cardTitle">Gluten free card</h2>
+      <button class="link-btn" value="close">Done</button>
+    </div>
+    <div id="cardBody"></div>
+  </form>
+</dialog>
+
+<dialog id="upload" aria-labelledby="uploadTitle">
+  <form class="sheet" id="uploadForm" novalidate>
+    <div class="sheet-head">
+      <h2 id="uploadTitle">Add a menu</h2>
+      <button type="button" class="link-btn" id="uploadClose">Close</button>
+    </div>
+    <div id="keySetup" hidden>
+      <p>Uploading needs a one-time GitHub key for this app's project. It's saved on this phone only.</p>
+      <ol>
+        <li>In Safari, open <b>github.com/settings/personal-access-tokens/new</b>.</li>
+        <li>Name it <b>GF Menus upload</b> and pick an expiry.</li>
+        <li>Under <b>Repository access</b>, choose <b>Only select repositories</b> and pick <b id="repoName">gf-drinks</b>.</li>
+        <li>Under <b>Permissions → Repository permissions</b>, set <b>Contents</b> to <b>Read and write</b>.</li>
+        <li>Tap <b>Generate token</b>, copy it and paste it below.</li>
+      </ol>
+      <label class="field">GitHub key<input id="keyInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></label>
+      <p><button type="button" id="keySave" class="pill-btn">Save key</button></p>
+      <p class="muted">Not the owner? Send menus to whoever shared this app with you.</p>
+    </div>
+    <div id="uploadFields" hidden>
+      <label class="field">Restaurant<input id="upName" required placeholder="e.g. Café Name" autocomplete="off"></label>
+      <label class="field">City or country<input id="upArea" required placeholder="e.g. Berlin" autocomplete="off"></label>
+      <label class="field">Menu files<input id="upFiles" type="file" accept="application/pdf,image/*" multiple required></label>
+      <p class="muted">PDF or photos of the allergen menu. You can pick several pages.</p>
+      <label class="field">Notes (optional)<textarea id="upNotes" rows="2" placeholder="e.g. Only the lunch menu"></textarea></label>
+      <p><button type="submit" id="upSend" class="pill-btn">Upload</button></p>
+      <p id="upStatus" class="muted" role="status"></p>
+      <p class="muted">Signed in to upload. <button type="button" id="keyForget" class="link-btn">Remove key</button></p>
     </div>
   </form>
 </dialog>
