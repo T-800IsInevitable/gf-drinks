@@ -20,6 +20,7 @@
   let selected = ALL;            // restaurant id or ALL
   let filter = "all";            // "all" | "fav" | section name | "r:<id>"
   let favs = new Set(JSON.parse(store.get(FAV_KEY) || "[]"));
+  const firstVisit = !store.get(DATA_KEY); // a new user has nothing to compare, so no "what changed" banners
   let region = store.get(REGION_KEY) || UK;
   let cities = {};               // { <id>: { name, language, checked, list, tips, sections, places } }
   let cityFilter = "all";        // "all" | section name
@@ -296,9 +297,9 @@
     const names = (arr) => listOr(arr.map((r) => r.name)).replace(/ or /, " and ");
     $("certText").innerHTML = "<b>No gluten ingredients isn't the same as certified gluten free.</b> " + (claim.length
       ? esc(names(claim)) + (claim.length === 1 ? " says it's" : " say they're") + " accredited by Coeliac UK: see " +
-        (claim.length === 1 ? "its" : "their") + " own words in the warnings." + (claim.length < rs.length ? " The others don't claim their food is gluten free." : "") +
+        (claim.length === 1 ? "its" : "their") + " own words in the warnings." + (claim.length < rs.length ? " The others don't call the items listed here gluten free." : "") +
         " No restaurant here guarantees against cross-contact."
-      : "These restaurants don't claim their food is gluten free, and don't guarantee against cross-contact.");
+      : "These restaurants don't call the items listed here gluten free, and don't guarantee against cross-contact.");
   }
 
   // A search word that names an option ruled out everywhere it appears (e.g. "oat" milk) would find nothing,
@@ -461,7 +462,7 @@
 
   function renderPicker() {
     const opt = (id, name, line, meta, stale) =>
-      '<button type="button" class="pick-opt" data-r="' + esc(id) + '" aria-pressed="' + (selected === id) + '"><span class="po-main"><b>' +
+      '<button type="button" class="pick-opt" data-r="' + esc(id) + '" aria-pressed="' + (region === UK && selected === id) + '"><span class="po-main"><b>' +
       esc(name) + "</b><span>" + esc(line) + "</span></span>" + (stale ? '<span class="tag t-swap">Out of date</span>' : '<span class="po-meta">' + esc(meta) + "</span>") + "</button>";
     const total = data.restaurants.reduce((n, r) => n + r.stats.items, 0);
     const as = areas();
@@ -470,7 +471,12 @@
           .map((r) => opt(r.id, r.name, [r.type, guideLine(r)].filter(Boolean).join(" · "), r.stats.items + " items", isStale(r))).join("")).join("") +
         data.restaurants.filter((r) => !r.area).map((r) => opt(r.id, r.name, r.type, r.stats.items + " items", isStale(r))).join("")
       : data.restaurants.map((r) => opt(r.id, r.name, [r.type, r.area, guideLine(r)].filter(Boolean).join(" · "), r.stats.items + " items", isStale(r))).join("");
-    $("pickList").innerHTML = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false) + grouped +
+    // other cities (cities.json) are lists of places rather than menus, so they switch region instead of restaurant
+    const others = Object.entries(cities).map(([cid, c]) => '<div class="sub-h">' + esc(c.name) + "</div>" +
+      '<button type="button" class="pick-opt" data-region="' + esc(cid) + '" aria-pressed="' + (region === cid) + '"><span class="po-main"><b>' +
+      esc(c.name) + "</b><span>Places that are all gluten free, by their own word or the coeliac support groups'</span></span>" +
+      '<span class="po-meta">' + c.places.length + " places</span></button>").join("");
+    $("pickList").innerHTML = '<div class="sub-h">UK</div>' + opt(ALL, "All restaurants", "Search and browse everything", total + " items", false) + grouped + others +
       '<p class="pick-note">More restaurants can be added by the app\'s owner from each restaurant\'s allergen guide.</p>';
   }
 
@@ -634,7 +640,7 @@
       (claim.length
         ? "It isn't the app's gluten free claim. " + esc(listOr(claim)) + " says it's accredited by Coeliac UK, in its own words below; " +
           "the app still lists items by their ingredients. "
-        : "It isn't a gluten free claim: none of these guides use the words \"gluten free\", and none claim to test for gluten or promise " +
+        : "It isn't a gluten free claim: these guides don't call the items listed here \"gluten free\", and none claim to test for gluten or promise " +
           "there's been no contact with it. ") +
       "If you have coeliac disease, ask staff about shared equipment such as toasters, fryers and tongs.</p></div>" +
       scope().map(warningsFor).join('<hr class="w-sep">');
@@ -669,6 +675,7 @@
       region = UK;
     }
     render();
+    if (data && $("picker").open) renderPicker(); // the first-visit chooser may have opened before the cities arrived
   }
   function renderCardLaunch() {
     const r = byId(selected);
@@ -855,6 +862,7 @@
       const prev = data;
       const changed = !prev || prev.built !== fresh.built;
       if (changed) {
+        if (!prev && firstVisit && !store.get(SEEN_KEY)) store.set(SEEN_KEY, JSON.stringify(fresh.restaurants.map((r) => r.id + "@" + r.source)));
         data = fresh;
         store.set(DATA_KEY, JSON.stringify(fresh));
         render();
@@ -927,7 +935,8 @@
     if (!b) return;
     e.preventDefault();
     $("picker").close();
-    select(b.dataset.r);
+    if (b.dataset.region) setRegion(b.dataset.region);
+    else select(b.dataset.r);
   });
   $("infoBtn").addEventListener("click", () => openDialog($("info")));
   ["picker", "info", "gfcard", "warnings", "staff", "changes"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));

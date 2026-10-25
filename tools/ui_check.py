@@ -158,6 +158,33 @@ def main():
         print(f"switch: UK -> {cid} (search, card, reload) -> UK")
         ctx.close()
 
+        # first visit: no "what changed" banner (nothing has changed for a new user), and the chooser offers Berlin
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        page.goto(base)
+        page.wait_for_selector("#picker[open]")
+        if page.locator("#news").is_visible():
+            problems.append("first visit: the 'what changed' banner shows for a new user")
+        page.locator(f'#pickList [data-region="{cid}"]').click()
+        page.wait_for_selector("#cityList .row")
+        if page.locator("#picker[open]").count():
+            problems.append("first visit: choosing Berlin left the chooser open")
+        page.locator("#pickBtn").click()
+        page.wait_for_selector("#picker[open]")
+        if page.locator(f'#pickList [data-region="{cid}"]').get_attribute("aria-pressed") != "true":
+            problems.append("from Berlin, the chooser doesn't show Berlin as chosen")
+        page.locator(f"#pickList [data-r=\"{ids[0]}\"]").click()
+        page.wait_for_selector("#list .row")
+        # wording: the guides do call some (avoided) items gluten free, so don't say they never use the words
+        if "don't claim their food is gluten free" in page.locator("#certText").inner_text():
+            problems.append("certified note says the restaurants don't claim their food is gluten free")
+        page.locator("#openWarnings").click()
+        page.wait_for_selector("#warnings[open]")
+        if "none of these guides use" in page.locator("#warnBody").inner_text():
+            problems.append("warnings intro says none of the guides use the words gluten free")
+        print("first visit: chooser with Berlin, no changes banner; wording checked")
+        ctx.close()
+
         # search: the first result sits above the iPhone keyboard (about 340pt tall), and a ruled-out milk is explained
         ctx = browser.new_context(color_scheme="light", **IPHONE)
         page = ctx.new_page()
