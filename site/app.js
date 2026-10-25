@@ -17,6 +17,11 @@
   let selected = ALL;            // restaurant id or ALL
   let filter = "all";            // "all" | "fav" | section name | "r:<id>"
   let favs = new Set(JSON.parse(store.get(FAV_KEY) || "[]"));
+  const SHOW_KEY = "gf-show";
+  const THEME_KEY = "gf-theme";
+  let show = Object.assign({ straight: true, change: true, gluten: true }, JSON.parse(store.get(SHOW_KEY) || "{}"));
+  // straight up = asis/any/except (fine as served, or with any milk but the ones named); change = swap/modify
+  const kindOf = (i) => (!i.order ? "gluten" : (i.order === "swap" || i.order === "modify") ? "change" : "straight");
 
   // ---------- helpers ----------
   const byId = (id) => data && data.restaurants.find((r) => r.id === id);
@@ -29,6 +34,7 @@
       "Frappuccino® Blended Beverage": "Frappuccino",
       "Syrups, Drizzles & Cream Cold Foams": "Syrups & toppings",
       "Protein Beverages": "Protein",
+      "Pret's Hot": "Hot food",
     };
     return map[s] || s.replace(/®/g, "");
   }
@@ -51,7 +57,7 @@
   function tagFor(r, i) {
     const label = r.optionLabel || "option";
     switch (i.order) {
-      case "asis": return ["t-asis", "As listed"];
+      case "asis": return ["t-asis", "Straight up"];
       case "any": return ["t-any", "Any " + label];
       case "swap": return ["t-swap", "Swap " + label];
       case "modify": return ["t-swap", "Ask"];
@@ -126,7 +132,7 @@
       if (data.restaurants.length > 1) data.restaurants.forEach((r) => chips.push(["r:" + r.id, r.name]));
     } else {
       const r = byId(selected);
-      r.sections.filter((s) => r.items.some((i) => i.section === s)).forEach((s) => chips.push([s, shortSection(s)]));
+      r.sections.filter((s) => r.items.some((i) => i.section === s) || r.avoid.some((a) => a.section === s)).forEach((s) => chips.push([s, shortSection(s)]));
     }
     if (!chips.some(([v]) => v === filter)) filter = "all";
     $("chips").innerHTML = chips.map(([v, l]) =>
@@ -157,7 +163,7 @@
     let html = "";
     let shown = 0;
     for (const r of rs) {
-      let items = r.items.filter((i) => matches(i, q));
+      let items = r.items.filter((i) => matches(i, q) && show[kindOf(i)]);
       if (filter === "fav") items = items.filter((i) => favs.has(favKey(r, i)));
       else if (!multi && filter !== "all") items = items.filter((i) => i.section === filter);
       if (!items.length) continue;
@@ -179,12 +185,13 @@
       }
     }
     let empty = "No gluten free match";
+    if (!show.straight || !show.change) empty = "Nothing to show with these filters. Tap Straight up or Needs change above to show more.";
     if (filter === "fav") empty = favs.size ? "No saved favourites here yet" : "No favourites yet. Open an item and tap ☆ Save.";
     else if (q) empty = 'No gluten free match for "' + esc(q) + '". Check the list below.';
     $("list").innerHTML = html || '<p class="empty">' + empty + "</p>";
 
     let avoidHtml = "";
-    if (filter !== "fav") {
+    if (filter !== "fav" && show.gluten) {
       for (const r of rs) {
         const av = r.avoid.filter((a) => matches(a, q) && (multi || filter === "all" || a.section === filter));
         if (!av.length) continue;
@@ -200,6 +207,66 @@
     $("avoid").innerHTML = avoidHtml;
     return shown;
   }
+
+  function renderStatus() {
+    const q = $("q").value.trim().toLowerCase();
+    const multi = selected === ALL;
+    let rs = scope();
+    if (filter.startsWith("r:")) rs = rs.filter((r) => r.id === filter.slice(2));
+    if (filter.startsWith("a:")) rs = rs.filter((r) => r.area === filter.slice(2));
+    const n = { straight: 0, change: 0, gluten: 0 };
+    for (const r of rs) {
+      for (const i of r.items.concat(r.avoid)) {
+        if (!matches(i, q)) continue;
+        if (filter === "fav" && !favs.has(favKey(r, i))) continue;
+        if (!multi && !["all", "fav"].includes(filter) && i.section !== filter) continue;
+        n[kindOf(i)]++;
+      }
+    }
+    const b = (k, cls, label) => '<button type="button" data-k="' + k + '" aria-pressed="' + show[k] + '"><span class="dot ' + cls + '"></span>' +
+      label + " <small>" + n[k] + "</small></button>";
+    $("status").innerHTML = b("straight", "d-ok", "Straight up") + b("change", "d-swap", "Needs change") + b("gluten", "d-bad", "Gluten");
+  }
+
+  const THEMES = [
+    ["auto", "Match phone", "linear-gradient(135deg,#f6f5f2 50%,#171412 50%)"],
+    ["light", "Light", "#f6f5f2"],
+    ["dark", "Dark", "#171412"],
+    ["pink-light", "Pink light", "linear-gradient(135deg,#fbf3f6 50%,#c2185b 50%)"],
+    ["pink-dark", "Pink dark", "linear-gradient(135deg,#1a1116 50%,#f48fb1 50%)"],
+  ];
+  function applyTheme(t) {
+    const root = document.documentElement;
+    if (t === "auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", t);
+    const bg = getComputedStyle(root).getPropertyValue("--bg").trim();
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+      if (t === "auto") m.setAttribute("content", m.media.includes("dark") ? "#171412" : "#f6f5f2"); else m.setAttribute("content", bg);
+    });
+  }
+  function renderThemes() {
+    const cur = store.get(THEME_KEY) || "auto";
+    $("themes").innerHTML = THEMES.map(([id, label, sw]) => '<button type="button" data-t="' + id + '" aria-pressed="' + (cur === id) +
+      '"><span class="swatch" style="background:' + sw + '"></span>' + label + "</button>").join("");
+  }
+  $("themes").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-t]");
+    if (!b) return;
+    e.preventDefault();
+    store.set(THEME_KEY, b.dataset.t);
+    applyTheme(b.dataset.t);
+    renderThemes();
+  });
+  applyTheme(store.get(THEME_KEY) || "auto");
+  renderThemes();
+
+  $("status").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-k]");
+    if (!b || !data) return;
+    show[b.dataset.k] = !show[b.dataset.k];
+    store.set(SHOW_KEY, JSON.stringify(show));
+    renderStatus();
+    renderList();
+  });
 
   function renderSources() {
     const line = (r) => {
@@ -236,6 +303,7 @@
     renderHeader();
     renderChips();
     renderBanners();
+    renderStatus();
     renderList();
     renderSources();
   }
@@ -437,7 +505,7 @@
   }
 
   // ---------- events ----------
-  $("q").addEventListener("input", () => data && renderList());
+  $("q").addEventListener("input", () => { if (data) { renderStatus(); renderList(); } });
   $("chips").addEventListener("click", (e) => {
     const b = e.target.closest("button");
     if (!b || !data) return;
@@ -445,6 +513,7 @@
     if (f.startsWith("r:")) { select(f.slice(2)); return; }
     filter = f;
     renderChips();
+    renderStatus();
     renderList();
     window.scrollTo({ top: 0 });
   });
@@ -480,9 +549,9 @@
   $("shareBtn").addEventListener("click", async () => {
     const r = byId(selected);
     const url = location.origin + location.pathname.replace(/index\.html$/, "") + (r ? "#" + r.id : "");
-    const text = r ? "Gluten free options at " + r.name : "Gluten free options at restaurants and coffee shops";
+    const text = r ? "Gluten free food and drinks at " + r.name : "Gluten free food and drinks at restaurants and coffee shops";
     if (navigator.share) {
-      try { await navigator.share({ title: "GF Menus", text, url }); } catch (e) { /* share sheet closed */ }
+      try { await navigator.share({ title: "Twoo's Treat Temple", text, url }); } catch (e) { /* share sheet closed */ }
       return;
     }
     try { await navigator.clipboard.writeText(url); toast("Link copied"); } catch (e) { toast(url); }

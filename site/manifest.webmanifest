@@ -1,7 +1,7 @@
 {
-  "name": "GF Menus",
-  "short_name": "GF Menus",
-  "description": "Gluten free options at restaurants and coffee shops, from their published allergen guides, and how to order them.",
+  "name": "Twoo's Treat Temple",
+  "short_name": "Treat Temple",
+  "description": "Gluten free food and drinks at restaurants and coffee shops, from their published allergen guides, and how to order them.",
   "lang": "en-GB",
   "start_url": "./",
   "scope": "./",

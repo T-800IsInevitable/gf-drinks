@@ -1,0 +1,15 @@
+{
+  "name": "Pret A Manger",
+  "type": "Café",
+  "covers": "Food and drinks in GB Pret shops",
+  "area": "UK",
+  "language": "en",
+  "reader": "pret_uk_pdf",
+  "optionLabel": "milk",
+  "officialUrl": "https://www.pret.co.uk",
+  "recheckDays": 91,
+  "tips": [
+    "Oat milk: the guide marks oats as a gluten cereal, so choose another milk.",
+    "Check the label: the guide says recipes change and can differ shop to shop."
+  ]
+}
