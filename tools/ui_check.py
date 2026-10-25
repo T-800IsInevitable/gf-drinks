@@ -8,7 +8,10 @@ For every restaurant page and the "All restaurants" page it checks:
   * nothing wider than the screen (no sideways scrolling)
   * the list shows items
 the same for each city page in cities.json (every place shown and opened), then
-it switches UK -> city (search, coeliac card, reload) -> UK, and on one
+it switches UK -> city (search, coeliac card, reload) -> UK; Berlin on a
+Sunday evening (open today, near me, saving); the staff card, German card and
+offline header; accessibility (Larger Text, 44pt taps, contrast, VoiceOver
+labels); the first visit; search staying above the keyboard; and on one
 restaurant it taps through: opening an item, the Show staff card, a status
 button and saving a favourite.
 
@@ -220,6 +223,40 @@ def main():
         if page.locator("#cityList .row").count() != 1:
             problems.append(f"{cid}: after saving one place and reloading, Saved shows {page.locator('#cityList .row').count()}")
         print(f"{cid}: open on Sunday {len(want)}, nearest to Alexanderplatz {shown()[:1] and nearest[0]['name']}, saving works")
+        ctx.close()
+
+        # staff card wording, the German card, and saying when it's offline
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        page.goto(base + "#starbucks-uk")
+        page.wait_for_selector("#list .row")
+        sb = json.loads((SITE / "data" / "r" / "starbucks-uk.json").read_text(encoding="utf-8"))
+        for order, must in (("except", "Any other milk is fine"), ("swap", "instead of")):
+            item = next(i for i in sb["items"] if i["order"] == order)
+            page.locator("#q").fill(item["name"])
+            row = page.locator("#list .row", has=page.locator(".nm", has_text=item["name"])).first
+            row.locator("summary").click()
+            row.locator(".staff-btn").click()
+            page.wait_for_selector("#staff[open]")
+            said = page.locator("#staff .staff-order").inner_text()
+            if must not in said or said.count(",") > 1:
+                problems.append(f"staff card for {item['name']} ({order}): {said!r}")
+            page.locator("#staff .link-btn").click()
+        page.locator("#q").fill("")
+        de = json.loads((SITE / "phrases.json").read_text(encoding="utf-8"))["de"]
+        if not any("Fritteuse" in c["text"] for c in de["card"]):
+            problems.append("German card has no line about a shared fryer")
+        page.evaluate("navigator.serviceWorker.ready")
+        page.reload()  # now controlled by the service worker, which keeps the saved copy
+        page.wait_for_selector("#list .row")
+        page.wait_for_timeout(500)
+        ctx.set_offline(True)
+        page.reload()
+        page.wait_for_selector("#list .row")
+        page.wait_for_timeout(5000)  # the service worker waits up to 4s for the network before using the saved copy
+        if "offline" not in page.locator("#guideLine").inner_text().lower():
+            problems.append(f"offline: the header doesn't say so ({page.locator('#guideLine').inner_text()!r})")
+        print(f"staff card and offline: header {page.locator('#guideLine').inner_text()!r}")
         ctx.close()
 
         # accessibility: Larger Text, contrast, tap targets, VoiceOver labels

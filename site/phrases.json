@@ -9,6 +9,8 @@
       { "text": "Haben Sie eine Allergenliste?", "en": "Do you have an allergen list?" },
       { "text": "Bitte keine Hafermilch.", "en": "No oat milk, please." },
       { "text": "Ist da Hafer oder Weizenstärke drin?", "en": "Does this contain oats or wheat starch?" },
+      { "text": "Bitte verwenden Sie saubere Küchengeräte und Bretter.", "en": "Please use clean kitchen utensils and boards." },
+      { "text": "Wird das in derselben Fritteuse wie panierte Speisen frittiert?", "en": "Is this fried in the same fryer as breaded food?" },
       { "text": "Vielen Dank für Ihre Hilfe!", "en": "Thank you for your help!" }
     ],
     "words": [

@@ -27,6 +27,8 @@
   let nearSort = false;          // city places sorted by distance from here
   let here = null;               // { lat, lon } from the phone, once asked
   const city = () => cities[region];
+  let offlineNow = false;        // showing the copy saved on the phone because there's no signal
+  const offlineTag = () => (offlineNow ? " · Offline: saved copy" : "");
   const PICK_KEY = "gf-pick";
   const THEME_KEY = "gf-theme";
   // Status buttons start unselected (show everything); selecting some narrows the list to those
@@ -173,13 +175,13 @@
     if (r) {
       $("pickName").textContent = r.name;
       $("pickBtn").setAttribute("aria-label", r.name + ". Choose where to eat");
-      $("guideLine").textContent = guideLine(r) || r.covers;
+      $("guideLine").textContent = (guideLine(r) || r.covers) + offlineTag();
       $("q").placeholder = "Search " + r.name;
     } else {
       $("pickName").textContent = "All restaurants";
       $("pickBtn").setAttribute("aria-label", "All restaurants. Choose where to eat");
       const n = data.restaurants.length;
-      $("guideLine").textContent = n + (n === 1 ? " restaurant" : " restaurants") + " · tap to choose";
+      $("guideLine").textContent = n + (n === 1 ? " restaurant" : " restaurants") + (offlineNow ? "" : " · tap to choose") + offlineTag();
       $("q").placeholder = "Search all restaurants";
     }
   }
@@ -540,7 +542,7 @@
     if (!c) { $("cityList").innerHTML = '<p class="empty">Loading…</p>'; return; }
     $("pickName").textContent = c.name;
     $("pickBtn").setAttribute("aria-label", c.name + ". Choose where to eat");
-    $("guideLine").textContent = c.places.length + " places · checked " + fmtDate(c.checked);
+    $("guideLine").textContent = c.places.length + " places · checked " + fmtDate(c.checked) + offlineTag();
     $("q").placeholder = "Search " + c.name;
     const chips = [["all", "All"], ["open", "Open today"], ["fav", "★ Saved"]].concat(c.sections.filter((s) => c.places.some((p) => p.section === s)).map((s) => [s, s]));
     if (!chips.some(([v]) => v === cityFilter)) cityFilter = "all";
@@ -764,8 +766,13 @@
     switch (i.order) {
       case "asis": return "As it comes, please.";
       case "any": return "As it comes, please. Any " + label + " is fine.";
-      case "except": return "Please don't use " + listOr(i.not.map(opt)) + ".";
-      case "swap": return "With " + listOr(i.ok.map(opt)) + " instead of " + opt(i.standard || i.not[0]) + ", please.";
+      case "except": return "Please don't use " + listOr(i.not.map(opt)) + ". Any other " + label + " is fine.";
+      case "swap": {
+        const std = i.standard || i.not[0];
+        if (i.ok.length <= 2) return "With " + listOr(i.ok.map(opt)) + " instead of " + opt(std) + ", please.";
+        const also = i.not.filter((n) => n !== std);
+        return "Any other " + label + " instead of " + opt(std) + (also.length ? " (not " + listOr(also.map(opt)) + ")" : "") + ", please.";
+      }
       default: return i.note.replace(/[.!]?$/, ".");
     }
   }
@@ -919,10 +926,14 @@
       const fresh = { built: idx.json.built, restaurants: full.map((f) => f.json) };
       const prev = data;
       const changed = !prev || prev.built !== fresh.built;
-      if (changed) {
-        if (!prev && firstVisit && !store.get(SEEN_KEY)) store.set(SEEN_KEY, JSON.stringify(fresh.restaurants.map((r) => r.id + "@" + r.source)));
-        data = fresh;
-        store.set(DATA_KEY, JSON.stringify(fresh));
+      const wasOffline = offlineNow;
+      offlineNow = offline;
+      if (changed || wasOffline !== offlineNow) {
+        if (changed) {
+          if (!prev && firstVisit && !store.get(SEEN_KEY)) store.set(SEEN_KEY, JSON.stringify(fresh.restaurants.map((r) => r.id + "@" + r.source)));
+          data = fresh;
+          store.set(DATA_KEY, JSON.stringify(fresh));
+        }
         render();
       }
       if (offline) {
@@ -937,6 +948,7 @@
       }
     } catch (e) {
       if (data) {
+        if (!offlineNow) { offlineNow = true; render(); }
         if (manual) toast("No connection. Showing the menus saved on this phone.");
       } else {
         $("guideLine").textContent = "Couldn't load menus";
