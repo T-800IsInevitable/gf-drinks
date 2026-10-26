@@ -12,13 +12,13 @@
     },
     "tips": [
       "Oats and wheat starch: in Germany, food labelled glutenfrei can contain gluten free oats (Hafer) or gluten free wheat starch (Weizenstärke). This app counts oats as gluten, so ask: Ist da Hafer oder Weizenstärke drin?",
-      "Packaged food: look for glutenfrei or the crossed grain symbol. In Germany the DZG licenses the symbol for products tested at under 20 mg of gluten per kg. Supermarkets, drugstores and organic shops sell gluten free food.",
+      "Packaged food: look for glutenfrei or the crossed grain symbol. In Germany the DZG licenses the symbol for products tested at under 20 mg of gluten per kg. Supermarkets, drugstores and organic shops sell food labelled glutenfrei.",
       "Before you go: opening times change, and many of these places close one or two days a week or only open in the evening. Check the website first. Some take card only."
     ],
     "sections": [
       "Bakeries and cafés",
       "Restaurants",
-      "Separate gluten free kitchen"
+      "Separate kitchen"
     ],
     "places": [
       {
@@ -455,7 +455,7 @@
       },
       {
         "name": "Zeus Pizzeria",
-        "section": "Separate gluten free kitchen",
+        "section": "Separate kitchen",
         "claim": "separate",
         "type": "Pizzeria",
         "locations": [

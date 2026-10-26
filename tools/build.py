@@ -75,6 +75,38 @@ def merge(parts):
     }
 
 
+ROLES = {"part", "ingredient"}
+
+
+def apply_config(data, config, rid):
+    """Corrections from restaurant.json, applied to the readers' output:
+    "rename": {"Section|Name": "New name"} for a row whose guide name could be taken for another dish
+      (Five Guys lists its hot dog sausage as "Hot Dog");
+    "roles": {"Section" or "Section|Name": "part" | "ingredient"} for rows that aren't things to order as they
+      are: parts of dishes (burger toppings) and ingredients listed on their own (milks). They get no staff card.
+    A setting that matches nothing stops the build: the guide has changed, so it needs looking at again."""
+    rows = data["items"] + data["avoid"]
+    for key, new in (config.get("rename") or {}).items():
+        hits = [i for i in rows if f"{i['section']}|{i['name']}" == key]
+        if not hits:
+            raise SystemExit(f"ERROR: {rid}/restaurant.json: rename {key!r} matches nothing in the guide. Check the guide, then update it.")
+        for i in hits:
+            i["name"] = new
+    for key, role in (config.get("roles") or {}).items():
+        if role not in ROLES:
+            raise SystemExit(f"ERROR: {rid}/restaurant.json: role {role!r} for {key!r} isn't one of {sorted(ROLES)}.")
+        hits = [i for i in rows if key in (i["section"], f"{i['section']}|{i['name']}")]
+        if not hits:
+            raise SystemExit(f"ERROR: {rid}/restaurant.json: roles {key!r} matches nothing in the guide. Check the guide, then update it.")
+        for i in hits:
+            i["role"] = role
+    # the counts shown in the app are of things to order, so an ingredient listed on its own isn't one
+    ingredients = sum(1 for i in data["items"] if i.get("role") == "ingredient")
+    if ingredients:
+        data["stats"]["items"] -= ingredients
+        data["stats"]["ingredients"] = ingredients
+
+
 def build_one(folder):
     config = json.loads((folder / "restaurant.json").read_text(encoding="utf-8"))
     readers = config.get("readers") or ([config["reader"]] if config.get("reader") else [])
@@ -88,6 +120,7 @@ def build_one(folder):
         guide["validUntil"] = guide.get("validUntil") or end_date(guide.get("runs"))
         parts.append(part)
     data = merge(parts)
+    apply_config(data, config, folder.name)
     meta = {
         "id": folder.name,
         "name": config["name"],
@@ -102,7 +135,8 @@ def build_one(folder):
         "gaps": config.get("gaps", []),
         "latestGuide": config.get("latestGuide"),  # when we last looked for a newer guide, and what we found
     }
-    print(f"  {data['stats']['rows']} rows -> {data['stats']['items']} with no gluten ingredients, {data['stats']['avoid']} to avoid")
+    print(f"  {data['stats']['rows']} rows -> {data['stats']['items']} with no gluten ingredients, {data['stats']['avoid']} to avoid"
+          + (f", {data['stats']['ingredients']} ingredients listed on their own" if data["stats"].get("ingredients") else ""))
     for w in data.get("warnings", []):
         print("  WARNING:", w)
     return meta, data

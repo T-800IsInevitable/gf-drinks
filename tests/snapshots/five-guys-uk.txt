@@ -1,17 +1,17 @@
 # source: FGUK_allergen_ingredient_nutrition_20261013.pdf
-OK    | Meat | Bacon | asis
-OK    | Meat | Hot Dog | asis
-OK    | Meat | Beef Burger Patty | asis
-OK    | Meat | Sausage Patty | asis
+OK    | Meat | Bacon | asis role=part
+OK    | Meat | Hot dog sausage | asis role=part
+OK    | Meat | Beef Burger Patty | asis role=part
+OK    | Meat | Sausage Patty | asis role=part
 OK    | Fries Cooked in Peanut Oil | Fries | asis
-OK    | Fries Cooked in Peanut Oil | Cajun Seasoning | asis
+OK    | Fries Cooked in Peanut Oil | Cajun Seasoning | asis role=part
 OK    | Fries Cooked in Peanut Oil | Loaded Fries | asis
 OK    | Fries Cooked in Peanut Oil | Loaded Cajun Fries | asis
 OK    | Fries Cooked in Peanut Oil | Hash Browns | asis
-OK    | Toppings | Cheese | asis
-OK    | Toppings | Tomato Ketchup | asis
-OK    | Toppings | Mustard | asis
-OK    | Toppings | Crispy Onions | asis
+OK    | Toppings | Cheese | asis role=part
+OK    | Toppings | Tomato Ketchup | asis role=part
+OK    | Toppings | Mustard | asis role=part
+OK    | Toppings | Crispy Onions | asis role=part
 OK    | Breakfast | Latte | asis
 OK    | Breakfast | Cappuccino | asis
 OK    | Breakfast | Flat White | asis
@@ -20,23 +20,23 @@ OK    | Breakfast | Americano White | asis
 OK    | Breakfast | Double Espresso | asis
 OK    | Breakfast | Breakfast Tea | asis
 OK    | Other Items | Bulk Peanuts Without Shell | asis
-OK    | Other Items | Egg | asis
+OK    | Other Items | Egg | asis role=part
 AVOID | Bun | Burger Bun | GLUTEN;WHEAT
 AVOID | Bun | Hot Dog Bun | GLUTEN;WHEAT
-AVOID | Toppings | BBQ Sauce | PREPARATION tag=Not suitable
-AVOID | Toppings | Green Peppers | PREPARATION tag=Not suitable
-AVOID | Toppings | Grilled Mushrooms | PREPARATION tag=Not suitable
-AVOID | Toppings | Hot Sauce | PREPARATION tag=Not suitable
-AVOID | Toppings | HP Brown Sauce | BARLEY;RYE
-AVOID | Toppings | Jalapeño Peppers | PREPARATION tag=Not suitable
-AVOID | Toppings | Lettuce | PREPARATION tag=Not suitable
-AVOID | Toppings | Mayonnaise | PREPARATION tag=Not suitable
-AVOID | Toppings | Fresh Onions | PREPARATION tag=Not suitable
-AVOID | Toppings | Grilled Onions | PREPARATION tag=Not suitable
-AVOID | Toppings | Pickles | PREPARATION tag=Not suitable
-AVOID | Toppings | Relish | PREPARATION tag=Not suitable
-AVOID | Toppings | Tomatoes | PREPARATION tag=Not suitable
-AVOID | Toppings | Grilled Toppings | PREPARATION tag=Not suitable
+AVOID | Toppings | BBQ Sauce | PREPARATION tag=Not suitable role=part
+AVOID | Toppings | Green Peppers | PREPARATION tag=Not suitable role=part
+AVOID | Toppings | Grilled Mushrooms | PREPARATION tag=Not suitable role=part
+AVOID | Toppings | Hot Sauce | PREPARATION tag=Not suitable role=part
+AVOID | Toppings | HP Brown Sauce | BARLEY;RYE role=part
+AVOID | Toppings | Jalapeño Peppers | PREPARATION tag=Not suitable role=part
+AVOID | Toppings | Lettuce | PREPARATION tag=Not suitable role=part
+AVOID | Toppings | Mayonnaise | PREPARATION tag=Not suitable role=part
+AVOID | Toppings | Fresh Onions | PREPARATION tag=Not suitable role=part
+AVOID | Toppings | Grilled Onions | PREPARATION tag=Not suitable role=part
+AVOID | Toppings | Pickles | PREPARATION tag=Not suitable role=part
+AVOID | Toppings | Relish | PREPARATION tag=Not suitable role=part
+AVOID | Toppings | Tomatoes | PREPARATION tag=Not suitable role=part
+AVOID | Toppings | Grilled Toppings | PREPARATION tag=Not suitable role=part
 AVOID | Milkshakes + Mix-ins | Five Guys Milkshake Base | PREPARATION tag=Not suitable
 AVOID | Milkshakes + Mix-ins | Whipped Cream | PREPARATION tag=Not suitable
 AVOID | Milkshakes + Mix-ins | Flake | PREPARATION tag=Not suitable

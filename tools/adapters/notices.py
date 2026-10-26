@@ -23,7 +23,7 @@ KINDS = [
     ("nutrition", r"kcal|calorie"),
 ]
 LABELS = {
-    "accreditation": "Gluten free accreditation",
+    "accreditation": "Accreditation",
     "update": "Allergen updates",
     "cross-contact": "Cross-contact",
     "recipes": "Recipes and ingredients",

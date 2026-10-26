@@ -13,7 +13,7 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 - **Wording:** the app says "no gluten ingredients", not "gluten free". In UK law "gluten free" means tested below 20 parts per million. Apart from Pho, which is accredited by Coeliac UK, these restaurants make no such claim, and even for Pho the app lists items by their ingredients and quotes Pho's own words.
 - **Themes:** ⓘ → Appearance: Match phone, Light, Dark, Pink light, Pink dark.
 - **Favourites:** open any item and tap **☆ Save**. The **★ Favourites** chip shows them. They're stored on your phone only. If a new guide puts a favourite on the Avoid list, or drops it, a warning stays at the top until you remove it.
-- **Show staff:** open any item and tap **Show staff** for a large-print card with the item, how to order it and that you have coeliac disease.
+- **Show staff:** open any item and tap **Show staff** for a large-print card with the item, how to order it and that you have coeliac disease. Parts of dishes (marked **Part of a dish**, such as Five Guys' toppings) and ingredients the guide lists on their own (tagged **Ingredient**, such as Blank Street's milks) have no card, because they aren't things to order as they are.
 - **What changed:** when a restaurant's guide is updated, a note lists what's new, what's gone, what's ordered differently and anything that now contains gluten. Changed items are marked in the list until the next guide.
 - **Out-of-date warning:** if a restaurant's guide has passed its end date, a banner says so.
 - **Share** sends a link to the restaurant you're viewing (for example `…/gf-drinks/#starbucks-uk`).
@@ -34,6 +34,8 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 **Pho:** upload the new allergen guide PDF (linked as "Allergens" at the foot of phocafe.co.uk) to `restaurants/pho-uk/guides/`. Its "accurate as of" month is the version; the app asks for a re-check 183 days later.
 
 **Blank Street:** upload the new UK allergen guide PDF (linked from blankstreet.com) to `restaurants/blank-street-uk/guides/`. The guide has no date in it, so keep the season in the file name (for example `...Autumn26.pdf`); the PDF's creation date is used as the version.
+
+**Parts of dishes, ingredients and names that could be mixed up:** some guides list parts of dishes (Five Guys' meat and toppings) or ingredients on their own (Blank Street's milks and syrups). In `restaurant.json`, `roles` marks them as `part` or `ingredient`, by section or by `"Section|Name"` for one row. Neither gets a staff card; parts say **Part of a dish**, and ingredients get a grey **Ingredient** tag and aren't counted under the status buttons. `rename` gives a row a clearer name, such as `"Meat|Hot Dog": "Hot dog sausage"`, so a part can't be taken for the dish of the same name. The build stops if either matches nothing in a new guide, and the checks stop it if one name is on both the list and the Avoid list.
 
 **Restaurants kept by hand (Knoops):** edit that restaurant's `menu.csv` and update the dates in its `restaurant.json`. When you look for a newer guide and there isn't one, record it in `latestGuide` (`checked` date and a `note`); the out-of-date banner shows it. Knoops' newest guide is from March 2024, so the app shows it as possibly out of date until a newer one appears.
 
