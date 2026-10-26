@@ -359,3 +359,21 @@ body.searching .hide-searching { display: none !important; }
 /* ---- final review: which dish on the staff card; subtitle wraps with Larger Text ---- */
 .sheet .staff-sec { font-size: 1.125rem; color: var(--muted); margin-top: -8px !important; }
 .picker .guide { white-space: normal; }
+
+/* ---- content first: tips and the certified-or-not card fold into one line after a page's first visit ---- */
+.strip { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 9px 14px; min-height: 44px; width: 100%;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; font: inherit; font-size: 0.875rem; color: var(--muted); cursor: pointer; }
+.strip b { color: var(--fg); }
+.strip-more { color: var(--accent); font-weight: 600; }
+.cert-btns { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.w-tips { margin: 2px 0 10px; }
+.city-intro { gap: 2px; }
+.city-intro > p { margin-bottom: 6px; }
+.more summary { min-height: 44px; display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600; color: var(--accent); list-style: none; }
+.more summary::-webkit-details-marker { display: none; }
+.more summary::after { content: "\203A"; font-size: 1.2em; line-height: 1; transition: transform 0.15s; }
+.more[open] summary::after { transform: rotate(90deg); }
+.more > p, .more > .rules { margin: 0 0 10px; }
+.decided { background: var(--bg); border-radius: 8px; padding: 6px 10px; }
+.more-row { display: flex; flex-wrap: wrap; column-gap: 22px; }
+.more-row .more[open] { flex-basis: 100%; }

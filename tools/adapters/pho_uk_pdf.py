@@ -238,8 +238,8 @@ def classify(r, config, warnings):
         return "avoid", {**item, "gluten": gluten}
     warnings.append(f"{where}: gluten column has {'a pink cell' if r['pink'] else 'the word ' + ', '.join(r['labels'])} "
                     "but no mark; treated as containing gluten")
-    return "avoid", {**item, "gluten": gluten, "reason": "The guide names " + (", ".join(cereals) or "gluten") +
-                     " for this without its usual mark, so it's treated as containing gluten."}
+    why = "The guide names " + (", ".join(cereals) or "gluten") + " for this without its usual mark, so it's treated as containing gluten."
+    return "avoid", {**item, "gluten": gluten, "reason": why, "decided": why}
 
 
 def newest_pdf(folder):

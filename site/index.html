@@ -66,10 +66,19 @@
   <div id="stale" class="stale hide-searching" hidden></div>
   <div id="favAlert" class="fav-alert" role="alert" hidden></div>
   <div id="news" class="news hide-searching" hidden></div>
+  <!-- After the first visit to a page, its tips and the certified-or-not card fold into this one line; all of
+       their wording is in the Tips and warnings sheet it opens -->
+  <button type="button" id="openStrip" class="strip hide-searching" hidden>
+    <span id="stripText"></span>
+    <span class="strip-more"><span id="stripLabel">Tips and warnings</span>&nbsp;<span id="stripCount"></span>&nbsp;&rsaquo;</span>
+  </button>
   <section id="tips" class="rules hide-searching" aria-label="How to order"></section>
   <div class="certnote hide-searching" id="certNote">
     <p id="certText"><b>No gluten ingredients isn't the same as certified gluten free.</b> These restaurants don't call the items listed here gluten free, and don't guarantee against cross-contact.</p>
-    <button type="button" id="openWarnings" class="pill-btn pill-warn">Read the warnings <span id="warnCount"></span></button>
+    <div class="cert-btns">
+      <button type="button" id="openWarnings" class="pill-btn pill-warn">Read the warnings <span id="warnCount"></span></button>
+      <button type="button" id="introDone" class="link-btn">Got it</button>
+    </div>
   </div>
   <div id="cardLaunch" class="card-launch hide-searching" hidden></div>
   <div id="searchNote" class="search-note" role="status" hidden></div>
@@ -85,9 +94,15 @@
   </footer>
   </div>
   <div id="cityView" class="view" hidden>
-    <div class="certnote hide-searching"><p id="cityIntro"></p></div>
-    <div class="card-launch hide-searching"><button type="button" id="cityCard" class="pill-btn">Show German coeliac card</button></div>
-    <section id="cityTips" class="rules hide-searching" aria-label="Tips"></section>
+    <div id="cityStale" class="stale hide-searching" hidden></div>
+    <!-- One line on the first screen; how the tags work and the tips fold out, so the places start near the top -->
+    <div class="certnote city-intro hide-searching">
+      <p id="cityIntroLine"></p>
+      <div class="more-row">
+        <details class="more"><summary>How the tags work</summary><p id="cityIntro"></p></details>
+        <details class="more"><summary id="cityTipsLabel">Before you go</summary><section id="cityTips" class="rules" aria-label="Tips"></section></details>
+      </div>
+    </div>
     <div id="cityList" class="list" aria-live="polite"></div>
     <footer class="foot" id="cityFoot"></footer>
   </div>
@@ -142,7 +157,7 @@
     <p>Each restaurant's own allergen warnings, word for word, plus what its guide doesn't tell you.</p>
     <p><button type="button" id="openWarnings2" class="pill-btn">Read the warnings</button></p>
     <h3>Berlin</h3>
-    <p>Tap <b>Berlin</b> beside the search box (or choose it from the title) for places in Berlin that are all gluten free, by their own word or the Berlin coeliac support groups', or that say they make gluten free food in a separate kitchen. Each tag says who makes that claim. Each row says whether it's open now (Berlin time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Still open today</b>, <b>Near me</b> and <b>★ Saved</b> narrow the list. Tap <b>UK</b> to go back to the menus.</p>
+    <p>Tap <b>Berlin</b> beside the search box (or choose it from the title) for places in Berlin that are all gluten free, by their own word or the Berlin coeliac support groups', or that say they make gluten free food in a separate kitchen. Each tag says who makes that claim. Each row says whether it's open now (Berlin time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Still open today</b>, <b>Near me</b> and <b>★ Saved</b> narrow the list. The <b>German card</b> chip opens the coeliac card, and <b>How the tags work</b> and <b>Before you go</b> open under the introduction. Tap <b>UK</b> to go back to the menus.</p>
     <h3>Travelling</h3>
     <p>Menus in other languages show each item in English with the original name underneath, so you can point to it when ordering. A coeliac card you can show staff is available in: <span id="cardLangs"></span>. Open it from the Berlin page, or from a restaurant whose menu is in that language.</p>
     <h3>Add a menu</h3>
@@ -150,10 +165,6 @@
     <p><button type="button" id="openUpload" class="pill-btn">Add a menu</button></p>
     <h3>Menus in this app</h3>
     <div id="infoSources"></div>
-    <div id="notesWrap" hidden>
-      <h3>Notes from the last update</h3>
-      <ul id="notes" class="notes"></ul>
-    </div>
   </form>
 </dialog>
 

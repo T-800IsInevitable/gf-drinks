@@ -20,7 +20,7 @@ from pathlib import Path
 import pdfplumber
 
 from . import notices
-from .starbucks_uk_pdf import GLUTEN, clean, is_food_guide
+from .starbucks_uk_pdf import GLUTEN, clean, decided, is_food_guide
 
 MIN_ROWS = 60  # a real guide has well over a hundred products
 INGREDIENTS_X = 136
@@ -109,6 +109,7 @@ def parse_rows(pdf_path):
                             f"ingredients {sorted(i) or 'none'}; treated as containing gluten")
         if not r["allergens"]:
             warnings.append(f"food p.{r['page']} {r['name']}: allergen column empty; classified from ingredients")
+        r["decided"] = decided(r["allergens"], a, i)
     return info, rows, warnings, table
 
 
@@ -145,6 +146,8 @@ def build(folder, config):
             continue
         seen.add(key)
         item = {"name": r["name"], "section": r["section"], "sub": r["sub"], "pages": [r["page"]]}
+        if r["decided"]:
+            item["decided"] = r["decided"]
         if r["gluten"]:
             avoid.append({**item, "gluten": r["gluten"]})
         else:
