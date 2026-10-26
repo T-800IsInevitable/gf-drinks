@@ -89,6 +89,10 @@ class Send(unittest.TestCase):
         self.assertEqual(push.subscriptions(json.dumps([one, one])), [one, one])
         self.assertEqual(push.subscriptions("# Owen's phone\n" + json.dumps(one) + "\n\n" + json.dumps(one) + "\n"), [one, one])
         self.assertEqual(push.subscriptions(""), [])
+        # braces turned into web-address codes on the way from the phone (%7B, %7D), alone or among other lines
+        encoded = json.dumps(one).replace('"keys": {', '"keys": %7B').replace("}}", "%7D%7D")
+        self.assertEqual(push.subscriptions(encoded), [one])
+        self.assertEqual(push.subscriptions(json.dumps(one) + "\n" + encoded), [one, one])
         with self.assertRaises(SystemExit):
             push.subscriptions(json.dumps(one) + "\nnot json")
 
@@ -107,16 +111,29 @@ class Send(unittest.TestCase):
                 raise Gone(500)
             if "/odd/" in subscription_info["endpoint"]:
                 raise ValueError("not a key")
+            if "/far/" in subscription_info["endpoint"]:
+                raise ConnectionError("Max retries exceeded with url: /far/Zz9madeUpTokenForTheTest-0123456789abcdef")
 
-        subs = [{"endpoint": f"https://push.example/{x}/secret-token", "keys": {}} for x in ("a", "old", "bad", "odd")]
+        subs = [{"endpoint": f"https://push.example/{x}/secret-token", "keys": {}} for x in ("a", "old", "bad", "odd", "far")]
         msg = {"title": push.TITLE, "body": "b", "tag": "gf-menus", "url": "", "nowAvoid": [], "badge": 1}
         with mock.patch.object(push, "webpush", fake), mock.patch.object(push, "WebPushException", Gone):
             lines = push.send(msg, subs, "PEM", "https://github.com/o/r")
-        self.assertEqual([l.split(": ", 1)[1].split(".")[0] for l in lines], ["sent", "gone", "failed (500)", "failed (ValueError: not a key)"])
+        self.assertEqual([l.split(": ", 1)[1].split(".")[0] for l in lines][:4], ["sent", "gone", "failed (500)", "failed (ValueError: not a key)"])
+        self.assertNotIn("madeUpToken", lines[4])  # an error quoting the address doesn't put its token in the log
+        self.assertIn("ConnectionError", lines[4])
         self.assertIn("Tell me about new menus", lines[1])
         self.assertTrue(all("secret-token" not in l and "push.example" in l for l in lines), lines)  # the host, never the token
         self.assertEqual(calls[0][1], msg)
         self.assertEqual(calls[0][2], {"sub": "https://github.com/o/r"})
+
+    def test_the_contact_is_one_push_services_accept(self):
+        self.assertEqual(push.contact("T-800IsInevitable/gf-drinks"), "https://t-800isinevitable.github.io")
+        try:
+            from py_vapid import _check_sub
+        except ImportError:
+            self.skipTest("py_vapid not installed")
+        self.assertTrue(_check_sub(push.contact("T-800IsInevitable/gf-drinks")))
+        self.assertTrue(_check_sub(push.contact("")))
 
     def test_the_key_as_pem_or_raw(self):
         raw = "A" * 43

@@ -21,8 +21,9 @@ Usage:
 import argparse
 import json
 import os
+import re
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 try:
     from py_vapid import Vapid
@@ -83,6 +84,17 @@ def plan(previous=ROOT / ".previous", data=SITE / "data"):
     return msg
 
 
+def scrub(error):
+    """An error's text without the long tokens in it (a connection error quotes the phone's address, which is secret)."""
+    return re.sub(r"[A-Za-z0-9_-]{20,}", "…", str(error))[:200]
+
+
+def contact(repository):
+    """Who is sending, as push services ask: the app's own site. It must be a bare https address (no path) or a mailto:."""
+    owner = (repository or "T-800IsInevitable/gf-drinks").split("/")[0].lower()
+    return f"https://{owner}.github.io"
+
+
 def vapid_key(text):
     """The private key as the secret holds it: PEM text becomes a Vapid instance; a raw base64url value is passed as is."""
     text = (text or "").strip()
@@ -91,13 +103,23 @@ def vapid_key(text):
     return text
 
 
+def loads_lenient(text):
+    """JSON, or JSON whose characters a share sheet or notes app turned into web-address codes ({ as %7B, " as %22)."""
+    try:
+        return json.loads(text)
+    except ValueError:
+        if "%" not in text:
+            raise
+        return json.loads(unquote(text))
+
+
 def subscriptions(text):
     """The saved subscriptions: a JSON array, one object, or one object per line (blank lines and # notes ignored)."""
     text = (text or "").strip()
     if not text:
         return []
     try:
-        d = json.loads(text)
+        d = loads_lenient(text)
         return d if isinstance(d, list) else [d]
     except ValueError:
         out = []
@@ -106,9 +128,9 @@ def subscriptions(text):
             if not line or line.startswith("#"):
                 continue
             try:
-                out.append(json.loads(line))
+                out.append(loads_lenient(line))
             except ValueError:
-                raise SystemExit(f"ERROR: PUSH_SUBSCRIPTIONS line {n} isn't JSON")
+                raise SystemExit(f"ERROR: PUSH_SUBSCRIPTIONS line {n} isn't JSON (it should start with {{\"endpoint\": and end with }})")
         return out
 
 
@@ -130,7 +152,7 @@ def send(msg, subs, private_key, claim):
             else:
                 lines.append(f"{who}: failed ({status or e})")
         except Exception as e:  # a malformed line or key: say so for this phone and carry on with the others
-            lines.append(f"{who}: failed ({type(e).__name__}: {e})")
+            lines.append(f"{who}: failed ({type(e).__name__}: {scrub(e)})")
     return lines
 
 
@@ -156,7 +178,7 @@ def main():
         if not subs or not key:
             print("push: no phones saved yet (set the PUSH_SUBSCRIPTIONS and VAPID_PRIVATE_KEY secrets), so nothing sent")
             return
-        claim = "https://github.com/" + os.environ.get("GITHUB_REPOSITORY", "T-800IsInevitable/gf-drinks")
+        claim = contact(os.environ.get("GITHUB_REPOSITORY", ""))
         lines = send(msg, subs, vapid_key(key), claim)
         print("\n".join(lines))
         summary = os.environ.get("GITHUB_STEP_SUMMARY")
