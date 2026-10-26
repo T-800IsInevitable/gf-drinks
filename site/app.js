@@ -229,13 +229,13 @@
   const noteMark = (k) => (noteOf(k) ? '<span class="note-mark">✎<span class="vh"> has a note</span></span>' : "");
   const noteBox = (k) => '<label class="note-box">Your note<textarea data-note="' + esc(k) + '" rows="1" maxlength="' + NOTE_MAX +
     '" placeholder="e.g. ask for a clean jug">' + esc(noteOf(k)) + "</textarea></label>";
-  // typing saves after a short pause, and the row's mark follows
-  let noteTimer;
+  // typing saves after a short pause (one timer per note, so a second box doesn't lose the first), and the row's mark follows
+  const noteTimers = {};
   document.addEventListener("input", (e) => {
     const t = e.target.closest && e.target.closest("textarea[data-note]");
     if (!t) return;
-    clearTimeout(noteTimer);
-    noteTimer = setTimeout(() => {
+    clearTimeout(noteTimers[t.dataset.note]);
+    noteTimers[t.dataset.note] = setTimeout(() => {
       setNote(t.dataset.note, t.value);
       const nm = t.closest(".row") && t.closest(".row").querySelector(".nm");
       if (!nm) return;

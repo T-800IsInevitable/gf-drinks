@@ -66,6 +66,16 @@ class Plan(unittest.TestCase):
         self.assertEqual(m["url"], "")
         self.assertEqual(m["badge"], 5)
 
+    def test_a_big_change_still_fits_a_push(self):
+        self.write(self.prev, [restaurant("starbucks-uk", "Starbucks", "old.pdf")])
+        now_avoid = [{"section": "Seasonal and Festive Beverages", "name": f"Iced Caramel Macchiato with Oat Drink and Cold Foam number {n}"} for n in range(80)]
+        self.write(self.data, [restaurant("starbucks-uk", "Starbucks", "new.pdf", changes={"nowAvoid": now_avoid})])
+        m = push.plan(self.prev, self.data)
+        size = len(json.dumps(m, ensure_ascii=False).encode("utf-8"))
+        self.assertLessEqual(size, push.MAX_BYTES)
+        self.assertTrue(10 < len(m["nowAvoid"]) < 80, len(m["nowAvoid"]))
+        self.assertIn("80 now contain gluten", m["body"])
+
     def test_first_publish_has_nothing_to_compare(self):
         self.write(self.data, [restaurant("pret-uk", "Pret A Manger", "pret-sep.pdf", items=40)])
         m = push.plan(self.prev, self.data)  # no previous index at all: every restaurant counts as new to the app
@@ -91,19 +101,32 @@ class Send(unittest.TestCase):
 
         def fake(subscription_info, data, vapid_private_key, vapid_claims, ttl):
             calls.append((subscription_info["endpoint"], json.loads(data), vapid_claims))
-            if subscription_info["endpoint"].endswith("/old"):
+            if "/old/" in subscription_info["endpoint"]:
                 raise Gone(410)
-            if subscription_info["endpoint"].endswith("/bad"):
+            if "/bad/" in subscription_info["endpoint"]:
                 raise Gone(500)
+            if "/odd/" in subscription_info["endpoint"]:
+                raise ValueError("not a key")
 
-        subs = [{"endpoint": f"https://push.example/{x}", "keys": {}} for x in ("a", "old", "bad")]
+        subs = [{"endpoint": f"https://push.example/{x}/secret-token", "keys": {}} for x in ("a", "old", "bad", "odd")]
         msg = {"title": push.TITLE, "body": "b", "tag": "gf-menus", "url": "", "nowAvoid": [], "badge": 1}
         with mock.patch.object(push, "webpush", fake), mock.patch.object(push, "WebPushException", Gone):
             lines = push.send(msg, subs, "PEM", "https://github.com/o/r")
-        self.assertEqual([l.split(": ", 1)[1].split(".")[0] for l in lines], ["sent", "gone", "failed (500)"])
+        self.assertEqual([l.split(": ", 1)[1].split(".")[0] for l in lines], ["sent", "gone", "failed (500)", "failed (ValueError: not a key)"])
         self.assertIn("Tell me about new menus", lines[1])
+        self.assertTrue(all("secret-token" not in l and "push.example" in l for l in lines), lines)  # the host, never the token
         self.assertEqual(calls[0][1], msg)
         self.assertEqual(calls[0][2], {"sub": "https://github.com/o/r"})
+
+    def test_the_key_as_pem_or_raw(self):
+        raw = "A" * 43
+        self.assertEqual(push.vapid_key(raw + "\n"), raw)
+        if push.Vapid is None:
+            self.skipTest("py_vapid not installed")
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import ec
+        pem = ec.generate_private_key(ec.SECP256R1()).private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()).decode()
+        self.assertIsInstance(push.vapid_key(pem), push.Vapid)
 
 
 if __name__ == "__main__":

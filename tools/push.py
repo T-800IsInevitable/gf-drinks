@@ -5,8 +5,14 @@ badge with it. Nothing is sent when the publish changed no guide (a code-only re
 
 There's no server. Each phone's push subscription is saved by hand as the repository secret PUSH_SUBSCRIPTIONS (one
 JSON object per line, or a JSON array), and the private half of the push key pair as VAPID_PRIVATE_KEY (its public
-half is PUSH_KEY in site/app.js). The phone decides for itself whether a favourite is among the items that now
-contain gluten: the message carries their keys, and the service worker holds a copy of the favourites.
+half is PUSH_KEY in site/app.js). The secret may hold the key as PEM text ("-----BEGIN PRIVATE KEY-----" ...) or as
+the 43-character base64url value py_vapid calls raw. The phone decides for itself whether a favourite is among the
+items that now contain gluten: the message carries their keys, and the service worker holds a copy of the favourites.
+
+To make a new key pair (if the private half is lost; phones then switch notifications on again):
+  pip install py-vapid && vapid --gen                  # writes private_key.pem and public_key.pem
+  vapid --applicationServerKey                         # the public half: paste it into PUSH_KEY in site/app.js
+  the VAPID_PRIVATE_KEY secret: the text of private_key.pem
 
 Usage:
   python tools/push.py --plan [--out push-message.json]   # after build.py, with .previous/ from fetch_previous.py
@@ -16,17 +22,20 @@ import argparse
 import json
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 try:
+    from py_vapid import Vapid
     from pywebpush import WebPushException, webpush
-except ImportError:  # only --send needs it (the notify job installs it)
-    WebPushException, webpush = Exception, None
+except ImportError:  # only --send needs them (the notify job installs them)
+    Vapid, WebPushException, webpush = None, Exception, None
 
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 TITLE = "New menus in Treat Temple"
 MOST = 3  # restaurants named in the message; the rest are counted
-KEYS_MOST = 80  # "now contains gluten" keys carried for the phone's favourites check (a push payload is small)
+KEYS_MOST = 80  # "now contains gluten" keys carried for the phone's favourites check, at most
+MAX_BYTES = 3500  # push services refuse a payload over about 4 KB, so the keys are trimmed to fit under this
 
 
 def read(path):
@@ -68,7 +77,18 @@ def plan(previous=ROOT / ".previous", data=SITE / "data"):
     url = "#" + new_index["restaurants"][0]["id"] if len(news) == 1 and len(new_index["restaurants"]) else ""
     if len(news) == 1:
         url = "#" + next(r["id"] for r in new_index["restaurants"] if news[0].startswith(r["name"] + ":"))
-    return {"title": TITLE, "body": body[:400], "tag": "gf-menus", "url": url, "nowAvoid": keys[:KEYS_MOST], "badge": len(news)}
+    msg = {"title": TITLE, "body": body[:400], "tag": "gf-menus", "url": url, "nowAvoid": keys[:KEYS_MOST], "badge": len(news)}
+    while msg["nowAvoid"] and len(json.dumps(msg, ensure_ascii=False).encode("utf-8")) > MAX_BYTES:
+        msg["nowAvoid"].pop()  # a big change must still arrive; the phone's favourites check then covers fewer items
+    return msg
+
+
+def vapid_key(text):
+    """The private key as the secret holds it: PEM text becomes a Vapid instance; a raw base64url value is passed as is."""
+    text = (text or "").strip()
+    if "BEGIN" in text and Vapid is not None:
+        return Vapid.from_pem(text.encode("utf-8"))
+    return text
 
 
 def subscriptions(text):
@@ -98,7 +118,8 @@ def send(msg, subs, private_key, claim):
         raise SystemExit("ERROR: pip install pywebpush")
     lines = []
     for n, sub in enumerate(subs, 1):
-        who = f"phone {n} ({(sub.get('endpoint') or '?')[:40]}…)"
+        # the host only: part of an endpoint is part of a secret, and the job's log is public
+        who = f"phone {n} ({urlparse(str((sub or {}).get('endpoint') or '')).netloc or 'no endpoint'})"
         try:
             webpush(subscription_info=sub, data=json.dumps(msg), vapid_private_key=private_key, vapid_claims={"sub": claim}, ttl=86400)
             lines.append(f"{who}: sent")
@@ -108,6 +129,8 @@ def send(msg, subs, private_key, claim):
                 lines.append(f"{who}: gone. Its subscription has expired: open Help on that phone and tap Tell me about new menus again, then save the new one.")
             else:
                 lines.append(f"{who}: failed ({status or e})")
+        except Exception as e:  # a malformed line or key: say so for this phone and carry on with the others
+            lines.append(f"{who}: failed ({type(e).__name__}: {e})")
     return lines
 
 
@@ -134,7 +157,7 @@ def main():
             print("push: no phones saved yet (set the PUSH_SUBSCRIPTIONS and VAPID_PRIVATE_KEY secrets), so nothing sent")
             return
         claim = "https://github.com/" + os.environ.get("GITHUB_REPOSITORY", "T-800IsInevitable/gf-drinks")
-        lines = send(msg, subs, key, claim)
+        lines = send(msg, subs, vapid_key(key), claim)
         print("\n".join(lines))
         summary = os.environ.get("GITHUB_STEP_SUMMARY")
         if summary:

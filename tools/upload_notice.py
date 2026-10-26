@@ -29,6 +29,7 @@ BRANCH = "origin/uploads"
 TITLE = "Upload waiting: "
 REQUEST_TITLE = "Place requested: "
 REQUESTS = "requests"  # inbox/requests/<when>-<name>-<area>.json: a place asked for by name, with no menu yet
+URL = re.compile(r"https://[^\s/<>()\[\]`'\"]+\.[^\s<>()\[\]`'\"]+")  # a website as passed on to the issue: no markdown, no second line
 
 
 def git(*args):
@@ -68,9 +69,9 @@ def requests_waiting():
         if not path.endswith(".json"):
             continue
         meta = read_json(path)
-        url = str(meta.get("url") or "").strip()
+        url = str(meta.get("url") or "").strip()[:200]
         out.append({"file": path.split("/")[-1], "name": clean(meta.get("name")), "area": clean(meta.get("area")),
-                    "url": url if url.startswith("https://") else ""})
+                    "url": url if URL.fullmatch(url) else ""})  # one plain https address, or nothing
     return out
 
 
@@ -87,8 +88,9 @@ def request_title(q):
 
 
 def request_body(q):
-    return (f"Someone asked for **{q['name'] or 'a place'}**{' in ' + q['area'] if q['area'] else ''} from the app, by name only"
-            f"{' (website: ' + q['url'] + ')' if q['url'] else ''}. The request is `inbox/{REQUESTS}/{q['file']}` on the `uploads` branch.\n\n"
+    # the name, area and website are someone's typing: shown as code, so they can't become markdown or a link
+    return (f"Someone asked for `{q['name'] or 'a place'}`{' in `' + q['area'] + '`' if q['area'] else ''} from the app, by name only"
+            f"{' (website: `' + q['url'] + '`)' if q['url'] else ''}. The request is `inbox/{REQUESTS}/{q['file']}` on the `uploads` branch.\n\n"
             "The scan follows the \"Places asked for by name\" section of `tools/SCAN_INSTRUCTIONS.md`: it looks for the place's "
             "own published allergen information, and opens a pull request for you to check if it finds some. If it finds none, "
             "it says so here and leaves this issue open for you.\n\n"

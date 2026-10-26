@@ -71,6 +71,7 @@ runs:
       run: |
         timeout 8m python -m playwright install-deps chromium webkit && exit 0
         echo "::warning::The package mirror was too slow; trying Ubuntu's own archive"
+        sudo dpkg --configure -a || true  # the timeout may have cut apt off mid-install
         sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list 2>/dev/null || true
         sudo apt-get update -qq
         timeout 10m python -m playwright install-deps chromium webkit

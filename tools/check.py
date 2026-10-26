@@ -98,6 +98,10 @@ def check_restaurant(r, err):
                 err(f"{rid}: order.cardLine is what the staff card asks for, so end it with 'please.'")
     if d.get("logo") and not (SITE / d["logo"]).exists():
         err(f"{rid}: logo {d['logo']} wasn't written")
+    # what OpenStreetMap calls the chain (Near me): plain names only, because they go into a query pattern as they are
+    for name in d.get("osm") or []:
+        if not (isinstance(name, str) and re.fullmatch(r"[\w' ]+", name)):
+            err(f"{rid}: osm name {name!r} should be letters, digits, spaces and apostrophes only")
     if not d.get("hash") or r.get("hash") != d["hash"]:
         err(f"{rid}: the index and the menu file don't carry the same fingerprint")
     if "built" in d:
