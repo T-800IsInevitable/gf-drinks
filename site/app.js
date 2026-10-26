@@ -448,6 +448,18 @@
     $("searchNote").innerHTML = note;
     let html = "";
     let shown = 0;
+    // "Your usuals": saved favourites first, grouped by restaurant on All. Not while searching or on another chip,
+    // and they stay in their own sections too, so nothing moves.
+    let usuals = "", usualsN = 0;
+    if (!$("q").value.trim() && filter === "all") {
+      for (const r of rs) {
+        const fav = r.items.filter((i) => favs.has(favKey(r, i)) && visible(kindOf(i)));
+        if (!fav.length) continue;
+        usualsN += fav.length;
+        usuals += (multi ? '<div class="sub-h">' + esc(r.name) + "</div>" : "") + '<div class="card">' + fav.map((i) => rowHtml(r, i, false)).join("") + "</div>";
+      }
+      if (usuals) usuals = '<h2 class="group-h">Your usuals<small>' + usualsN + "</small></h2>" + usuals;
+    }
     for (const r of rs) {
       let items = r.items.filter((i) => matches(i, ts) && visible(kindOf(i)));
       if (filter === "fav") items = items.filter((i) => favs.has(favKey(r, i)));
@@ -476,7 +488,7 @@
     else if (q) empty = 'No items with no gluten ingredients match "' + esc(q) + '".' +
       (glutenHits ? " " + glutenHits + (glutenHits === 1 ? " match is" : " matches are") + " on the Avoid list" + (visible("gluten") ? " below." : ". Tap Avoid above to see " + (glutenHits === 1 ? "it." : "them.")) : "");
     if (!visible("straight") || !visible("change")) empty += " Some items are hidden by the buttons above.";
-    $("list").innerHTML = html || '<p class="empty">' + empty + "</p>";
+    $("list").innerHTML = html ? usuals + html : '<p class="empty">' + empty + "</p>";
 
     let avoidHtml = "";
     if (filter !== "fav" && visible("gluten")) {
@@ -1336,12 +1348,15 @@
     if (favs.has(k)) favs.delete(k); else favs.add(k);
     store.set(FAV_KEY, JSON.stringify([...favs]));
     const on = favs.has(k);
-    b.setAttribute("aria-pressed", on);
-    b.textContent = on ? "★ Saved" : "☆ Save";
-    const nm = b.closest(".row").querySelector(".nm");
-    const star = nm.querySelector(".star");
-    if (on && !star) nm.insertAdjacentHTML("afterbegin", '<span class="star" aria-label="Favourite">★</span>');
-    if (!on && star) star.remove();
+    document.querySelectorAll("#list .fav-btn, #cityList .fav-btn").forEach((btn) => {
+      if (btn.dataset.fav !== k) return;
+      btn.setAttribute("aria-pressed", on);
+      btn.textContent = on ? "★ Saved" : "☆ Save";
+      const nm = btn.closest(".row").querySelector(".nm");
+      const star = nm.querySelector(".star");
+      if (on && !star) nm.insertAdjacentHTML("afterbegin", '<span class="star" aria-label="Favourite">★</span>');
+      if (!on && star) star.remove();
+    });
     toast(on ? "Saved to favourites" : "Removed from favourites");
   }
   function openDialog(d) { if (typeof d.showModal === "function") d.showModal(); else d.setAttribute("open", ""); }
