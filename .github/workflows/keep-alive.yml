@@ -24,7 +24,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |
-          for wf in guide-reminders.yml guide-watch.yml keep-alive.yml; do
+          for wf in guide-reminders.yml guide-watch.yml keep-alive.yml upload-notice.yml; do
             gh api -X PUT "repos/$REPO/actions/workflows/$wf/enable"
             echo "$wf: $(gh api "repos/$REPO/actions/workflows/$wf" --jq .state)"
           done

@@ -4,7 +4,7 @@
 // the network first, so the newest menu wins, and fall back to the saved copy when there's no signal (or it's slow).
 // Nothing waits for them: the app shows the menus saved on the phone meanwhile. They're checked, not downloaded afresh,
 // so a file that hasn't changed comes back as "not modified".
-const CACHE = "gf-menus-v21";
+const CACHE = "gf-menus-v22";
 const SHELL = ["./", "index.html", "styles.css", "compare.js", "app.js", "manifest.webmanifest",
   "data/restaurants.json", "phrases.json", "cities.json", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/favicon.png"];
 const TIMEOUT_MS = 4000;
