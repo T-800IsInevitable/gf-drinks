@@ -8,6 +8,15 @@
   "optionLabel": "option",
   "officialUrl": "https://www.fiveguys.co.uk",
   "recheckDays": 91,
+  "rename": {
+    "Meat|Hot Dog": "Hot dog sausage"
+  },
+  "roles": {
+    "Meat": "part",
+    "Toppings": "part",
+    "Fries Cooked in Peanut Oil|Cajun Seasoning": "part",
+    "Other Items|Egg": "part"
+  },
   "tips": [
     "Most toppings and sauces: Five Guys marks them not suitable for gluten because of how they're prepared, not just their ingredients.",
     "Lettuce wrap: still marked not suitable for gluten because of preparation.",

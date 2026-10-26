@@ -59,6 +59,16 @@ for r in index["restaurants"]:
     clash = names & {(a["section"], a["name"]) for a in d["avoid"]}
     if clash:
         err(f"{rid}: listed as both safe and to avoid: {sorted(clash)}")
+    # the same name in different sections (Five Guys' sausage under Meat, and the Hot Dog in a bun under Hot Dogs):
+    # a staff card for the safe one would order the other
+    plain = {" ".join(i["name"].lower().split()) for i in d["items"]}
+    same = sorted(n for n in plain & {" ".join(a["name"].lower().split()) for a in d["avoid"]}
+                  if not any(" ".join(x.lower().split()) == n for _, x in clash))
+    if same:
+        err(f"{rid}: {same} named the same on the list and on the Avoid list. Rename one with \"rename\" in restaurant.json")
+    for i in d["items"] + d["avoid"]:
+        if i.get("role") not in (None, "part", "ingredient"):
+            err(f"{rid}: {i['name']!r} has an unknown role {i['role']!r}")
     for n in d.get("notices", []):
         if not n.get("text"):
             err(f"{rid}: a warning has no text")

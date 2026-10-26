@@ -19,6 +19,7 @@ An iPhone home-screen web app (PWA) listing food and drinks with **no gluten ing
 
 - Gluten = wheat, rye, barley, **oats**, spelt, kamut, or "gluten"/malt, as the guide marks them. Oats count because the guides list them as gluten cereals.
 - When two sources in a guide disagree (e.g. allergen column vs ingredients), treat the item as containing gluten and record a warning.
+- A row that isn't a dish to order (a part such as Five Guys' meat and toppings, or an ingredient listed on its own such as Blank Street's milks) gets a `roles` entry in `restaurant.json`: no staff card, and ingredients aren't shown as green. No name may be on both the list and the Avoid list (`check.py`); use `rename` (Five Guys' sausage is "Hot dog sausage", because its menu Hot Dog comes in a wheat bun).
 - Five Guys "1" (not suitable due to preparation) in the gluten column = Avoid, with the reason shown.
 - "May contain" gluten or oats (Blank Street's "May Contain" lines, Knoops' "MCT") = Avoid, with the reason shown. Gluten free oats still count as oats.
 - Never call anything "gluten free". Say "no gluten ingredients". Pho is the exception that makes a claim (Coeliac UK accredited): quote its words, don't adopt them. The other guides make no gluten free claim.

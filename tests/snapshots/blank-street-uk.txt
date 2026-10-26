@@ -9,27 +9,27 @@ OK    | Not Coffee & Teas | Matcha Tea | asis
 OK    | Not Coffee & Teas | Iced Lemon Tea | asis
 OK    | Not Coffee & Teas | Iced Peach Tea | asis
 OK    | Cold Brew | Original Cold Brew (DEFAULT BLACK) | asis
-OK    | Ingredients | Milk (whole and semi-skimmed) | asis
-OK    | Ingredients | Coconut Drink | asis
-OK    | Ingredients | Espresso Double Shot | asis
-OK    | Ingredients | Decaf Espresso Double Shot | asis
-OK    | Ingredients | Dark Chocolate Sauce | asis
-OK    | Ingredients | White Chocolate Sauce | asis
-OK    | Ingredients | Chocolate Powder | asis
-OK    | Ingredients | Chai Concetrated | asis
-OK    | Ingredients | Matcha Mix (Batcha) | asis
-OK    | Ingredients | Dark Brown Sugar | asis
-OK    | Ingredients | Cinnamon Powder | asis
-OK    | Ingredients | Bloomin Vanilla Bean Syrup | asis
-OK    | Ingredients | 1883 Madeline Syrup | asis
-OK    | Ingredients | Bloomin Pistachio Syrup | asis
-OK    | Ingredients | Blueberry Syrup | asis
-OK    | Ingredients | Dark Brown Sugar Syrup | asis
-OK    | Ingredients | Iced Lemon Tea Syrup | asis
-OK    | Ingredients | Iced Peach Tea Syrup | asis
-OK    | Ingredients | Bloomin Ube Concentrate | asis
-OK    | Ingredients | Vanilla Bean Paste | asis
-OK    | Ingredients | Bloomin Salted Brown Sugar Syrup | asis
+OK    | Ingredients | Milk (whole and semi-skimmed) | asis role=ingredient
+OK    | Ingredients | Coconut Drink | asis role=ingredient
+OK    | Ingredients | Espresso Double Shot | asis role=ingredient
+OK    | Ingredients | Decaf Espresso Double Shot | asis role=ingredient
+OK    | Ingredients | Dark Chocolate Sauce | asis role=ingredient
+OK    | Ingredients | White Chocolate Sauce | asis role=ingredient
+OK    | Ingredients | Chocolate Powder | asis role=ingredient
+OK    | Ingredients | Chai Concetrated | asis role=ingredient
+OK    | Ingredients | Matcha Mix (Batcha) | asis role=ingredient
+OK    | Ingredients | Dark Brown Sugar | asis role=ingredient
+OK    | Ingredients | Cinnamon Powder | asis role=ingredient
+OK    | Ingredients | Bloomin Vanilla Bean Syrup | asis role=ingredient
+OK    | Ingredients | 1883 Madeline Syrup | asis role=ingredient
+OK    | Ingredients | Bloomin Pistachio Syrup | asis role=ingredient
+OK    | Ingredients | Blueberry Syrup | asis role=ingredient
+OK    | Ingredients | Dark Brown Sugar Syrup | asis role=ingredient
+OK    | Ingredients | Iced Lemon Tea Syrup | asis role=ingredient
+OK    | Ingredients | Iced Peach Tea Syrup | asis role=ingredient
+OK    | Ingredients | Bloomin Ube Concentrate | asis role=ingredient
+OK    | Ingredients | Vanilla Bean Paste | asis role=ingredient
+OK    | Ingredients | Bloomin Salted Brown Sugar Syrup | asis role=ingredient
 OK    | Custom | Milk Chocolate Shell | asis
 OK    | Custom | White Chocolate Shell | asis
 OK    | Custom | Matcha Shell | asis
@@ -73,8 +73,8 @@ AVOID | House Lattes | Hot Cinnamon Bun Latte | OAT tag=May contain gluten
 AVOID | House Lattes | Iced Cinnamon Bun Latte | OAT tag=May contain gluten
 AVOID | House Lattes | Hot Harvest Chai Latte | GLUTEN;OAT tag=May contain gluten
 AVOID | House Lattes | Iced Harvest Chai Latte | GLUTEN;OAT tag=May contain gluten
-AVOID | Ingredients | Oat Drink | OAT
-AVOID | Ingredients | Cookie Butter (Biscoff) | WHEAT
+AVOID | Ingredients | Oat Drink | OAT role=ingredient
+AVOID | Ingredients | Cookie Butter (Biscoff) | WHEAT role=ingredient
 AVOID | Signature Ice Cream | Vanilla Bean Affogato | GLUTEN tag=May contain gluten
 AVOID | Signature Ice Cream | White Chocolate Matcha | GLUTEN tag=May contain gluten
 AVOID | Signature Ice Cream | Strawberry Shortcake Matcha | GLUTEN;WHEAT

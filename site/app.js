@@ -40,8 +40,9 @@
   }
   const picking = () => pick.straight || pick.change || pick.gluten;
   const visible = (k) => !picking() || pick[k];
-  // "straight" = no gluten ingredients as served: asis/any/except (fine as served, or with any milk but the ones named); change = swap/modify
-  const kindOf = (i) => (!i.order ? "gluten" : (i.order === "swap" || i.order === "modify") ? "change" : "straight");
+  // "straight" = no gluten ingredients as served: asis/any/except (fine as served, or with any milk but the ones named); change = swap/modify;
+  // "info" = an ingredient listed on its own (not something to order), which none of the status buttons count
+  const kindOf = (i) => (!i.order ? "gluten" : i.role === "ingredient" ? "info" : (i.order === "swap" || i.order === "modify") ? "change" : "straight");
 
   // ---------- helpers ----------
   const byId = (id) => data && data.restaurants.find((r) => r.id === id);
@@ -77,6 +78,7 @@
   }
   function tagFor(r, i) {
     const label = r.optionLabel || "option";
+    if (i.role === "ingredient") return ["t-info", "Ingredient"];
     switch (i.order) {
       case "asis": return ["t-asis", "No gluten ingredients"];
       case "any": return ["t-any", "Any " + label];
@@ -109,17 +111,23 @@
     return "<div class=\"chg-note\"><b>Ordered differently since " + since + ":</b> it was " + esc(howText(r, c.was)) + ".</div>";
   }
   const chev = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  // rows that aren't things to order as they are (restaurant.json "roles"): no staff card, and they say why
+  const ROLE_NOTE = {
+    part: "Part of other dishes, listed on its own in the guide. It isn't something to order as it is, so there's no staff card for it.",
+    ingredient: "An ingredient, listed on its own in the guide. It isn't something to order as it is, so there's no staff card for it.",
+  };
 
   function detailFor(r, i) {
     const out = [];
     const c = changeOf(r, i);
     if (c) out.push(changeNote(r, c));
+    if (i.role) out.push("<div>" + ROLE_NOTE[i.role] + "</div>");
     if (i.original) {
       out.push('<div>On the menu as <b lang="' + esc(r.language || "") + '">' + esc(i.original) + "</b>" +
         (i.sectionOriginal ? ' under <span lang="' + esc(r.language || "") + '">' + esc(i.sectionOriginal) + "</span>" : "") + "</div>");
     }
     if (i.info) out.push("<div>" + esc(i.info) + "</div>");
-    if (i.order === "asis") out.push("<div>No gluten ingredients as listed. No changes needed.</div>");
+    if (i.order === "asis") out.push(i.role ? "<div>No gluten ingredients as listed.</div>" : "<div>No gluten ingredients as listed. No changes needed.</div>");
     if (i.order === "modify") out.push("<div><b>Ask for:</b> " + esc(i.note) + "</div>");
     if (i.order === "swap") {
       const std = i.standard || "";
@@ -133,8 +141,8 @@
     }
     const k = favKey(r, i);
     const on = favs.has(k);
-    out.push('<div class="detail-foot"><span>' + esc(pageText(i.pages)) + '</span><span class="foot-btns"><button type="button" class="staff-btn" data-staff="' +
-      esc(k) + '">Show staff</button><button type="button" class="fav-btn" data-fav="' + esc(k) +
+    out.push('<div class="detail-foot"><span>' + esc(pageText(i.pages)) + '</span><span class="foot-btns">' +
+      (i.role ? "" : '<button type="button" class="staff-btn" data-staff="' + esc(k) + '">Show staff</button>') + '<button type="button" class="fav-btn" data-fav="' + esc(k) +
       '" aria-pressed="' + on + '">' + (on ? "★ Saved" : "☆ Save") + "</button></span></div>");
     return out.join("");
   }
@@ -145,6 +153,7 @@
     const subs = [];
     const c = changeOf(r, i);
     if (c) subs.push('<span class="chg">' + CHG_LABEL[c.kind] + "</span>");
+    if (i.role === "part") subs.push("Part of a dish");
     if (i.order === "modify") subs.push(esc(i.note));
     if (i.original) subs.push('<span lang="' + esc(r.language || "") + '">' + esc(i.original) + "</span>");
     if (showRestaurant) subs.push(esc(r.name));

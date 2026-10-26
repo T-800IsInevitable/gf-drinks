@@ -72,6 +72,14 @@ WIDE_JS = """() => {
     }
     return out.slice(0, 5);
 }"""
+# each list row: its name, the small line under it, its tag, whether that tag is green, and whether it has a staff card
+ROWS_JS = """() => [...document.querySelectorAll('#list details.row')].map((d) => {
+    const nm = d.querySelector('.nm'), tag = d.querySelector('summary .tag');
+    return { name: [...nm.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim(),
+             small: (nm.querySelector('small') || { textContent: '' }).textContent, tag: tag.textContent,
+             green: tag.classList.contains('t-asis') || tag.classList.contains('t-any'),
+             staff: !!d.querySelector('.staff-btn'), detail: d.querySelector('.detail').textContent };
+})"""
 
 
 class Quiet(SimpleHTTPRequestHandler):
@@ -453,6 +461,43 @@ def main():
         if not page.locator("#list .row").count():
             problems.append("search 'oat milk latte': no lattes listed")
         print(f"search: results above the keyboard; 'oat milk latte' -> {page.locator('#list .row').count()} rows")
+        ctx.close()
+
+        # food safety: a part of a dish or an ingredient listed on its own isn't something to order. No green row
+        # may share a name with an Avoid row, and neither kind gets a staff card (Five Guys' sausage was "Hot Dog")
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        for rid in ids:
+            built = json.loads((SITE / "data" / "r" / f"{rid}.json").read_text(encoding="utf-8"))
+            page.goto(base + f"#{rid}")
+            page.wait_for_selector("#list .row")
+            rows = page.evaluate(ROWS_JS)
+            avoid = {" ".join(a["name"].lower().split()) for a in built["avoid"]}
+            for row in rows:
+                if row["green"] and " ".join(row["name"].lower().split()) in avoid:
+                    problems.append(f"{rid}: {row['name']!r} shows with no gluten ingredients, but an item of the same name is on the Avoid list")
+            for i in (i for i in built["items"] if i.get("role")):
+                for row in (r for r in rows if r["name"] == i["name"]):
+                    if row["staff"]:
+                        problems.append(f"{rid}: {i['name']!r} ({i['role']}) has a Show staff card")
+                    if "No changes needed" in row["detail"]:
+                        problems.append(f"{rid}: {i['name']!r} ({i['role']}) says 'No changes needed', as if it were a dish")
+                    if i["role"] == "ingredient" and (row["green"] or row["tag"] != "Ingredient"):
+                        problems.append(f"{rid}: ingredient {i['name']!r} is tagged {row['tag']!r}, not 'Ingredient'")
+                    if i["role"] == "part" and "Part of a dish" not in row["small"]:
+                        problems.append(f"{rid}: {i['name']!r} doesn't say it's part of a dish")
+        # the two found by the capability review, named here so they can't pass just by having no role
+        page.goto(base + "#five-guys-uk")
+        page.wait_for_selector("#list .row")
+        sausage = {r["name"]: r for r in page.evaluate(ROWS_JS)}.get("Hot dog sausage")
+        if not sausage or sausage["staff"] or "Part of a dish" not in sausage["small"]:
+            problems.append(f"five-guys-uk: the sausage isn't listed as 'Hot dog sausage', part of a dish, with no staff card ({sausage})")
+        page.goto(base + "#blank-street-uk")
+        page.wait_for_selector("#list .row")
+        coconut = {r["name"]: r for r in page.evaluate(ROWS_JS)}.get("Coconut Drink")
+        if not coconut or coconut["green"] or coconut["tag"] != "Ingredient" or coconut["staff"]:
+            problems.append(f"blank-street-uk: Coconut Drink isn't tagged as an ingredient with no staff card ({coconut})")
+        print("food safety: no green row named like an Avoid row; parts and ingredients have no staff card")
         ctx.close()
 
         # tap through one restaurant

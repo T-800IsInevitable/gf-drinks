@@ -9,7 +9,10 @@
   "officialUrl": "https://blankstreet.com/en-GB/menu",
   "recheckDays": 91,
   "sectionInfo": {
-    "Ingredients": "An ingredient on its own, not a drink. In this guide every drink made with dairy milk is marked 'may contain oat (gluten)', and the oat version contains oat."
+    "Ingredients": "In this guide every drink made with dairy milk is marked 'may contain oat (gluten)', and the oat version contains oat."
+  },
+  "roles": {
+    "Ingredients": "ingredient"
   },
   "tips": [
     "Milk drinks: every drink made with dairy milk is marked 'may contain oat (gluten)', and the oat version contains oat. So they're all on the Avoid list.",

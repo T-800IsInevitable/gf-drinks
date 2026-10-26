@@ -33,9 +33,12 @@ def lines(d):
             how += f" not={';'.join(i['not'])}"
         if i.get("note"):
             how += f" note={i['note']}"
+        if i.get("role"):
+            how += f" role={i['role']}"
         out.append(f"OK    | {i['section']} | {i['name']} | {how}")
     for a in d["avoid"]:
-        out.append(f"AVOID | {a['section']} | {a['name']} | {';'.join(a.get('gluten', []))}" + (f" tag={a['tag']}" if a.get("tag") else ""))
+        out.append(f"AVOID | {a['section']} | {a['name']} | {';'.join(a.get('gluten', []))}" + (f" tag={a['tag']}" if a.get("tag") else "")
+                   + (f" role={a['role']}" if a.get("role") else ""))
     return out
 
 
