@@ -51,7 +51,7 @@ runs:
     - name: Remember which Playwright this is
       id: pw
       shell: bash
-      run: echo "version=$(python -c 'import playwright; print(playwright.__version__)')" >> "$GITHUB_OUTPUT"
+      run: echo "version=$(python -m playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
 
     - uses: actions/cache@v4
       id: browsers
@@ -64,9 +64,16 @@ runs:
       shell: bash
       run: python -m playwright install chromium webkit
 
+    # Ubuntu's Azure package mirror sometimes crawls (a 24-minute install of WebKit's libraries). Give it eight minutes,
+    # then switch the runner to Ubuntu's own archive and try once more, rather than sit until the job's timeout.
     - name: Install what the browsers need from the system
       shell: bash
-      run: python -m playwright install-deps chromium webkit
+      run: |
+        timeout 8m python -m playwright install-deps chromium webkit && exit 0
+        echo "::warning::The package mirror was too slow; trying Ubuntu's own archive"
+        sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list 2>/dev/null || true
+        sudo apt-get update -qq
+        timeout 10m python -m playwright install-deps chromium webkit
 
     - name: Check the app at iPhone size, light and dark
       shell: bash

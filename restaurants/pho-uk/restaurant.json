@@ -7,6 +7,7 @@
   "reader": "pho_uk_pdf",
   "optionLabel": "option",
   "officialUrl": "https://phocafe.co.uk/gluten-free/",
+  "osm": ["Pho"],
   "watch": {
     "page": "https://phocafe.co.uk/gluten-free/",
     "link": "Allergen-Guide"

@@ -40,7 +40,9 @@ from adapters.common import MONTHS, valid_until  # noqa: E402
 
 # what the index (site/data/restaurants.json) says about each restaurant: enough to list it and find its file.
 # The rest (tips, gaps, settings) is in the restaurant's own file, which the app always loads.
-INDEX_KEYS = ("id", "name", "file", "source", "guide", "stats", "logo", "officialUrl", "hash")
+INDEX_KEYS = ("id", "name", "file", "source", "guide", "stats", "logo", "officialUrl", "osm", "hash")
+# a guide file named in a reader's "source" ("Knoops allergen guide, March 2024 (Knoops_allergen_guide_March_2024.pdf, ...)")
+PDF_NAME = re.compile(r"[\w.-]+\.pdf", re.I)
 
 
 def end_date(runs):
@@ -61,11 +63,13 @@ def merge(parts):
     ends = [p["guide"].get("validUntil") for p in parts if p["guide"].get("validUntil")]
     guide["validUntil"] = min(ends) if ends else None
     seen, notices = set(), []
-    for p in parts:
+    for n_part, p in enumerate(parts):
         for n in p.get("notices", []):
             if n["text"] not in seen:
                 seen.add(n["text"])
                 notices.append(n)
+        for i in p["items"] + p["avoid"]:  # which guide a row's page numbers refer to ("guides" below)
+            i["src"] = n_part
     return {
         "notices": notices,
         "source": " and ".join(p["source"] for p in parts),
@@ -149,6 +153,16 @@ def build_one(folder):
     if logo.exists():
         (ROOT / "site" / "data" / "logos").mkdir(parents=True, exist_ok=True)
         (ROOT / "site" / "data" / "logos" / f"{folder.name}.png").write_bytes(logo.read_bytes())
+    # the guides themselves go out with the site, so an item's "Guide page 7" can open the guide at that page
+    # (guideFiles: the source name each reader gave -> the published path)
+    guide_files = {}
+    for source in [g["source"] for g in data.get("guides", [])] or [data["source"]]:
+        for name in PDF_NAME.findall(source):
+            pdf = folder / "guides" / name
+            if pdf.exists():
+                (ROOT / "site" / "guides" / folder.name).mkdir(parents=True, exist_ok=True)
+                (ROOT / "site" / "guides" / folder.name / name).write_bytes(pdf.read_bytes())
+                guide_files[source] = f"guides/{folder.name}/{name}"
     meta = {
         "id": folder.name,
         "name": config["name"],
@@ -165,6 +179,8 @@ def build_one(folder):
         "latestGuide": config.get("latestGuide"),  # when we last looked for a newer guide, and what we found
         "logo": f"data/logos/{folder.name}.png" if logo.exists() else "",
         "order": order,
+        "osm": config.get("osm", []),  # what OpenStreetMap calls this chain's branches, for "Near me"
+        "guideFiles": guide_files,
     }
     print(f"  {data['stats']['rows']} rows -> {data['stats']['items']} with no gluten ingredients, {data['stats']['avoid']} to avoid"
           + (f", {data['stats']['ingredients']} ingredients listed on their own" if data["stats"].get("ingredients") else ""))

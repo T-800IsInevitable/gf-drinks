@@ -7,6 +7,7 @@
   "reader": "manual_csv",
   "optionLabel": "milk",
   "officialUrl": "https://knoops.com/pages/our-menu",
+  "osm": ["Knoops"],
   "watch": {"page": "https://knoops.com/pages/our-menu", "link": "allergen_guide"},
   "latestGuide": { "checked": "2026-10-25", "note": "Knoops' help centre still links this March 2024 guide as its latest." },
   "guide": {

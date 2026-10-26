@@ -41,6 +41,7 @@ import sys
 import tempfile
 import threading
 import time
+import urllib.parse
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -2494,6 +2495,413 @@ def check_tap_through_one_restaurant(env):
     return problems
 
 
+def check_f7_map(env):
+    base, browser, cities, cid = env.base, env.browser, env.cities, env.cid
+    problems = []
+    # F7: the Map chip on a city page draws one pin per location, a pin's Open opens that place's row, and the map
+    # goes away when the chip is tapped again. OpenStreetMap's tiles are answered here with a blank tile, so the
+    # check neither needs signal nor fetches from their server.
+    c = cities[cid]
+    ctx, page, errors = visit(browser, base + f"#{cid}", wait="#cityList .row")
+    page.route("https://tile.openstreetmap.org/**", lambda route: route.fulfill(status=200, content_type="image/png", body=PNG))
+    page.locator("#chips [data-map]").click()
+    page.wait_for_selector("#cityMap .leaflet-interactive", timeout=15000)
+    page.wait_for_timeout(500)
+    want = sum(len(p["locations"]) for p in c["places"])
+    pins = page.locator("#cityMap path.leaflet-interactive").count()
+    if pins != want:
+        problems.append(f"map: {pins} pins for {want} locations in {cid}")
+    if page.locator("#chips [data-map]").get_attribute("aria-pressed") != "true":
+        problems.append("map: the Map chip isn't shown as pressed while the map is open")
+    if "OpenStreetMap" not in page.locator("#cityMap .leaflet-control-attribution").inner_text():
+        problems.append("map: no OpenStreetMap attribution")
+    # a pin's popup opens the place's row
+    page.locator("#cityMap path.leaflet-interactive").first.click(force=True)
+    page.wait_for_selector("#cityMap .leaflet-popup [data-place-open]", timeout=5000)
+    name = page.locator("#cityMap .leaflet-popup [data-place-open]").get_attribute("data-place-open")
+    page.locator("#cityMap .leaflet-popup [data-place-open]").click()
+    page.wait_for_timeout(300)
+    opened = page.locator(f'#cityList details.row[open][data-place="{name}"]').count()
+    if not opened:
+        problems.append(f"map: Open on {name!r}'s pin didn't open its row")
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_selector(".top:not(.collapsed)")
+    page.wait_for_timeout(300)
+    page.locator("#chips [data-map]").click()
+    page.wait_for_timeout(300)
+    if page.locator("#cityMap").count():
+        problems.append("map: still there after the chip was tapped again")
+    problems += [f"map: {e}" for e in errors]
+    print(f"map: {pins} pins in {cid}, a pin opens {name!r}, chip toggles it off")
+    ctx.close()
+    return problems
+
+
+def check_f8_near_me(env):
+    base, browser, index = env.base, env.browser, env.index
+    problems = []
+    # F8: Near me on All restaurants asks OpenStreetMap (answered here by a fake) for the app's chains within a
+    # kilometre, lists them nearest first with their menu and directions, keeps the answer, and shows it again with
+    # a note when the service can't be reached.
+    chains = [r for r in index["restaurants"] if r.get("osm")]
+    pret = next((r for r in chains if r["id"] == "pret-uk"), chains[0])
+    other = next((r for r in chains if r["id"] != pret["id"]), None)
+    at = {"latitude": 51.5308, "longitude": -0.1238}  # King's Cross
+    dlat = 1 / 111.2  # about a kilometre, due north
+
+    def node(n, name, km, brand=None, way=False):
+        tags = {"name": name, "addr:street": "Euston Road"}
+        if brand:
+            tags["brand"] = brand
+        pos = {"lat": at["latitude"] + km * dlat, "lon": at["longitude"]}
+        el = {"type": "way" if way else "node", "id": n, "tags": tags}
+        el.update({"center": pos} if way else pos)
+        return el
+
+    elements = [node(1, pret["osm"][0], 0.3), node(2, pret["osm"][-1].upper(), 0.8),
+                node(4, "Not a chain", 0.1), node(5, pret["osm"][0] + " Something", 0.1)]  # names are matched whole
+    if other:
+        elements.append(node(3, "Coffee corner", 0.8, brand=other["osm"][0], way=True))
+    asked = []
+
+    def overpass(route):
+        asked.append(urllib.parse.unquote((route.request.post_data or "").removeprefix("data=")))
+        route.fulfill(status=200, content_type="application/json", body=json.dumps({"elements": elements}))
+
+    ctx = browser.new_context(color_scheme="light", geolocation=at, permissions=["geolocation"], **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(f"page error: {e}"))
+    page.on("console", lambda m: errors.append(f"console {m.type}: {m.text}") if m.type == "error" else None)
+    page.route("https://overpass-api.de/**", overpass)
+    page.goto(base)
+    page.wait_for_selector("#list .row")
+    page.locator("#chips [data-near-uk]").click()
+    page.wait_for_selector("#near[open] .near-list li", timeout=15000)
+    rows = [norm_ws(t) for t in page.locator("#near .near-list li .nm").all_inner_texts()]
+    want_first = f"{pret['name']} 300 m · Euston Road · 2 within 1 km"
+    if not rows or rows[0] != want_first:
+        problems.append(f"near me: first row {rows[0] if rows else None!r}, expected {want_first!r}")
+    if other and (len(rows) != 2 or not rows[1].startswith(f"{other['name']} 800 m")):
+        problems.append(f"near me: rows {rows}, expected {other['name']} second at 800 m")
+    if any("Not a chain" in r or "Something" in r for r in rows):
+        problems.append(f"near me: a place that isn't one of the app's chains was listed: {rows}")
+    for r in chains:
+        if not all(o in (asked[0] if asked else "") for o in r["osm"]):
+            problems.append(f"near me: the query doesn't ask for {r['name']}'s names {r['osm']}")
+    if len(asked) != 1:
+        problems.append(f"near me: {len(asked)} queries for one tap")
+    href = page.locator("#near .near-list li").first.locator("a").get_attribute("href")
+    if not href.startswith("https://maps.apple.com/?ll="):
+        problems.append(f"near me: directions link {href!r}")
+    page.locator("#near .near-list li").first.locator("[data-gonear]").click()
+    page.wait_for_timeout(300)
+    if page.locator("#near[open]").count() or pret["name"] not in page.locator("#pickName").inner_text():
+        problems.append("near me: Menu didn't open the restaurant's page")
+    if page.locator("#chips [data-near-uk]").count():
+        problems.append("near me: the chip shows on a restaurant's page (it belongs to All)")
+    saved = page.evaluate("localStorage.getItem('gf-near')")
+    ctx.close()
+    # no signal: the last answer, with a note saying so
+    ctx = browser.new_context(color_scheme="light", geolocation=at, permissions=["geolocation"], **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-near', " + json.dumps(saved) + ")")
+    page = ctx.new_page()
+    page.route("https://overpass-api.de/**", lambda route: route.abort())
+    page.goto(base)
+    page.wait_for_selector("#list .row")
+    page.locator("#chips [data-near-uk]").click()
+    page.wait_for_selector("#near[open] .near-list li", timeout=15000)
+    body = norm_ws(page.locator("#nearBody").inner_text())
+    if "last answer" not in body or "today at" not in body or pret["name"] not in body:
+        problems.append(f"near me offline: {body[:160]!r}")
+    ctx.close()
+    problems += [f"near me: {e}" for e in errors]
+    print(f"near me: {rows}; offline shows the last answer")
+    return problems
+
+
+def check_f10_read_aloud(env):
+    base, browser, cities, cid = env.base, env.browser, env.cities, env.cid
+    problems = []
+    # F10: Say it reads a phrase in the card's language with the phone's voice for it; without that voice the card
+    # says so; without speech at all there are no buttons
+    c = cities[cid]
+    lang = c["language"]
+    phrases = json.loads((SITE / "phrases.json").read_text(encoding="utf-8"))[lang]
+    want_lang = {"de": "de-DE", "nl": "nl-NL"}.get(lang, lang)
+    mock = ("window.__said = []; window.__voices = %s;"
+            "Object.defineProperty(window, 'speechSynthesis', { value: { getVoices: () => window.__voices, cancel() {}, addEventListener() {},"
+            " speak(u) { window.__said.push([u.text, u.lang, u.voice ? u.voice.name : null]); } } });"
+            "window.SpeechSynthesisUtterance = function (t) { this.text = t; };")
+    ctx, page, errors = visit(browser, base + f"#{cid}", init=mock % json.dumps([{"lang": want_lang, "name": "Anna"}, {"lang": "en-GB", "name": "Daniel"}]), wait="#cityList .row")
+    page.locator("#chips [data-card]").click()
+    page.wait_for_selector("#gfcard[open]")
+    if page.locator("#gfcard .say-btn").count() != len(phrases["card"]):
+        problems.append(f"read aloud: {page.locator('#gfcard .say-btn').count()} Say buttons for {len(phrases['card'])} phrases")
+    page.locator("#gfcard .say-btn").nth(1).click()
+    said = page.evaluate("window.__said")
+    if said != [[phrases["card"][1]["text"], want_lang, "Anna"]]:
+        problems.append(f"read aloud: said {said}, expected the second phrase in {want_lang} with the Anna voice")
+    if page.locator("#gfcard .voice-note").inner_text().strip():
+        problems.append("read aloud: a voice note shows although a voice for the language is installed")
+    ctx.close()
+    ctx, page, errors2 = visit(browser, base + f"#{cid}", init=mock % json.dumps([{"lang": "en-GB", "name": "Daniel"}]), wait="#cityList .row")
+    page.locator("#chips [data-card]").click()
+    page.wait_for_selector("#gfcard[open]")
+    note = page.locator("#gfcard .voice-note").inner_text()
+    if f"No {phrases['language']} voice" not in note or "Spoken Content" not in note:
+        problems.append(f"read aloud: without a {phrases['language']} voice the card should say how to add one, not {note!r}")
+    ctx.close()
+    ctx, page, errors3 = visit(browser, base + f"#{cid}", init="Object.defineProperty(window, 'speechSynthesis', { value: undefined }); window.SpeechSynthesisUtterance = undefined;", wait="#cityList .row")
+    page.locator("#chips [data-card]").click()
+    page.wait_for_selector("#gfcard[open]")
+    if page.locator("#gfcard .say-btn").count():
+        problems.append("read aloud: Say buttons show on a phone without speech")
+    ctx.close()
+    problems += [f"read aloud: {e}" for e in errors + errors2 + errors3]
+    print(f"read aloud: {len(phrases['card'])} phrases in {want_lang}, voice note without a voice, no buttons without speech")
+    return problems
+
+
+def check_f11_notes(env):
+    base, browser, ids, cid = env.base, env.browser, env.ids, env.cid
+    problems = []
+    # F11: a note typed in an opened item is kept on the phone and marks the row; it travels in the favourites link
+    # and comes back on another phone; city places take notes too
+    rid = ids[0]
+    ctx, page, errors = visit(browser, base + f"#{rid}", init=SHARE_MOCK + "localStorage.setItem('gf-selected', 'all');")
+    row = page.locator("#list .row").first
+    row.locator("summary").click()
+    box = row.locator("textarea[data-note]")
+    if not box.count():
+        problems.append("notes: an opened item has no note box")
+        ctx.close()
+        return problems
+    key = box.get_attribute("data-note")
+    box.fill("Ask for a clean jug")
+    page.wait_for_timeout(600)
+    if not row.locator(".nm .note-mark").count():
+        problems.append("notes: the row shows no mark after a note was typed")
+    page.reload()
+    page.wait_for_selector("#list .row")
+    row = page.locator("#list .row").first
+    if not row.locator(".nm .note-mark").count() or row.locator("textarea[data-note]").input_value() != "Ask for a clean jug":
+        problems.append("notes: the note or its mark didn't survive a reload")
+    row.locator("summary").click()
+    row.locator("textarea[data-note]").fill("")
+    page.wait_for_timeout(600)
+    if row.locator(".nm .note-mark").count() or page.evaluate("JSON.parse(localStorage.getItem('gf-notes') || '{}')") != {}:
+        problems.append("notes: clearing the box should remove the note and its mark")
+    row.locator("textarea[data-note]").fill("Ask for a clean jug")
+    page.wait_for_timeout(600)
+    row.locator(".fav-btn").click()  # the link carries favourites and notes
+    page.locator("#infoBtn").click()
+    page.wait_for_selector("#info[open]")
+    page.locator("#info details.more", has=page.locator("[data-sharefavs]")).locator("summary").click()
+    page.locator("#info [data-sharefavs]").click()
+    page.wait_for_timeout(300)
+    url = (page.evaluate("window.__shared") or {}).get("url", "")
+    code = url.split("#favs=")[-1] if "#favs=" in url else ""
+    carried = json.loads(base64.urlsafe_b64decode(code + "=" * (-len(code) % 4)).decode("utf-8")) if code else {}
+    if carried.get("n", {}).get(key) != "Ask for a clean jug" or key not in carried.get("f", []):
+        problems.append(f"notes: the favourites link should carry the note: {carried}")
+    ctx.close()
+    # another phone opens the link: the favourite and its note arrive
+    ctx, page, errors2 = visit(browser, base + "#favs=" + code, wait="#favImport[open]")
+    body = norm_ws(page.locator("#favImportBody").inner_text())
+    if "1 note comes with the link" not in body:
+        problems.append(f"notes: the import sheet doesn't mention the note: {body!r}")
+    page.locator("#favImportAdd").click()
+    page.wait_for_timeout(400)
+    if page.evaluate("JSON.parse(localStorage.getItem('gf-notes') || '{}')") != {key: "Ask for a clean jug"}:
+        problems.append("notes: the note didn't arrive with the favourite")
+    ctx.close()
+    # a city place
+    ctx, page, errors3 = visit(browser, base + f"#{cid}", wait="#cityList .row")
+    prow = page.locator("#cityList .row").first
+    prow.locator("summary").click()
+    if not prow.locator("textarea[data-note]").count():
+        problems.append("notes: an opened city place has no note box")
+    ctx.close()
+    problems += [f"notes: {e}" for e in errors + errors2 + errors3]
+    print(f"notes: kept and marked on {rid}, carried in the favourites link, taken on another phone, and on city places")
+    return problems
+
+
+def check_f14_guide_link(env):
+    base, browser, ids, index = env.base, env.browser, env.ids, env.index
+    problems = []
+    # F14: "Guide page 7" in an opened item is a link to the published guide at that page, the guide itself is served,
+    # a restaurant with two guides links each row to its own, and the footer offers the guides
+    with_two = next((r["id"] for r in index["restaurants"] if len(menu_of(r["id"]).get("guideFiles") or {}) > 1), None)
+    checked = []
+    for rid in [i for i in ids if menu_of(i).get("guideFiles")][:2] + ([with_two] if with_two else []):
+        m = menu_of(rid)
+        ctx, page, errors = visit(browser, base + f"#{rid}")
+        # one item from each guide (src) that cites a page
+        for src in sorted({i.get("src", 0) for i in m["items"] if i.get("pages")}):
+            item = next(i for i in m["items"] if i.get("pages") and i.get("src", 0) == src)
+            want = (m["guideFiles"].get(m["guides"][src]["source"]) if m.get("guides") else m["guideFiles"].get(m["source"])) or ""
+            page.locator("#q").fill(item["name"])
+            page.wait_for_timeout(300)
+            row = page.locator("#list .row, #avoid .row").filter(has_text=item["name"]).first
+            row.locator("summary").click()
+            link = row.locator(".guide-link")
+            if not link.count():
+                problems.append(f"guide link: {rid} {item['name']!r} has no link to its guide")
+                continue
+            href = link.get_attribute("href")
+            if href != f"{want}#page={item['pages'][0]}":
+                problems.append(f"guide link: {rid} {item['name']!r} links to {href!r}, expected {want!r} at page {item['pages'][0]}")
+            status = page.evaluate("(h) => fetch(h.split('#')[0]).then((r) => r.status + ' ' + (r.headers.get('content-type') || ''))", href)
+            if not status.startswith("200") or "pdf" not in status:
+                problems.append(f"guide link: {href} isn't served as a PDF ({status})")
+            checked.append(f"{rid} p{item['pages'][0]}")
+            page.locator("#q").fill("")
+            page.wait_for_timeout(200)
+        foot = page.locator("#sources").inner_text()
+        if "Open the" not in foot:
+            problems.append(f"guide link: {rid}'s footer has no link to open the guide")
+        problems += [f"guide link {rid}: {e}" for e in errors]
+        ctx.close()
+    print(f"guide links: {', '.join(checked)}; footers offer the guides")
+    return problems
+
+
+def check_f15_requests(env):
+    base, browser, index = env.base, env.browser, env.index
+    problems = []
+    # F15: asking for a place by name: with the owner's key it lands as one JSON file under inbox/requests/ on the
+    # uploads branch (never main); a place already in the app is pointed to instead; without the key it becomes a
+    # link, which fills the form in on the owner's phone rather than filing by itself
+    fake = FakeGitHub()
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-github-key', 'k'); localStorage.setItem('gf-selected', 'all')")
+    page = ctx.new_page()
+    page.route("https://api.github.com/**", fake.handle)
+    page.goto(base)
+    page.wait_for_selector("#list .row")
+    page.locator("#infoBtn").click()
+    page.locator("#openUpload").click()
+    page.wait_for_selector("#upload[open]")
+    page.locator("#reqName").fill("Wagamama")
+    page.locator("#reqArea").fill("London")
+    page.locator("#reqUrl").fill("wagamama.com")
+    page.locator("#reqSend").click()
+    page.wait_for_selector("#reqStatus.done", timeout=10000)
+    files = [f for f in fake.files("uploads") if f.startswith("inbox/requests/")]
+    if len(files) != 1 or not files[0].endswith("-wagamama-london.json") or fake.refs["main"] != "c0":
+        problems.append(f"requests: expected one request file on uploads and main untouched; {fake.files('uploads')}, main {fake.refs['main']}")
+    else:
+        blob = fake.blobs[fake.trees[fake.commits[fake.refs["uploads"]]["tree"]][files[0]]]
+        meta = json.loads(base64.b64decode(blob).decode("utf-8"))
+        if (meta.get("name"), meta.get("area"), meta.get("url")) != ("Wagamama", "London", "https://wagamama.com"):
+            problems.append(f"requests: the file says {meta}")
+    listed = norm_ws(page.locator("#reqList").inner_text())
+    if "Wagamama (London)" not in listed or "sent for adding" not in listed:
+        problems.append(f"requests: the phone's own list says {listed!r}")
+    # a place that's already here
+    have = index["restaurants"][0]
+    page.locator("#reqName").fill(have["name"].lower())
+    page.locator("#reqArea").fill("UK")
+    page.locator("#reqSend").click()
+    page.wait_for_timeout(300)
+    said = norm_ws(page.locator("#reqStatus").inner_text())
+    if "already in the app" not in said or len([f for f in fake.files("uploads") if f.startswith("inbox/requests/")]) != 1:
+        problems.append(f"requests: asking for {have['name']} again said {said!r}")
+    page.locator("#reqStatus [data-gotorest-req]").click()
+    page.wait_for_timeout(300)
+    if page.locator("#upload[open]").count() or have["name"] not in page.locator("#pickName").inner_text():
+        problems.append("requests: Open it didn't open the restaurant that's already here")
+    ctx.close()
+    # without the key: a link to pass on
+    ctx = browser.new_context(color_scheme="light", **IPHONE)
+    ctx.add_init_script(SHARE_MOCK + "localStorage.setItem('gf-selected', 'all')")
+    page = ctx.new_page()
+    page.goto(base)
+    page.wait_for_selector("#list .row")
+    page.locator("#infoBtn").click()
+    page.locator("#openUpload").click()
+    page.wait_for_selector("#upload[open]")
+    page.locator("#reqName").fill("Honest Burgers")
+    page.locator("#reqArea").fill("Brighton")
+    page.locator("#reqSend").click()
+    page.wait_for_selector("#reqStatus.done", timeout=10000)
+    shared = page.evaluate("window.__shared") or {}
+    link = shared.get("url", "")
+    if "#request=" not in link or "Honest Burgers" not in shared.get("text", ""):
+        problems.append(f"requests: without the key the request should be shared as a link: {shared}")
+    ctx.close()
+    # the owner opens the link: the form is filled in, nothing is filed until Ask for it is tapped
+    fake = FakeGitHub()
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-github-key', 'k')")
+    page = ctx.new_page()
+    page.route("https://api.github.com/**", fake.handle)
+    page.goto(link)
+    page.wait_for_selector("#upload[open]")
+    page.wait_for_timeout(300)
+    if page.locator("#reqName").input_value() != "Honest Burgers" or page.locator("#reqArea").input_value() != "Brighton" or "uploads" in fake.refs:
+        problems.append("requests: the link should fill the form in and file nothing by itself")
+    page.locator("#reqSend").click()
+    page.wait_for_selector("#reqStatus.done", timeout=10000)
+    if not any(f.endswith("-honest-burgers-brighton.json") for f in fake.files("uploads")):
+        problems.append(f"requests: Ask for it after the link didn't file the request: {fake.files('uploads')}")
+    ctx.close()
+    print("requests: filed as one JSON file on uploads, a known place is pointed to, a link without the key, filed from the link on tap")
+    return problems
+
+
+def check_f5_push(env):
+    base, browser = env.base, env.browser
+    problems = []
+    # F5: in the Home Screen app, Help offers notifications; switching them on subscribes with the app's public key
+    # and shows the phone's address to send; switching off takes it back; in Safari the section doesn't show
+    # (the phone's notification and push machinery is stood in for here; sending is tools/push.py's, tested in tests/)
+    mock = """
+      Object.defineProperty(navigator, 'standalone', { get: () => true });
+      window.__sub = null; window.__opts = null;
+      const fakeSub = () => ({ toJSON: () => ({ endpoint: 'https://push.example/abc', keys: { p256dh: 'k', auth: 'a' } }), unsubscribe: async () => { window.__sub = null; return true; } });
+      const pm = { getSubscription: async () => window.__sub, subscribe: async (o) => { window.__opts = o; window.__sub = fakeSub(); return window.__sub; } };
+      window.Notification = { permission: 'default', requestPermission: async () => { window.Notification.permission = 'granted'; return 'granted'; } };
+      window.PushManager = window.PushManager || function () {};
+      Object.defineProperty(navigator.serviceWorker, 'ready', { get: () => Promise.resolve({ pushManager: pm }) });
+    """
+    ctx, page, errors = visit(browser, base + "#knoops-uk", init=mock)
+    page.locator("#infoBtn").click()
+    page.wait_for_selector("#info[open]")
+    if page.locator("#pushHelp").is_hidden():
+        problems.append("push: Help doesn't offer notifications in the Home Screen app")
+    page.locator("#pushHelp summary").click()
+    page.locator("#pushOn").click()
+    page.wait_for_selector("#pushBox:not([hidden])", timeout=5000)
+    shown = page.locator("#pushSub").input_value()
+    key_len = page.evaluate("window.__opts && window.__opts.applicationServerKey && window.__opts.applicationServerKey.length")
+    if "https://push.example/abc" not in shown or key_len != 65 or not page.evaluate("window.__opts.userVisibleOnly"):
+        problems.append(f"push: subscribed with key length {key_len}, shows {shown[:60]!r}")
+    if "PUSH_SUBSCRIPTIONS" not in page.locator("#pushBox").inner_text():
+        problems.append("push: the box doesn't say where the owner saves the address")
+    page.locator("#pushOff").click()
+    page.wait_for_selector("#pushOn:not([hidden])", timeout=5000)
+    if page.evaluate("window.__sub") is not None or not page.locator("#pushBox").is_hidden():
+        problems.append("push: Switch off didn't unsubscribe")
+    problems += [f"push: {e}" for e in errors]
+    ctx.close()
+    ctx, page, errors = visit(browser, base + "#knoops-uk")
+    page.locator("#infoBtn").click()
+    page.wait_for_selector("#info[open]")
+    if not page.locator("#pushHelp").is_hidden():
+        problems.append("push: the notifications section shows outside the Home Screen app")
+    ctx.close()
+    sw = (SITE / "sw.js").read_text(encoding="utf-8")
+    for want in ('addEventListener("push"', 'addEventListener("notificationclick"', "setAppBadge", "nowAvoid"):
+        if want not in sw:
+            problems.append(f"push: sw.js has no {want}")
+    print("push: offered only in the Home Screen app; subscribe shows the address with the app's key; switch off unsubscribes")
+    return problems
+
+
 CHECKS = [
     ("every_page", check_every_page),
     ("the_berlin_page_in_light", check_the_berlin_page_in_light),
@@ -2541,6 +2949,13 @@ CHECKS = [
     ("f3", check_f3),
     ("o6", check_o6),
     ("tap_through_one_restaurant", check_tap_through_one_restaurant),
+    ("f7_map", check_f7_map),
+    ("f8_near_me", check_f8_near_me),
+    ("f10_read_aloud", check_f10_read_aloud),
+    ("f11_notes", check_f11_notes),
+    ("f14_guide_link", check_f14_guide_link),
+    ("f15_requests", check_f15_requests),
+    ("f5_push", check_f5_push),
 ]
 
 

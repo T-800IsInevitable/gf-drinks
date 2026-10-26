@@ -27,6 +27,16 @@ jobs:
 
       - uses: ./.github/actions/build-check
 
+      # what to tell the phones once this is live: only a publish that brought a new guide says anything
+      - name: Work out the notification for this publish
+        run: python tools/push.py --plan --out push-message.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: push-message
+          path: push-message.json
+          retention-days: 3
+
       - uses: actions/configure-pages@v6
 
       - uses: actions/upload-pages-artifact@v5
@@ -42,3 +52,29 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
+
+  # One push notification per publish with a new guide, to the phones saved in the PUSH_SUBSCRIPTIONS secret
+  # (tools/push.py). With no phones saved, or nothing new, it says so and does nothing. It never fails the publish.
+  notify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: push-message
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - run: pip install pywebpush==2.5.0
+
+      - name: Tell the phones about new menus
+        env:
+          PUSH_SUBSCRIPTIONS: ${{ secrets.PUSH_SUBSCRIPTIONS }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python tools/push.py --send push-message.json
