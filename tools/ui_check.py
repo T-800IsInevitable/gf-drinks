@@ -1149,6 +1149,40 @@ def main():
         print("contrast and amber: tags, buttons and notes in all five themes")
         ctx.close()
 
+        # S1: saved favourites come first as "Your usuals" (grouped by restaurant on All), not while searching or on a section chip
+        def usual(rid, n):
+            built = json.loads((SITE / "data" / "r" / f"{rid}.json").read_text(encoding="utf-8"))
+            return [(f"{rid}|{i['section']}|{i['name']}", i["name"]) for i in built["items"] if not i.get("role")][n:n + 2]
+        favs = usual("starbucks-uk", 3) + usual("pret-uk", 5)
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-intro-seen', JSON.stringify(['all', 'starbucks-uk']));"
+                            f"localStorage.setItem('gf-favourites', JSON.stringify({json.dumps([k for k, _ in favs])}))")
+        page = ctx.new_page()
+        page.goto(base + "#starbucks-uk")
+        page.wait_for_selector("#list .row")
+        heads = page.locator("#list .group-h").all_inner_texts()
+        first_rows = page.evaluate("[...document.querySelector('#list .card').querySelectorAll('.row .nm')].map((n) => n.childNodes[1]?.textContent || n.childNodes[0].textContent)")
+        want = [n for k, n in favs if k.startswith("starbucks-uk")]
+        if not heads or not heads[0].startswith("Your usuals") or [x.strip() for x in first_rows] != want:
+            problems.append(f"Starbucks: Your usuals is {heads[:1]} with {first_rows}, expected {want}")
+        page.locator("#list .card").first.locator(".fav-btn").first.evaluate("el => el.closest('.row').open = true")
+        page.locator("#q").fill(want[0][:6])
+        if any(h.startswith("Your usuals") for h in page.locator("#list .group-h").all_inner_texts()):
+            problems.append("Starbucks: Your usuals still shows while searching")
+        page.locator("#q").fill("")
+        page.locator("#chips [data-f]").nth(2).click()  # a section chip
+        if any(h.startswith("Your usuals") for h in page.locator("#list .group-h").all_inner_texts()):
+            problems.append("Starbucks: Your usuals shows on a section chip")
+        page.goto(base)
+        page.reload()
+        page.wait_for_selector("#list .row")
+        subs = page.evaluate("[...document.querySelectorAll('#list > *')].slice(0, 5).map((e) => e.className + ':' + e.textContent.slice(0, 14))")
+        names = page.evaluate("[...document.querySelectorAll('#list > .sub-h')].slice(0, 2).map((e) => e.textContent)")
+        if not page.locator("#list .group-h").first.inner_text().startswith("Your usuals") or names != ["Pret A Manger", "Starbucks"]:
+            problems.append(f"All: Your usuals should list favourites first, grouped by restaurant ({names}, {subs})")
+        print(f"your usuals: {len(favs)} favourites first on a restaurant and on All, hidden while searching")
+        ctx.close()
+
         # X5: a restaurant's own name at the start of a search in All restaurants narrows to it
         # ("pret latte" means lattes at Pret), and an everyday word finds the menu's own word ("chips" -> "fries")
         ctx = browser.new_context(color_scheme="light", **IPHONE)
