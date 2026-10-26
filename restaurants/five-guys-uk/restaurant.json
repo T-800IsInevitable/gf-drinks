@@ -7,6 +7,7 @@
   "reader": "five_guys_uk_pdf",
   "optionLabel": "option",
   "officialUrl": "https://www.fiveguys.co.uk",
+  "watch": {"page": "https://www.fiveguys.co.uk/nutritional-allergy-information/", "link": "FGUK_.*allergen"},
   "recheckDays": 91,
   "rename": {
     "Meat|Hot Dog": "Hot dog sausage"

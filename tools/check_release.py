@@ -7,7 +7,7 @@ and the app reloads itself for a new release (see "new app code without a
 restart" in site/app.js). So a pull request that changes the app's code must
 raise CACHE in site/sw.js, and APP_VERSION in site/app.js with it (check.py
 holds the two equal). Menus, cities and phrases don't need it: they're always
-fetched fresh.
+checked for a newer copy.
 
 Usage (in the pull request check, after fetching the base branch):
   python tools/check_release.py FETCH_HEAD

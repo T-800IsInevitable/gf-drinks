@@ -1,0 +1,38 @@
+name: Guide watch
+
+# Each week, look on every watched restaurant's own website for a new allergen
+# guide (tools/watch_guides.py). A new one becomes a pull request with the PDF
+# in guides/, for the owner to read and merge; nothing merges by itself. A page
+# that can't be checked, or a new guide for a menu kept by hand, opens an issue.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write       # push the new guide's branch (main stays protected)
+  pull-requests: write
+  issues: write
+  actions: write        # start the checks on the pull request
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install PDF reader
+        run: pip install -r tools/requirements.txt
+
+      - name: Download the menus that are live now, to say what a new guide changes
+        run: python tools/fetch_previous.py
+
+      - name: Look for new guides
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python tools/watch_guides.py --github
