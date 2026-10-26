@@ -89,6 +89,10 @@ class Send(unittest.TestCase):
         self.assertEqual(push.subscriptions(json.dumps([one, one])), [one, one])
         self.assertEqual(push.subscriptions("# Owen's phone\n" + json.dumps(one) + "\n\n" + json.dumps(one) + "\n"), [one, one])
         self.assertEqual(push.subscriptions(""), [])
+        # braces turned into web-address codes on the way from the phone (%7B, %7D), alone or among other lines
+        encoded = json.dumps(one).replace('"keys": {', '"keys": %7B').replace("}}", "%7D%7D")
+        self.assertEqual(push.subscriptions(encoded), [one])
+        self.assertEqual(push.subscriptions(json.dumps(one) + "\n" + encoded), [one, one])
         with self.assertRaises(SystemExit):
             push.subscriptions(json.dumps(one) + "\nnot json")
 

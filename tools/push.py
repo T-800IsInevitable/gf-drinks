@@ -22,7 +22,7 @@ import argparse
 import json
 import os
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 try:
     from py_vapid import Vapid
@@ -91,13 +91,23 @@ def vapid_key(text):
     return text
 
 
+def loads_lenient(text):
+    """JSON, or JSON whose characters a share sheet or notes app turned into web-address codes ({ as %7B, " as %22)."""
+    try:
+        return json.loads(text)
+    except ValueError:
+        if "%" not in text:
+            raise
+        return json.loads(unquote(text))
+
+
 def subscriptions(text):
     """The saved subscriptions: a JSON array, one object, or one object per line (blank lines and # notes ignored)."""
     text = (text or "").strip()
     if not text:
         return []
     try:
-        d = json.loads(text)
+        d = loads_lenient(text)
         return d if isinstance(d, list) else [d]
     except ValueError:
         out = []
@@ -106,9 +116,9 @@ def subscriptions(text):
             if not line or line.startswith("#"):
                 continue
             try:
-                out.append(json.loads(line))
+                out.append(loads_lenient(line))
             except ValueError:
-                raise SystemExit(f"ERROR: PUSH_SUBSCRIPTIONS line {n} isn't JSON")
+                raise SystemExit(f"ERROR: PUSH_SUBSCRIPTIONS line {n} isn't JSON (it should start with {{\"endpoint\": and end with }})")
         return out
 
 
