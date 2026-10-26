@@ -54,6 +54,8 @@
     <p><b>Install on your iPhone:</b> in Safari, tap <b>•••</b> (or <b>Share</b>), then <b>Add to Home Screen</b>. Keep <b>Open as Web App</b> switched on.</p>
     <button type="button" id="installClose" class="link-btn">Dismiss</button>
   </div>
+  <!-- Offered once per trip, from the phone's time zone alone (no location asked) -->
+  <div id="tzOffer" class="stale hide-searching" hidden></div>
   <div id="ukView" class="view">
   <div id="stale" class="stale hide-searching" hidden></div>
   <div id="favAlert" class="fav-alert" role="alert" hidden></div>
@@ -157,11 +159,15 @@
     </details>
     <details class="more">
       <summary>Show staff</summary>
-      <p>Open any item and tap <b>Show staff</b> for a large-print card with the item, how to order it, and that you have coeliac disease.</p>
+      <p>Open any item and tap <b>Show staff</b> for a large-print card with the item, how to order it, and that you have coeliac disease. The screen stays lit while a card is open.</p>
+    </details>
+    <details class="more">
+      <summary>Share an item, or report a mistake</summary>
+      <p>Open any item and tap <b>Share this item</b> for a link that opens straight to it. Tap <b>Something wrong?</b> (on any item or Berlin place) for a ready message with the restaurant, item and guide page, to send to whoever looks after the app.</p>
     </details>
     <details class="more">
       <summary>Berlin</summary>
-      <p>Tap <b>Berlin</b> next to the title (or choose it from the title) for places in Berlin that are all gluten free, by their own word or the Berlin coeliac support groups', or that say they make gluten free food in a separate kitchen. Each tag says who makes that claim. Each row says whether it's open now (Berlin time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Still open today</b>, <b>Near me</b> and <b>★ Saved</b> narrow the list. The <b>German card</b> chip opens the coeliac card, and <b>About the tags</b> and <b>Before you go</b> open under the introduction. Tap <b>UK</b> to go back to the menus.</p>
+      <p>Tap <b>Berlin</b> next to the title (or choose it from the title; the app also offers it when your phone is on Berlin time) for places in Berlin that are all gluten free, by their own word or the Berlin coeliac support groups', or that say they make gluten free food in a separate kitchen. Each tag says who makes that claim. Each row says whether it's open now (Berlin time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Open near me</b> shows what's still open today, nearest first; <b>Still open today</b>, <b>Near me</b> and <b>★ Saved</b> narrow the list on their own. The <b>German card</b> chip opens the coeliac card, and <b>About the tags</b> and <b>Before you go</b> open under the introduction. Tap <b>UK</b> to go back to the menus.</p>
     </details>
     <details class="more">
       <summary>Travelling</summary>
@@ -226,6 +232,19 @@
       <button class="link-btn" value="close">Done</button>
     </div>
     <div id="changesBody"></div>
+  </form>
+</dialog>
+
+<dialog id="report" aria-labelledby="reportTitle">
+  <form method="dialog" class="sheet">
+    <div class="sheet-head">
+      <h2 id="reportTitle">Something wrong?</h2>
+      <button type="button" class="link-btn" id="reportClose">Close</button>
+    </div>
+    <p>About <b id="reportSubject"></b>. Add what happened at the end, then send it.</p>
+    <label class="field">Message<textarea id="reportText" rows="9"></textarea></label>
+    <p class="report-btns"><button type="button" id="reportSend" class="pill-btn">Send…</button>
+      <button type="button" id="reportIssue" class="link-btn" hidden>Open a GitHub issue</button></p>
   </form>
 </dialog>
 

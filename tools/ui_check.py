@@ -1183,6 +1183,261 @@ def main():
         print(f"your usuals: {len(favs)} favourites first on a restaurant and on All, hidden while searching")
         ctx.close()
 
+        # F1: the screen stays lit while a staff or coeliac card is open, comes back after the phone let go of it, and the card is in large type
+        wake_mock = ("window.__wl = { requests: 0, released: 0, last: null };"
+                     "Object.defineProperty(navigator, 'wakeLock', { value: { request: async () => { const ls = [];"
+                     " const s = { addEventListener: (t, f) => ls.push(f), release: async () => { window.__wl.released++; ls.forEach((f) => f()); } };"
+                     " window.__wl.requests++; window.__wl.last = s; return s; } } });")
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script(wake_mock + "localStorage.setItem('gf-selected', 'all');")
+        page = ctx.new_page()
+        page.goto(base + "#knoops-uk")
+        page.wait_for_selector("#list .row")
+        row = page.locator("#list .row").first
+        row.locator("summary").click()
+        row.locator(".staff-btn").click()
+        page.wait_for_selector("#staff[open]")
+        wl = lambda: page.evaluate("({ requests: window.__wl.requests, released: window.__wl.released })")
+        if wl()["requests"] != 1:
+            problems.append(f"Show staff: the screen isn't kept on ({wl()})")
+        size = page.evaluate("parseFloat(getComputedStyle(document.querySelector('#staff .staff-name')).fontSize)")
+        over = page.evaluate("(() => { const d = document.getElementById('staff'); return d.scrollWidth - d.clientWidth; })()")
+        if size < 36 or over > 1:
+            problems.append(f"Show staff: the card's type is {size}px and {over}px too wide")
+        page.evaluate("window.__wl.last.release()")  # the phone lets go when the app is hidden
+        page.evaluate("document.dispatchEvent(new Event('visibilitychange'))")
+        page.wait_for_timeout(200)
+        if wl()["requests"] != 2:
+            problems.append(f"Show staff: the screen isn't kept on again on coming back ({wl()})")
+        page.locator("#staff .link-btn").click()
+        page.wait_for_timeout(100)
+        if wl()["released"] != 2:
+            problems.append(f"Show staff: the screen lock isn't let go of when the card closes ({wl()})")
+        page.locator(f'#region [data-region="{cid}"]').click()
+        page.wait_for_selector("#cityList .row")
+        page.locator("#chips [data-card]").click()
+        page.wait_for_selector("#gfcard[open]")
+        if wl()["requests"] != 3:
+            problems.append(f"Coeliac card: the screen isn't kept on ({wl()})")
+        page.locator("#gfcard .link-btn").click()
+        page.wait_for_timeout(100)
+        if wl()["released"] != 3:
+            problems.append(f"Coeliac card: the screen lock isn't let go of ({wl()})")
+        print("wake lock: kept on for the staff card and the coeliac card, again on returning, let go on Done; staff card type", size)
+        ctx.close()
+
+        # F4: "Something wrong?" on an item and a place opens a ready message (and, for the owner, a GitHub issue)
+        share_mock = "window.__shared = null; Object.defineProperty(navigator, 'share', { value: async (d) => { window.__shared = d; } });"
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script(share_mock + "localStorage.setItem('gf-selected', 'all');")
+        page = ctx.new_page()
+        page.goto(base + "#knoops-uk")
+        page.wait_for_selector("#list .row")
+        row = page.locator("#list .row").first
+        item_name = page.evaluate(ROWS_JS)[0]["name"]
+        row.locator("summary").click()
+        row.locator("[data-wrong]").click()
+        page.wait_for_selector("#report[open]")
+        msg = page.locator("#reportText").input_value()
+        if not all(w in msg for w in ("Restaurant: Knoops", f"Item: {item_name}", "The app shows:", "Guide: ", "Link: ")) or not msg.endswith("What happened: "):
+            problems.append(f"Something wrong?: the message is {msg!r}")
+        if page.locator("#reportIssue").is_visible():
+            problems.append("Something wrong?: the GitHub issue button shows without the owner's key")
+        page.locator("#reportText").press("End")
+        page.keyboard.type("It has changed")
+        page.locator("#reportSend").click()
+        page.wait_for_timeout(200)
+        shared = page.evaluate("window.__shared")
+        if not shared or "It has changed" not in shared["text"] or page.locator("#report[open]").count():
+            problems.append(f"Something wrong?: sending shared {shared}")
+        page.goto(base + f"#{cid}")
+        page.wait_for_selector("#cityList .row")
+        place = page.locator("#cityList .row").first
+        place.locator("summary").click()
+        place.locator("[data-wrong-place]").click()
+        page.wait_for_selector("#report[open]")
+        msg = page.locator("#reportText").input_value()
+        if "Place: " not in msg or "List checked: " not in msg or "Link: " not in msg:
+            problems.append(f"Something wrong?: the place message is {msg!r}")
+        ctx.close()
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-github-key', 'k'); localStorage.setItem('gf-selected', 'all');")
+        page = ctx.new_page()
+        page.goto(base + "#knoops-uk")
+        page.wait_for_selector("#list .row")
+        page.locator("#list .row").first.locator("summary").click()
+        page.locator("#list .row").first.locator("[data-wrong]").click()
+        page.wait_for_selector("#report[open]")
+        if not page.locator("#reportIssue").is_visible():
+            problems.append("Something wrong?: the owner has no GitHub issue button")
+        print("something wrong: a ready message for an item and a place, sent through the share sheet; the owner also gets a GitHub issue")
+        ctx.close()
+
+        # F6: a link to one item opens its restaurant, scrolls to it and opens it; every item in a guide has its own link;
+        # a link to an item that has changed lands on the restaurant with a note
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script(share_mock)
+        page = ctx.new_page()
+        for rid in ids:
+            page.goto(base + f"#{rid}")
+            page.wait_for_selector("#list .row")
+            page.evaluate("document.getElementById('avoidWrap').open = true")
+            slugs = page.evaluate("[...document.querySelectorAll('#list .row, #avoid .row')].map((d) => d.dataset.slug)")
+            if len(slugs) != len(set(slugs)) or "" in slugs or None in slugs:
+                dupes = sorted({x for x in slugs if slugs.count(x) > 1})
+                problems.append(f"{rid}: {len(dupes)} item links are shared by more than one item, such as {dupes[:2]}")
+        page.goto(base + "#starbucks-uk")
+        page.wait_for_selector("#list .row")
+        want = page.evaluate("document.querySelectorAll('#list .row')[5].dataset.slug")
+        avoid_slug = page.evaluate("(() => { document.getElementById('avoidWrap').open = true; return document.querySelector('#avoid .row').dataset.slug; })()")
+        ctx.close()
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script(share_mock)
+        page = ctx.new_page()
+        for target, where in ((want, "#list"), (avoid_slug, "#avoid")):
+            page.goto(base + f"#starbucks-uk/{target}")  # a fresh visit: the menus load before the link is followed
+            page.wait_for_selector(f'{where} .row[data-slug="{target}"]', state="attached")
+            page.wait_for_timeout(300)
+            row = page.locator(f'{where} .row[data-slug="{target}"]').first
+            box = row.bounding_box()
+            if not row.evaluate("el => el.open") or box is None or not (0 <= box["y"] < IPHONE["viewport"]["height"]):
+                problems.append(f"the link to {target!r} doesn't open the item on screen (box {box})")
+            if where == "#avoid" and not page.locator("#avoidWrap").evaluate("el => el.open"):
+                problems.append("the link to an Avoid item leaves the Avoid list folded")
+        row.locator("[data-share-item]").click()
+        page.wait_for_timeout(150)
+        shared = page.evaluate("window.__shared")
+        if not shared or not shared["url"].endswith(f"#starbucks-uk/{avoid_slug}"):
+            problems.append(f"Share this item shared {shared}")
+        page.goto(base + "#starbucks-uk/no-such-drink-any-more")
+        page.wait_for_selector("#toast:not([hidden])")
+        if "changed" not in page.locator("#toast").inner_text() or "Starbucks" not in page.locator("#pickName").inner_text():
+            problems.append("a link to an item that has changed doesn't land on its restaurant with a note")
+        print(f"item links: unique within every guide, open and scroll to the item, Avoid items too, shared from the row ({want})")
+        ctx.close()
+
+        # S2: on Berlin time the app offers Berlin once; on UK time again, it offers the way back
+        def tz_ctx(zone, init=""):
+            c = browser.new_context(color_scheme="light", timezone_id=zone, **IPHONE)
+            c.add_init_script("localStorage.setItem('gf-selected', 'all');" + init)
+            return c
+        ctx = tz_ctx("Europe/Berlin")
+        page = ctx.new_page()
+        page.goto(base)
+        page.wait_for_selector("#tzOffer:not([hidden])")
+        if "You're on Berlin time" not in page.locator("#tzOffer").inner_text():
+            problems.append(f"Berlin time: the offer says {page.locator('#tzOffer').inner_text()!r}")
+        page.locator('#tzOffer [data-tz="yes"]').click()
+        page.wait_for_selector("#cityList .row")
+        page.reload()
+        page.wait_for_selector("#cityList .row")
+        page.wait_for_timeout(300)
+        if page.locator("#tzOffer").is_visible():
+            problems.append("Berlin time: the offer comes back after it was accepted")
+        ctx.close()
+        ctx = tz_ctx("Europe/Berlin")
+        page = ctx.new_page()
+        page.goto(base)
+        page.wait_for_selector("#tzOffer:not([hidden])")
+        page.locator('#tzOffer [data-tz="no"]').click()
+        page.reload()
+        page.wait_for_selector("#list .row")
+        page.wait_for_timeout(300)
+        if page.locator("#tzOffer").is_visible() or page.locator("#ukView").is_hidden():
+            problems.append("Berlin time: after Not now the offer returns, or the UK menus went")
+        ctx.close()
+        ctx = tz_ctx("Europe/London", f"localStorage.setItem('gf-region', '{cid}'); localStorage.setItem('gf-tz-asked', 'Europe/Berlin');")
+        page = ctx.new_page()
+        page.goto(base)
+        page.wait_for_selector("#tzOffer:not([hidden])")
+        if "back on UK time" not in page.locator("#tzOffer").inner_text():
+            problems.append(f"UK time again: the offer says {page.locator('#tzOffer').inner_text()!r}")
+        page.locator('#tzOffer [data-tz="yes"]').click()
+        page.wait_for_selector("#list .row")
+        if page.locator("#cityView").is_visible():
+            problems.append("UK time again: accepting didn't go back to the UK menus")
+        ctx.close()
+        ctx = tz_ctx("Europe/London")
+        page = ctx.new_page()
+        page.goto(base)
+        page.wait_for_selector("#list .row")
+        page.wait_for_timeout(300)
+        if page.locator("#tzOffer").is_visible():
+            problems.append("UK time: the app offers Berlin though the phone is on UK time")
+        print("time zone: Berlin offered once on Berlin time (yes or not now), UK offered again on returning, nothing on UK time")
+        ctx.close()
+
+        # S3: "Open near me" does both in one tap, and a second tap turns both off
+        ctx = browser.new_context(color_scheme="light", geolocation=alex, permissions=["geolocation"], **IPHONE)
+        page = ctx.new_page()
+        page.clock.set_fixed_time("2026-11-01T19:00:00+01:00")
+        page.goto(base + f"#{cid}")
+        page.wait_for_selector("#cityList .row")
+        listed = lambda: [n.split(chr(10))[0].strip().lstrip("★").strip() for n in page.locator("#cityList .row .nm").all_inner_texts()]
+        pressed = lambda sel: page.locator(f"#chips {sel}").get_attribute("aria-pressed")
+        page.locator("#chips [data-nearopen]").click()
+        page.wait_for_selector('#chips [data-nearopen][aria-pressed="true"]')
+        open_nearest = [pl["name"] for pl in nearest if any(closes(h) > 19 * 60 for h in sunday(pl))]
+        states = {"near": pressed("[data-near]"), "open": pressed("[data-f='open']"), "all": pressed("[data-f='all']")}
+        if listed() != open_nearest or states != {"near": "true", "open": "true", "all": "false"}:
+            problems.append(f"Open near me: shows {listed()}, expected {open_nearest}; chips pressed: {states}")
+        page.locator("#chips [data-nearopen]").click()
+        if pressed("[data-nearopen]") != "false" or pressed("[data-near]") != "false" or pressed('[data-f="all"]') != "true":
+            problems.append("Open near me: a second tap doesn't turn it off")
+        print(f"open near me: {len(open_nearest)} places open on Sunday evening, nearest first, one tap on, one tap off")
+        ctx.close()
+
+        # S4 and S5: a search that finds nothing here shows matches elsewhere, and a way to send a menu
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+        page = ctx.new_page()
+        page.goto(base + "#knoops-uk")
+        page.wait_for_selector("#list .row")
+        page.locator("#q").fill("burger")
+        page.wait_for_selector("#list .empty")
+        link = page.locator('#list [data-elsewhere="all"]')
+        if not re.match(r"\d+ match(es)? at (another restaurant|other restaurants)", link.inner_text()):
+            problems.append(f"empty search at Knoops: the link to other restaurants says {link.inner_text() if link.count() else None!r}")
+        else:
+            link.click()
+            page.wait_for_selector("#list .rest-h")
+            if page.locator("#q").input_value() != "burger" or "Five Guys" not in " ".join(page.locator("#list .rest-h").all_inner_texts()):
+                problems.append("empty search at Knoops: the link doesn't open All with the same search")
+        place = cities[cid]["places"][0]["name"]
+        page.goto(base + "#starbucks-uk")
+        page.wait_for_selector("#list .row")
+        page.locator("#q").fill(place.split()[0])
+        page.wait_for_selector("#list .empty")
+        if not page.locator(f'#list [data-elsewhere="{cid}"]').count():
+            problems.append(f"empty search for a Berlin place ({place}): no link to the Berlin places")
+        else:
+            page.locator(f'#list [data-elsewhere="{cid}"]').click()
+            page.wait_for_selector("#cityList .row")
+            if place not in page.locator("#cityList").inner_text() or page.locator("#q").input_value() != place.split()[0]:
+                problems.append("empty search: the link to Berlin doesn't keep the search")
+        page.locator("#q").fill("burger")
+        page.wait_for_selector("#cityList .empty")
+        if not page.locator('#cityList [data-elsewhere="uk"]').count():
+            problems.append("empty search in Berlin: no link to matches on the UK menus")
+        else:
+            page.locator('#cityList [data-elsewhere="uk"]').click()
+            page.wait_for_selector("#list .row")
+            if page.locator("#q").input_value() != "burger" or page.locator("#ukView").is_hidden():
+                problems.append("empty search in Berlin: the link doesn't open the UK menus with the same search")
+        page.locator("#q").fill("zzzzzz")
+        page.wait_for_selector("#list .empty")
+        page.locator("#list [data-addmenu]").click()
+        page.wait_for_selector("#upload[open]")
+        page.locator("#uploadClose").click()
+        page.locator("#pickBtn").click()
+        page.wait_for_selector("#picker[open]")
+        page.locator("#pickList [data-addmenu]").click()
+        page.wait_for_selector("#upload[open]")
+        if page.locator("#picker[open]").count():
+            problems.append("Add a menu from the chooser leaves the chooser open")
+        print("empty searches: matches at other restaurants, in Berlin and on the UK menus; Add a menu from the chooser and under an empty search")
+        ctx.close()
+
         # X5: a restaurant's own name at the start of a search in All restaurants narrows to it
         # ("pret latte" means lattes at Pret), and an everyday word finds the menu's own word ("chips" -> "fries")
         ctx = browser.new_context(color_scheme="light", **IPHONE)

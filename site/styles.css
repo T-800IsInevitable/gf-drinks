@@ -421,3 +421,15 @@ body.searching .hide-searching { display: none !important; }
 .stale-line::before { content: "i"; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; border-radius: 50%;
   border: 1.5px solid var(--muted); color: var(--muted); font: italic 700 0.75rem/15px var(--display); text-align: center; }
 .stale-line .go { color: var(--accent); font-weight: 600; }
+
+/* ---- everyday features: item actions, report sheet, time zone offer, larger staff card ---- */
+.detail-more { display: flex; flex-wrap: wrap; gap: 0 12px; }
+.detail-more .link-btn { font-size: 0.8438rem; font-weight: 600; }
+.tz-btns { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.report-btns { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+#report textarea { font: inherit; font-size: 1rem; width: 100%; resize: vertical; }
+.empty-links { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.sheet .staff-name { font-size: 2.5rem; overflow-wrap: anywhere; }
+.sheet .staff-orig { font-size: 1.625rem; }
+.sheet .staff-order { font-size: 1.875rem; }
+.sheet .staff-coeliac { font-size: 1.5rem; }
