@@ -339,8 +339,8 @@ class Quiet(SimpleHTTPRequestHandler):
         pass
 
 
-def serve():
-    httpd = ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(SITE)))
+def serve(root=SITE):
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(root)))
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     return httpd, f"http://127.0.0.1:{httpd.server_address[1]}/"
 
@@ -1437,6 +1437,127 @@ def main():
             problems.append("Add a menu from the chooser leaves the chooser open")
         print("empty searches: matches at other restaurants, in Berlin and on the UK menus; Add a menu from the chooser and under an empty search")
         ctx.close()
+
+        # F2: favourites travel in a link. The link holds exactly what's saved; opening it on another phone sorts each one
+        # against the menus as they are now: new ones are added, saved ones skipped, a renamed section followed, and
+        # anything now on the Avoid list or gone is listed but not added
+        sb = json.loads((SITE / "data" / "r" / "starbucks-uk.json").read_text(encoding="utf-8"))
+        pret = json.loads((SITE / "data" / "r" / "pret-uk.json").read_text(encoding="utf-8"))
+        dishes = [i for i in sb["items"] if not i.get("role")]
+        key = lambda rid, i: f"{rid}|{i['section']}|{i['name']}"
+        moved = next(i for i in pret["items"] if not i.get("role") and sum(" ".join(x["name"].lower().split()) == " ".join(i["name"].lower().split()) for x in pret["items"]) == 1)
+        place = cities[cid]["places"][0]["name"]
+        mine = [key("starbucks-uk", dishes[0]), key("starbucks-uk", dishes[1]), f"city:{cid}|{place}"]
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script(share_mock + "localStorage.setItem('gf-selected', 'all');"
+                            f"localStorage.setItem('gf-favourites', JSON.stringify({json.dumps(mine)}))")
+        page = ctx.new_page()
+        page.goto(base)
+        page.wait_for_selector("#list .row")
+        page.locator('#chips [data-f="fav"]').click()
+        page.locator("#list [data-sharefavs]").click()
+        page.wait_for_timeout(150)
+        url = (page.evaluate("window.__shared") or {}).get("url", "")
+        code = url.split("#favs=", 1)[-1]
+        try:
+            carried = json.loads(base64.urlsafe_b64decode(code + "=" * (-len(code) % 4)))["f"]
+        except Exception:
+            carried = None
+        if "#favs=" not in url or sorted(carried or []) != sorted(mine):
+            problems.append(f"Share my favourites: the link {url[:60]!r} holds {carried}, expected {mine}")
+        ctx.close()
+        link_keys = [key("starbucks-uk", dishes[0]),                         # new on this phone: added
+                     key("starbucks-uk", dishes[1]),                         # already saved here: skipped
+                     f"pret-uk|An old section name|{moved['name']}",         # its section was renamed: follows its name
+                     key("starbucks-uk", sb["avoid"][0]),                    # now on the Avoid list: not added
+                     "knoops-uk|Hot chocolate|A drink that has gone",        # gone: not added
+                     f"city:{cid}|{place}"]                                  # a Berlin place: added
+        code = base64.urlsafe_b64encode(json.dumps({"v": 1, "f": link_keys}).encode()).decode().rstrip("=")
+        ctx = browser.new_context(color_scheme="light", **IPHONE)  # a new phone: no restaurant chosen yet
+        ctx.add_init_script(f"if (!sessionStorage.getItem('seeded')) {{ sessionStorage.setItem('seeded', '1'); "
+                            f"localStorage.setItem('gf-favourites', JSON.stringify({json.dumps([link_keys[1]])})); }}")
+        page = ctx.new_page()
+        page.goto(base + "#favs=" + code)
+        page.wait_for_selector("#favImport[open]")
+        body = norm_ws(page.locator("#favImportBody").inner_text())
+        for want in ("To add (3)", "1 is already saved", "Not added (2)", "is now on the Avoid list", "is no longer in the guide"):
+            if want not in body:
+                problems.append(f"favourites link: the sheet doesn't say {want!r} ({body[:200]!r})")
+        if page.locator("#picker[open]").count() or "favs=" in page.url:
+            problems.append("favourites link: the chooser opened over it, or the link stays in the address")
+        page.locator("#favImportAdd").click()
+        saved = set(page.evaluate("JSON.parse(localStorage.getItem('gf-favourites'))"))
+        want = {link_keys[0], link_keys[1], key("pret-uk", moved), link_keys[5]}
+        if saved != want:
+            problems.append(f"favourites link: saved {sorted(saved)}, expected {sorted(want)}")
+        page.reload()
+        page.wait_for_selector("#list .row")
+        page.wait_for_timeout(300)
+        if page.locator("#favImport[open]").count():
+            problems.append("favourites link: reloading asks again")
+        page.goto(base + "#favs=not-a-real-link")
+        page.wait_for_selector("#toast:not([hidden])")
+        if "damaged" not in page.locator("#toast").inner_text():
+            problems.append("favourites link: a damaged link doesn't say so")
+        print(f"favourites link: round trip of {len(mine)}; opening one adds 3, skips 1 already saved, follows a renamed section, leaves out 2")
+        ctx.close()
+
+        # O5: a new release loads without restarting the app. The first service worker doesn't reload the page; a newer one
+        # reloads it by itself when nothing is open, and otherwise offers "Updated. Tap to reload"
+        import shutil
+        import tempfile
+        tmp = Path(tempfile.mkdtemp()) / "site"
+        shutil.copytree(SITE, tmp)
+        httpd2, base2 = serve(tmp)
+        v = int(re.search(r"const APP_VERSION = (\d+);", (SITE / "app.js").read_text(encoding="utf-8")).group(1))
+
+        def release(n):
+            for name, old, new in (("app.js", r"const APP_VERSION = \d+;", f"const APP_VERSION = {n};"),
+                                   ("sw.js", r'const CACHE = "gf-menus-v\d+"', f'const CACHE = "gf-menus-v{n}"')):
+                f = tmp / name
+                f.write_text(re.sub(old, new, f.read_text(encoding="utf-8")), encoding="utf-8")
+
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+        page = ctx.new_page()
+        page.goto(base2)
+        page.wait_for_selector("#list .row")
+        page.evaluate("navigator.serviceWorker.ready")
+        for _ in range(50):
+            if page.evaluate("!!navigator.serviceWorker.controller"):
+                break
+            page.wait_for_timeout(100)
+        page.wait_for_timeout(500)
+        version = lambda: page.evaluate("document.documentElement.dataset.version")
+        if page.evaluate("performance.getEntriesByType('navigation')[0].type") == "reload" or version() != str(v):
+            problems.append("new release: the first visit reloaded itself")
+        release(v + 1)
+        try:
+            with page.expect_navigation(timeout=20000):
+                page.evaluate("document.dispatchEvent(new Event('visibilitychange'))")
+            page.wait_for_selector("#list .row")
+        except Exception as e:
+            problems.append(f"new release: coming back to the app didn't load it ({e.__class__.__name__})")
+        if version() != str(v + 1):
+            problems.append(f"new release: the app is on {version()} after an idle update, expected {v + 1}")
+        release(v + 2)
+        page.locator("#list .row").first.locator("summary").click()  # reading an item: don't pull the page away
+        page.evaluate("document.dispatchEvent(new Event('visibilitychange'))")
+        try:
+            page.wait_for_selector("#updateBar:not([hidden])", timeout=20000)
+            if version() != str(v + 1):
+                problems.append("new release: the app reloaded while an item was open")
+            with page.expect_navigation(timeout=20000):
+                page.locator("#updateBar").click()
+            page.wait_for_selector("#list .row")
+            if version() != str(v + 2):
+                problems.append(f"new release: tapping Updated loaded {version()}, expected {v + 2}")
+        except Exception as e:
+            problems.append(f"new release: with an item open there's no 'Updated. Tap to reload' ({e.__class__.__name__})")
+        print(f"new release: first visit stays put; {v} -> {v + 1} reloads quietly; {v + 1} -> {v + 2} waits for a tap while an item is open")
+        ctx.close()
+        httpd2.shutdown()
+        shutil.rmtree(tmp.parent, ignore_errors=True)
 
         # X5: a restaurant's own name at the start of a search in All restaurants narrows to it
         # ("pret latte" means lattes at Pret), and an everyday word finds the menu's own word ("chips" -> "fries")

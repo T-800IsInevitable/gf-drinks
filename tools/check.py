@@ -141,6 +141,13 @@ for cid, c in cities.items():
                 err(f"{where}: link {u!r} isn't https")
     print(f"city {cid}: {len(c.get('places', []))} places, checked {c.get('checked')}")
 
+# the release number: the app's APP_VERSION and the service worker's cache number must be the same (tools/check_release.py)
+SITE = DATA.parent
+app_v = re.search(r"const APP_VERSION = (\d+);", (SITE / "app.js").read_text(encoding="utf-8"))
+sw_v = re.search(r'const CACHE = "gf-menus-v(\d+)"', (SITE / "sw.js").read_text(encoding="utf-8"))
+if not app_v or not sw_v or app_v.group(1) != sw_v.group(1):
+    err(f"release: APP_VERSION in site/app.js ({app_v and app_v.group(1)}) and CACHE in site/sw.js ({sw_v and sw_v.group(1)}) must match")
+
 if errors:
     print("\nCHECK FAILED:")
     for e in errors:

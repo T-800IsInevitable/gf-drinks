@@ -433,3 +433,9 @@ body.searching .hide-searching { display: none !important; }
 .sheet .staff-orig { font-size: 1.625rem; }
 .sheet .staff-order { font-size: 1.875rem; }
 .sheet .staff-coeliac { font-size: 1.5rem; }
+
+/* ---- favourites link, and a new release waiting to load ---- */
+.fav-share { margin: 0 0 6px; }
+.update-bar { position: fixed; left: 16px; right: 16px; margin: 0 auto; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 21;
+  width: fit-content; max-width: calc(100% - 32px); min-height: 44px; padding: 10px 18px; border: 0; border-radius: 16px;
+  background: var(--accent); color: var(--on-accent); font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,0.2); cursor: pointer; }
