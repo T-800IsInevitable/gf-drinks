@@ -786,9 +786,15 @@ def main():
                     problems.append(f"{where}: on a second visit the tips and card don't fold into one line")
             page.wait_for_timeout(300)
             m = page.evaluate(FIRST_SCREEN_JS, "#cityList" if in_city else "#list")
-            if m["top"] > half + m["stale"] or m["rows"] < 4:
-                problems.append(f"{where}: the menu starts at {m['top']}pt with {m['rows']} items on the first screen "
-                                f"(wanted the top half, {half:.0f}pt{' plus the out-of-date banner' if m['stale'] else ''}, and 4 or more)")
+            # and again in a wide font: the iPhone's font isn't the test machine's, so the layout needs room to spare
+            wide = page.add_style_tag(content='* { font-family: Verdana, "DejaVu Sans", sans-serif !important; }')
+            page.wait_for_timeout(200)
+            mw = page.evaluate(FIRST_SCREEN_JS, "#cityList" if in_city else "#list")
+            wide.evaluate("el => el.remove()")
+            for label, mm in (("", m), (" in a wide font", mw)):
+                if mm["top"] > half + mm["stale"] or mm["rows"] < 4:
+                    problems.append(f"{where}{label}: the menu starts at {mm['top']}pt with {mm['rows']} items on the first screen "
+                                    f"(wanted the top half, {half:.0f}pt{' plus the out-of-date banner' if mm['stale'] else ''}, and 4 or more)")
             found |= set(page.evaluate(WORDING_JS))
             if in_city:
                 if not page.locator("#chips [data-card]").count():

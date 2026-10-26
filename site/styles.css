@@ -375,5 +375,5 @@ body.searching .hide-searching { display: none !important; }
 .more[open] summary::after { transform: rotate(90deg); }
 .more > p, .more > .rules { margin: 0 0 10px; }
 .decided { background: var(--bg); border-radius: 8px; padding: 6px 10px; }
-.more-row { display: flex; flex-wrap: wrap; column-gap: 22px; }
+.more-row { display: flex; flex-wrap: wrap; column-gap: 16px; }
 .more-row .more[open] { flex-basis: 100%; }

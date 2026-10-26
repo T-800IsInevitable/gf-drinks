@@ -650,7 +650,7 @@
       '<button type="button" data-f="' + esc(v) + '" aria-pressed="' + (v === cityFilter) + '">' + esc(l) + "</button>").join("") +
       (card ? '<button type="button" data-card>' + esc(card.language) + " card</button>" : "");
     const n = (claim) => c.places.filter((p) => p.claim === claim).length;
-    $("cityIntroLine").innerHTML = "<b>Each place's tag says who calls it gluten free</b>, not the app. Tell staff you have coeliac disease.";
+    $("cityIntroLine").innerHTML = "<b>Tags say who calls a place gluten free</b>, not the app. Tell staff you're coeliac.";
     $("cityIntro").innerHTML = "<b>Each place's tag says who calls it gluten free.</b> " +
       [n("place-all") && n("place-all") + " say so themselves", n("list-all") && n("list-all") + " are listed as all gluten free by the support groups but don't say so on their own websites",
         n("place-part") && n("place-part") + " says only part of its range is", n("separate") && n("separate") + " says it makes gluten free food in a separate kitchen"]
