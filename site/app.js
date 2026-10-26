@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 19;
+  const APP_VERSION = 20;
   document.documentElement.dataset.version = APP_VERSION;
   const DATA_KEY = "gf-data-v2";
   const SEL_KEY = "gf-selected";
@@ -111,22 +111,59 @@
   }
   const pageText = (p) => (!p || !p.length ? "" : (p.length > 1 ? "Guide pages " : "Guide page ") + p.join(", "));
 
-  // ---------- what changed in the latest guide (built by tools/changes.py) ----------
+  // ---------- what changed: the guide's own list (r.changes, built by tools/changes.py) and since you last looked ----------
+  // The phone keeps each restaurant's menu as it was when you last dismissed its "new guide" note (or first had it), and
+  // compares the newest menu with that (site/compare.js, the same comparison as tools/changes.py). So if a chain brings
+  // out two guides between your visits, what changed in the first isn't lost under the second.
+  const LOOKED_KEY = "gf-looked";
+  const looked = (() => { try { return JSON.parse(store.get(LOOKED_KEY) || "{}") || {}; } catch (e) { return {}; } })();
+  const keepOnly = (o, keys) => { const out = {}; keys.forEach((k) => { if (o[k] !== undefined) out[k] = o[k]; }); return out; };
+  const snapshot = (r) => ({ source: r.source, guide: keepOnly(r.guide || {}, ["title", "version"]),
+    items: r.items.map((i) => keepOnly(i, ["name", "section", "order", "ok", "not", "note"])),
+    avoid: r.avoid.map((a) => keepOnly(a, ["name", "section", "gluten"])) });
+  // remember these restaurants as you see them now; onlyNew: only those the phone has no copy of yet
+  function setLooked(rs, onlyNew) {
+    let any = false;
+    for (const r of rs) if (!onlyNew || !looked[r.id]) { looked[r.id] = snapshot(r); any = true; }
+    if (any) store.set(LOOKED_KEY, JSON.stringify(looked));
+  }
+  const sinceCache = new WeakMap();
+  function sinceLooked(r) {
+    const base = looked[r.id];
+    if (!base || base.source === r.source || typeof self.gfCompare !== "function") return null;
+    const hit = sinceCache.get(r);
+    if (hit && hit.base === base) return hit.c;
+    const c = self.gfCompare(base, r);
+    sinceCache.set(r, { base, c });
+    return c;
+  }
+  const KINDS = ["nowAvoid", "nowOk", "changed", "added", "removed"];
+  const namesIn = (c, k) => (c[k] || []).map((x) => x.section + "|" + x.name).sort().join("\n");
+  // the two lists start from the same guide and say the same: show one. Otherwise both show, so nothing is hidden.
+  const agree = (a, b) => !!(a && b && a.sinceSource === b.sinceSource && KINDS.every((k) => namesIn(a, k) === namesIn(b, k)));
   const chgCache = new WeakMap();
   function changeOf(r, i) {
-    if (!r.changes) return null;
+    const mine = sinceLooked(r);
+    if (!r.changes && !mine) return null;
     let m = chgCache.get(r);
-    if (!m) {
-      m = new Map();
-      for (const kind of ["added", "changed", "nowOk", "nowAvoid"]) (r.changes[kind] || []).forEach((c) => m.set(c.section + "|" + c.name, { kind, ...c }));
+    if (!m || m.mine !== mine) {
+      const map = new Map();
+      // since you last looked first; the guide's own list fills in the rest (an item can only be marked once)
+      for (const [c, own] of [[mine, true], [r.changes, false]]) {
+        if (!c) continue;
+        for (const kind of ["added", "changed", "nowOk", "nowAvoid"]) {
+          (c[kind] || []).forEach((x) => { const k = x.section + "|" + x.name; if (!map.has(k)) map.set(k, { kind, ...x, since: c.since, own }); });
+        }
+      }
+      m = { mine, map };
       chgCache.set(r, m);
     }
-    return m.get(i.section + "|" + i.name) || null;
+    return m.map.get(i.section + "|" + i.name) || null;
   }
   const howText = (r, h) => tagFor(r, h)[1] + (h.order === "modify" ? ": " + h.note : "");
   const CHG_LABEL = { added: "New", changed: "Order changed", nowOk: "No longer to avoid", nowAvoid: "Now contains gluten" };
   function changeNote(r, c) {
-    const since = "the " + esc(r.changes.since) + " guide";
+    const since = "the " + esc(c.since) + " guide" + (c.own ? " you last looked at" : "");
     if (c.kind === "added") return "<div class=\"chg-note\"><b>New</b> since " + since + ".</div>";
     if (c.kind === "nowOk") return "<div class=\"chg-note\"><b>No longer to avoid.</b> It was on the Avoid list in " + since + ".</div>";
     if (c.kind === "nowAvoid") return "<div class=\"chg-note bad\"><b>Now contains gluten.</b> It had no gluten ingredients in " + since + ".</div>";
@@ -393,12 +430,22 @@
   const seen = () => new Set(JSON.parse(store.get(SEEN_KEY) || "[]"));
   const counts = (c) => [["nowAvoid", "now contain gluten"], ["nowOk", "no longer to avoid"], ["changed", "ordered differently"],
     ["added", "new"], ["removed", "gone"]].filter(([k]) => (c[k] || []).length).map(([k, l]) => c[k].length + " " + l);
+  // what the note says: what changed since you last looked if anything did, else the guide's own list until dismissed
+  function newsFor(r, s) {
+    const mine = sinceLooked(r);
+    if (mine && counts(mine).length) return mine;
+    if (r.changes && counts(r.changes).length && !s.has(r.id + "@" + r.source)) return r.changes;
+    return null;
+  }
+  // more than one guide since you last looked: the guide's own list starts later than your copy
+  const skipped = (r, c) => c === sinceLooked(r) && !!r.changes && r.changes.sinceSource !== c.sinceSource;
   function renderNews() {
     const s = seen();
-    const news = scope().filter((r) => r.changes && counts(r.changes).length && !s.has(r.id + "@" + r.source));
+    const news = scope().map((r) => [r, newsFor(r, s)]).filter(([, c]) => c);
     $("news").hidden = !news.length;
-    $("news").innerHTML = news.map((r) => '<div class="news-row' + (r.changes.nowAvoid.length ? " bad" : "") + '"><p><b>' + esc(r.name) +
-      " has a new guide.</b> Since " + esc(r.changes.since) + ": " + esc(counts(r.changes).join(", ")) + '.</p><p class="news-btns">' +
+    $("news").innerHTML = news.map(([r, c]) => '<div class="news-row' + (c.nowAvoid.length ? " bad" : "") + '"><p><b>' + esc(r.name) +
+      (skipped(r, c) ? " has new guides.</b> Since the " + esc(c.since) + " guide you last looked at: " : " has a new guide.</b> Since " + esc(c.since) + ": ") +
+      esc(counts(c).join(", ")) + '.</p><p class="news-btns">' +
       '<button type="button" class="pill-btn" data-news="' + esc(r.id) + '">See what changed</button>' +
       '<button type="button" class="link-btn" data-seen="' + esc(r.id) + '">Dismiss</button></p></div>').join("");
   }
@@ -411,20 +458,31 @@
     const s = seen();
     s.add(r.id + "@" + r.source);
     store.set(SEEN_KEY, JSON.stringify([...s]));
+    setLooked([r]); // seen: the next comparison starts from this menu
     renderNews();
+    if (region === UK) renderList();
   });
   function openChanges(r) {
-    if (!r || !r.changes) return;
-    const c = r.changes;
+    if (!r) return;
+    const mine = sinceLooked(r), theirs = r.changes;
+    const showMine = !!mine && (counts(mine).length > 0 || mine.newAvoid > 0);
+    const showTheirs = !!theirs && !(showMine && agree(mine, theirs));
+    if (!showMine && !showTheirs) return;
     const list = (title, arr, fn, cls) => arr && arr.length ? "<h3" + (cls ? ' class="' + cls + '"' : "") + ">" + title + " (" + arr.length + ")</h3><ul class=\"chg-list\">" +
       arr.map((x) => "<li><b>" + esc(x.name) + "</b> <span class=\"muted\">" + esc(shortSection(x.section)) + "</span>" + (fn ? fn(x) : "") + "</li>").join("") + "</ul>" : "";
-    $("changesTitle").textContent = r.name + ": what changed";
-    $("changesBody").innerHTML = '<p class="muted">Compared with the ' + esc(c.since) + " guide. Noticed " + esc(fmtDate(c.date)) + ".</p>" +
+    const part = (c, intro) => '<p class="muted">' + intro + "</p>" +
       list("Now contain gluten", c.nowAvoid, (x) => x.gluten && x.gluten.length ? ": " + esc(x.gluten.map(cap).join(" & ")) : "", "bad") +
       list("Ordered differently", c.changed, (x) => ": was " + esc(howText(r, x.was)) + ", now " + esc(howText(r, x.now))) +
       list("No longer to avoid", c.nowOk) + list("New", c.added) +
       list("Gone from the guide", c.removed) +
       (c.newAvoid ? "<p class=\"muted\">Plus " + c.newAvoid + " new " + (c.newAvoid === 1 ? "item" : "items") + " on the Avoid list.</p>" : "");
+    const both = showMine && showTheirs;
+    $("changesTitle").textContent = r.name + ": what changed";
+    $("changesBody").innerHTML =
+      (showMine ? (both ? '<h4 class="chg-part">Since you last looked</h4>' : "") +
+        part(mine, "Compared with the " + esc(mine.since) + " guide, the last one you looked at.") : "") +
+      (showTheirs ? (both ? '<h4 class="chg-part">This guide\'s own list</h4>' : "") +
+        part(theirs, "Compared with the " + esc(theirs.since) + " guide. Noticed " + esc(fmtDate(theirs.date)) + ".") : "");
     openDialog($("changes"));
   }
 
@@ -660,8 +718,8 @@
   });
 
   function renderSources() {
-    const whatChanged = (r) => r.changes ? ' <button type="button" class="link-btn" data-whatchanged="' + esc(r.id) + '">What changed, noticed ' +
-      esc(fmtDate(r.changes.date)) + " &rsaquo;</button>" : "";
+    const whatChanged = (r) => { const c = sinceLooked(r) || r.changes; return c ? ' <button type="button" class="link-btn" data-whatchanged="' + esc(r.id) + '">What changed, noticed ' +
+      esc(fmtDate(c.date)) + " &rsaquo;</button>" : ""; };
     const lineShort = (r) => "<p><b>" + esc(r.name) + ":</b> " + esc(r.covers ? r.covers + ". " : "") + "From " + esc(plainGuideName(r)) + ". " +
       esc(r.stats.items) + " with no gluten ingredients, " + esc(r.stats.avoid) + " to avoid." +
       (r.officialUrl ? ' <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">Official site</a>' : "") + "</p>";
@@ -991,8 +1049,8 @@
     // a restaurant's own tips lead its page of the sheet, so they're one tap away once folded off the first screen
     if (selected !== ALL && r.tips && r.tips.length) html += '<h4>How to order</h4><div class="rules w-tips">' + tipsHtml(r.tips) + "</div>";
     html += '<p class="muted">From ' + esc(plainGuideName(r)) +
-      (r.changes ? '. <button type="button" class="link-btn" data-whatchanged="' + esc(r.id) + '">What changed, noticed ' +
-        esc(fmtDate(r.changes.date)) + " &rsaquo;</button>" : ".") + "</p>";
+      ((sinceLooked(r) || r.changes) ? '. <button type="button" class="link-btn" data-whatchanged="' + esc(r.id) + '">What changed, noticed ' +
+        esc(fmtDate((sinceLooked(r) || r.changes).date)) + " &rsaquo;</button>" : ".") + "</p>";
     if (groups.length) {
       html += "<h4>What " + esc(r.name) + (/s$/.test(r.name) ? "'" : "'s") + " guide says</h4>";
       for (const g of groups) {
@@ -1578,6 +1636,7 @@
           if (!prev && firstVisit && !store.get(SEEN_KEY)) store.set(SEEN_KEY, JSON.stringify(fresh.restaurants.map((r) => r.id + "@" + r.source)));
           data = fresh;
           store.set(DATA_KEY, JSON.stringify(fresh));
+          setLooked(fresh.restaurants, true); // a restaurant new to this phone starts from what it shows now
         }
         render();
       }
@@ -1763,6 +1822,7 @@
   if (saved) {
     try { data = JSON.parse(saved); } catch (e) { data = null; }
   }
+  if (data) setLooked(data.restaurants, true); // the menus saved on this phone are the ones you last saw
   // a link to a restaurant opens the UK menus; any other link (#berlin) is taken as a city until cities.json says otherwise
   if (hashRid) region = data && byId(hashRid) ? UK : hashRid;
   selected = (region === UK && hashRid) || store.get(SEL_KEY) || ALL;

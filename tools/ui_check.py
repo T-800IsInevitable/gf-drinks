@@ -1559,6 +1559,130 @@ def main():
         httpd2.shutdown()
         shutil.rmtree(tmp.parent, ignore_errors=True)
 
+        # F12: what changed since you last looked. The phone keeps each restaurant's menu as you last saw it and compares
+        # the newest with that, so a guide you never saw (two out between visits) can't hide an item that now contains gluten
+        sys.path.insert(0, str(SITE.parent / "tools"))
+        import changes as py_changes
+        sb_now = json.loads((SITE / "data" / "r" / "starbucks-uk.json").read_text(encoding="utf-8"))
+        trim = lambda d: {"source": d["source"], "guide": {k: d["guide"][k] for k in ("title", "version") if d["guide"].get(k)},
+                          "items": [{k: i[k] for k in ("name", "section", "order", "ok", "not", "note") if k in i} for i in d["items"]],
+                          "avoid": [{k: a[k] for k in ("name", "section", "gluten") if k in a} for a in d["avoid"]]}
+        COUNT_LABELS = (("nowAvoid", "now contain gluten"), ("nowOk", "no longer to avoid"), ("changed", "ordered differently"),
+                        ("added", "new"), ("removed", "gone"))
+        count_text = lambda c: ", ".join(f"{len(c[k])} {label}" for k, label in COUNT_LABELS if c[k])
+
+        def looked_ctx(baseline, extra=""):
+            c = browser.new_context(color_scheme="light", **IPHONE)
+            c.add_init_script("if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1');"
+                              "localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-changes-seen', '[]');"
+                              f"localStorage.setItem('gf-looked', JSON.stringify({{'starbucks-uk': {json.dumps(baseline)}}})); {extra} }}")
+            return c
+
+        # 1. you last looked at the real summer drinks guide; two guides have come out since
+        summer = json.loads((SITE.parent / "tests" / "fixtures" / "changes" / "starbucks-drinks-summer-2026.json").read_text(encoding="utf-8"))
+        want = py_changes.compare(summer, trim(sb_now))
+        ctx = looked_ctx(summer)
+        page = ctx.new_page()
+        page.goto(base + "#starbucks-uk")
+        page.wait_for_selector("#list .row")
+        news = norm_ws(page.locator("#news").inner_text()) if page.locator("#news").is_visible() else ""
+        if "has new guides" not in news or f"Since the {want['since']} guide you last looked at" not in news or count_text(want) not in news:
+            problems.append(f"since you last looked (summer guide): the note says {news!r}, expected {count_text(want)!r} since {want['since']}")
+        page.locator("#news [data-news]").click()
+        page.wait_for_selector("#changes[open]")
+        parts = page.locator("#changesBody h4").all_text_contents()
+        if parts != ["Since you last looked", "This guide's own list"]:
+            problems.append(f"since you last looked: What changed shows {parts}, expected both lists")
+        page.keyboard.press("Escape")
+        ctx.close()
+
+        # 2. a drink that had no gluten ingredients when you last looked is now on the Avoid list, and one is ordered differently
+        gone_bad = sb_now["avoid"][0]
+        moved = next(i for i in sb_now["items"] if i.get("order") in ("any", "except") and not i.get("role"))
+        base_menu = trim(sb_now)
+        base_menu["source"], base_menu["guide"] = "an-older-guide.pdf", {"title": "Spring Beverages"}
+        base_menu["avoid"] = [a for a in base_menu["avoid"] if a["name"] != gone_bad["name"]]
+        base_menu["items"].append({"name": gone_bad["name"], "section": gone_bad["section"], "order": "asis"})
+        for i in base_menu["items"]:
+            if i["name"] == moved["name"] and i["section"] == moved["section"]:
+                i.update(order="asis", ok=[], **{"not": []})
+        want = py_changes.compare(base_menu, trim(sb_now))
+        ctx = looked_ctx(base_menu)
+        page = ctx.new_page()
+        page.goto(base + "#starbucks-uk")
+        page.wait_for_selector("#list .row")
+        row = page.locator("#news .news-row").first
+        if not row.count() or "bad" not in (row.get_attribute("class") or "") or "1 now contain gluten" not in row.inner_text():
+            problems.append(f"since you last looked: no red note for the drink that now contains gluten ({row.inner_text() if row.count() else None!r})")
+        page.locator("#q").fill(gone_bad["name"])
+        avoid_row = page.locator("#avoid .row", has=page.locator(".nm", has_text=gone_bad["name"])).first
+        if not avoid_row.count() or "Now contains gluten" not in avoid_row.inner_text():
+            problems.append(f"since you last looked: {gone_bad['name']!r} on the Avoid list isn't marked 'Now contains gluten'")
+        else:
+            avoid_row.locator("summary").click()
+            if "you last looked at" not in avoid_row.locator(".detail").inner_text():
+                problems.append("since you last looked: the item's note doesn't say it's since the guide you last looked at")
+        page.locator("#q").fill(moved["name"])
+        mrow = page.locator("#list .row", has=page.locator(".nm", has_text=moved["name"])).first
+        if not mrow.count() or "Order changed" not in mrow.inner_text():
+            problems.append(f"since you last looked: {moved['name']!r} isn't marked 'Order changed'")
+        page.locator("#q").fill("")
+        page.locator("#news [data-news]").first.click()
+        page.wait_for_selector("#changes[open]")
+        body = page.locator("#changesBody").inner_text()
+        if gone_bad["name"] not in body or "Now contain gluten (1)" not in body.replace("NOW CONTAIN", "Now contain"):
+            problems.append(f"since you last looked: What changed doesn't list {gone_bad['name']!r} as now containing gluten")
+        page.keyboard.press("Escape")
+        # 3. Dismiss: that's looked at; the note doesn't come back, and the next comparison starts from here
+        page.locator("#news [data-seen]").first.click()
+        page.reload()
+        page.wait_for_selector("#list .row")
+        base_now = page.evaluate("JSON.parse(localStorage.getItem('gf-looked'))['starbucks-uk'].source")
+        if page.locator("#news").is_visible() or base_now != sb_now["source"]:
+            problems.append(f"since you last looked: after Dismiss the note is {'still there' if page.locator('#news').is_visible() else 'gone'}, and the phone's copy is {base_now!r}")
+        ctx.close()
+
+        # 4. updating from an older app: the menus already on the phone become what you last looked at, with no false alarm
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+        page = ctx.new_page()
+        page.goto(base + "#starbucks-uk")
+        page.wait_for_selector("#list .row")
+        page.evaluate("localStorage.removeItem('gf-looked'); localStorage.setItem('gf-changes-seen', JSON.stringify(JSON.parse(localStorage.getItem('gf-data-v2')).restaurants.map((r) => r.id + '@' + r.source)))")
+        page.reload()
+        page.wait_for_selector("#list .row")
+        kept = page.evaluate("Object.keys(JSON.parse(localStorage.getItem('gf-looked') || '{}')).length")
+        if kept != len(ids) or page.locator("#news").is_visible():
+            problems.append(f"updating the app: {kept} restaurants remembered (expected {len(ids)}), note showing: {page.locator('#news').is_visible()}")
+        ctx.close()
+
+        # 5. when you last looked at exactly the guide the build compared with, the two lists agree and only one shows
+        theirs = sb_now.get("changes") or {}
+        if theirs.get("added"):
+            added = {(x["section"], x["name"]) for x in theirs["added"]}
+            prior = trim(sb_now)
+            prior["source"], prior["guide"] = theirs["sinceSource"], {"title": theirs["since"]}
+            prior["items"] = [i for i in prior["items"] if (i["section"], i["name"]) not in added]
+            for k in ("removed", "nowOk", "changed", "nowAvoid"):
+                if theirs.get(k):
+                    prior = None
+                    break
+            if prior:
+                ctx = looked_ctx(prior)
+                page = ctx.new_page()
+                page.goto(base + "#starbucks-uk")
+                page.wait_for_selector("#list .row")
+                news = page.locator("#news").inner_text() if page.locator("#news").is_visible() else ""
+                if "has a new guide" not in news:
+                    problems.append(f"since you last looked (same as the guide's list): the note says {news!r}")
+                page.locator("#news [data-news]").first.click()
+                page.wait_for_selector("#changes[open]")
+                if page.locator("#changesBody h4").count():
+                    problems.append("since you last looked: the two lists agree but What changed shows both")
+                ctx.close()
+        print("since you last looked: a missed guide, a drink now on the Avoid list and a changed order are all shown and marked; "
+              "Dismiss moves the starting point; updating the app raises no false alarm; agreeing lists show once")
+
         # X5: a restaurant's own name at the start of a search in All restaurants narrows to it
         # ("pret latte" means lattes at Pret), and an everyday word finds the menu's own word ("chips" -> "fries")
         ctx = browser.new_context(color_scheme="light", **IPHONE)

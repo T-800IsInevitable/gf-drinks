@@ -17,7 +17,7 @@ import re
 import subprocess
 import sys
 
-CODE = ["site/app.js", "site/styles.css", "site/index.html", "site/sw.js", "site/manifest.webmanifest", "site/icons"]
+CODE = ["site/app.js", "site/compare.js", "site/styles.css", "site/index.html", "site/sw.js", "site/manifest.webmanifest", "site/icons"]
 
 
 def cache_number(text):
