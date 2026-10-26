@@ -25,11 +25,13 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 
 ## Updating a restaurant's menu
 
+`main` is protected: every change to it goes through a pull request whose checks have passed, including yours. When you upload a guide on GitHub (open the folder, then **Add file → Upload files**), choose **Create a new branch for this commit and start a pull request**, then **Propose changes** and **Create pull request**. When the check turns green (about three minutes), tap **Merge**. The app updates about a minute after that. If the check fails, nothing is published; its log says why.
+
 **Five Guys:** upload the new UK allergen, ingredient and nutrition guide PDF to `restaurants/five-guys-uk/guides/`. The newest date in the guide (FGUK_YYYYMMDD) is used. Anything with a gluten dot **or a "1"** (Five Guys' mark for "not suitable … due to manufacturing and preparation methods") goes in the Avoid list; a "2" (not suitable at breakfast time) shows as needing a change.
 
 **Pret:** upload the new GB allergen guide PDF to `restaurants/pret-uk/guides/`. Pret's guides have no end date, so the app asks for a re-check 91 days after the "valid from" date (change `recheckDays` in `restaurant.json`).
 
-**Starbucks:** upload the new Beverage Allergen Guide and Food Allergen Guide PDFs to `restaurants/starbucks-uk/guides/` (on GitHub: open the folder, then **Add file → Upload files → Commit changes**). Each reader takes the newest of its own kind (the food guide's cover says Food), so old guides can stay. About a minute later the app updates for everyone.
+**Starbucks:** upload the new Beverage Allergen Guide and Food Allergen Guide PDFs to `restaurants/starbucks-uk/guides/` (through a pull request, as above). Each reader takes the newest of its own kind (the food guide's cover says Food), so old guides can stay.
 
 **Pho:** upload the new allergen guide PDF (linked as "Allergens" at the foot of phocafe.co.uk) to `restaurants/pho-uk/guides/`. Its "accurate as of" month is the version; the app asks for a re-check 183 days later.
 
@@ -49,7 +51,7 @@ Anyone can open **ⓘ → Add a menu**, pick photos or a PDF of a restaurant's a
 
 1. Open **ⓘ → Add a menu → I'm the app's owner**.
 2. The first time, paste a GitHub key (the app shows how to create one; it only needs **Contents: Read and write** on this repository). It's stored on that phone only.
-3. Enter the restaurant and city, choose the PDF or photos, and tap **Upload**. Files go into `inbox/`.
+3. Enter the restaurant and city, choose the PDF or photos, and tap **Upload**. The files go into `inbox/` on the `uploads` branch, all in one commit, so an upload arrives whole or not at all, and it's safe to tap **Upload** again after a dropped signal. Uploads never touch `main`, so a lost key can't change the live app.
 4. Every day a scheduled Claude task follows `tools/SCAN_INSTRUCTIONS.md`: it reads each upload in any language, works out the gluten free options conservatively, translates them, and opens a **pull request**.
 5. Check the pull request (it lists the items it's least sure about and anything left out) and tap **Merge** in the GitHub app to publish. Nothing goes live before that.
 
@@ -74,7 +76,7 @@ Each restaurant is a folder in `restaurants/`. The folder name becomes its id in
    | `doubt` | The source shows no gluten, but the app has reason to doubt it. Listed under Avoid as "Check in store" | `note`: why, shown as the app's own caution |
 
    Separate several options with `;` (for example `skimmed;soya`). For menus in another language, write `name` and `section` in English and put the menu's own wording in `original` and `section_original`.
-4. Commit. The build checks the file and refuses to publish if anything is missing.
+4. Commit on a new branch and open a pull request. The checks refuse anything missing; merge once they pass.
 
 **Option 2: an automatic reader**
 
@@ -98,7 +100,7 @@ Every change to the repository runs `.github/workflows/publish.yml`, which:
 2. runs the unit tests (`tests/`) and builds every restaurant (`tools/build.py`),
 3. checks the results (`tools/check.py`): every item has a valid ordering tag, options are listed where needed, nothing is both safe and unsafe, and each restaurant has items,
 4. compares each menu with its snapshot (`tools/snapshot.py`, saved in `tests/snapshots/`), so a change to a reader can't quietly change what the same guide gives. A new guide is reported, not failed,
-5. opens the app in a real browser at iPhone size, in light and dark (`tools/ui_check.py`): no errors, nothing wider than the screen, and the buttons work,
+5. opens the app in a real browser at iPhone size, in light and dark (`tools/ui_check.py`): no errors, nothing wider than the screen, and the buttons work; then again in WebKit, the engine iPhones use,
 6. publishes the app to GitHub Pages.
 
 If any step fails, nothing is published and the live app keeps its previous menus. The **Actions** tab shows each run's results, including how many items each restaurant has. Pull requests run the same checks (`.github/workflows/checks.yml`) without publishing.
@@ -111,7 +113,7 @@ Free GitHub accounts can publish Pages sites from public repositories only, so e
 
 ```
 pip install -r tools/requirements.txt -r tools/requirements-dev.txt
-python -m playwright install chromium            # once, for the UI checks
+python -m playwright install chromium webkit     # once, for the UI checks
 python tools/fetch_previous.py                   # optional: the live menus, to see what changed
 python tools/build.py && python tools/check.py   # writes site/data/
 python tools/snapshot.py && python tools/ui_check.py
@@ -130,7 +132,8 @@ python -m http.server -d site 8000               # open http://localhost:8000
 - `tools/reminders.py`: guides ending soon (opens GitHub issues each morning)
 - `tools/adapters/`: readers for each kind of allergen guide
 - `tools/SCAN_INSTRUCTIONS.md`: what the daily scan does with uploads
-- `inbox/`: uploads waiting to be scanned
+- `inbox/` on the `uploads` branch: uploads waiting to be scanned
+- `.github/workflows/keep-alive.yml`: keeps the scheduled workflows switched on
 - `site/phrases.json`: gluten free card phrases (add a language here)
 - `site/cities.json`: hand-checked places in other cities (Berlin)
 - `site/`: the app (HTML, CSS, JavaScript, offline support, icons)

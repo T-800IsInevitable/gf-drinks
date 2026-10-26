@@ -1,11 +1,11 @@
 name: Check pull request
 
 # The same build and checks as publishing, on every pull request, so problems
-# show up before merging. Nothing is published from here.
+# show up before merging. Nothing is published from here. main requires this
+# check to pass, so it runs on every pull request (no paths-ignore: a skipped
+# required check would block merging).
 on:
   pull_request:
-    paths-ignore:
-      - "inbox/**"
 
 permissions:
   contents: read
@@ -23,7 +23,7 @@ jobs:
       - name: Install PDF reader and browser
         run: |
           pip install -r tools/requirements.txt -r tools/requirements-dev.txt
-          python -m playwright install --with-deps chromium
+          python -m playwright install --with-deps chromium webkit
 
       - name: Download the menus that are live now
         run: python tools/fetch_previous.py

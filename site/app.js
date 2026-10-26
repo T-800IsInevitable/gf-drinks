@@ -70,8 +70,12 @@
   // in Help, "Menus in this app", for the record.
   function plainGuideName(r) {
     const g = r.guide || {};
-    const named = g.title && g.title !== "Allergen guide";
-    return possessive(r.name) + " " + (named ? g.title.toLowerCase() + " guide" : "allergen guide" + (g.version ? " (" + fmtDate(g.version) + ")" : ""));
+    const gs = r.guides && r.guides.length > 1 ? r.guides : [g]; // Starbucks: a drinks guide and a food guide
+    const titles = gs.map((x) => x.title).filter((t) => t && t !== "Allergen guide").map((t) => t.toLowerCase());
+    if (titles.length === gs.length) {
+      return possessive(r.name) + " " + (titles.length > 1 ? titles.slice(0, -1).join(", ") + " and " + titles[titles.length - 1] + " guides" : titles[0] + " guide");
+    }
+    return possessive(r.name) + " allergen guide" + (g.version ? " (" + fmtDate(g.version) + ")" : "");
   }
   function listOr(arr) {
     return arr.length < 2 ? arr.join("") : arr.slice(0, -1).join(", ") + " or " + arr[arr.length - 1];
@@ -171,8 +175,9 @@
   }
 
   // Search: every word must match (in English or the original language). Words like "gluten free" / "gf" are
-  // ignored because everything listed is already sorted by gluten; plurals match singulars ("toasties" -> "toastie").
-  const STOP = new Set(["gluten", "free", "gf", "glutenfree", "gluten-free", "no", "without", "and", "with"]);
+  // ignored because everything listed is already sorted by gluten, and so are articles ("a latte" means lattes);
+  // plurals match singulars ("toasties" -> "toastie").
+  const STOP = new Set(["gluten", "free", "gf", "glutenfree", "gluten-free", "no", "without", "and", "with", "a", "an", "the"]);
   const stem = (w) => w.replace(/ies$/, "ie").replace(/(ches|shes|xes)$/, (m) => m.slice(0, -2)).replace(/([^s])s$/, "$1");
   const norm = (t) => t.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
   function terms(q) { return norm(q).split(/[^a-z0-9ßäöü]+/).filter((w) => w && !STOP.has(w)).map(stem); }
@@ -363,12 +368,16 @@
 
   // In All restaurants, a restaurant's own name at the start of the search narrows to it, so
   // "pret latte" means lattes at Pret. Tries the longest run of words first ("five guys" before "five").
+  // A word counts as the name when it's a whole word of it, or its first four letters or more ("star" for
+  // Starbucks). Shorter starts and short name words don't: "a latte" isn't Pret A Manger, and "str" on the
+  // way to "strawberry" isn't Blank Street.
+  const nameWord = (t, w) => w.length > 2 && (t === w || (t.length >= 4 && w.startsWith(t)));
   function withNameFilter(rs, q) {
     if (selected !== ALL || rs.length < 2) return { rs, q };
     const words = terms(q);
     for (let n = Math.min(3, words.length); n > 0; n--) {
       const head = words.slice(0, n);
-      const hit = rs.filter((r) => { const nm = terms(r.name); return head.every((t) => nm.some((w) => w.startsWith(t))); });
+      const hit = rs.filter((r) => { const nm = terms(r.name); return head.every((t) => nm.some((w) => nameWord(t, w))); });
       if (hit.length === 1) return { rs: hit, q: words.slice(n).join(" ") };
     }
     return { rs, q };
@@ -895,8 +904,9 @@
     if (i) openStaff(r, i);
   });
 
-  // ---------- add a menu (owner only, uploads to inbox/ on GitHub) ----------
+  // ---------- add a menu (owner only): uploads go to inbox/ on the "uploads" branch, never to main ----------
   const KEY_KEY = "gf-github-key";
+  const UPLOAD_BRANCH = "uploads";
   const repo = (() => {
     const m = location.hostname.match(/^([^.]+)\.github\.io$/);
     const seg = location.pathname.split("/").filter(Boolean)[0];
@@ -962,51 +972,94 @@
   async function toJpeg(file) {
     const url = URL.createObjectURL(file);
     try {
-      const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = url; });
+      const img = await new Promise((ok, bad) => {
+        const i = new Image();
+        i.onload = () => ok(i);
+        i.onerror = () => bad(new Error("couldn't read the photo " + file.name));
+        i.src = url;
+      });
       const scale = Math.min(1, 2400 / Math.max(img.naturalWidth, img.naturalHeight));
       const c = document.createElement("canvas");
       c.width = Math.round(img.naturalWidth * scale);
       c.height = Math.round(img.naturalHeight * scale);
       c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-      return await new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.88));
+      return await new Promise((ok, bad) => c.toBlob((b) => (b ? ok(b) : bad(new Error("couldn't save the photo " + file.name))), "image/jpeg", 0.88));
     } finally { URL.revokeObjectURL(url); }
   }
-  async function putFile(path, b64, message) {
-    const res = await api("/contents/" + path.split("/").map(encodeURIComponent).join("/"), {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, content: b64 }),
-    });
-    if (res.status === 401 || res.status === 403) {
+  // GitHub's answer, or an error saying what went wrong. 401, or a 403 that isn't GitHub's rate limit, means the
+  // saved key no longer works, so it's removed. A rate limit is GitHub's, not the key's: the key stays.
+  async function gh(res, what) {
+    if (res.ok) return res.json();
+    const body = await res.json().catch(() => ({}));
+    const limited = res.status === 429 || res.headers.get("x-ratelimit-remaining") === "0" || /rate limit/i.test(body.message || "");
+    if (res.status === 401 || (res.status === 403 && !limited)) {
       try { localStorage.removeItem(KEY_KEY); } catch (e) { /* storage unavailable */ }
       throw new Error("EXPIRED_KEY");
     }
-    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || "HTTP " + res.status);
+    const err = new Error(limited ? "GitHub is limiting uploads for now, so wait an hour" : (body.message || "HTTP " + res.status) + " while " + what);
+    err.status = res.status;
+    throw err;
   }
+  const send = (path, body, method = "POST") => api(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  // Every file goes into one commit (the files, then the folder, then the commit, then moving the branch on to it),
+  // so an upload arrives whole or not at all: a half-finished folder is never left for the daily scan.
+  // Returns false if the same files were already there (an earlier try that worked but whose answer was lost).
+  async function commitFiles(files, message) {
+    const entries = [];
+    for (const f of files) {
+      const blob = await gh(await send("/git/blobs", { content: f.b64, encoding: "base64" }), "saving " + f.path.split("/").pop());
+      entries.push({ path: f.path, mode: "100644", type: "blob", sha: blob.sha });
+    }
+    for (let tries = 1; ; tries++) {
+      const ref = await api("/git/ref/heads/" + UPLOAD_BRANCH);
+      const fresh = ref.status === 404; // the first upload starts the branch from main
+      const parent = (await gh(fresh ? await api("/git/ref/heads/main") : ref, "reading the branch")).object.sha;
+      const base = (await gh(await api("/git/commits/" + parent), "reading the branch")).tree.sha;
+      const tree = (await gh(await send("/git/trees", { base_tree: base, tree: entries }), "saving the folder")).sha;
+      if (tree === base && !fresh) return false;
+      const commit = (await gh(await send("/git/commits", { message, tree, parents: [parent] }), "saving the upload")).sha;
+      const moved = fresh ? await send("/git/refs", { ref: "refs/heads/" + UPLOAD_BRANCH, sha: commit })
+        : await send("/git/refs/heads/" + UPLOAD_BRANCH, { sha: commit, force: false }, "PATCH");
+      if (moved.ok) return true;
+      // the branch moved (or was made) in the meantime: build on top of it and try again
+      if (tries < 3 && (moved.status === 422 || moved.status === 409)) continue;
+      await gh(moved, "finishing the upload");
+    }
+  }
+  // What's being uploaded, kept until it arrives, so trying again sends the same folder and the same files:
+  // a retry after a lost answer can't make a second copy.
+  let pending = null;
   $("uploadForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const name = $("upName").value.trim();
     const area = $("upArea").value.trim();
+    const notes = $("upNotes").value.trim();
     const files = [...$("upFiles").files];
     const status = $("upStatus");
     if (!name || !area || !files.length) { status.textContent = "Add the restaurant, the city or country, and at least one file."; return; }
     const btn = $("upSend");
     btn.disabled = true;
-    const now = new Date();
-    const stamp = now.toISOString().slice(0, 16).replace(/:/g, "");
-    const folder = "inbox/" + stamp + "-" + slug(name) + "-" + slug(area);
+    const key = JSON.stringify([name, area, notes, files.map((f) => [f.name, f.size, f.lastModified])]);
     try {
-      let n = 0;
-      for (const f of files) {
-        n++;
-        status.textContent = "Uploading " + n + " of " + files.length + "…";
-        const isPdf = f.type === "application/pdf" || /\.pdf$/i.test(f.name);
-        const blob = isPdf ? f : await toJpeg(f);
-        const fname = isPdf ? (files.length > 1 ? "menu-" + n + ".pdf" : "menu.pdf") : "page-" + n + ".jpg";
-        await putFile(folder + "/" + fname, await toB64(blob), "Upload " + name + " menu (" + fname + ")");
+      if (!pending || pending.key !== key) {
+        const now = new Date();
+        const folder = "inbox/" + now.toISOString().slice(0, 16).replace(/:/g, "") + "-" + slug(name) + "-" + slug(area);
+        const out = [];
+        let n = 0;
+        for (const f of files) {
+          n++;
+          status.textContent = "Getting file " + n + " of " + files.length + " ready…";
+          const isPdf = f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+          const fname = isPdf ? (files.length > 1 ? "menu-" + n + ".pdf" : "menu.pdf") : "page-" + n + ".jpg";
+          out.push({ path: folder + "/" + fname, b64: await toB64(isPdf ? f : await toJpeg(f)) });
+        }
+        const meta = { restaurant: name, area, notes, files: files.length, uploadedAt: now.toISOString(), uploadedFrom: "Twoo's Treat Temple app" };
+        out.push({ path: folder + "/upload.json", b64: btoa(unescape(encodeURIComponent(JSON.stringify(meta, null, 2)))) });
+        pending = { key, folder, files: out };
       }
-      const meta = { restaurant: name, area, notes: $("upNotes").value.trim(), files: files.length, uploadedAt: now.toISOString(), uploadedFrom: "Twoo's Treat Temple app" };
-      await putFile(folder + "/upload.json", btoa(unescape(encodeURIComponent(JSON.stringify(meta, null, 2)))), "Upload " + name + " menu details");
+      status.textContent = "Uploading…";
+      await commitFiles(pending.files, "Upload " + name + " menu (" + pending.folder.split("/").pop() + ")");
+      pending = null;
       status.textContent = "Uploaded. It'll be scanned within a day and sent to GitHub for you to approve.";
       $("uploadForm").reset();
       toast("Menu uploaded");
@@ -1015,7 +1068,8 @@
         status.textContent = "This GitHub key no longer works (it may have expired). Make a new one below.";
         showUploadState();
       } else {
-        status.textContent = "Upload failed: " + err.message + ". Nothing was lost; try again with signal.";
+        const why = err instanceof TypeError ? "no connection" : err.message; // fetch fails with a TypeError offline
+        status.textContent = "The upload didn't finish (" + why + "). Try again when you have signal: it's safe, and it won't make a second copy.";
       }
     } finally {
       btn.disabled = false;
