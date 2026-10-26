@@ -17,13 +17,27 @@ import re
 import subprocess
 import sys
 
-CODE = ["site/app.js", "site/compare.js", "site/styles.css", "site/index.html", "site/sw.js", "site/manifest.webmanifest", "site/icons"]
+# the app's own files, plus the chains' logos: the service worker serves them from the release's saved copy, so a
+# change to any of them reaches phones only with a new release
+CODE = ["site/app.js", "site/compare.js", "site/theme.js", "site/styles.css", "site/index.html", "site/sw.js", "site/manifest.webmanifest",
+        "site/icons", "restaurants/*/logo.png"]
+APP_VERSION = re.compile(r"const APP_VERSION = (\d+);")
+CACHE = re.compile(r'const CACHE = "gf-menus-v(\d+)"')
 
 
 def cache_number(text):
-    m = re.search(r'const CACHE = "gf-menus-v(\d+)"', text)
+    """The release number in site/sw.js's text."""
+    m = CACHE.search(text)
     if not m:
         raise SystemExit("ERROR: couldn't find CACHE in site/sw.js")
+    return int(m.group(1))
+
+
+def app_number(text):
+    """The release number in site/app.js's text."""
+    m = APP_VERSION.search(text)
+    if not m:
+        raise SystemExit("ERROR: couldn't find APP_VERSION in site/app.js")
     return int(m.group(1))
 
 

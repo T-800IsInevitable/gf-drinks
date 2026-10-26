@@ -8,6 +8,8 @@ availability caveats, delivery notes and nutrition advice.
 import re
 from difflib import SequenceMatcher
 
+from .common import clean
+
 KINDS = [
     # a guide's own gluten free claim (e.g. Coeliac UK accreditation); the app shows it word for word
     ("accreditation", r"coeliac uk|accredited|20 ?ppm|parts per million|20 ?mg/kg"),
@@ -35,9 +37,7 @@ LABELS = {
 
 
 def _clean(s):
-    s = re.sub(r"[​-‍﻿]", "", s)
-    s = re.sub(r"\s+", " ", s).strip()
-    return s.replace(" .help", " help").replace(" ,", ",")
+    return clean(s).replace(" .help", " help").replace(" ,", ",")
 
 
 def _sentences(text):

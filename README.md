@@ -117,13 +117,13 @@ Restaurants prepare food in shared kitchens, so nothing is guaranteed gluten fre
 
 ## Publishing and safety checks
 
-Every change to the repository runs `.github/workflows/publish.yml`, which:
+Every pull request runs `.github/workflows/checks.yml`, and every change to `main` runs `.github/workflows/publish.yml`; both use the same steps (`.github/actions/build-check`), which:
 
 1. downloads the menus that are live now (`tools/fetch_previous.py`), so the build can say what changed in a new guide,
 2. runs the unit tests (`tests/`) and builds every restaurant (`tools/build.py`),
 3. checks the results (`tools/check.py`): every item has a valid ordering tag, options are listed where needed, nothing is both safe and unsafe, and each restaurant has items,
 4. compares each menu with its snapshot (`tools/snapshot.py`, saved in `tests/snapshots/`), so a change to a reader can't quietly change what the same guide gives. A new guide is reported, not failed,
-5. opens the app in a real browser at iPhone size, in light and dark (`tools/ui_check.py`): no errors, nothing wider than the screen, and the buttons work; then again in WebKit, the engine iPhones use,
+5. opens the app in a real browser at iPhone size (`tools/ui_check.py`): no errors, nothing wider than the screen, the buttons work, and every theme has enough contrast; then again in WebKit, the engine iPhones use,
 6. publishes the app to GitHub Pages.
 
 If any step fails, nothing is published and the live app keeps its previous menus. The **Actions** tab shows each run's results, including how many items each restaurant has. Pull requests run the same checks (`.github/workflows/checks.yml`) without publishing.
@@ -151,7 +151,8 @@ python -m http.server -d site 8000               # open http://localhost:8000
 - `tools/check.py`: safety checks run before publishing
 - `tools/changes.py`, `tools/fetch_previous.py`: what changed since the live menus
 - `tools/snapshot.py`, `tests/snapshots/`: each reader's output, to catch unintended changes
-- `tools/ui_check.py`: the app in a real browser at iPhone size
+- `tools/ui_check.py`: the app in a real browser at iPhone size (`--list` names the checks; `--only NAME` runs one)
+- `tools/adapters/common.py`: what the readers share (the cereal words, tidying, picking the newest guide); `tools/gh.py`: the GitHub API for the tools that open issues and pull requests
 - `tools/reminders.py`: guides ending soon (opens GitHub issues each morning)
 - `tools/watch_guides.py`: new guides on the restaurants' websites (opens pull requests each Monday)
 - `tools/upload_notice.py`: opens an issue for each upload waiting on the `uploads` branch

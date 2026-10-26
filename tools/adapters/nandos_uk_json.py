@@ -14,10 +14,10 @@ Nando's sets no end date; the app asks for a new snapshot after recheckDays.
 """
 import json
 import re
-from datetime import date, timedelta
 from pathlib import Path
 
-CEREAL = re.compile(r"\b(wheat\w*|rye|barley|oats?|oatmeal|spelt|kamut|malt(?:ed)?)\b", re.I)
+from .common import CEREAL, cereal_code, cereal_word, result
+
 MIN_DISHES = 80
 # words that make a title part a label about where or when a dish is sold, not its name
 LABEL = re.compile(r"select restaurants|gatwick|airport|updated|new recipe|availab|avalible|halal", re.I)
@@ -81,14 +81,15 @@ def build(folder, config):
         item = {"name": name, "section": section, "sub": None, "pages": []}
         info = [f"Nando's says: \"{other}\"" if other else None]
         note = (d.get("notes") or {}).get("gluten")
-        cereals = sorted({c.lower() for c in CEREAL.findall(d.get("ingredients") or "")})
+        codes = sorted({cereal_code(c) for c in CEREAL.findall(d.get("ingredients") or "")})
+        cereals = [cereal_word(c) for c in codes]
         # the table and the line above it ("Contains gluten, sesame.") are two sources: either one is enough
         said = bool(re.search(r"^Contains\b[^.]*\bgluten\b", d.get("summary") or "", re.I))
         if said != ("gluten" in d["contains"]) and d.get("fullTable"):
             warnings.append(f"{d['name']}: the allergen table and the line above it disagree about gluten; treated as containing gluten")
         if "gluten" in d["contains"] or said:
             reason = quoted(note) if note else "Nando's lists gluten."
-            avoid.append({**item, "gluten": [c.upper() for c in cereals] or ["GLUTEN"], "reason": reason,
+            avoid.append({**item, "gluten": codes or ["GLUTEN"], "reason": reason,
                           **({"info": " ".join(x for x in info if x)} if any(info) else {})})
         elif "gluten" in d["mayContain"]:
             reason = quoted(note, "Nando's says it may contain gluten") if note else "Nando's says it may contain gluten."
@@ -96,7 +97,7 @@ def build(folder, config):
                           **({"info": " ".join(x for x in info if x)} if any(info) else {})})
         elif cereals:
             warnings.append(f"{d['name']}: no gluten marked but the ingredients name {cereals}; treated as containing gluten")
-            avoid.append({**item, "gluten": [c.upper() for c in cereals], "reason": "The ingredients name " + " and ".join(cereals) + ".",
+            avoid.append({**item, "gluten": codes, "reason": "The ingredients name " + " and ".join(cereals) + ".",
                           "decided": "Nando's allergen table marks no gluten but the ingredients name a gluten cereal, so the app treats it "
                                      "as containing gluten."})
         else:
@@ -105,20 +106,10 @@ def build(folder, config):
             if extra:
                 out["info"] = " ".join(extra)
             ok.append(out)
-    fetched = snap["fetched"]
-    guide = {"title": "Allergen guide", "runs": None, "version": fetched,
-             "validUntil": (date.fromisoformat(fetched) + timedelta(days=int(config.get("recheckDays", 61)))).isoformat()}
+    # no end date of its own: build.py asks for a new snapshot recheckDays after this one was fetched
+    guide = {"title": "Allergen guide", "runs": None, "version": snap["fetched"]}
     notices = [{"kind": "cross-contact", "label": "Cross-contact", "text": t, "pages": [], "pagesTotal": 0}
                for t in snap.get("notices", []) + [snap.get("important")] if t]
-    return {
-        "notices": notices,
-        "source": path.name,
-        "guide": guide,
-        "rule": "Nando's: excludes dishes Nando's marks as containing or maybe containing gluten, and any whose ingredients name a "
-                "gluten cereal.",
-        "sections": list(dict.fromkeys(i["section"] for i in ok + avoid)),
-        "items": ok,
-        "avoid": avoid,
-        "warnings": warnings,
-        "stats": {"rows": len(dishes), "items": len(ok), "avoid": len(avoid)},
-    }
+    return result(path.name, guide,
+                  "Nando's: excludes dishes Nando's marks as containing or maybe containing gluten, and any whose ingredients name a "
+                  "gluten cereal.", ok, avoid, warnings, notices, rows=len(dishes))

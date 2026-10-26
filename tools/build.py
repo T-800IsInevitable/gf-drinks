@@ -8,8 +8,9 @@ more than one guide (e.g. drinks and food) lists several: "readers": [...].
 Folders starting with "_" or "." are skipped (use them for templates and drafts).
 
 Writes:
-  site/data/restaurants.json   list of restaurants with summary details
-  site/data/r/<id>.json        one restaurant's full gluten free menu
+  site/data/restaurants.json   the build time, and each restaurant's name, file, guide, stats, logo and fingerprint
+  site/data/r/<id>.json        one restaurant's full menu and settings (unchanged byte for byte between builds
+                               from the same guide and settings)
 
 If .previous/ holds the menus that are live now (tools/fetch_previous.py),
 each restaurant also gets "changes": what's different since the last guide.
@@ -24,6 +25,7 @@ Usage:
 """
 import argparse
 import calendar
+import hashlib
 import importlib
 import json
 import re
@@ -34,8 +36,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import changes  # noqa: E402  (needs the path above)
+from adapters.common import MONTHS, valid_until  # noqa: E402
 
-MONTHS = {m: i for i, m in enumerate(calendar.month_name) if m}
+# what the index (site/data/restaurants.json) says about each restaurant: enough to list it and find its file.
+# The rest (tips, gaps, settings) is in the restaurant's own file, which the app always loads.
+INDEX_KEYS = ("id", "name", "file", "source", "guide", "stats", "logo", "officialUrl", "hash")
 
 
 def end_date(runs):
@@ -127,7 +132,9 @@ def build_one(folder):
     for reader in readers:
         part = importlib.import_module(f"adapters.{reader}").build(folder, config)
         guide = part.setdefault("guide", {})
-        guide["validUntil"] = guide.get("validUntil") or end_date(guide.get("runs"))
+        # when to look again: the guide's own end date, else the end of the season it names, else its version date
+        # plus the restaurant's recheckDays
+        guide["validUntil"] = guide.get("validUntil") or end_date(guide.get("runs")) or valid_until(guide.get("version"), config)
         parts.append(part)
     data = merge(parts)
     apply_config(data, config, folder.name)
@@ -182,7 +189,9 @@ def main():
         raise SystemExit("ERROR: no restaurants found")
     for folder in folders:
         meta, data = build_one(folder)
-        full = {**meta, **data, "built": built}
+        # the build time goes in the index only: a menu file that hasn't changed stays byte for byte the same, so a
+        # phone's "has it changed?" check gets "not modified" instead of downloading every menu after every release
+        full = {**meta, **data}
         prev_path = args.previous / "r" / f"{meta['id']}.json"
         prev = json.loads(prev_path.read_text(encoding="utf-8")) if prev_path.exists() else None
         full["changes"] = changes.compare(prev, full)
@@ -190,9 +199,12 @@ def main():
             print("  same guide as the live menu" + (f"; keeping its changes {changes.summary(full['changes'])}" if full["changes"] else ""))
         else:
             print("  changes", changes.summary(full["changes"]))
+        # a fingerprint of everything the app shows, so it can tell a changed menu from an unchanged one by comparing
+        # two short strings rather than the whole file
+        full["hash"] = hashlib.sha256(json.dumps(full, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()[:16]
         (out / "r" / f"{meta['id']}.json").write_text(json.dumps(full, indent=1, ensure_ascii=False), encoding="utf-8")
-        index.append({**meta, "guide": data["guide"], "source": data["source"], "stats": data["stats"],
-                      "file": f"data/r/{meta['id']}.json"})
+        entry = {**full, "file": f"data/r/{meta['id']}.json"}
+        index.append({k: entry[k] for k in INDEX_KEYS if k in entry})
     (out / "restaurants.json").write_text(json.dumps({"built": built, "restaurants": index}, indent=1, ensure_ascii=False),
                                           encoding="utf-8")
     print(f"Wrote {len(index)} restaurant(s) to {out}")

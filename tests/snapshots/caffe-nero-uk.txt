@@ -101,14 +101,14 @@ AVOID | Muffins & Scones | Ultimate Chocolate Muffin | WHEAT
 AVOID | Muffins & Scones | Blueberry Muffin | GLUTEN;WHEAT
 AVOID | Muffins & Scones | Sicilian Lemon Curd Muffin | WHEAT
 AVOID | Muffins & Scones | Fruit Scone | WHEAT
-AVOID | Porridge | Porridge with Steel Cut Oats | OATS
-AVOID | Porridge | Porridge made with Semi Skimmed Milk | OATS
-AVOID | Porridge | Porridge made with Skimmed Milk | OATS
-AVOID | Porridge | Porridge made with Whole Milk | OATS
-AVOID | Porridge | Porridge made with Alpro Barista Soya | OATS
-AVOID | Porridge | Porridge made with Alpro Barista Coconut | OATS
-AVOID | Porridge | Porridge made with Alpro Barista Oat | OATS
-AVOID | Porridge | Porridge made with Alpro Barista Almond | OATS
+AVOID | Porridge | Porridge with Steel Cut Oats | OAT
+AVOID | Porridge | Porridge made with Semi Skimmed Milk | OAT
+AVOID | Porridge | Porridge made with Skimmed Milk | OAT
+AVOID | Porridge | Porridge made with Whole Milk | OAT
+AVOID | Porridge | Porridge made with Alpro Barista Soya | OAT
+AVOID | Porridge | Porridge made with Alpro Barista Coconut | OAT
+AVOID | Porridge | Porridge made with Alpro Barista Oat | OAT
+AVOID | Porridge | Porridge made with Alpro Barista Almond | OAT
 AVOID | Cakes & Slices | Lemon and Blueberry Cake | GLUTEN;WHEAT
 AVOID | Cakes & Slices | Belgian Chocolate Fudge Cake | WHEAT
 AVOID | Cakes & Slices | Cappuccino Cake | WHEAT
@@ -118,7 +118,7 @@ AVOID | Loaf Cakes | Banana & Walnut Loaf Cake | GLUTEN;WHEAT
 AVOID | Traybakes | Caramel Shortbread | WHEAT
 AVOID | Traybakes | Rocky Road | WHEAT
 AVOID | Traybakes | Belgian Chocolate Brownie | WHEAT
-AVOID | Traybakes | Granola Flapjack | OATS
+AVOID | Traybakes | Granola Flapjack | OAT
 AVOID | Cookies | Milk Chocolate Chunk Cookie | WHEAT
 AVOID | Cookies | Triple Chocolate Chunk Cookie | WHEAT
 AVOID | Desserts | Honeycomb Cheesecake | WHEAT
@@ -129,30 +129,30 @@ AVOID | Desserts | Italian Cream Bun 'Maritozzo' | WHEAT
 AVOID | Desserts | Italian Tiramisu | WHEAT
 AVOID | Desserts | Pistachio & Chocolate Mousse Cake | MALT;WHEAT
 AVOID | Savoury Pastries & Rolls | Pork & Pancetta Sausage Roll | WHEAT
-AVOID | Savoury Pastries & Rolls | Sourdough Bread Roll | GLUTEN;MALTED;WHEAT
+AVOID | Savoury Pastries & Rolls | Sourdough Bread Roll | GLUTEN;MALT;WHEAT
 AVOID | Savoury Pastries & Rolls | Roasted Vegetable Plant Based Savoury Roll | WHEAT
 AVOID | Savoury Pastries & Rolls | Ham & Cheese Croissant | WHEAT
-AVOID | Nero Deli | Italian Prosciutto & Yellow Datterini Tomato Flatbread | MALTED;WHEAT
-AVOID | Nero Deli | Italian Mozzarella, Pesto & Tomato Pizzetta | MALTED;WHEAT
+AVOID | Nero Deli | Italian Prosciutto & Yellow Datterini Tomato Flatbread | MALT;WHEAT
+AVOID | Nero Deli | Italian Mozzarella, Pesto & Tomato Pizzetta | MALT;WHEAT
 AVOID | Panini | Butternut Squash & Pesto Seeded Panini | BARLEY;MALT;WHEAT
-AVOID | Panini | Ham & Mozzarella Panini | GLUTEN;MALTED;WHEAT
-AVOID | Panini | Mozzarella & Tomato Panini | GLUTEN;MALTED;WHEAT
-AVOID | Panini | Tuna Melt Panini | GLUTEN;MALTED;WHEAT
-AVOID | Panini | Brie & Bacon Panini | GLUTEN;MALTED;WHEAT
+AVOID | Panini | Ham & Mozzarella Panini | GLUTEN;MALT;WHEAT
+AVOID | Panini | Mozzarella & Tomato Panini | GLUTEN;MALT;WHEAT
+AVOID | Panini | Tuna Melt Panini | GLUTEN;MALT;WHEAT
+AVOID | Panini | Brie & Bacon Panini | GLUTEN;MALT;WHEAT
 AVOID | Tostati | Four Cheese and Balsamic Onion Chutney Tostati Melt | GLUTEN;WHEAT
 AVOID | Tostati | Chicken and Pesto Tostati | WHEAT
 AVOID | Tostati | Chicken and Bacon Tostati Melt | GLUTEN;WHEAT
 AVOID | Tostati | Ham & Cheese Tostati Melt | GLUTEN;WHEAT
 AVOID | Tostati | Mozzarella & Roasted Tomato Tostati Melt | GLUTEN;WHEAT
 AVOID | Tostati | Cheese and Tomato Tostati | WHEAT
-AVOID | Breakfast Rolls | Bacon Ciabatta | MALTED;RYE;WHEAT
-AVOID | Breakfast Rolls | Butcher's Sausage Ciabatta | MALTED;RYE;WHEAT
-AVOID | Sandwiches | Tuna & Cucumber Sandwich | BARLEY;MALTED;WHEAT
-AVOID | Sandwiches | Free Range Egg Mayo Sandwich | BARLEY;MALTED;OATS;WHEAT
-AVOID | Sandwiches | Chicken Salad Sandwich | BARLEY;MALTED;WHEAT
-AVOID | Sandwiches | BLT Sandwich | BARLEY;MALTED;WHEAT
+AVOID | Breakfast Rolls | Bacon Ciabatta | MALT;RYE;WHEAT
+AVOID | Breakfast Rolls | Butcher's Sausage Ciabatta | MALT;RYE;WHEAT
+AVOID | Sandwiches | Tuna & Cucumber Sandwich | BARLEY;MALT;WHEAT
+AVOID | Sandwiches | Free Range Egg Mayo Sandwich | BARLEY;MALT;OAT;WHEAT
+AVOID | Sandwiches | Chicken Salad Sandwich | BARLEY;MALT;WHEAT
+AVOID | Sandwiches | BLT Sandwich | BARLEY;MALT;WHEAT
 AVOID | Focaccia | Spicy Chicken & Red Pepper Focaccia | WHEAT
-AVOID | Focaccia | Italian Fennel Salami, Cotto Ham & Mozzarella Focaccia | MALTED;WHEAT
+AVOID | Focaccia | Italian Fennel Salami, Cotto Ham & Mozzarella Focaccia | MALT;WHEAT
 AVOID | Wraps | Chicken & Bacon Caesar Wrap | WHEAT
 AVOID | Wraps | Smoky Three Bean Wrap | BARLEY;MALT;WHEAT
 AVOID | Salad | Feta & Mixed Grain Salad | BARLEY
@@ -162,5 +162,5 @@ AVOID | Biscuits & Snacks | Gingerbread Biscuit | WHEAT
 AVOID | Biscuits & Snacks | Loacker Napolitaner | BARLEY;MALT;WHEAT
 AVOID | Biscuits & Snacks | Loacker Vanille | BARLEY;MALT;WHEAT
 AVOID | Biscuits & Snacks | Panettone | WHEAT
-AVOID | Yogurts & Granola Pot | Berry Granola | OATS
+AVOID | Yogurts & Granola Pot | Berry Granola | OAT
 AVOID | Extras | HP Sauce | GLUTEN

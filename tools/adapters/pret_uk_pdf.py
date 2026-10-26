@@ -18,12 +18,13 @@ Kamut (Wheat), Oats, Rye, Spelt (Wheat) and Wheat.
     "Latte Oat (instead of milk)") are grouped into one drink each.
 """
 import re
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 
 import pdfplumber
 
 from . import notices
+from .common import MONTHS, clean, newest_by, result
 
 TICK = ""
 GLUTEN_COLS = {"Barley": "BARLEY", "Kamut": "KAMUT", "Oats": "OAT", "Rye": "RYE", "Spelt": "SPELT", "Wheat": "WHEAT"}
@@ -32,30 +33,22 @@ MILK = re.compile(r"^(.*?)\s+(?:-\s+)?((?:Semi Skimmed|Skimmed|Whole)(?: milk)?(
 MIN_ROWS = 100
 
 
-def clean(s):
-    s = re.sub(r"[\u200b-\u200d\ufeff]", "", s or "")  # invisible characters in the source
-    return re.sub(r"\s+", " ", s).strip()
-
-
 def is_red(c):
     return isinstance(c, (tuple, list)) and len(c) == 3 and all(abs(a - b) < 0.05 for a, b in zip(c, RED))
 
 
 def guide_info(pdf):
     text = "\n".join(pdf.pages[i].extract_text() or "" for i in range(min(2, len(pdf.pages))))
-    m = re.search(r"Valid from\s+(\d{1,2})\s+(\w+)\s+(\d{4})(?:\s+(V\d+))?", text)
-    if not m:
-        m2 = re.search(r"Allergen Guide (\d{1,2})(?:st|nd|rd|th)?\s+(\w+)\s+(\d{4})(?:\s+(V\d+))?", text)
-        m = m2
+    m = (re.search(r"Valid from\s+(\d{1,2})\s+(\w+)\s+(\d{4})(?:\s+(V\d+))?", text)
+         or re.search(r"Allergen Guide (\d{1,2})(?:st|nd|rd|th)?\s+(\w+)\s+(\d{4})(?:\s+(V\d+))?", text))
     version = None
     label = None
     if m:
         d, mon, y, v = m.groups()
         try:
-            version = date(int(y), ["january", "february", "march", "april", "may", "june", "july", "august", "september",
-                                    "october", "november", "december"].index(mon.lower()) + 1, int(d)).isoformat()
+            version = date(int(y), MONTHS[mon.title()], int(d)).isoformat()
             label = f"Valid from {int(d)} {mon} {y}" + (f" {v}" if v else "")
-        except ValueError:
+        except (KeyError, ValueError):
             pass
     return {"title": "Allergen guide", "runs": None, "version": version, "label": label}
 
@@ -65,8 +58,7 @@ def page_title(page):
     return clean("".join(c["text"] for c in sorted(big, key=lambda c: (round(c["top"]), c["x0"]))))
 
 
-def parse_rows(pdf_path):
-    pdf = pdfplumber.open(pdf_path)
+def parse_rows(pdf, pdf_path):
     info = guide_info(pdf)
     rows, warnings = [], []
     table_pages = 0
@@ -106,7 +98,6 @@ def parse_rows(pdf_path):
         if sorted(gluten_cols.values()) != sorted(GLUTEN_COLS.values()):
             raise SystemExit(f"ERROR: p.{pno}: found gluten columns {sorted(gluten_cols.values())}, expected all of "
                              f"{sorted(GLUTEN_COLS.values())}. Layout changed? Menu not updated.")
-        # Row boundaries: thin full-width rules plus the red sub-heading bands.
         # Row boundaries: edges of the full-width rules, shaded row stripes and red
         # sub-heading bands, down to the red disclaimer box under the table.
         allwide = [r for r in page.rects if r["x0"] < 60 and r["x1"] > page.width * 0.8]
@@ -199,39 +190,17 @@ def group(rows, warnings=None):
 
 
 def newest_pdf(folder):
-    pdfs = list(Path(folder).glob("*.pdf"))
-    if not pdfs:
-        raise SystemExit(f"ERROR: no PDF found in {folder}")
-    dated = []
-    for p in pdfs:
-        with pdfplumber.open(p) as pdf:
-            dated.append((guide_info(pdf)["version"] or "0000-00-00", p.stat().st_mtime, p))
-    dated.sort()
-    for v, _, p in dated:
-        print(f"  found {p.name} (valid from {v})")
-    return dated[-1][2]
+    return newest_by(folder, lambda pdf, p: guide_info(pdf)["version"], what="valid from")
 
 
 def build(folder, config):
     pdf_path = newest_pdf(Path(folder) / "guides")
     print(f"  building from {pdf_path.name}")
-    info, rows, warnings = parse_rows(pdf_path)
-    ok, avoid = group(rows, warnings)
     with pdfplumber.open(pdf_path) as pdf:
+        info, rows, warnings = parse_rows(pdf, pdf_path)
+        ok, avoid = group(rows, warnings)
         first_table = next((i + 1 for i, pg in enumerate(pdf.pages) if "Product" in (pg.extract_text() or "")), 3)
         guide_notices = notices.collect(pdf, list(range(1, first_table)), columns_for=tuple(range(2, first_table)))
-    # Pret guides have no end date. Ask for a re-check after the number of days in restaurant.json.
-    if info["version"]:
-        days = int(config.get("recheckDays", 91))
-        info["validUntil"] = (date.fromisoformat(info["version"]) + timedelta(days=days)).isoformat()
-    return {
-        "notices": guide_notices,
-        "source": pdf_path.name,
-        "guide": {k: info.get(k) for k in ("title", "runs", "version", "validUntil")},
-        "rule": "Excludes anything ticked for barley, kamut, oats, rye, spelt or wheat.",
-        "sections": list(dict.fromkeys(i["section"] for i in ok + avoid)),
-        "items": ok,
-        "avoid": avoid,
-        "warnings": warnings,
-        "stats": {"rows": len(rows), "items": len(ok), "avoid": len(avoid)},
-    }
+    # Pret guides have no end date: build.py asks for a re-check recheckDays after the version date
+    return result(pdf_path.name, {k: info.get(k) for k in ("title", "runs", "version")},
+                  "Excludes anything ticked for barley, kamut, oats, rye, spelt or wheat.", ok, avoid, warnings, guide_notices, rows=len(rows))

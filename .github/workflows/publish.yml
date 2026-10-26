@@ -1,5 +1,7 @@
 name: Build menu and publish app
 
+# On every push to main: the same build and checks as the pull request check
+# (.github/actions/build-check), then the site goes to GitHub Pages.
 on:
   push:
     branches: [main]
@@ -19,38 +21,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      - name: Install PDF reader
-        run: pip install -r tools/requirements.txt
-
-      # The live menus, so the build can say what changed in a new guide (tools/changes.py)
-      - name: Download the menus that are live now
-        run: python tools/fetch_previous.py
-
-      - name: Build every restaurant's menu
-        run: |
-          set -o pipefail
-          { python -m unittest discover -s tests && python tools/build.py && python tools/check.py && python tools/snapshot.py; } | tee build.log
-          {
-            echo "## Menu build"
-            echo '```'
-            cat build.log
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Install the browser for UI checks
-        run: |
-          pip install -r tools/requirements-dev.txt
-          python -m playwright install --with-deps chromium webkit
-
-      - name: Check the app at iPhone size, light and dark
-        run: python tools/ui_check.py
+      - uses: ./.github/actions/build-check
 
       - uses: actions/configure-pages@v6
 

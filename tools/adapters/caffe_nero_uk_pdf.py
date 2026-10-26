@@ -17,14 +17,13 @@ sample product) are skipped.
 import re
 from collections import defaultdict
 from difflib import SequenceMatcher
-from datetime import date, timedelta
 from pathlib import Path
 
 import pdfplumber
 
 from . import notices
+from .common import CEREAL, cereal_code, cereal_word, clean, newest_by, result
 
-CEREAL = re.compile(r"\b(wheat\w*|rye|barley|oats?|oatmeal|oatly|spelt|kamut|malt(?:ed)?|gluten(?![\s-]*free))\b", re.I)
 DRINK_GLUTEN = re.compile(r"^(WHEAT|RYE|BARLEY|OATS?|SPELT|KAMUT|MALT|GLUTEN|CEREALS?)$")
 ALLERGENS = {"MILK", "SOYA", "ALMONDS", "NUTS", "NONE", "EGG", "EGGS", "PEANUTS", "FISH", "CELERY", "MUSTARD", "LUPIN",
              "SESAME", "SULPHITES", "SULPHUR", "DIOXIDE", "CRUSTACEANS", "MOLLUSCS", "HAZELNUTS", "COCONUT"}
@@ -33,10 +32,6 @@ DIET = {"Vegetarian", "Vegan", "DIETARY"}
 MILKS = [(r"semi(\s+skimmed)?(\s+milk)?", "semi-skimmed"), (r"skimmed(\s+milk)?", "skimmed"), (r"whole(\s+milk)?", "whole"),
          (r"soya", "soya"), (r"coconut", "coconut"), (r"oat", "oat"), (r"almond", "almond"), (r"black", "black")]
 MIN_FOOD, MIN_DRINKS = 60, 80
-
-
-def clean(s):
-    return re.sub(r"\s+", " ", s or "").strip()
 
 
 def norm(name):
@@ -200,7 +195,7 @@ def tidy_food_name(raw):
 
 
 # ---------- drinks ----------
-def drink_rows(page, pno, warnings):
+def drink_rows(page, pno):
     text = page.extract_text() or ""
     lines = [clean(x) for x in text.split("\n")]
     title_i = next(i for i, x in enumerate(lines) if "Beverage Nutritional & Allergen Information" in x)
@@ -295,16 +290,7 @@ def page_notices(pdf, drinks_pages):
 
 
 def newest_pdf(folder):
-    dated = []
-    for p in Path(folder).glob("*.pdf"):
-        with pdfplumber.open(p) as pdf:
-            dated.append((guide_info(pdf)["version"] or "0000-00-00", p.stat().st_mtime, p))
-    if not dated:
-        raise SystemExit(f"ERROR: no PDF found in {folder}")
-    dated.sort()
-    for v, _, p in dated:
-        print(f"  found {p.name} (version {v})")
-    return dated[-1][2]
+    return newest_by(folder, lambda pdf, p: guide_info(pdf)["version"])
 
 
 def build(folder, config):
@@ -322,7 +308,7 @@ def build(folder, config):
                 for row in gen:
                     food.append(row)
                     section = row[1]
-        drinks = [r for n, k in kinds.items() if k == "drinks" for r in drink_rows(pdf.pages[n - 1], n, warnings)]
+        drinks = [r for n, k in kinds.items() if k == "drinks" for r in drink_rows(pdf.pages[n - 1], n)]
         guide_notices = page_notices(pdf, [n for n, k in kinds.items() if k == "drinks"])
     if len(food) < MIN_FOOD or len(drinks) < MIN_DRINKS:
         raise SystemExit(f"ERROR: {pdf_path.name} doesn't look like Caffè Nero's guide ({len(food)} foods, {len(drinks)} drinks). Menu not updated.")
@@ -338,8 +324,7 @@ def build(folder, config):
             continue
         seen.add(key)
         item = {"name": name, "section": section, "sub": None, "pages": [pno]}
-        cereals = sorted({c.lower() for c in CEREAL.findall(ingredients)})
-        cereals = sorted({"oats" if c.startswith("oat") else ("wheat" if c.startswith("wheat") else c) for c in cereals})
+        cereals = sorted({cereal_code(c) for c in CEREAL.findall(ingredients)})
         if gf:
             notes.append("Caffè Nero calls this gluten free: it's marked GF in its guide.")
         elif re.search(r"gluten[\s-]*free", name, re.I):
@@ -347,7 +332,7 @@ def build(folder, config):
         if notes:
             item["info"] = " ".join(notes)
         if cereals:
-            avoid.append({**item, "gluten": [c.upper() for c in cereals], "reason": "The ingredients list " + " and ".join(cereals) + "."})
+            avoid.append({**item, "gluten": cereals, "reason": "The ingredients list " + " and ".join(cereal_word(c) for c in cereals) + "."})
         else:
             ok.append({**item, "order": "asis"})
 
@@ -426,17 +411,7 @@ def build(folder, config):
                 out["order"] = "swap"
         ok.append(out)
 
-    if info["version"]:
-        info["validUntil"] = (date.fromisoformat(info["version"]) + timedelta(days=int(config.get("recheckDays", 91)))).isoformat()
-    return {
-        "notices": guide_notices,
-        "source": pdf_path.name,
-        "guide": info,
-        "rule": "Caffè Nero: excludes food whose ingredients name wheat, rye, barley, oats, spelt, kamut, malt or gluten, "
-                "and drinks with a milk the guide lists with a gluten cereal (oat).",
-        "sections": list(dict.fromkeys(i["section"] for i in sorted(ok + avoid, key=lambda i: i["pages"][0]))),
-        "items": ok,
-        "avoid": avoid,
-        "warnings": warnings,
-        "stats": {"rows": len(food) + len(drinks), "items": len(ok), "avoid": len(avoid)},
-    }
+    return result(pdf_path.name, info,
+                  "Caffè Nero: excludes food whose ingredients name wheat, rye, barley, oats, spelt, kamut, malt or gluten, "
+                  "and drinks with a milk the guide lists with a gluten cereal (oat).", ok, avoid, warnings, guide_notices,
+                  rows=len(food) + len(drinks), sections=list(dict.fromkeys(i["section"] for i in sorted(ok + avoid, key=lambda i: i["pages"][0]))))

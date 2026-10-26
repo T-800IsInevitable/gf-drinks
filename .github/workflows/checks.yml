@@ -1,6 +1,6 @@
 name: Check pull request
 
-# The same build and checks as publishing, on every pull request, so problems
+# The same build and checks as publishing (.github/actions/build-check), on every pull request, so problems
 # show up before merging. Nothing is published from here. main requires this
 # check to pass, so it runs on every pull request (no paths-ignore: a skipped
 # required check would block merging). The guide watch starts it by hand
@@ -16,36 +16,10 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
+      - uses: ./.github/actions/build-check
         with:
-          python-version: "3.12"
-
-      - name: Install PDF reader and browser
-        run: |
-          pip install -r tools/requirements.txt -r tools/requirements-dev.txt
-          python -m playwright install --with-deps chromium webkit
-
-      - name: Download the menus that are live now
-        run: python tools/fetch_previous.py
-
-      - name: Build and check every restaurant's menu
-        run: |
-          set -o pipefail
-          { python -m unittest discover -s tests && python tools/build.py && python tools/check.py && python tools/snapshot.py; } | tee build.log
-          {
-            echo "## Menu build"
-            echo '```'
-            cat build.log
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Check the release number went up with any app code change
-        run: |
-          git fetch --depth=1 origin "${{ github.base_ref || 'main' }}"
-          python tools/check_release.py FETCH_HEAD
-
-      - name: Check the app at iPhone size, light and dark
-        run: python tools/ui_check.py
+          release-base: ${{ github.base_ref || 'main' }}

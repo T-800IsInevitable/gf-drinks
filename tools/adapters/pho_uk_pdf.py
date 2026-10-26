@@ -20,22 +20,16 @@ Pho is accredited by Coeliac UK, so its guide makes a gluten free claim; its
 own words are kept on the Warnings page (notices.py, "accreditation").
 """
 import re
-from datetime import date, timedelta
 from pathlib import Path
 
 import pdfplumber
 
 from . import notices
+from .common import CEREAL, MONTHS, cereal_code, cereal_word, clean, newest_by, result
 
 RED = (0.02, 1.0, 0.85, 0.06)
 PINK = (0.004, 0.21, 0.178, 0.013)
 MIN_ROWS = 100
-MONTHS = {m: i for i, m in enumerate(["January", "February", "March", "April", "May", "June", "July", "August",
-                                      "September", "October", "November", "December"], start=1)}
-
-
-def clean(s):
-    return re.sub(r"\s+", " ", s or "").strip()
 
 
 def close(a, b, tol=0.03):
@@ -83,7 +77,7 @@ def styled_words(page):
     return words
 
 
-def parse_page(page, pno, state, warnings):
+def parse_page(page, pno, state):
     words = styled_words(page)
     crust = next((w for w in words if w["text"] == "Crustacea"), None)
     egg = next((w for w in words if w["text"] == "Egg" and crust and abs(w["top"] - crust["top"]) < 3), None)
@@ -220,8 +214,9 @@ def classify(r, config, warnings):
                  if f["colour"] == r["star"] or r["star"] is True or f["colour"] is None]
     if info:
         item["info"] = " ".join(info).replace("..", ".")
-    cereals = sorted({c for c in r["labels"] if c in ("wheat", "barley", "rye", "oats", "oat", "spelt", "kamut", "gluten")})
-    gluten = [c.upper().rstrip("S") if c == "oats" else c.upper() for c in cereals] or ["GLUTEN"]
+    codes = sorted({cereal_code(c) for c in r["labels"] if CEREAL.fullmatch(c)})
+    cereals = [cereal_word(c) for c in codes]
+    gluten = codes or ["GLUTEN"]
     where = f"p.{r['page']} {r['name']}"
     if not r["marks"] and not r["labels"] and not r["pink"]:
         return "ok", {**item, "order": "asis"}
@@ -243,17 +238,7 @@ def classify(r, config, warnings):
 
 
 def newest_pdf(folder):
-    pdfs = sorted(folder.glob("*.pdf"), key=lambda p: p.stat().st_mtime)
-    if not pdfs:
-        raise SystemExit(f"ERROR: no PDF found in {folder}")
-    dated = []
-    for p in pdfs:
-        with pdfplumber.open(p) as pdf:
-            dated.append((guide_info(pdf)["version"] or "0000-00-00", p.stat().st_mtime, p))
-    dated.sort()
-    for v, _, p in dated:
-        print(f"  found {p.name} (version {v})")
-    return dated[-1][2]
+    return newest_by(folder, lambda pdf, p: guide_info(pdf)["version"])
 
 
 def build(folder, config):
@@ -265,7 +250,7 @@ def build(folder, config):
         state = {"section": "Menu", "sectionOriginal": None, "sub": None, "note": None}
         table = []
         for pno, page in enumerate(pdf.pages, start=1):
-            got = parse_page(page, pno, state, warnings)
+            got = parse_page(page, pno, state)
             if got:
                 table.append(pno)
                 rows += got
@@ -277,16 +262,6 @@ def build(folder, config):
         kind, item = classify(r, config, warnings)
         if kind != "note":
             (ok if kind == "ok" else avoid).append(item)
-    if info["version"]:
-        info["validUntil"] = (date.fromisoformat(info["version"]) + timedelta(days=int(config.get("recheckDays", 91)))).isoformat()
-    return {
-        "notices": guide_notices,
-        "source": pdf_path.name,
-        "guide": info,
-        "rule": "Pho: excludes anything with a mark or a cereal named in the guide's gluten column, unless the guide says the gluten can be removed.",
-        "sections": list(dict.fromkeys(i["section"] for i in ok + avoid)),
-        "items": ok,
-        "avoid": avoid,
-        "warnings": warnings,
-        "stats": {"rows": len(rows), "items": len(ok), "avoid": len(avoid)},
-    }
+    return result(pdf_path.name, info,
+                  "Pho: excludes anything with a mark or a cereal named in the guide's gluten column, unless the guide says the gluten can be removed.",
+                  ok, avoid, warnings, guide_notices, rows=len(rows))

@@ -32,6 +32,8 @@ recipe changes, nutrition notes) go in restaurant.json under "notices" as
 import csv
 from pathlib import Path
 
+from .common import result
+
 ORDERS = {"asis", "any", "except", "swap", "modify", "avoid", "doubt"}
 
 
@@ -86,16 +88,8 @@ def build(folder, config):
     if not items and not avoid:
         raise SystemExit(f"ERROR: {path} has no rows")
     guide = config.get("guide", {})
-    return {
-        "notices": [{"kind": n.get("kind", "other"), "label": n.get("label", "From the menu"), "text": n["text"],
-                     "pages": [n["page"]] if n.get("page") else [], "pagesTotal": 1 if n.get("page") else 0}
-                    for n in config.get("notices", [])],
-        "source": guide.get("source") or path.name,
-        "guide": {k: guide.get(k) for k in ("title", "runs", "version", "validUntil")},
-        "rule": config.get("rule") or "Checked by hand against the restaurant's allergen information.",
-        "sections": list(dict.fromkeys(i["section"] for i in items + avoid)),
-        "items": items,
-        "avoid": avoid,
-        "warnings": warnings,
-        "stats": {"rows": len(items) + len(avoid), "items": len(items), "avoid": len(avoid)},
-    }
+    notices = [{"kind": n.get("kind", "other"), "label": n.get("label", "From the menu"), "text": n["text"],
+                "pages": [n["page"]] if n.get("page") else [], "pagesTotal": 1 if n.get("page") else 0}
+               for n in config.get("notices", [])]
+    return result(guide.get("source") or path.name, {k: guide.get(k) for k in ("title", "runs", "version", "validUntil")},
+                  config.get("rule") or "Checked by hand against the restaurant's allergen information.", items, avoid, warnings, notices)
