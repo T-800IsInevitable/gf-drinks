@@ -10,7 +10,9 @@ For every restaurant page and the "All restaurants" page it checks:
 the same for each city page in cities.json (every place shown and opened), then
 it switches UK -> city (search, coeliac card, reload) -> UK; Berlin on a
 Sunday evening (open today, near me, saving); the staff card, German card and
-offline header; accessibility (Larger Text, 44pt taps, contrast, VoiceOver
+offline header; the tags under item names, even status buttons, the lighter header, Help in sections, the
+cross-contact-first warnings, the chooser's order and first-run welcome, the photo button, the folded Avoid
+list and amber used only for items needing a change (contrast in all five themes); accessibility (Larger Text, 44pt taps, contrast, VoiceOver
 labels); the first visit; search staying above the keyboard; and on one
 restaurant it taps through: opening an item, the Show staff card, a status
 button and saving a favourite.
@@ -233,7 +235,14 @@ def upload_checks(browser, base, engine):
     # two uploads in a row: the first starts the uploads branch from main, the second builds on it
     fake = FakeGitHub()
     ctx, page = session(fake)
+    page.locator("#upName").fill("Test Cafe")  # filled by hand to look at the previews before sending
+    page.locator("#upArea").fill("Berlin")
+    page.set_input_files("#upFiles", files=photo_and_pdf)
+    if page.locator("#upThumbs .thumb").count() != 2:
+        problems.append(f"{engine} upload: {page.locator('#upThumbs .thumb').count()} previews for 2 files")
     said = [upload(page), upload(page, "Second Cafe", photo_and_pdf[1:])]
+    if not page.locator("#upStatus.done").count() or page.locator("#upThumbs .thumb").count():
+        problems.append(f"{engine} upload: after sending, the status should say it's done and the previews should clear")
     folders = sorted({f.split("/")[1] for f in fake.files("uploads")})
     if not all(s.startswith("Uploaded") for s in said):
         problems.append(f"{engine} upload: {said}")
@@ -507,7 +516,7 @@ def main():
         page.goto(base + "#pho-uk")
         page.wait_for_selector("#list .row")
         page.locator("#q").fill("chicken")
-        row = page.locator("#list .row", has=page.locator(".nm", has_text=re.compile(r"^\s*Chicken\s*$"))).first  # six dishes are just "Chicken"
+        row = page.locator("#list .row").nth([r["name"] for r in page.evaluate(ROWS_JS)].index("Chicken"))  # six dishes are just "Chicken"
         row.locator("summary").click()
         row.locator(".staff-btn").click()
         page.wait_for_selector("#staff[open]")
@@ -799,7 +808,7 @@ def main():
             if in_city:
                 if not page.locator("#chips [data-card]").count():
                     problems.append(f"{where}: no coeliac card chip")
-                page.locator(".more summary").last.click()
+                page.locator(".city-intro .more summary").last.click()
                 if not page.locator("#cityTips").is_visible() or not page.locator("#cityTips > div").count():
                     problems.append(f"{where}: Before you go doesn't open to the tips")
                 continue
@@ -862,6 +871,282 @@ def main():
         if re.search(r"classified from ingredients|Notes from the last update", page.locator("#info").inner_text()):
             problems.append("Help still has the separate list of reading notes")
         print(f"how items were decided: {shown} items say so on the item and in the sheet; none left in Help")
+        ctx.close()
+
+        # U2 and U3: each tag is on its own line under the name and never wraps, and the three status buttons are one even row
+        tags_js = """(sel) => [...document.querySelectorAll(sel)].filter((t) => t.offsetParent).map((t) => {
+            const nm = t.closest('.nm'), r = t.getBoundingClientRect(), n = nm.getBoundingClientRect();
+            const lh = parseFloat(getComputedStyle(t).lineHeight) || 16;
+            return { text: t.textContent, lines: Math.round((r.height - 6) / lh), under: t.parentElement === nm && r.top >= n.top + 10, wide: r.right > n.right + 1 };
+        })"""
+        status_js = """() => [...document.querySelectorAll('#status button')].map((b) => {
+            const r = b.getBoundingClientRect(), d = b.querySelector('.dot').getBoundingClientRect(), c = b.querySelector('.cnt').getBoundingClientRect();
+            return { h: Math.round(r.height), dot: Math.round(d.top), cnt: Math.round(c.top) };
+        })"""
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+        page = ctx.new_page()
+        checked_tags = 0
+        for url in [""] + [f"#{rid}" for rid in ids]:
+            where = url[1:] or "all restaurants"
+            page.goto(base + url)
+            page.wait_for_selector("#list .row")
+            page.evaluate("document.getElementById('avoidWrap').open = true")  # the Avoid list is folded until wanted
+            for label, css in (("", None), (" in a wide font", '* { font-family: Verdana, "DejaVu Sans", sans-serif !important; }')):
+                style = page.add_style_tag(content=css) if css else None
+                page.wait_for_timeout(150)
+                found = page.evaluate(tags_js, "#list .tag, #avoid .tag")
+                checked_tags += len(found)
+                bad = [t for t in found if t["lines"] > 1 or not t["under"] or t["wide"]]
+                if bad:
+                    problems.append(f"{where}{label}: {len(bad)} tags wrap or aren't under the name, such as {bad[0]['text']!r}")
+                buttons = page.evaluate(status_js)
+                hs, dots, cnts = [b["h"] for b in buttons], {b["dot"] for b in buttons}, {b["cnt"] for b in buttons}
+                if len(buttons) != 3 or max(hs) - min(hs) > 1 or max(hs) > 64 or len(dots) > 1 or len(cnts) > 1:
+                    problems.append(f"{where}{label}: the status buttons aren't one even row (heights {hs}, dots at {sorted(dots)}, counts at {sorted(cnts)})")
+                if style:
+                    style.evaluate("el => el.remove()")
+        print(f"tags and status buttons: {checked_tags} tags each on one line under their name; status buttons even")
+        ctx.close()
+
+        # U4 and U5: on All an out-of-date guide is one line pointing to its page (the full banner stays there), and the
+        # header is lighter: the UK / Berlin switch is in the title row, the search box has the full width, share is in
+        # the chooser and refresh in Help beside when it last worked
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all'); Object.defineProperty(navigator, 'share', { value: undefined })")  # no share sheet: the link is copied
+        page = ctx.new_page()
+        page.goto(base)
+        page.wait_for_selector("#list .row")
+        stale_text = page.locator("#stale").inner_text() if page.locator("#stale").is_visible() else ""
+        wide_style = page.add_style_tag(content='* { font-family: Verdana, "DejaVu Sans", sans-serif !important; }')  # the test machine's fonts differ from the phone's
+        page.wait_for_timeout(150)
+        wide_height = page.locator("#stale").bounding_box()["height"] if page.locator("#stale").is_visible() else 0
+        wide_style.evaluate("el => el.remove()")
+        if not stale_text or max(page.locator("#stale").bounding_box()["height"], wide_height) > 70 or "may be out of date" not in stale_text:
+            problems.append(f"all restaurants: the out-of-date guides aren't one short line ({stale_text!r}, {wide_height:.0f}pt in a wide font)")
+        else:
+            page.locator("#stale [data-gotorest]").first.click()
+            page.wait_for_selector("#list .row")
+            if "It covered up to" not in page.locator("#stale").inner_text():
+                problems.append("the out-of-date line on All doesn't lead to the restaurant's full banner")
+        page.goto(base)
+        page.wait_for_selector("#list .row")
+        if page.locator("#shareBtn").is_visible() or page.locator("#refreshBtn").is_visible():
+            problems.append("the header still has share or refresh buttons")
+        if not page.locator(".titlebar #region").count():
+            problems.append("the UK / Berlin switch isn't in the title row")
+        search = page.locator(".search").bounding_box()
+        if search["width"] < IPHONE["viewport"]["width"] - 40:
+            problems.append(f"the search box is {search['width']:.0f}pt wide, not the full width")
+        page.locator("#pickBtn").click()
+        page.wait_for_selector("#picker[open]")
+        if not page.locator("#shareBtn").is_visible():
+            problems.append("the chooser has no Share button")
+        else:
+            page.locator("#shareBtn").click()
+            page.wait_for_selector("#toast:not([hidden])")  # no share sheet in the test browser: the link is copied or shown
+        page.keyboard.press("Escape")
+        page.locator("#infoBtn").click()
+        page.wait_for_selector("#info[open]")
+        page.locator("#info summary", has_text="Staying up to date").click()
+        page.locator("#refreshBtn").click()
+        page.wait_for_selector("#refreshBtn:not([disabled])")
+        if not page.locator("#lastChecked").inner_text().startswith("Last checked today at"):
+            problems.append(f"Help: after Check for new menus it says {page.locator('#lastChecked').inner_text()!r}")
+        print(f"header: switch in the title row, search {search['width']:.0f}pt wide; All's stale line one line; share in the chooser; refresh in Help")
+        ctx.close()
+
+        # U6: Help puts Warnings and Add a menu first, then the tags; the rest folds; the install steps go once it's on the Home Screen
+        for standalone in (False, True):
+            ctx = browser.new_context(color_scheme="light", **IPHONE)
+            ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+            if standalone:
+                ctx.add_init_script("Object.defineProperty(navigator, 'standalone', { get: () => true })")
+            page = ctx.new_page()
+            page.goto(base)
+            page.wait_for_selector("#list .row")
+            page.locator("#infoBtn").click()
+            page.wait_for_selector("#info[open]")
+            heads = page.locator("#info > form > h3").all_text_contents()
+            folds = page.locator("#info details.more > summary").all_text_contents()
+            if heads[:3] != ["Warnings", "Add a menu", "Reading the tags"] or len(folds) < 7:
+                problems.append(f"Help: sections are {heads} with folds {folds}")
+            if page.locator("#installHelp").is_visible() == standalone:
+                problems.append(f"Help: the install steps are {'shown' if standalone else 'missing'} when the app is {'on the Home Screen' if standalone else 'in the browser'}")
+            ctx.close()
+        print("help: warnings and add a menu first, the rest folded, install steps hidden on the Home Screen")
+
+        # U8: the guide's own warnings come cross-contact first, and every quote is still there word for word
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        page.goto(base + "#starbucks-uk")
+        page.wait_for_selector("#list .row")
+        page.locator("#openStrip:visible, #openWarnings:visible").first.click()
+        page.wait_for_selector("#warnings[open]")
+        labels = page.locator("#warnBody .w-label").all_text_contents()
+        sb = json.loads((SITE / "data" / "r" / "starbucks-uk.json").read_text(encoding="utf-8"))
+        sheet = norm_ws(page.locator("#warnBody").text_content())
+        if "Cross-contact" not in labels or "Other allergen updates" not in labels or labels.index("Cross-contact") > labels.index("Other allergen updates"):
+            problems.append(f"Starbucks warnings aren't cross-contact first: {labels}")
+        lost = [n["text"] for n in sb["notices"] if norm_ws(n["text"]) not in sheet]
+        if lost:
+            problems.append(f"Starbucks warnings lost or changed quotes: {lost[:2]}")
+        print(f"warnings order: {labels[:3]}; {len(sb['notices'])} quotes intact")
+        ctx.close()
+
+        # U9: the chooser lists the last used restaurant first, then those with favourites, then A to Z; guide dates are month and year
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-last-restaurant', 'pret-uk'); "
+                            "localStorage.setItem('gf-favourites', JSON.stringify(['starbucks-uk|S|N']))")
+        page = ctx.new_page()
+        page.goto(base)
+        page.wait_for_selector("#list .row")
+        page.locator("#pickBtn").click()
+        page.wait_for_selector("#picker[open]")
+        order = page.evaluate("[...document.querySelectorAll('#pickList [data-r]')].map((b) => b.dataset.r)")
+        names = {r["id"]: r["name"] for r in index["restaurants"]}
+        rest = sorted((i for i in ids if i not in ("pret-uk", "starbucks-uk")), key=lambda i: names[i])
+        if order != ["all", "pret-uk", "starbucks-uk"] + rest:
+            problems.append(f"chooser order is {order}, expected last used, then favourites, then A to Z")
+        lines = page.locator("#pickList .po-main span").all_text_contents()
+        if any(re.search(r"\b\d{1,2} [A-Z][a-z]{2} \d{4}\b", t) for t in lines):
+            problems.append(f"chooser: a guide date still has the day in it: {[t for t in lines if re.search(r'[0-9] [A-Z][a-z]{2} [0-9]{4}', t)]}")
+        if not any("Last used" in t for t in lines):
+            problems.append("chooser: the last used restaurant isn't marked")
+        print(f"chooser order: {order[:3]}, dates are month and year")
+        ctx.close()
+
+        # U10: Add a menu has one big photo button instead of the browser's file box, with a preview of each pick
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        page.goto(base + "#knoops-uk")
+        page.wait_for_selector("#list .row")
+        page.locator("#infoBtn").click()
+        page.locator("#openUpload").click()
+        page.wait_for_selector("#upload[open]")
+        btn = page.locator("#keySetup .photo-btn")
+        if not btn.is_visible() or btn.bounding_box()["height"] < 56 or "Take photos or choose a PDF" not in btn.inner_text():
+            problems.append("Add a menu: no big 'Take photos or choose a PDF' button")
+        if page.locator("#shareFiles").bounding_box()["width"] > 2:
+            problems.append("Add a menu: the browser's own file box still shows")
+        page.set_input_files("#shareFiles", files=[{"name": "page.png", "mimeType": "image/png", "buffer": PNG},
+                                                   {"name": "menu.pdf", "mimeType": "application/pdf", "buffer": b"%PDF-1.4"}])
+        if page.locator("#shareThumbs .thumb").count() != 2 or page.locator("#shareThumbs img").count() != 1 or "2 files chosen" not in page.locator("#shareThumbs").inner_text():
+            problems.append(f"Add a menu: the previews are {page.locator('#shareThumbs').inner_text()!r} with {page.locator('#shareThumbs .thumb').count()} thumbnails")
+        print("add a menu: photo button, 2 previews")
+        ctx.close()
+
+        # U11: the Avoid list is folded until it's wanted, and repeated names say which one is which
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+        page = ctx.new_page()
+        page.goto(base + "#blank-street-uk")
+        page.wait_for_selector("#list .row")
+        bs = json.loads((SITE / "data" / "r" / "blank-street-uk.json").read_text(encoding="utf-8"))
+        if page.locator("#avoidWrap").evaluate("el => el.open") or page.locator("#avoid .row").first.is_visible():
+            problems.append("Blank Street: the Avoid list is open before it's wanted")
+        if f"({len(bs['avoid'])})" not in page.locator("#avoidTitle").inner_text():
+            problems.append(f"Blank Street: the Avoid heading {page.locator('#avoidTitle').inner_text()!r} doesn't count {len(bs['avoid'])}")
+        page.locator("#avoidWrap > summary").click()
+        if not page.locator("#avoid .row").first.is_visible():
+            problems.append("Blank Street: tapping the Avoid heading doesn't open it")
+        small = [t for t in page.evaluate("[...document.querySelectorAll('#avoid .row')].filter((r) => r.querySelector('.nm').childNodes[0].textContent.trim() === 'Almond Croissant').map((r) => r.querySelector('.nm small')?.textContent || '')")]
+        if len(small) < 2 or len(set(small)) != len(small) or "" in small:
+            problems.append(f"Blank Street: repeated 'Almond Croissant' rows don't say which is which: {small}")
+        page.locator("#avoidWrap > summary").click()
+        page.locator("#q").fill("croissant")
+        if not page.locator("#avoid .row").first.is_visible():
+            problems.append("Blank Street: searching 'croissant' doesn't open the matches on the Avoid list")
+        page.locator("#q").fill("")
+        if page.locator("#avoidWrap").evaluate("el => el.open"):
+            problems.append("Blank Street: the Avoid list stays open after the search is cleared")
+        page.evaluate("window.scrollTo(0, 0)")
+        page.locator('#status [data-k="gluten"]').click()
+        if not page.locator("#avoid .row").first.is_visible():
+            problems.append("Blank Street: choosing the Avoid button doesn't open the Avoid list")
+        print(f"avoid list: folded, counts {len(bs['avoid'])}, opens on a tap, a search and the Avoid button; repeats say which: {small[:2]}")
+        ctx.close()
+
+        # U12: the first run's chooser says what the app is, what the colours mean and that nothing is certified,
+        # with Berlin still on the first screen; once left, it doesn't come back
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        page.goto(base)
+        page.wait_for_selector("#picker[open]")
+        welcome = norm_ws(page.locator("#pickWelcome").inner_text()) if page.locator("#pickWelcome").is_visible() else ""
+        if not all(w in welcome for w in ("Green", "Amber", "Red", "Nothing here is certified gluten free")):
+            problems.append(f"first run: the welcome is {welcome!r}")
+        for s in page.evaluate(WORDING_JS):
+            problems.append(f"first run welcome calls something gluten free in the app's own voice: {s!r}")
+        berlin = page.locator(f'#pickList [data-region="{cid}"]').bounding_box()
+        sheet_box = page.locator("#picker").bounding_box()
+        if berlin["y"] + berlin["height"] > min(sheet_box["y"] + sheet_box["height"], IPHONE["viewport"]["height"]):
+            problems.append(f"first run: Berlin sits at {berlin['y'] + berlin['height']:.0f}pt, below the first screen of the chooser")
+        page.locator(f"#pickList [data-r=\"{ids[0]}\"]").click()
+        page.wait_for_selector("#list .row")
+        page.locator("#pickBtn").click()
+        page.wait_for_selector("#picker[open]")
+        if page.locator("#pickWelcome").is_visible():
+            problems.append("the welcome shows again once a restaurant has been chosen")
+        print(f"first run: welcome says what green, amber and red mean; Berlin ends at {berlin['y'] + berlin['height']:.0f}pt")
+        ctx.close()
+
+        # U13: amber only for items that need a change; banners and notes are neutral. Contrast of the tags, buttons and
+        # notes is checked in all five themes
+        contrast_js = r"""(sel) => {
+            const rgba = (s) => s.match(/[\d.]+/g).map(Number);
+            const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; })
+                .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+            const bgOf = (el) => { for (let e = el; e; e = e.parentElement) { const c = getComputedStyle(e).backgroundColor, v = rgba(c); if (v.length < 4 || v[3] > 0.99) return v; } return [255, 255, 255]; };
+            let worst = 21, who = '';
+            for (const el of document.querySelectorAll(sel)) {
+                if (!el.offsetParent && el !== document.body) continue;
+                const bg = bgOf(el), fg = rgba(getComputedStyle(el).color), a = fg[3] ?? 1;
+                const mix = [0, 1, 2].map((i) => fg[i] * a + bg[i] * (1 - a));
+                const [hi, lo] = [lum(mix), lum(bg)].sort((x, y) => y - x);
+                const ratio = (hi + 0.05) / (lo + 0.05);
+                if (ratio < worst) { worst = ratio; who = el.tagName.toLowerCase() + '.' + el.className + ' ' + JSON.stringify(el.textContent.trim().slice(0, 24)); }
+            }
+            return { worst, who };
+        }"""
+        amber_js = """() => {
+            const probe = document.createElement('i'); probe.style.background = 'var(--swap-bg)'; document.body.appendChild(probe);
+            const swap = getComputedStyle(probe).backgroundColor; probe.remove();
+            return ['#stale', '#searchNote', '#openWarnings', '#openStrip'].filter((s) => getComputedStyle(document.querySelector(s)).backgroundColor === swap);
+        }"""
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        for theme in ("auto", "light", "dark", "pink-light", "pink-dark"):
+            looks = [("#starbucks-uk", ".tag, .pill-warn, .fav-btn, .certnote p, .status button, .detail, .more summary, .group-h small", True),
+                     ("#knoops-uk", ".stale, .stale a, .strip, .stale-line .link-btn", False),
+                     ("#blank-street-uk", ".tag", False)]
+            for url, sel, open_row in looks:
+                page.goto(base + url)
+                page.wait_for_selector("#list .row")
+                page.evaluate("(t) => (t === 'auto' ? document.documentElement.removeAttribute('data-theme') : document.documentElement.setAttribute('data-theme', t))", theme)
+                if open_row:
+                    page.locator("#list .row").first.locator("summary").click()
+                    page.locator("#list .row").first.locator(".fav-btn").click()  # also checks the saved look
+                    page.evaluate("document.getElementById('avoidWrap').open = true")
+                if url == "#starbucks-uk":
+                    page.locator("#q").fill("oat milk latte")
+                    page.wait_for_timeout(250)
+                    sel += ", .search-note, .t-bad"
+                got = page.evaluate(contrast_js, sel)
+                if got["worst"] < 4.5:
+                    problems.append(f"{theme} theme, {url[1:]}: contrast {got['worst']:.2f}:1 on {got['who']}")
+                amber = page.evaluate(amber_js)
+                if amber:
+                    problems.append(f"{theme} theme, {url[1:]}: {amber} are amber, which is for items that need a change")
+                page.evaluate("localStorage.clear()")
+        page.goto(base + f"#{cid}")
+        page.wait_for_selector("#cityList .row")
+        for theme in ("auto", "light", "dark", "pink-light", "pink-dark"):
+            page.evaluate("(t) => (t === 'auto' ? document.documentElement.removeAttribute('data-theme') : document.documentElement.setAttribute('data-theme', t))", theme)
+            got = page.evaluate(contrast_js, ".tag, .city-intro p, .more summary, .stale, .chg")
+            if got["worst"] < 4.5:
+                problems.append(f"{theme} theme, {cid}: contrast {got['worst']:.2f}:1 on {got['who']}")
+        print("contrast and amber: tags, buttons and notes in all five themes")
         ctx.close()
 
         # X5: a restaurant's own name at the start of a search in All restaurants narrows to it

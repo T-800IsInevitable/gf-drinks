@@ -76,6 +76,14 @@ def merge(parts):
 
 
 ROLES = {"part", "ingredient"}
+# words that really are written in capitals (brands and abbreviations); any other all-capitals word in a name is the guide's styling
+CAPS_WORDS = {"BBQ", "BLT", "IPA", "THIS", "UK", "USA", "PB", "KFC"}
+
+
+def tidy_name(name):
+    """'Americano (BLACK)' -> 'Americano (Black)'. Only item names: a quoted warning stays exactly as the guide wrote it.
+    Case alone changes, so the app still finds a saved favourite and the changes list still matches it (both ignore case)."""
+    return re.sub(r"\b[A-Z]{3,}\b", lambda m: m.group(0) if m.group(0) in CAPS_WORDS else m.group(0).capitalize(), name)
 
 
 def apply_config(data, config, rid):
@@ -100,6 +108,8 @@ def apply_config(data, config, rid):
             raise SystemExit(f"ERROR: {rid}/restaurant.json: roles {key!r} matches nothing in the guide. Check the guide, then update it.")
         for i in hits:
             i["role"] = role
+    for i in rows:  # after the settings above, which are matched against the guide's own spelling
+        i["name"] = tidy_name(i["name"])
     # the counts shown in the app are of things to order, so an ingredient listed on its own isn't one
     ingredients = sum(1 for i in data["items"] if i.get("role") == "ingredient")
     if ingredients:

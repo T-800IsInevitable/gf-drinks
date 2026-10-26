@@ -36,6 +36,7 @@ An iPhone home-screen web app (PWA) listing food and drinks with **no gluten ing
 
 ## Working conventions
 
+- Amber (`--swap`) means "this item needs a change": the Swap and Ask tags, and a Berlin place with a caution. Banners and notes are neutral (surface colour, a small ⓘ). Item tags sit under the name and mustn't wrap, and the status buttons stay one even row, in the phone's font and a wide one; `ui_check.py` measures both. Item names are tidied by `build.py` (`CAPS_WORDS` lists the real capitals), by case only, so a saved favourite still matches.
 - Accessibility (enforced by `ui_check.py`): font sizes in rem so iPhone Larger Text works, tap targets at least 44pt, text contrast at least 4.5:1 (no fading with opacity), VoiceOver-only words in a `.vh` span rather than `aria-label` on plain spans.
 - **British English, no em-dashes**, plain warm wording in anything user-facing (app text, README, PR descriptions).
 - Changes go through a branch and pull request, then merge once the check passes (`main` is protected); the publish workflow deploys from `main`.

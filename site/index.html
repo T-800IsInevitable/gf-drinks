@@ -35,24 +35,16 @@
       <span id="guideLine" class="guide">Loading…</span>
     </button>
     <div class="actions">
-      <button type="button" id="refreshBtn" class="icon-btn" aria-label="Check for new menus">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <button type="button" id="shareBtn" class="icon-btn" aria-label="Share">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
+      <div id="region" class="region" role="group" aria-label="Where"></div>
       <button type="button" id="infoBtn" class="icon-btn" aria-label="About and help">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v6M12 7.5v.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
       </button>
     </div>
   </div>
-  <div class="searchrow">
   <label class="search">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     <input id="q" type="search" placeholder="Search" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Search">
   </label>
-  <div id="region" class="region" role="group" aria-label="Where"></div>
-  </div>
   <nav id="chips" class="chips" aria-label="Filter"></nav>
   <div id="status" class="status" role="group" aria-label="Show items that are"></div>
 </header>
@@ -83,10 +75,11 @@
   <div id="cardLaunch" class="card-launch hide-searching" hidden></div>
   <div id="searchNote" class="search-note" role="status" hidden></div>
   <div id="list" class="list" aria-live="polite"></div>
-  <section id="avoidWrap" class="avoid">
-    <h2>Avoid: contains gluten or not suitable</h2>
+  <!-- Folded until it's wanted: opens by itself while searching, or when the Avoid button is chosen -->
+  <details id="avoidWrap" class="avoid">
+    <summary><h2 id="avoidTitle">Avoid: contains gluten or not suitable</h2></summary>
     <div id="avoid" class="list"></div>
-  </section>
+  </details>
   <footer class="foot">
     <p><b>Shared kitchens:</b> restaurants prepare food and drink where allergens are handled, so nothing is guaranteed free from gluten. If you're coeliac, tell the staff when you order.</p>
     <div id="sources"></div>
@@ -114,7 +107,14 @@
       <h2 id="pickerTitle">Where to eat</h2>
       <button class="link-btn" value="close">Done</button>
     </div>
+    <!-- First run only: what the app lists, what the colours mean, and that nothing in it is certified -->
+    <div id="pickWelcome" class="w-intro" hidden>
+      <p><b>Food and drinks with no gluten ingredients</b>, from each restaurant's own allergen guide, and how to order them.</p>
+      <p>Green: no gluten ingredients as listed. Amber: ask for a change when you order. Red: avoid it, because it contains gluten or isn't suitable.</p>
+      <p>Nothing here is certified gluten free. If you have coeliac disease, tell staff when you order.</p>
+    </div>
     <div id="pickList" class="pick-list"></div>
+    <p class="pick-share"><button type="button" id="shareBtn" class="link-btn">Share this app</button></p>
   </form>
 </dialog>
 
@@ -124,19 +124,13 @@
       <h2 id="infoTitle">About Twoo's Treat Temple</h2>
       <button class="link-btn" value="close">Done</button>
     </div>
-    <h3>Appearance</h3>
-    <div id="themes" class="themes" role="group" aria-label="Theme"></div>
-    <h3>Install on iPhone</h3>
-    <ol>
-      <li>Open this page in <b>Safari</b>.</li>
-      <li>Tap <b>•••</b> next to the address bar, then <b>Share</b>. (On older iPhones, tap <b>Share</b> directly.)</li>
-      <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
-      <li>Keep <b>Open as Web App</b> switched on, then tap <b>Add</b>. If it's off, you get a plain bookmark instead.</li>
-    </ol>
-    <p>It opens full screen and works without signal using the last menus it downloaded.</p>
-    <p id="storageState" class="muted" hidden></p>
-    <h3>Show or hide</h3>
-    <p>Everything shows until you choose. Tap the buttons under the search box to show only items with <b>No gluten ingredients</b> (as served, or with any milk except the ones named), items that <b>Need a change</b> (ask for a swap or a change), and items to <b>Avoid</b> (they contain gluten, or the restaurant says they aren't suitable because of how they're prepared).</p>
+    <!-- The things used most come first; the rest folds under its heading -->
+    <h3>Warnings</h3>
+    <p>Each restaurant's own allergen warnings, word for word, plus what its guide doesn't tell you.</p>
+    <p><button type="button" id="openWarnings2" class="pill-btn">Read the warnings</button></p>
+    <h3>Add a menu</h3>
+    <p id="uploadInfo">Send a restaurant's allergen menu (PDF or photos) to whoever shared this app, so they can add it. The app's owner can upload it straight to the app, where it's checked within a day and added once approved.</p>
+    <p><button type="button" id="openUpload" class="pill-btn">Add a menu</button></p>
     <h3>Reading the tags</h3>
     <ul class="legend">
       <li><span class="tag t-asis">No gluten ingredients</span> as served, no changes needed</li>
@@ -147,24 +141,51 @@
       <li><span class="tag t-bad">Not suitable</span> the restaurant says it isn't suitable for coeliacs because of how it's prepared</li>
       <li><span class="tag t-info">Ingredient</span> an ingredient the guide lists on its own, not something to order. Rows marked <b>Part of a dish</b> are the same for parts such as burger toppings. Neither has a staff card</li>
     </ul>
-    <h3>Favourites</h3>
-    <p>Open any item and tap <b>☆ Save</b>. Favourites stay on this phone. If a new guide puts a favourite on the Avoid list, or drops it, you'll see a warning at the top until you remove it.</p>
-    <h3>Show staff</h3>
-    <p>Open any item and tap <b>Show staff</b> for a large-print card with the item, how to order it, and that you have coeliac disease.</p>
-    <h3>Staying up to date</h3>
-    <p>The app checks for new menus each time you open it with signal. Tap <b>↻</b> to check now. When a restaurant's guide changes, a note shows what's new, what's gone and anything that now contains gluten, and changed items are marked in the list. If a guide has passed its end date, you'll see a warning.</p>
-    <h3>Warnings</h3>
-    <p>Each restaurant's own allergen warnings, word for word, plus what its guide doesn't tell you.</p>
-    <p><button type="button" id="openWarnings2" class="pill-btn">Read the warnings</button></p>
-    <h3>Berlin</h3>
-    <p>Tap <b>Berlin</b> beside the search box (or choose it from the title) for places in Berlin that are all gluten free, by their own word or the Berlin coeliac support groups', or that say they make gluten free food in a separate kitchen. Each tag says who makes that claim. Each row says whether it's open now (Berlin time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Still open today</b>, <b>Near me</b> and <b>★ Saved</b> narrow the list. The <b>German card</b> chip opens the coeliac card, and <b>About the tags</b> and <b>Before you go</b> open under the introduction. Tap <b>UK</b> to go back to the menus.</p>
-    <h3>Travelling</h3>
-    <p>Menus in other languages show each item in English with the original name underneath, so you can point to it when ordering. A coeliac card you can show staff is available in: <span id="cardLangs"></span>. Open it from the Berlin page, or from a restaurant whose menu is in that language.</p>
-    <h3>Add a menu</h3>
-    <p id="uploadInfo">Send a restaurant's allergen menu (PDF or photos) to whoever shared this app, so they can add it. The app's owner can upload it straight to the app, where it's checked within a day and added once approved.</p>
-    <p><button type="button" id="openUpload" class="pill-btn">Add a menu</button></p>
-    <h3>Menus in this app</h3>
-    <div id="infoSources"></div>
+    <details class="more">
+      <summary>Staying up to date</summary>
+      <p>The app checks for new menus each time you open it with signal. When a restaurant's guide changes, a note shows what's new, what's gone and anything that now contains gluten, and changed items are marked in the list. If a guide has passed its end date, you'll see a warning.</p>
+      <p><button type="button" id="refreshBtn" class="pill-btn">Check for new menus</button></p>
+      <p id="lastChecked" class="muted"></p>
+    </details>
+    <details class="more">
+      <summary>Show or hide</summary>
+      <p>Everything shows until you choose. Tap the buttons under the search box to show only items with <b>No gluten ingredients</b> (as served, or with any milk except the ones named), items that <b>Need a change</b> (ask for a swap or a change), and items to <b>Avoid</b> (they contain gluten, or the restaurant says they aren't suitable because of how they're prepared). The Avoid list under the menu opens when you search or choose Avoid.</p>
+    </details>
+    <details class="more">
+      <summary>Favourites</summary>
+      <p>Open any item and tap <b>☆ Save</b>. Favourites stay on this phone. If a new guide puts a favourite on the Avoid list, or drops it, you'll see a warning at the top until you remove it.</p>
+    </details>
+    <details class="more">
+      <summary>Show staff</summary>
+      <p>Open any item and tap <b>Show staff</b> for a large-print card with the item, how to order it, and that you have coeliac disease.</p>
+    </details>
+    <details class="more">
+      <summary>Berlin</summary>
+      <p>Tap <b>Berlin</b> next to the title (or choose it from the title) for places in Berlin that are all gluten free, by their own word or the Berlin coeliac support groups', or that say they make gluten free food in a separate kitchen. Each tag says who makes that claim. Each row says whether it's open now (Berlin time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Still open today</b>, <b>Near me</b> and <b>★ Saved</b> narrow the list. The <b>German card</b> chip opens the coeliac card, and <b>About the tags</b> and <b>Before you go</b> open under the introduction. Tap <b>UK</b> to go back to the menus.</p>
+    </details>
+    <details class="more">
+      <summary>Travelling</summary>
+      <p>Menus in other languages show each item in English with the original name underneath, so you can point to it when ordering. A coeliac card you can show staff is available in: <span id="cardLangs"></span>. Open it from the Berlin page, or from a restaurant whose menu is in that language.</p>
+    </details>
+    <details class="more">
+      <summary>Appearance</summary>
+      <div id="themes" class="themes" role="group" aria-label="Theme"></div>
+    </details>
+    <details class="more" id="installHelp">
+      <summary>Install on iPhone</summary>
+      <ol>
+        <li>Open this page in <b>Safari</b>.</li>
+        <li>Tap <b>•••</b> next to the address bar, then <b>Share</b>. (On older iPhones, tap <b>Share</b> directly.)</li>
+        <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
+        <li>Keep <b>Open as Web App</b> switched on, then tap <b>Add</b>. If it's off, you get a plain bookmark instead.</li>
+      </ol>
+      <p>It opens full screen and works without signal using the last menus it downloaded.</p>
+    </details>
+    <details class="more">
+      <summary>Menus in this app</summary>
+      <div id="infoSources"></div>
+    </details>
+    <p id="storageState" class="muted" hidden></p>
   </form>
 </dialog>
 
@@ -216,7 +237,11 @@
     </div>
     <div id="keySetup" hidden>
       <p>Take photos of the restaurant's allergen menu (or save its PDF), then send them to whoever shared this app with you. They'll add it.</p>
-      <label class="field">Photos or PDF<input id="shareFiles" type="file" accept="application/pdf,image/*" multiple></label>
+      <div class="field">Photos or PDF
+        <input id="shareFiles" class="file-in" type="file" accept="application/pdf,image/*" multiple>
+        <label for="shareFiles" class="photo-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Take photos or choose a PDF</span></label>
+        <div id="shareThumbs" class="thumbs"></div>
+      </div>
       <label class="field">Restaurant and city<input id="shareName" placeholder="e.g. Café Name, Berlin" autocomplete="off"></label>
       <p><button type="button" id="shareSend" class="pill-btn">Send…</button></p>
       <p id="shareStatus" class="muted" role="status"></p>
@@ -237,7 +262,11 @@
     <div id="uploadFields" hidden>
       <label class="field">Restaurant<input id="upName" required placeholder="e.g. Café Name" autocomplete="off"></label>
       <label class="field">City or country<input id="upArea" required placeholder="e.g. Berlin" autocomplete="off"></label>
-      <label class="field">Menu files<input id="upFiles" type="file" accept="application/pdf,image/*" multiple required></label>
+      <div class="field">Menu files
+        <input id="upFiles" class="file-in" type="file" accept="application/pdf,image/*" multiple required>
+        <label for="upFiles" class="photo-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Take photos or choose a PDF</span></label>
+        <div id="upThumbs" class="thumbs"></div>
+      </div>
       <p class="muted">PDF or photos of the allergen menu. You can pick several pages.</p>
       <label class="field">Notes (optional)<textarea id="upNotes" rows="2" placeholder="e.g. Only the lunch menu"></textarea></label>
       <p><button type="submit" id="upSend" class="pill-btn">Upload</button></p>

@@ -8,6 +8,9 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from build import CAPS_WORDS  # noqa: E402  (needs the path above)
+
 DATA = Path(__file__).resolve().parent.parent / "site" / "data"
 ORDERS = {"asis", "any", "except", "swap", "modify"}
 errors = []
@@ -69,6 +72,9 @@ for r in index["restaurants"]:
     for i in d["items"] + d["avoid"]:
         if i.get("role") not in (None, "part", "ingredient"):
             err(f"{rid}: {i['name']!r} has an unknown role {i['role']!r}")
+        shout = [w for w in re.findall(r"\b[A-Z]{3,}\b", i["name"]) if w not in CAPS_WORDS]
+        if shout:
+            err(f"{rid}: {i['name']!r} has {shout} in capitals; the build tidies these (tools/build.py CAPS_WORDS lists the real ones)")
         if "decided" in i and not (isinstance(i["decided"], str) and i["decided"].strip()):
             err(f"{rid}: {i['name']!r} has an empty note on how it was decided")
     # the folded first screen shows the headline instead of the tips, so a restaurant with tips needs one
