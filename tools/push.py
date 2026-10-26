@@ -83,6 +83,12 @@ def plan(previous=ROOT / ".previous", data=SITE / "data"):
     return msg
 
 
+def contact(repository):
+    """Who is sending, as push services ask: the app's own site. It must be a bare https address (no path) or a mailto:."""
+    owner = (repository or "T-800IsInevitable/gf-drinks").split("/")[0].lower()
+    return f"https://{owner}.github.io"
+
+
 def vapid_key(text):
     """The private key as the secret holds it: PEM text becomes a Vapid instance; a raw base64url value is passed as is."""
     text = (text or "").strip()
@@ -166,7 +172,7 @@ def main():
         if not subs or not key:
             print("push: no phones saved yet (set the PUSH_SUBSCRIPTIONS and VAPID_PRIVATE_KEY secrets), so nothing sent")
             return
-        claim = "https://github.com/" + os.environ.get("GITHUB_REPOSITORY", "T-800IsInevitable/gf-drinks")
+        claim = contact(os.environ.get("GITHUB_REPOSITORY", ""))
         lines = send(msg, subs, vapid_key(key), claim)
         print("\n".join(lines))
         summary = os.environ.get("GITHUB_STEP_SUMMARY")

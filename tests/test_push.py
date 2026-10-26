@@ -122,6 +122,15 @@ class Send(unittest.TestCase):
         self.assertEqual(calls[0][1], msg)
         self.assertEqual(calls[0][2], {"sub": "https://github.com/o/r"})
 
+    def test_the_contact_is_one_push_services_accept(self):
+        self.assertEqual(push.contact("T-800IsInevitable/gf-drinks"), "https://t-800isinevitable.github.io")
+        try:
+            from py_vapid import _check_sub
+        except ImportError:
+            self.skipTest("py_vapid not installed")
+        self.assertTrue(_check_sub(push.contact("T-800IsInevitable/gf-drinks")))
+        self.assertTrue(_check_sub(push.contact("")))
+
     def test_the_key_as_pem_or_raw(self):
         raw = "A" * 43
         self.assertEqual(push.vapid_key(raw + "\n"), raw)
