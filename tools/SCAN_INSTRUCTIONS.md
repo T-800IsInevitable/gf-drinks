@@ -4,7 +4,7 @@ You are processing menus uploaded to `inbox/` in this repository (T-800IsInevita
 
 ## 1. Check for work
 
-- List `inbox/`. Ignore `README.md`. If there are no upload folders, stop: report "Inbox empty" and do nothing else.
+- List `inbox/`. Ignore `README.md` and `.keep-alive` (a monthly marker file, not an upload). If there are no upload folders, stop: report "Inbox empty" and do nothing else.
 - Process each upload folder separately, one branch and one pull request per restaurant.
 - If a pull request for that upload is already open (search open PRs for the folder name), skip it.
 
