@@ -487,6 +487,160 @@
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/zeuss-pizza-pide",
         "status": "confirmed"
       }
+    ],
+    "footNotes": [
+      "That list also has places it says have some gluten free dishes. They're left out here because their kitchens also use gluten, unless they say they make gluten free food separately.",
+      "Unofficial guide. Not affiliated with any of these places or the DZG."
+    ]
+  },
+  "amsterdam": {
+    "name": "Amsterdam",
+    "language": "nl",
+    "timeZone": "Europe/Amsterdam",
+    "checked": "2026-10-26",
+    "recheckDays": 90,
+    "bounds": {
+      "lat": [
+        52.25,
+        52.45
+      ],
+      "lon": [
+        4.7,
+        5.1
+      ]
+    },
+    "list": {
+      "name": "Zorgeloos Glutenvrij restaurants in Noord-Holland",
+      "by": "the Dutch Coeliac Society (NCV)",
+      "url": "https://www.glutenvrij.nl/glutenvrije-restaurants-noord-holland"
+    },
+    "also": [
+      {
+        "name": "Gluten-free food in Amsterdam",
+        "by": "I amsterdam, the city's official guide",
+        "url": "https://www.iamsterdam.com/en/see-and-do/restaurant-and-bars/gluten-free-food-in-amsterdam"
+      }
+    ],
+    "footNotes": [
+      "The Dutch Coeliac Society's list also has places with its mark that serve some gluten free dishes, such as Hans im Glück on Rembrandtplein and some McDonald's branches. They're left out here because their kitchens also use gluten.",
+      "Other guides call Rose & Vanilla, Croque Madame and Wild & The Moon all gluten free, but their websites couldn't be checked, so they're left out until they can be.",
+      "Unofficial guide. Not affiliated with any of these places or the NCV."
+    ],
+    "tips": [
+      "Oats and wheat starch: Dutch food labelled glutenvrij can contain gluten free oats (haver) or gluten free wheat starch (tarwezetmeel). This app counts oats as gluten, so ask: Zit hier haver of tarwezetmeel in?",
+      "Chips: the Dutch Coeliac Society says chips are often fried in the same fryer as food with gluten, so ask whether there's a separate gluten free fryer.",
+      "McDonald's: the Dutch Coeliac Society says more than 200 McDonald's restaurants in the Netherlands sell its gluten free burgers, but not every branch does.",
+      "Before you go: these places close on some days and keep short hours. Check the website first."
+    ],
+    "sections": [
+      "Bakeries and cafés",
+      "Restaurants"
+    ],
+    "places": [
+      {
+        "name": "Craft Coffee & Pastry",
+        "section": "Bakeries and cafés",
+        "claim": "place-all",
+        "type": "Bakery and coffee",
+        "locations": [
+          {
+            "area": "De Pijp",
+            "address": "Gerard Doustraat 103A, 1073 VS Amsterdam",
+            "lat": 52.35615,
+            "lon": 4.89349,
+            "hours": [
+              "",
+              "",
+              "10:00–16:00",
+              "10:00–16:00",
+              "10:00–16:00",
+              "10:00–16:00",
+              ""
+            ]
+          }
+        ],
+        "url": "https://www.craft-amsterdam.nl/",
+        "says": {
+          "text": "Je vindt onze 100% glutenvrije bakkerijen midden in de gezellige Pijp in Amsterdam",
+          "lang": "nl",
+          "en": "You'll find our 100% gluten free bakeries in the middle of lively De Pijp in Amsterdam"
+        },
+        "notes": [
+          "It's on the Dutch Coeliac Society's list of places with its Zorgeloos Glutenvrij mark. The society says it checks them before they get the mark and then again, unannounced.",
+          "Its website says orders to collect are taken only through its webshop. Croissants, bread, cakes and coffee."
+        ],
+        "status": "confirmed"
+      },
+      {
+        "name": "De Glutenvrije Winkel",
+        "section": "Bakeries and cafés",
+        "claim": "place-all",
+        "type": "Shop and bakery",
+        "locations": [
+          {
+            "area": "Oost",
+            "address": "Pretoriusstraat 35, 1092 EZ Amsterdam",
+            "lat": 52.3557,
+            "lon": 4.92544,
+            "hours": [
+              "",
+              "09:00–15:00",
+              "09:00–15:00",
+              "",
+              "09:00–15:00",
+              "09:00–15:00",
+              ""
+            ]
+          }
+        ],
+        "url": "https://glutenvrijewinkelamsterdam.nl/",
+        "says": {
+          "text": "Ontdek onze collectie van heerlijke glutenvrije producten. Van vers gebakken brood tot zoete lekkernijen.",
+          "lang": "nl",
+          "en": "Discover our collection of delicious gluten free products, from freshly baked bread to sweet treats."
+        },
+        "notes": [
+          "Its name means The Gluten Free Shop; its website also calls it flour·ish. It isn't on the Dutch Coeliac Society's list."
+        ],
+        "status": "confirmed"
+      },
+      {
+        "name": "Bloem Eten & Drinken",
+        "section": "Restaurants",
+        "claim": "place-all",
+        "type": "Plant-based restaurant",
+        "locations": [
+          {
+            "area": "Centrum (Kadijken)",
+            "address": "Entrepotdok 36, 1018 AD Amsterdam",
+            "lat": 52.36885,
+            "lon": 4.91424,
+            "hours": [
+              "",
+              "17:00–23:00",
+              "17:00–23:00",
+              "17:00–23:00",
+              "09:30–23:00",
+              "09:30–23:00",
+              "09:30–23:00"
+            ],
+            "hoursNote": "Closed 31 December and 1 January."
+          }
+        ],
+        "url": "https://www.bloem36.nl/",
+        "says": {
+          "text": "Onze keuken is volledig plantaardig en glutenvrij.",
+          "lang": "nl",
+          "en": "Our kitchen is entirely plant based and gluten free."
+        },
+        "notes": [
+          "It's on the Dutch Coeliac Society's list of places with its Zorgeloos Glutenvrij mark. The society says it checks them before they get the mark and then again, unannounced.",
+          "Book by phone (020 3300929) or by email (bloem36@gmail.com)."
+        ],
+        "caution": "Its menu says it uses certified gluten free oats (haver). Ask which dishes have oats and leave them out.",
+        "flag": "Has oats: ask",
+        "status": "confirmed"
+      }
     ]
   }
 }

@@ -27,6 +27,7 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 - **Menus in other languages** show each item in English with the original name underneath, so you can point to it when ordering. Searching works in either language.
 - **Coeliac card:** a set of phrases to show staff (currently German), with a list of words to look for on menus. Works offline.
 - **Berlin:** tap **Berlin** beside the search box (or choose it from the title) to switch from the UK menus to places in Berlin that are all gluten free, by their own word or the Berlin coeliac support groups' (plus one pizzeria with a separate gluten free kitchen). Each place's tag says who makes the claim, and its row shows any warning, such as oats. Each place shows its own words with an English translation, the Berlin coeliac support groups' description, the app's notes (for example where oats are used), its addresses with a map link, and its opening hours. Rows say whether each place is open now, opens later or is closed (Berlin time). **Still open today** shows places open now or opening later today, **Near me** sorts by distance from your phone, and **☆ Save** keeps places under **★ Saved**. Tap **UK** to go back. Links work too: `…/gf-drinks/#berlin`.
+- **Amsterdam:** the same for Amsterdam, from the Dutch Coeliac Society's list of places with its Zorgeloos Glutenvrij mark and the city's official guide, each checked against the place's own website, with a Dutch coeliac card. Places with the society's mark that serve only some gluten free dishes (Hans im Glück, some McDonald's) are left out, and named on the page. Links: `…/gf-drinks/#amsterdam`.
 - **Updates:** when the app comes back to the screen it checks for a new release as well as new menus. If nothing is open it reloads itself (back where you were); if you're reading an item or a sheet, it shows **Updated. Tap to reload**. Help shows the app version, and **Copy details for the owner** copies it with the menu date, the phone's browser and the last 20 errors the app noticed. They're kept on the phone only, with no tracking and no outside service, and go nowhere unless you paste them into a message.
 - **Install:** in Safari, tap **•••** (or **Share** on older iPhones), then **Add to Home Screen**, and keep **Open as Web App** switched on (otherwise you get a bookmark). It works without signal using the last menus it downloaded. It opens at once even on a weak signal: the app and the menus saved on the phone show straight away, and newer menus replace them when they arrive (**Menus updated**). Menus that haven't changed aren't downloaded again.
 
@@ -45,6 +46,14 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 **Blank Street:** upload the new UK allergen guide PDF (linked from blankstreet.com) to `restaurants/blank-street-uk/guides/`. The guide has no date in it, so keep the season in the file name (for example `...Autumn26.pdf`); the PDF's creation date is used as the version.
 
 **Parts of dishes, ingredients and names that could be mixed up:** some guides list parts of dishes (Five Guys' meat and toppings) or ingredients on their own (Blank Street's milks and syrups). In `restaurant.json`, `roles` marks them as `part` or `ingredient`, by section or by `"Section|Name"` for one row. Neither gets a staff card; parts say **Part of a dish**, and ingredients get a grey **Ingredient** tag and aren't counted under the status buttons. `rename` gives a row a clearer name, such as `"Meat|Hot Dog": "Hot dog sausage"`, so a part can't be taken for the dish of the same name. The build stops if either matches nothing in a new guide, and the checks stop it if one name is on both the list and the Avoid list.
+
+**Greggs:** upload the new allergen guide PDF (linked as the allergen guide on greggs.com/nutrition) to `restaurants/greggs-uk/guides/`. Its version date on the cover is used; the app asks for a re-check 61 days later. The guide watch finds new ones by itself.
+
+**Caffè Nero:** upload the new GB "Allergen, Nutritional & Ingredient Guide" PDF (linked from the menu pages on caffenero.com) to `restaurants/caffe-nero-uk/guides/`. The "Issued" date is used.
+
+**PizzaExpress:** upload the new "Allergen Information, England, Scotland, Wales and Jersey" PDF (pizzaexpress.com/allergens-and-nutritionals) to `restaurants/pizza-express-uk/guides/`. The month and version on its cover are used. The ingredients list and the other regions' guides are ignored if they land there too.
+
+**Nando's:** Nando's has no guide file, only a page per dish. Run `python tools/fetch_nandos.py` (about four minutes; it reads the dishes in Nando's sitemap one at a time) and open a pull request with the new `restaurants/nandos-uk/guides/nandos-allergens-<date>.json`. The app asks for a new one 61 days after the last.
 
 **Restaurants kept by hand (Knoops):** edit that restaurant's `menu.csv` and update the dates in its `restaurant.json`. When you look for a newer guide and there isn't one, record it in `latestGuide` (`checked` date and a `note`); the out-of-date banner shows it. Knoops' newest guide is from March 2024, so the app shows it as possibly out of date until a newer one appears.
 
@@ -148,7 +157,8 @@ python -m http.server -d site 8000               # open http://localhost:8000
 - `inbox/` on the `uploads` branch: uploads waiting to be scanned
 - `.github/workflows/keep-alive.yml`: keeps the scheduled workflows switched on
 - `site/phrases.json`: gluten free card phrases (add a language here)
-- `site/cities.json`: hand-checked places in other cities (Berlin)
+- `site/cities.json`: hand-checked places in other cities (Berlin, Amsterdam)
+- `tools/fetch_nandos.py`: saves Nando's allergen pages as a snapshot for its reader
 - `site/`: the app (HTML, CSS, JavaScript, offline support, icons)
 
 Unofficial. Not affiliated with any restaurant.

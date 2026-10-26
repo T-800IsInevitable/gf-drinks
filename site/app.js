@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 22;
+  const APP_VERSION = 23;
   document.documentElement.dataset.version = APP_VERSION;
   const DATA_KEY = "gf-data-v2";
   const SEL_KEY = "gf-selected";
@@ -897,16 +897,17 @@
       [n("place-all") && n("place-all") + " say so themselves", n("list-all") && n("list-all") + " are listed as all gluten free by the support groups but don't say so on their own websites",
         n("place-part") && n("place-part") + " says only part of its range is", n("separate") && n("separate") + " says it makes gluten free food in a separate kitchen"]
         .filter(Boolean).join("; ") + ". That's their claim, not the app's. They come from the list kept by " + esc(c.list.by) +
+      (c.also || []).map((a) => " and " + esc(a.by)).join("") +
       ", checked against each place's own website on " + esc(fmtDate(c.checked)) + ". Nobody from this app has seen their kitchens, so tell staff you have coeliac disease.";
     $("cityStale").hidden = !cityStale(c);
     $("cityStale").innerHTML = cityStale(c) ? "<p><b>This list may be out of date.</b> It was checked on " + esc(fmtDate(c.checked)) +
       ". Places open, close and change, so check before you go.</p>" : "";
     $("cityTipsLabel").textContent = "Before you go (" + c.tips.length + ")";
     $("cityTips").innerHTML = tipsHtml(c.tips);
-    $("cityFoot").innerHTML = '<p><b>Sources:</b> <a href="' + esc(c.list.url) + '" target="_blank" rel="noopener">' + esc(c.list.name) + "</a>, kept by " +
-      esc(c.list.by) + ", and each place's own website. Checked " + esc(fmtDate(c.checked)) + ".</p>" +
-      "<p>That list also has places it says have some gluten free dishes. They're left out here because their kitchens also use gluten, unless they say they make gluten free food separately.</p>" +
-      "<p>Unofficial guide. Not affiliated with any of these places or the DZG.</p>";
+    const source = (a) => '<a href="' + esc(a.url) + '" target="_blank" rel="noopener" data-quote>' + esc(a.name) + "</a>, kept by " + esc(a.by);
+    $("cityFoot").innerHTML = "<p><b>Sources:</b> " + [c.list, ...(c.also || [])].map(source).join("; ") +
+      "; and each place's own website. Checked " + esc(fmtDate(c.checked)) + ".</p>" +
+      (c.footNotes || []).map((n) => "<p>" + esc(n) + "</p>").join("");
     renderCityList();
   }
   // Who says it's gluten free: the place itself, only the support groups' list, or the place for part of its range

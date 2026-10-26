@@ -796,6 +796,8 @@ def main():
             where = url[1:] or "all restaurants"
             in_city = url[1:] in cities
             page.goto(base + url)
+            if in_city:
+                page.reload()  # a hash change keeps the last city's folds open
             page.wait_for_selector("#cityList .row" if in_city else "#list .row")
             if not in_city:
                 if not page.locator("#certNote").is_visible() or page.locator("#openStrip").is_visible():
@@ -812,7 +814,8 @@ def main():
             mw = page.evaluate(FIRST_SCREEN_JS, "#cityList" if in_city else "#list")
             wide.evaluate("el => el.remove()")
             for label, mm in (("", m), (" in a wide font", mw)):
-                if mm["top"] > half + mm["stale"] or mm["rows"] < 4:
+                want = min(4, len(cities[url[1:]]["places"])) if in_city else 4  # a city may list fewer places
+                if mm["top"] > half + mm["stale"] or mm["rows"] < want:
                     problems.append(f"{where}{label}: the menu starts at {mm['top']}pt with {mm['rows']} items on the first screen "
                                     f"(wanted the top half, {half:.0f}pt{' plus the out-of-date banner' if mm['stale'] else ''}, and 4 or more)")
             found |= set(page.evaluate(WORDING_JS))
@@ -1607,13 +1610,15 @@ def main():
         ix = json.loads((tmp / "data" / "restaurants.json").read_text(encoding="utf-8"))
         ix["built"] = "2099-01-01T00:00:00Z"
         (tmp / "data" / "restaurants.json").write_text(json.dumps(ix, ensure_ascii=False), encoding="utf-8")
-        lag["s"] = 2.5
+        # 1.2s a file: slower than the app may take to appear, but every menu still answers within the 4s wait,
+        # even though the browser fetches only six at a time
+        lag["s"] = 1.2
         t0 = time.monotonic()
         page.reload(wait_until="commit")
         page.wait_for_selector("#list .row", timeout=15000)
         shown = time.monotonic() - t0
-        if shown > 1.5:
-            problems.append(f"weak signal: the app took {shown:.1f}s to appear, waiting on a network that takes 2.5s")
+        if shown > 0.8:
+            problems.append(f"weak signal: the app took {shown:.1f}s to appear, waiting on a network that takes 1.2s")
         try:
             page.locator("#toast", has_text="Menus updated").wait_for(state="visible", timeout=15000)
         except Exception:
@@ -1633,7 +1638,7 @@ def main():
         if shown2 > 1.5 or "offline" not in line.lower():
             problems.append(f"very weak signal: the app took {shown2:.1f}s to appear and the header says {line!r}")
         lag["s"] = 0
-        print(f"weak signal: unchanged menus answered {sorted(set(codes))}; on screen in {shown:.1f}s with a 2.5s network, then "
+        print(f"weak signal: unchanged menus answered {sorted(set(codes))}; on screen in {shown:.1f}s with a 1.2s network, then "
               f"'Menus updated'; in {shown2:.1f}s with a 6s one, then {line!r}")
         ctx.close()
         httpd3.shutdown()

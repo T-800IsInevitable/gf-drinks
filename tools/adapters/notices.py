@@ -10,7 +10,7 @@ from difflib import SequenceMatcher
 
 KINDS = [
     # a guide's own gluten free claim (e.g. Coeliac UK accreditation); the app shows it word for word
-    ("accreditation", r"coeliac uk|accredited|20 ?ppm|parts per million"),
+    ("accreditation", r"coeliac uk|accredited|20 ?ppm|parts per million|20 ?mg/kg"),
     ("update", r"allergen update|now contains"),
     ("delivery", r"deliver|courier"),
     ("diet", r"vegan|not suitable for those"),

@@ -91,6 +91,12 @@ class FindingLinks(unittest.TestCase):
         self.assertEqual(got, ["https://www.starbucks.co.uk/files/2026-10/AUT%2026_UK_AllergenBook_CORE_FOOD_v04.pdf",
                                "https://cdn.example.com/x/AUT_26_UK_AllergenBook_CORE_BEVERAGE_v04.pdf?v=1&b=2"])
 
+    def test_links_written_in_a_script(self):
+        page = ('<script>self.__next_f.push([1,"{\\"file\\":\\"https://content-cdn.pizzaexpress.com/files/x/production/'
+                'c93d88db.pdf\\",\\"other\\":\\"https://example.com/logo.png\\"}"])</script>')
+        self.assertEqual(w.guide_links(page, "https://www.pizzaexpress.com/allergens-and-nutritionals", r"content-cdn\.pizzaexpress\.com"),
+                         ["https://content-cdn.pizzaexpress.com/files/x/production/c93d88db.pdf"])
+
     def test_file_name(self):
         self.assertEqual(w.file_name("https://x.example/f/AUT%2026_UK_AllergenBook_CORE_FOOD_v04.pdf?v=3"),
                          "AUT_26_UK_AllergenBook_CORE_FOOD_v04.pdf")

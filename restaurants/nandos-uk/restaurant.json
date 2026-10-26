@@ -1,0 +1,22 @@
+{
+  "name": "Nando's",
+  "type": "Chicken restaurant",
+  "covers": "Dishes, sides, sauces and drinks in UK Nando's restaurants",
+  "area": "UK",
+  "language": "en",
+  "reader": "nandos_uk_json",
+  "optionLabel": "option",
+  "officialUrl": "https://www.nandos.co.uk/allergens",
+  "recheckDays": 61,
+  "headline": "Chicken and the PERi-PERi bastes list no gluten.",
+  "tips": [
+    "Chicken and the PERi-PERi bastes list no gluten. Pittas, wraps, buns and some sides do, so have the chicken on its own or with a side listed here.",
+    "Tell the manager on duty: Nando's says to speak to them about an allergy so extra precautions can be taken.",
+    "Beers contain barley, so they're on the Avoid list here."
+  ],
+  "gaps": [
+    "Nando's publishes its allergens as a page per dish, not as a guide; this app reads a copy taken on the date shown, so check the dish page or ask if it might have changed.",
+    "Nando's says it handles many allergens in its kitchens and can't guarantee any dish is allergen free.",
+    "The dish pages list allergens by recipe. They don't say how food is cooked, such as shared grills or fryers."
+  ]
+}
