@@ -116,7 +116,11 @@
         "caution": "Its shop sells an oat biscuit (Haferkeks). Ask which items contain oats.",
         "flag": "Has oats: ask",
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/aera-mitte",
-        "status": "confirmed"
+        "status": "confirmed",
+        "notes": [
+          "Its website lists both shops but not their opening hours."
+        ],
+        "checked": "2026-10-26"
       },
       {
         "name": "PURE NOGLUTEN",
@@ -156,21 +160,38 @@
       {
         "name": "Jute Bäckerei",
         "section": "Bakeries and cafés",
-        "claim": "list-all",
+        "claim": "place-all",
         "type": "Bakery and café",
         "locations": [
           {
             "area": "Prenzlauer Berg",
             "address": "Schönhauser Allee 52A, 10437 Berlin",
             "lat": 52.543,
-            "lon": 13.41265
+            "lon": 13.41265,
+            "hours": [
+              "",
+              "08:30–19:00",
+              "08:30–19:00",
+              "08:30–19:00",
+              "08:30–19:00",
+              "08:30–19:00",
+              "10:00–15:00"
+            ],
+            "hoursNote": "Open on public holidays unless it says otherwise"
           }
         ],
         "url": "https://www.jute-bäckerei.de/",
         "listed": "Bakes only gluten free: bread, rolls, baguettes and sweet baked goods. Also sold at some Bio Company organic shops.",
+        "says": {
+          "text": "Mit unserem Geschäft eröffnete 2014 eine rein glutenfreie Bäckerei, in der wir alles frisch herstellen.",
+          "lang": "de",
+          "en": "Our shop opened in 2014 as an entirely gluten free bakery, where we make everything fresh."
+        },
+        "caution": "Its breakfast menu offers oat milk (\"Hafer (glutenfrei)\"), porridge and muesli. Ask which items contain oats.",
+        "flag": "Has oats: ask",
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/jute-baeckerei",
-        "status": "unconfirmed",
-        "statusNote": "Its website didn't load when this list was checked, so it may have closed or changed."
+        "status": "confirmed",
+        "checked": "2026-10-26"
       },
       {
         "name": "Café Prana",
@@ -225,7 +246,8 @@
         "flag": "Has oats: ask",
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/easypeasy",
         "status": "unconfirmed",
-        "statusNote": "Its website blocked the app's check, so its opening times weren't confirmed."
+        "statusNote": "Its website blocked the app's check again, so its opening times weren't confirmed.",
+        "checked": "2026-10-26"
       },
       {
         "name": "Café Velicious",
@@ -278,7 +300,8 @@
         "listed": "Bakes only gluten free: cakes, tarts, ice cream, sandwiches and some soups. The owner has coeliac disease.",
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/prettyhill",
         "status": "unconfirmed",
-        "statusNote": "It has no website, only Instagram, so its opening times weren't confirmed."
+        "statusNote": "It has no website, only Instagram, so its opening times weren't confirmed.",
+        "checked": "2026-10-26"
       },
       {
         "name": "Sinless Cakes",
@@ -432,15 +455,15 @@
             "lat": 52.51632,
             "lon": 13.46488,
             "hours": [
-              null,
-              null,
+              "",
+              "",
               "18:00–23:00",
               "18:00–23:00",
               "18:00–23:00",
               "12:00–23:00",
               "12:00–21:00"
             ],
-            "hoursNote": "Its website lists no hours for Monday or Tuesday."
+            "hoursNote": "Its website lists opening times for Wednesday to Sunday only, so Monday and Tuesday show as closed"
           }
         ],
         "url": "https://tapiocaria.de/",
@@ -451,7 +474,8 @@
           "Book through its website."
         ],
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/tapiocaria",
-        "status": "confirmed"
+        "status": "confirmed",
+        "checked": "2026-10-26"
       },
       {
         "name": "Zeus Pizzeria",

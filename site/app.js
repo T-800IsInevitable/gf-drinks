@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 23;
+  const APP_VERSION = 24;
   document.documentElement.dataset.version = APP_VERSION;
   const DATA_KEY = "gf-data-v2";
   const SEL_KEY = "gf-selected";
@@ -984,7 +984,7 @@
     out.push('<ul class="locs">' + p.locations.map((l) => '<li><a href="' + esc(mapLink(p, l)) + '" target="_blank" rel="noopener">' + esc(l.address) + "</a>" +
       "<span>" + esc([l.area, l.note].filter(Boolean).join(" · ")) + "</span>" +
       "<span>" + (l.hours ? "<b>Hours:</b> " + esc(weekText(l.hours)) + (l.kitchenCloses ? ". Kitchen closes at " + esc(l.kitchenCloses) : "") +
-        (l.hoursNote ? ". " + esc(l.hoursNote) : "") + " (from its website, " + esc(fmtDate(c.checked)) + ")"
+        (l.hoursNote ? ". " + esc(l.hoursNote) : "") + " (from its website, " + esc(fmtDate(p.checked || c.checked)) + ")"
         : "<b>Hours not known.</b> Check its website before going.") + "</span></li>").join("") + "</ul>");
     out.push('<div class="detail-more"><button type="button" class="link-btn" data-wrong-place="' + esc(p.name) + '">Something wrong?</button></div>');
     out.push('<div class="place-links"><a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + (/instagram\.com/.test(p.url) ? "Instagram" : "Website") + "</a>" +

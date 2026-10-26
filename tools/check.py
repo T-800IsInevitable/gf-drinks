@@ -116,6 +116,9 @@ for cid, c in cities.items():
             err(f"{where}: quote isn't in English and has no translation")
         if p.get("status") not in ("confirmed", "unconfirmed") or (p.get("status") == "unconfirmed" and not p.get("statusNote")):
             err(f"{where}: status must be confirmed, or unconfirmed with a statusNote")
+        # a place re-checked on its own carries its own date, never earlier than the city's
+        if "checked" in p and (not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(p["checked"])) or p["checked"] < c.get("checked", "")):
+            err(f"{where}: checked {p['checked']!r} isn't a date on or after the city's {c.get('checked')}")
         if not p.get("locations") or any(not l.get("address") or not l.get("area") for l in p["locations"]):
             err(f"{where}: every location needs an address and area")
         for l in p.get("locations", []):
