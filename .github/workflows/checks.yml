@@ -3,9 +3,12 @@ name: Check pull request
 # The same build and checks as publishing, on every pull request, so problems
 # show up before merging. Nothing is published from here. main requires this
 # check to pass, so it runs on every pull request (no paths-ignore: a skipped
-# required check would block merging).
+# required check would block merging). The guide watch starts it by hand
+# (workflow_dispatch) on the pull requests it opens, because a pull request
+# opened with the workflow's own token doesn't start it.
 on:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -41,7 +44,7 @@ jobs:
 
       - name: Check the release number went up with any app code change
         run: |
-          git fetch --depth=1 origin "${{ github.base_ref }}"
+          git fetch --depth=1 origin "${{ github.base_ref || 'main' }}"
           python tools/check_release.py FETCH_HEAD
 
       - name: Check the app at iPhone size, light and dark

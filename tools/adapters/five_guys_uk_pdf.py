@@ -176,17 +176,21 @@ def parse(pdf_path):
     return rows_out, ing, version, guide_notices, warnings
 
 
-def build(folder, config):
-    pdfs = sorted(Path(folder, "guides").glob("*.pdf"))
+def newest_pdf(folder):
+    pdfs = sorted(Path(folder).glob("*.pdf"))
     if not pdfs:
-        raise SystemExit(f"ERROR: no PDF in {folder}/guides")
+        raise SystemExit(f"ERROR: no PDF in {folder}")
     # newest by the date in the guide (FGUK_YYYYMMDD), else by file name
     dated = []
     for p in pdfs:
         with pdfplumber.open(p) as pdf:
             m = re.search(r"FGUK_(\d{8})", pdf.pages[0].extract_text() or "")
         dated.append((m.group(1) if m else "", p.name, p))
-    pdf_path = sorted(dated)[-1][2]
+    return sorted(dated)[-1][2]
+
+
+def build(folder, config):
+    pdf_path = newest_pdf(Path(folder, "guides"))
     print(f"  building from {pdf_path.name}")
     rows, ing, version, guide_notices, warnings = parse(pdf_path)
     stars_note = {1: "Available at participating locations only.", 2: "Available in non-halal stores only.",

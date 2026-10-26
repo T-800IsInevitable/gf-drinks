@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 20;
+  const APP_VERSION = 21;
   document.documentElement.dataset.version = APP_VERSION;
   const DATA_KEY = "gf-data-v2";
   const SEL_KEY = "gf-selected";
@@ -1110,7 +1110,7 @@
   let phrases = {};
   async function loadPhrases() {
     try {
-      const res = await fetch("phrases.json", { cache: "no-store" });
+      const res = await fetch("phrases.json", { cache: "no-cache" });
       if (res.ok) phrases = await res.json();
     } catch (e) { /* offline and never cached: no card */ }
     $("cardLangs").textContent = Object.values(phrases).map((p) => p.language).join(", ") || "none yet";
@@ -1119,7 +1119,7 @@
   }
   async function loadCities() {
     try {
-      const res = await fetch("cities.json", { cache: "no-store" });
+      const res = await fetch("cities.json", { cache: "no-cache" });
       if (res.ok) cities = await res.json();
     } catch (e) { /* offline and never cached: UK menus only */ }
     if (region !== UK && !cities[region]) { // not a city (or the list couldn't load): back to the menus
@@ -1611,11 +1611,12 @@
 
   // ---------- loading ----------
   async function getJSON(url) {
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetch(url, { cache: "no-cache" });
     if (!res.ok) throw new Error(url + " " + res.status);
     return { json: await res.json(), offline: res.headers.get("X-GF-Offline") === "1" };
   }
 
+  const menusOf = (d) => JSON.stringify(d.restaurants.map(({ built, ...r }) => r));
   async function load(manual) {
     if (manual) checkForUpdate();
     const btn = $("refreshBtn");
@@ -1628,18 +1629,19 @@
       if (!offline) { store.set(CHECKED_KEY, new Date().toISOString()); renderLastChecked(); }
       const fresh = { built: idx.json.built, restaurants: full.map((f) => f.json) };
       const prev = data;
-      const changed = !prev || prev.built !== fresh.built;
+      // every release rebuilds the menus, so compare what they say, not when they were built
+      const changed = !prev || menusOf(prev) !== menusOf(fresh);
       const wasOffline = offlineNow;
       offlineNow = offline;
-      if (changed || wasOffline !== offlineNow) {
-        if (changed) {
-          if (!prev && firstVisit && !store.get(SEEN_KEY)) store.set(SEEN_KEY, JSON.stringify(fresh.restaurants.map((r) => r.id + "@" + r.source)));
-          data = fresh;
-          store.set(DATA_KEY, JSON.stringify(fresh));
-          setLooked(fresh.restaurants, true); // a restaurant new to this phone starts from what it shows now
-        }
-        render();
+      if (changed) {
+        if (!prev && firstVisit && !store.get(SEEN_KEY)) store.set(SEEN_KEY, JSON.stringify(fresh.restaurants.map((r) => r.id + "@" + r.source)));
+        setLooked(fresh.restaurants, true); // a restaurant new to this phone starts from what it shows now
       }
+      if (!prev || prev.built !== fresh.built) {
+        data = fresh;
+        store.set(DATA_KEY, JSON.stringify(fresh));
+      }
+      if (changed || wasOffline !== offlineNow) render();
       if (offline) {
         if (manual) toast("No connection. Showing the menus saved on this phone.");
       } else if (prev) {
@@ -1648,7 +1650,8 @@
           return !old || old.source !== r.source;
         });
         if (news.length) toast("New guides: " + news.map((r) => r.name).join(", "));
-        else if (manual) toast(changed ? "Menus refreshed" : "You have the latest menus");
+        else if (changed) toast("Menus updated"); // the saved menus showed first; these newer ones replace them
+        else if (manual) toast("You have the latest menus");
       }
     } catch (e) {
       if (data) {

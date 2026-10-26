@@ -30,6 +30,7 @@ import math
 import re
 import sys
 import threading
+import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -338,9 +339,19 @@ class Quiet(SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
+    def do_GET(self):
+        # a weak signal: every answer but the service worker's own file takes this long
+        if self.server.lag["s"] and not self.path.startswith("/sw.js"):
+            time.sleep(self.server.lag["s"])
+        super().do_GET()
 
-def serve(root=SITE):
+    def log_request(self, code="-", size="-"):
+        self.server.answered.append((self.path, int(code) if str(code).isdigit() else code))
+
+
+def serve(root=SITE, lag=None):
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(root)))
+    httpd.lag, httpd.answered = lag if lag is not None else {"s": 0}, []
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     return httpd, f"http://127.0.0.1:{httpd.server_address[1]}/"
 
@@ -1557,6 +1568,75 @@ def main():
         print(f"new release: first visit stays put; {v} -> {v + 1} reloads quietly; {v + 1} -> {v + 2} waits for a tap while an item is open")
         ctx.close()
         httpd2.shutdown()
+        shutil.rmtree(tmp.parent, ignore_errors=True)
+
+        # O8: a quick start on a weak signal. The app's own files come from the phone at once and the menus saved on the
+        # phone show straight away; newer menus replace them when they arrive ("Menus updated"). Unchanged menus are
+        # checked rather than downloaded again, and a signal too weak to answer in time still says it's the saved copy
+        tmp = Path(tempfile.mkdtemp()) / "site"
+        shutil.copytree(SITE, tmp)
+        lag = {"s": 0}
+        httpd3, base3 = serve(tmp, lag)
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+        page = ctx.new_page()
+        page.goto(base3)
+        page.wait_for_selector("#list .row")
+        page.evaluate("navigator.serviceWorker.ready")
+        for _ in range(50):
+            if page.evaluate("!!navigator.serviceWorker.controller"):
+                break
+            page.wait_for_timeout(100)
+        page.reload()  # controlled now, so the menus go through the service worker
+        page.wait_for_selector("#list .row")
+        page.wait_for_timeout(1000)
+        # 1. menus that haven't changed come back "not modified"
+        httpd3.answered.clear()
+        page.reload()
+        page.wait_for_selector("#list .row")
+        page.wait_for_timeout(1000)
+        codes = [c for path, c in httpd3.answered if path.startswith("/data/restaurants.json")]
+        if 304 not in codes:
+            problems.append(f"weak signal: unchanged menus were downloaded again (answers {codes}, expected 304 not modified)")
+        # 2. a slow signal: the app is on screen before anything arrives, then the newer menus replace the saved ones
+        rf = tmp / "data" / "r" / f"{ids[0]}.json"
+        d = json.loads(rf.read_text(encoding="utf-8"))
+        d["tips"] = d.get("tips", []) + ["Weak signal check: a newer menu."]
+        d["built"] = "2099-01-01T00:00:00Z"
+        rf.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+        ix = json.loads((tmp / "data" / "restaurants.json").read_text(encoding="utf-8"))
+        ix["built"] = "2099-01-01T00:00:00Z"
+        (tmp / "data" / "restaurants.json").write_text(json.dumps(ix, ensure_ascii=False), encoding="utf-8")
+        lag["s"] = 2.5
+        t0 = time.monotonic()
+        page.reload(wait_until="commit")
+        page.wait_for_selector("#list .row", timeout=15000)
+        shown = time.monotonic() - t0
+        if shown > 1.5:
+            problems.append(f"weak signal: the app took {shown:.1f}s to appear, waiting on a network that takes 2.5s")
+        try:
+            page.locator("#toast", has_text="Menus updated").wait_for(state="visible", timeout=15000)
+        except Exception:
+            problems.append(f"weak signal: no 'Menus updated' when the newer menus arrived (toast: {page.locator('#toast').inner_text()!r})")
+        if "Weak signal check" not in (page.evaluate("localStorage.getItem('gf-data-v2')") or ""):
+            problems.append("weak signal: the newer menus weren't kept on the phone")
+        if "offline" in page.locator("#guideLine").inner_text().lower():
+            problems.append("weak signal: a slow answer that came in time was called offline")
+        # 3. too slow to answer in time: still on screen at once, and the header says these are the saved menus
+        lag["s"] = 6
+        t0 = time.monotonic()
+        page.reload(wait_until="commit")
+        page.wait_for_selector("#list .row", timeout=15000)
+        shown2 = time.monotonic() - t0
+        page.wait_for_timeout(9000)  # the index, then each menu, waits up to 4s for the network before using the saved copy
+        line = page.locator("#guideLine").inner_text()
+        if shown2 > 1.5 or "offline" not in line.lower():
+            problems.append(f"very weak signal: the app took {shown2:.1f}s to appear and the header says {line!r}")
+        lag["s"] = 0
+        print(f"weak signal: unchanged menus answered {sorted(set(codes))}; on screen in {shown:.1f}s with a 2.5s network, then "
+              f"'Menus updated'; in {shown2:.1f}s with a 6s one, then {line!r}")
+        ctx.close()
+        httpd3.shutdown()
         shutil.rmtree(tmp.parent, ignore_errors=True)
 
         # F12: what changed since you last looked. The phone keeps each restaurant's menu as you last saw it and compares

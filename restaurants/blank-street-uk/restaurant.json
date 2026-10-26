@@ -7,6 +7,7 @@
   "reader": "blank_street_uk_pdf",
   "optionLabel": "milk",
   "officialUrl": "https://blankstreet.com/en-GB/menu",
+  "watch": {"page": "https://blankstreet.com/en-GB/menu", "link": "AllergenGuide"},
   "recheckDays": 91,
   "sectionInfo": {
     "Ingredients": "In this guide every drink made with dairy milk is marked 'may contain oat (gluten)', and the oat version contains oat."
