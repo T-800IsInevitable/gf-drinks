@@ -1,0 +1,27 @@
+{
+  "name": "Test Cafe",
+  "type": "Cafe",
+  "covers": "Drinks and cake (London)",
+  "area": "London",
+  "language": "en",
+  "reader": "manual_csv",
+  "optionLabel": "option",
+  "guide": {
+    "title": "Test Cafe allergen guide",
+    "source": "menu.pdf, Test Cafe allergen guide (uploaded test document)",
+    "version": "2026-10-26",
+    "validUntil": "2027-01-26"
+  },
+  "headline": "Check the guide for oats and malt.",
+  "tips": [
+    "The guide lists oats and barley malt as gluten cereals, so oat drinks and malted drinks are on the Avoid list."
+  ],
+  "reviewed": {"by": "pending owner review", "date": "2026-10-26"},
+  "notices": [
+    {"label": "Cross-contact", "text": "May contain traces of other allergens.", "page": 1}
+  ],
+  "gaps": [
+    "The guide says it may contain traces of other allergens but doesn't say whether that includes gluten.",
+    "The guide never claims any item is gluten free."
+  ]
+}
