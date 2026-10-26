@@ -7,6 +7,7 @@
   "reader": "nandos_uk_json",
   "optionLabel": "option",
   "officialUrl": "https://www.nandos.co.uk/allergens",
+  "osm": ["Nando's", "Nandos"],
   "recheckDays": 61,
   "order": {
     "intro": "Nando's lists its chicken, sauces, extras and sides on their own, so tick each part of your order. Its pittas, wraps, rolls and burgers are on the Avoid list.",

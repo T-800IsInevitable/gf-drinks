@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 26;
+  const APP_VERSION = 27;
   document.documentElement.dataset.version = APP_VERSION;
   const DATA_KEY = "gf-data-v2";
   const SEL_KEY = "gf-selected";
@@ -47,6 +47,17 @@
   let filter = { kind: "all" };  // { kind: "all" | "fav" | "section" | "restaurant" | "area", value }
   const sameFilter = (a, b) => a.kind === b.kind && (a.value || "") === (b.value || "");
   let favs = new Set(JSON.parse(store.get(FAV_KEY) || "[]"));
+  // The service worker keeps a copy of the favourites (IndexedDB, which it can read; localStorage it can't), so a
+  // notification about a new guide can say when a favourite now contains gluten.
+  function mirrorFavs() {
+    try {
+      const open = indexedDB.open("gf", 1);
+      open.onupgradeneeded = () => open.result.createObjectStore("kv");
+      open.onsuccess = () => { try { open.result.transaction("kv", "readwrite").objectStore("kv").put([...favs], "favs"); } catch (e) { /* not kept */ } };
+    } catch (e) { /* no IndexedDB here */ }
+  }
+  function saveFavs() { store.set(FAV_KEY, JSON.stringify([...favs])); mirrorFavs(); }
+  mirrorFavs();
   const firstVisit = !store.get(DATA_KEY); // a new user has nothing to compare, so no "what changed" banners
   let region = store.get(REGION_KEY) || UK;
   let cities = {};               // { <id>: { name, language, checked, list, tips, sections, places } }
@@ -205,6 +216,45 @@
     ingredient: "An ingredient, listed on its own in the guide. It isn't something to order as it is, so there's no staff card for it.",
   };
 
+  // ---------- personal notes on items and places: kept on this phone, and carried in the favourites link ----------
+  const NOTES_KEY = "gf-notes"; // { <favourite key>: text }
+  const NOTE_MAX = 300;
+  const notes = (() => { try { const o = JSON.parse(store.get(NOTES_KEY) || "{}"); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } })();
+  const noteOf = (k) => (typeof notes[k] === "string" ? notes[k] : "");
+  function setNote(k, text) {
+    text = String(text || "").slice(0, NOTE_MAX);
+    if (text.trim()) notes[k] = text; else delete notes[k];
+    store.set(NOTES_KEY, JSON.stringify(notes));
+  }
+  const noteMark = (k) => (noteOf(k) ? '<span class="note-mark">✎<span class="vh"> has a note</span></span>' : "");
+  const noteBox = (k) => '<label class="note-box">Your note<textarea data-note="' + esc(k) + '" rows="1" maxlength="' + NOTE_MAX +
+    '" placeholder="e.g. ask for a clean jug">' + esc(noteOf(k)) + "</textarea></label>";
+  // typing saves after a short pause (one timer per note, so a second box doesn't lose the first), and the row's mark follows
+  const noteTimers = {};
+  document.addEventListener("input", (e) => {
+    const t = e.target.closest && e.target.closest("textarea[data-note]");
+    if (!t) return;
+    clearTimeout(noteTimers[t.dataset.note]);
+    noteTimers[t.dataset.note] = setTimeout(() => {
+      setNote(t.dataset.note, t.value);
+      const nm = t.closest(".row") && t.closest(".row").querySelector(".nm");
+      if (!nm) return;
+      const m = nm.querySelector(".note-mark");
+      if (noteOf(t.dataset.note) && !m) nm.insertAdjacentHTML("afterbegin", noteMark(t.dataset.note));
+      if (!noteOf(t.dataset.note) && m) m.remove();
+    }, 300);
+  });
+
+  // "Guide page 7" opens the guide itself at that page (the guides are published with the app; whether the phone's
+  // PDF viewer jumps to the page is up to it). Starbucks has two guides, so a row says which one its pages are in.
+  const guideFile = (r, i) => { const files = r.guideFiles || {}; const src = r.guides && i.src != null ? (r.guides[i.src] || {}).source : r.source; return files[src] || ""; };
+  function guideLinkHtml(r, i) {
+    const text = pageText(i.pages), file = guideFile(r, i);
+    if (!text) return "<span></span>";
+    if (!file) return "<span>" + esc(text) + "</span>";
+    return '<a class="guide-link" href="' + esc(file + "#page=" + i.pages[0]) + '" target="_blank" rel="noopener">' + esc(text) + '<span class="vh">, opens the guide</span> &rsaquo;</a>';
+  }
+
   // How the app decided an item where the guide wasn't plain (the readers' notes, in plain English)
   const decidedNote = (i) => '<div class="decided"><b>How the app decided:</b> ' + esc(i.decided) + "</div>";
   // "Share this item" (a link that opens straight to it) and "Something wrong?" (a ready message to send)
@@ -236,7 +286,8 @@
     const k = favKey(r, i);
     const on = favs.has(k);
     const inOrder = canOrder(i) && (orders[r.id] || []).includes(k);
-    out.push('<div class="detail-foot"><span>' + esc(pageText(i.pages)) + '</span><span class="foot-btns">' +
+    out.push(noteBox(k));
+    out.push('<div class="detail-foot">' + guideLinkHtml(r, i) + '<span class="foot-btns">' +
       (canOrder(i) ? '<button type="button" class="order-btn" data-order="' + esc(k) + '" aria-pressed="' + inOrder + '">' + (inOrder ? "✓ In order" : "Add to order") + "</button>" : "") +
       (i.role ? "" : '<button type="button" class="staff-btn" data-staff="' + esc(k) + '">Show staff</button>') + '<button type="button" class="fav-btn" data-fav="' + esc(k) +
       '" aria-pressed="' + on + '">' + (on ? "★ Saved" : "☆ Save") + "</button></span></div>");
@@ -256,7 +307,7 @@
     if (showRestaurant) subs.push(esc(r.name));
     const sub = subs.length ? "<small>" + subs.join(" · ") + "</small>" : "";
     // the tag sits under the name, so even "Any milk except oat, almond, coconut" has the full width
-    return '<details class="row" data-slug="' + esc(itemSlug(r, i)) + '"><summary><span class="nm">' + star + esc(i.name) + sub + '<span class="tag ' + cls + '">' +
+    return '<details class="row" data-slug="' + esc(itemSlug(r, i)) + '"><summary><span class="nm">' + star + noteMark(favKey(r, i)) + esc(i.name) + sub + '<span class="tag ' + cls + '">' +
       esc(label) + "</span></span>" + chev + '</summary><div class="detail">' + detailFor(r, i) + "</div></details>";
   }
 
@@ -366,8 +417,10 @@
     if (!chips.some((c) => sameFilter(c, filter))) filter = { kind: "all" };
     // on a restaurant's page the order builder is a chip after Favourites: it costs no height above the menu
     const r = byId(selected);
+    // on All, "Near me" (which chains are within a kilometre) sits after Favourites, as the order builder does on a restaurant
+    const nearChip = !r && data.restaurants.some((x) => Array.isArray(x.osm) && x.osm.length) ? '<button type="button" data-near-uk>Near me</button>' : "";
     $("chips").innerHTML = chips.map((c) => chipHtml(c.kind, c.value, c.label, sameFilter(c, filter)) +
-      (c.kind === "fav" && r ? '<button type="button" data-order-open>' + orderChipText(r) + "</button>" : "")).join("");
+      (c.kind === "fav" ? (r ? '<button type="button" data-order-open>' + orderChipText(r) + "</button>" : nearChip) : "")).join("");
   }
   const orderChipText = (r) => { const n = orderItems(r).length; return n ? "Your order (" + n + ") &rsaquo;" : "Build an order"; };
 
@@ -442,7 +495,7 @@
       const a = r.avoid.find((x) => x.section === section && x.name === name) || r.avoid.find((x) => norm(x.name) === norm(name));
       out.push({ k, r, name, section, avoid: a });
     }
-    if (moved) store.set(FAV_KEY, JSON.stringify([...favs]));
+    if (moved) saveFavs();
     return out;
   }
   function renderFavAlerts() {
@@ -467,7 +520,7 @@
   }
   $("favAlert").addEventListener("click", (e) => {
     const un = e.target.closest("[data-unfav]");
-    if (un) { favs.delete(un.dataset.unfav); store.set(FAV_KEY, JSON.stringify([...favs])); render(); return; }
+    if (un) { favs.delete(un.dataset.unfav); saveFavs(); render(); return; }
     const go = e.target.closest("[data-gotorest]");
     if (go) select(go.dataset.gotorest);
   });
@@ -605,7 +658,7 @@
     }
     return out;
   }
-  const addMenuLink = '<button type="button" class="link-btn" data-addmenu>A place not here? Send its menu &rsaquo;</button>';
+  const addMenuLink = '<button type="button" class="link-btn" data-addmenu>A place not here? Ask for it &rsaquo;</button>';
   const emptyExtras = (raw) => raw.trim() ? '<div class="empty-links">' + elsewhere(raw) + addMenuLink + "</div>" : "";
   // What the search box and the chip leave to show: the restaurants in scope, and each one's matching items and
   // Avoid rows (the status buttons are applied by the callers, so the counts on them can be worked out here too).
@@ -693,7 +746,7 @@
             esc(a.tag || a.gluten.map(cap).join(" & ")) + "</span></span>" + chev + '</summary><div class="detail">' + (c ? changeNote(r, c) : "") + "<div>" +
             (a.reason ? esc(a.reason) : "Every version contains " + esc(a.gluten.join(" and ").toLowerCase()) + ".") + "</div>" +
             (a.info ? "<div>" + esc(a.info) + "</div>" : "") + (a.decided && a.decided !== a.reason ? decidedNote(a) : "") +
-            "<div>" + esc(pageText(a.pages)) + "</div>" + moreLinks(r, a) + "</div></details>";
+            "<div>" + guideLinkHtml(r, a) + "</div>" + moreLinks(r, a) + "</div></details>";
         }).join("") + "</div>";
       }
     }
@@ -757,15 +810,18 @@
   function renderSources() {
     const whatChanged = (r) => { const c = sinceLooked(r) || r.changes; return c ? ' <button type="button" class="link-btn" data-whatchanged="' + esc(r.id) + '">What changed, noticed ' +
       esc(fmtDate(c.date)) + " &rsaquo;</button>" : ""; };
+    // the guides themselves, as published with the app: one link, or one per guide when there are several
+    const guideLinks = (r) => Object.entries(r.guideFiles || {}).map(([src, file], n, all) => ' <a href="' + esc(file) + '" target="_blank" rel="noopener">Open the ' +
+      (all.length > 1 ? esc(((r.guides || []).find((g) => g.source === src) || {}).title || "guide " + (n + 1)) + " guide" : "guide") + "</a>").join("");
     const lineShort = (r) => "<p><b>" + esc(r.name) + ":</b> " + esc(r.covers ? r.covers + ". " : "") + "From " + esc(plainGuideName(r)) + ". " +
       esc(r.stats.items) + " with no gluten ingredients, " + esc(r.stats.avoid) + " to avoid." +
-      (r.officialUrl ? ' <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">Official site</a>' : "") + "</p>";
+      (r.officialUrl ? ' <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">Official site</a>' : "") + guideLinks(r) + "</p>";
     // "Menus in this app" (Help) keeps the raw file name, for the record
     const lineFull = (r) => {
       const g = r.guide || {};
       return "<p><b>" + esc(r.name) + ":</b> " + esc(r.covers ? r.covers + ". " : "") + "From " + esc(r.source) +
         (g.version ? " (version " + esc(fmtDate(g.version)) + ")" : "") + ". " + esc(r.stats.items) + " with no gluten ingredients, " + esc(r.stats.avoid) +
-        " to avoid." + (r.officialUrl ? ' <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">Official site</a>' : "") + whatChanged(r) + "</p>";
+        " to avoid." + (r.officialUrl ? ' <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">Official site</a>' : "") + guideLinks(r) + whatChanged(r) + "</p>";
     };
     $("sources").innerHTML = scope().map(lineShort).join("");
     $("infoSources").innerHTML = data.restaurants.map(lineFull).join("") + "<p>Rules: " + esc([...new Set(data.restaurants.map((r) => r.rule))].join(" ")) +
@@ -892,6 +948,8 @@
     if (id !== UK) store.set(LAST_CITY_KEY, id);
     $("q").value = "";
     cityFilter = "all";
+    mapOn = false;
+    dropMap();
     history.replaceState(null, "", id !== UK ? "#" + id : selected === ALL ? location.pathname : "#" + selected);
     render();
     window.scrollTo({ top: 0 });
@@ -917,6 +975,7 @@
     const card = phrases[c.language];
     $("chips").innerHTML = '<button type="button" data-nearopen aria-pressed="' + (nearSort && cityFilter === "open") + '">Open near me</button>' +
       '<button type="button" data-near aria-pressed="' + nearSort + '">Near me</button>' +
+      '<button type="button" data-map aria-pressed="' + mapOn + '">Map</button>' +
       chips.map(([v, l]) => chipHtml(["all", "open", "fav"].includes(v) ? v : "section", ["all", "open", "fav"].includes(v) ? "" : v, l,
         v === cityFilter && !(v === "all" && nearSort))).join("") +
       (card ? '<button type="button" data-card>' + esc(card.language) + " card</button>" : "");
@@ -1012,6 +1071,7 @@
     if (p.caution) out.push('<div class="chg-note"><b>Note from this app:</b> ' + esc(p.caution) + "</div>");
     if (p.status !== "confirmed") out.push('<div class="chg-note bad"><b>Not confirmed open.</b> ' + esc(p.statusNote || "") + "</div>");
     (p.notes || []).forEach((n) => out.push("<div>" + esc(n) + "</div>"));
+    out.push(noteBox(placeFav(p)));
     out.push('<ul class="locs">' + p.locations.map((l) => '<li><a href="' + esc(mapLink(p, l)) + '" target="_blank" rel="noopener">' + esc(l.address) + "</a>" +
       "<span>" + esc([l.area, l.note].filter(Boolean).join(" · ")) + "</span>" +
       "<span>" + (l.hours ? "<b>Hours:</b> " + esc(weekText(l.hours)) + (l.kitchenCloses ? ". Kitchen closes at " + esc(l.kitchenCloses) : "") +
@@ -1026,7 +1086,7 @@
     const cls = p.claim === "place-all" && !p.caution ? "t-asis" : p.caution ? "t-swap" : "t-info";
     const label = p.claimLabel || CLAIM_TAGS[p.claim];
     const star = favs.has(placeFav(p)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
-    return '<details class="row" data-place="' + esc(p.name) + '"><summary><span class="nm">' + star + esc(p.name) + "<small>" + subs.join(" · ") + '</small><span class="tag ' + cls + '">' +
+    return '<details class="row" data-place="' + esc(p.name) + '"><summary><span class="nm">' + star + noteMark(placeFav(p)) + esc(p.name) + "<small>" + subs.join(" · ") + '</small><span class="tag ' + cls + '">' +
       esc(label) + "</span></span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
   }
   // search what a place is and where it is, not street names or notes ("Sonntag" shouldn't find Sonntagstraße)
@@ -1052,8 +1112,63 @@
     const empty = cityFilter === "fav" ? "No saved places yet. Open a place and tap ☆ Save."
       : cityFilter === "open" ? "None of the places with known hours are open for the rest of today."
       : 'No places match "' + esc($("q").value.trim()) + '".';
-    $("cityList").innerHTML = (cityFilter === "fav" ? favShareBar() : "") + (html || '<p class="empty">' + empty + "</p>" + (cityFilter === "all" ? emptyExtras($("q").value) : "")) +
+    const mapHtml = mapOn ? '<div id="cityMap" class="city-map" role="region" aria-label="Map of the places"></div><p class="muted map-note">' +
+      (offlineNow ? "The map needs signal for its background; the pins still show. " : "") + "Green: says all gluten free. Amber: something to ask about. Grey: the rest. Tap a pin, then Open.</p>" : "";
+    $("cityList").innerHTML = mapHtml + (cityFilter === "fav" ? favShareBar() : "") + (html || '<p class="empty">' + empty + "</p>" + (cityFilter === "all" ? emptyExtras($("q").value) : "")) +
       (cityFilter === "open" && unknown ? '<p class="muted">' + unknown + " places with unknown hours aren't shown.</p>" : "");
+    if (mapOn) drawMap(c, places); else dropMap();
+  }
+  // ---------- a map of the city's places: Leaflet with OpenStreetMap's tiles, loaded only while the map is open ----------
+  // The tiles are fetched while looking and never saved (the tile provider's rules forbid keeping them), so the list
+  // keeps working offline and the map shows its pins on a blank background.
+  let mapOn = false, leafletMap = null, leafletLoading = null;
+  function loadLeaflet() {
+    if (window.L) return Promise.resolve();
+    if (leafletLoading) return leafletLoading;
+    leafletLoading = new Promise((ok, bad) => {
+      const css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = "vendor/leaflet/leaflet.css";
+      document.head.appendChild(css);
+      const s = document.createElement("script");
+      s.src = "vendor/leaflet/leaflet.js";
+      s.onload = ok;
+      s.onerror = () => { leafletLoading = null; bad(new Error("the map code didn't load")); };
+      document.head.appendChild(s);
+    });
+    return leafletLoading;
+  }
+  function dropMap() { if (leafletMap) { leafletMap.remove(); leafletMap = null; } }
+  // pins take the row's colours: green for a place's own all-gluten-free claim with nothing to add, amber for a caution
+  const pinColour = (p) => getComputedStyle(document.documentElement).getPropertyValue(p.claim === "place-all" && !p.caution ? "--ok" : p.caution ? "--swap" : "--muted").trim();
+  async function drawMap(c, places) {
+    dropMap();
+    try { await loadLeaflet(); } catch (e) { toast("The map couldn't load. Check your signal and try again."); return; }
+    const el = $("cityMap");
+    if (!el || !mapOn || leafletMap) return;
+    const map = L.map(el, { scrollWheelZoom: false });
+    leafletMap = map;
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors' }).addTo(map);
+    const pts = [];
+    for (const p of places) {
+      for (const l of p.locations) {
+        if (l.lat == null || l.lon == null) continue;
+        pts.push([l.lat, l.lon]);
+        L.circleMarker([l.lat, l.lon], { radius: 9, color: "#ffffff", weight: 2, fillColor: pinColour(p), fillOpacity: 0.95 })
+          .bindPopup("<b>" + esc(p.name) + "</b><br>" + esc(l.area) + '<br><button type="button" class="link-btn" data-place-open="' + esc(p.name) + '">Open &rsaquo;</button>').addTo(map);
+      }
+    }
+    if (here && nearSort) L.circleMarker([here.lat, here.lon], { radius: 7, color: "#ffffff", weight: 2, fillColor: "#1e6fd9", fillOpacity: 1 }).bindPopup("You are here").addTo(map);
+    if (pts.length) map.fitBounds(pts, { padding: [24, 24], maxZoom: 15 });
+    else map.setView([(c.bounds.lat[0] + c.bounds.lat[1]) / 2, (c.bounds.lon[0] + c.bounds.lon[1]) / 2], 11);
+  }
+  function openPlaceRow(name) {
+    const row = [...document.querySelectorAll("#cityList .row")].find((d) => d.dataset.place === name);
+    if (!row) return;
+    if (leafletMap) leafletMap.closePopup();
+    row.open = true;
+    window.scrollTo({ top: Math.max(0, row.getBoundingClientRect().top + window.scrollY - topEl.offsetHeight - 12) });
   }
   // "Open near me": still open today, nearest first, in one tap; a second tap turns both off
   function toggleNearOpen() {
@@ -1077,6 +1192,73 @@
       renderCity();
       window.scrollTo({ top: 0 });
     }, () => toast("Couldn't get your location. Check Location Services for Safari in Settings."), { timeout: 10000, maximumAge: 300000 });
+  }
+
+  // ---------- "Near me" on the UK menus: the app's chains within a kilometre, looked up in OpenStreetMap ----------
+  // One query to the Overpass API per tap (restaurant.json "osm" names what OpenStreetMap calls each chain's branches).
+  // OpenStreetMap doesn't list every branch, which is a convenience problem, not a safety one: each chain's allergen
+  // guide covers all its branches. The last answer is kept, for when there's no signal.
+  const NEAR_KEY = "gf-near";
+  const OVERPASS = "https://overpass-api.de/api/interpreter";
+  const osmChains = () => data.restaurants.filter((r) => Array.isArray(r.osm) && r.osm.length);
+  const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  function overpassQuery(at) {
+    const names = osmChains().flatMap((r) => r.osm).map(reEsc).join("|");
+    const around = "(around:1000," + at.lat.toFixed(5) + "," + at.lon.toFixed(5) + ")";
+    return '[out:json][timeout:10];(nwr["name"~"^(' + names + ')$",i]' + around + ';nwr["brand"~"^(' + names + ')$",i]' + around + ";);out center tags;";
+  }
+  const chainOf = (tags) => { const n = [tags.brand, tags.name].filter(Boolean).map((x) => x.toLowerCase()); return osmChains().find((r) => r.osm.some((o) => n.includes(o.toLowerCase()))) || null; };
+  // one row per chain: its nearest branch, and how many are within the kilometre
+  function nearRows(elements, at) {
+    const best = new Map();
+    for (const el of elements) {
+      const lat = el.lat != null ? el.lat : el.center && el.center.lat, lon = el.lon != null ? el.lon : el.center && el.center.lon;
+      const r = el.tags && chainOf(el.tags);
+      if (!r || lat == null || lon == null) continue;
+      const km = kmTo({ lat, lon }, at);
+      const where = el.tags["addr:street"] || "";
+      const cur = best.get(r.id);
+      if (!cur) best.set(r.id, { rid: r.id, name: r.name, km, lat, lon, n: 1, where });
+      else { cur.n++; if (km < cur.km) Object.assign(cur, { km, lat, lon, where }); }
+    }
+    return [...best.values()].sort((a, b) => a.km - b.km);
+  }
+  const metres = (km) => (km < 0.95 ? Math.max(10, Math.round(km * 100) * 10) + " m" : km.toFixed(1) + " km");
+  function renderNear(rows, stamp, note) {
+    $("nearBody").innerHTML = (note ? '<p class="muted">' + esc(note) + "</p>" : "") + (rows.length
+      ? '<ul class="near-list">' + rows.map((x) => '<li><span class="nm"><b>' + esc(x.name) + "</b><small>" + esc(metres(x.km)) + (x.where ? " · " + esc(x.where) : "") +
+        (x.n > 1 ? " · " + x.n + " within 1 km" : "") + '</small></span><span class="near-btns"><button type="button" class="fav-btn" data-gonear="' + esc(x.rid) + '">Menu</button>' +
+        '<a class="fav-btn" href="https://maps.apple.com/?ll=' + esc(x.lat + "," + x.lon) + "&q=" + encodeURIComponent(x.name) + '" target="_blank" rel="noopener">Directions</a></span></li>').join("") + "</ul>"
+      : '<p class="empty">None of the app\'s restaurants is listed within 1 km of here.</p>') +
+      '<p class="muted">Branches from OpenStreetMap, which doesn\'t list every one' + (stamp ? ", looked up " + esc(stamp) : "") + ". Each chain's allergen guide covers all its branches.</p>";
+  }
+  const fmtWhen = (iso) => { const d = new Date(iso); return d.toDateString() === new Date().toDateString() ? "today at " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "on " + d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }); };
+  async function nearMe() {
+    if (!data) return;
+    if (!navigator.geolocation) { toast("This phone can't share its location here"); return; }
+    $("nearBody").innerHTML = '<p class="empty">Finding your location…</p>';
+    openDialog($("near"));
+    const saved = (() => { try { return JSON.parse(store.get(NEAR_KEY) || "null"); } catch (e) { return null; } })();
+    const fallback = (why) => {
+      if (saved && Array.isArray(saved.rows)) renderNear(saved.rows, fmtWhen(saved.when), why + " This is the last answer.");
+      else $("nearBody").innerHTML = '<p class="empty">' + esc(why) + "</p>";
+    };
+    let at;
+    try {
+      const pos = await new Promise((ok, bad) => navigator.geolocation.getCurrentPosition(ok, bad, { timeout: 10000, maximumAge: 120000 }));
+      at = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+    } catch (e) { fallback("Couldn't get your location. Check Location Services for Safari in Settings."); return; }
+    $("nearBody").innerHTML = '<p class="empty">Looking for branches within 1 km…</p>';
+    try {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 15000);
+      let res;
+      try { res = await fetch(OVERPASS, { method: "POST", body: "data=" + encodeURIComponent(overpassQuery(at)), signal: ctl.signal }); } finally { clearTimeout(timer); }
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const rows = nearRows((await res.json()).elements || [], at);
+      store.set(NEAR_KEY, JSON.stringify({ when: new Date().toISOString(), rows }));
+      renderNear(rows, "just now", "");
+    } catch (e) { fallback("Couldn't reach the map service (no signal, or it's busy)."); }
   }
 
   // ---------- warnings page ----------
@@ -1202,12 +1384,43 @@
     } catch (e) { wake = null; /* refused, for example on low battery */ }
   }
   function letGo() { if (wake) { const w = wake; wake = null; w.release().catch(() => {}); } }
+  // Each phrase can be read aloud by the phone's own voice for that language (offline), for a noisy counter.
+  const SPEECH_LANG = { de: "de-DE", nl: "nl-NL", fr: "fr-FR", es: "es-ES", it: "it-IT" };
+  const canSpeak = () => !!window.speechSynthesis && typeof window.SpeechSynthesisUtterance === "function";
+  function voiceFor(lang) {
+    const want = (SPEECH_LANG[lang] || lang).toLowerCase();
+    const vs = speechSynthesis.getVoices();
+    return vs.find((v) => v.lang.toLowerCase().replace("_", "-") === want) || vs.find((v) => v.lang.toLowerCase().startsWith(lang)) || null;
+  }
+  function say(text, lang) {
+    if (!canSpeak()) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = SPEECH_LANG[lang] || lang;
+    const v = voiceFor(lang);
+    if (v) u.voice = v;
+    u.rate = 0.9;
+    speechSynthesis.speak(u);
+  }
+  // the phone may have no voice for the language yet (iPhone: Settings > Accessibility > Spoken Content > Voices)
+  function voiceNote(lang, language) {
+    if (!canSpeak() || !speechSynthesis.getVoices().length || voiceFor(lang)) return "";
+    return '<p class="muted">No ' + esc(language) + " voice is installed on this phone, so Say it may use another language's voice. Add one under Settings, Accessibility, Spoken Content, Voices.</p>";
+  }
+  let cardLang = "";
+  if (canSpeak()) {
+    speechSynthesis.getVoices(); // asks the phone to load its list; the note is redrawn once it arrives
+    speechSynthesis.addEventListener("voiceschanged", () => { const n = $("cardBody").querySelector(".voice-note"); if (n && cardLang) n.innerHTML = voiceNote(cardLang, phrases[cardLang].language); });
+  }
   function openCard(lang) {
     const p = phrases[lang];
     if (!p) return;
+    cardLang = lang;
     $("cardTitle").textContent = p.language + " coeliac card";
-    $("cardBody").innerHTML = '<div class="phrase-list" lang="' + esc(lang) + '">' + p.card.map((c) =>
-      '<div class="phrase"><p class="ph-text">' + esc(c.text) + '</p><p class="ph-en" lang="en-GB">' + esc(c.en) + "</p></div>").join("") + "</div>" +
+    $("cardBody").innerHTML = '<div class="phrase-list" lang="' + esc(lang) + '">' + p.card.map((c, n) =>
+      '<div class="phrase"><p class="ph-text">' + esc(c.text) + '</p><p class="ph-en" lang="en-GB">' + esc(c.en) + "</p>" +
+      (canSpeak() ? '<button type="button" class="say-btn" lang="en-GB" data-say="' + n + '">Say it</button>' : "") + "</div>").join("") + "</div>" +
+      '<div class="voice-note">' + voiceNote(lang, p.language) + "</div>" +
       "<h3>Words to look for</h3><dl class=\"words\">" + p.words.map(([w, en]) =>
         '<div><dt lang="' + esc(lang) + '">' + esc(w) + "</dt><dd>" + esc(en) + "</dd></div>").join("") + "</dl>" +
       '<p class="muted">Turn the screen towards staff. Phrases written by Claude and not yet checked by a native speaker.</p>';
@@ -1215,6 +1428,7 @@
     keepAwake();
   }
   $("cardLaunch").addEventListener("click", (e) => { const b = e.target.closest("[data-lang]"); if (b) openCard(b.dataset.lang); });
+  $("gfcard").addEventListener("close", () => { if (canSpeak()) speechSynthesis.cancel(); });
 
   // ---------- staff card: one item, how to order it, in large type to show at the counter ----------
   function orderLine(r, i) {
@@ -1420,7 +1634,9 @@
   function openAddMenu() {
     ["info", "picker"].forEach((id) => { if ($(id).open) $(id).close(); });
     showUploadState();
+    renderRequests();
     $("upStatus").textContent = "";
+    $("reqStatus").textContent = "";
     openDialog($("upload"));
   }
   $("openUpload").addEventListener("click", openAddMenu);
@@ -1618,6 +1834,93 @@
     }
   });
 
+  // ---------- ask for a place by name ----------
+  // The app can't look a place up itself (no server, and its security policy allows only GitHub), so the name goes
+  // where the scan routine already looks: inbox/requests/ on the uploads branch, from the phone with the upload key,
+  // or as a link to that phone from any other. The routine finds the place's own allergen information and opens a
+  // pull request; nothing reaches the app without the owner's merge.
+  const REQ_KEY = "gf-requests"; // asked for from this phone: [{ name, area, url, at, how: "filed" | "shared" }]
+  const requests = (() => { try { const a = JSON.parse(store.get(REQ_KEY) || "[]"); return Array.isArray(a) ? a.slice(-30) : []; } catch (e) { return []; } })();
+  const saveRequests = () => store.set(REQ_KEY, JSON.stringify(requests.slice(-30)));
+  const sameName = (a, b) => norm(a).replace(/[^a-z0-9]/g, "") === norm(b).replace(/[^a-z0-9]/g, "");
+  const inApp = (name) => (data ? data.restaurants.find((r) => sameName(r.name, name) || (Array.isArray(r.osm) && r.osm.some((o) => sameName(o, name)))) : null);
+  function renderRequests() {
+    const el = $("reqList");
+    el.hidden = !requests.length;
+    el.innerHTML = requests.length ? "<p><b>Asked for from this phone</b></p><ul class=\"req-list\">" + requests.slice().reverse().map((q) => {
+      const r = inApp(q.name);
+      return "<li>" + esc(q.name) + (q.area ? " (" + esc(q.area) + ")" : "") + ": " + (r
+        ? 'in the app <button type="button" class="link-btn" data-gotorest-req="' + esc(r.id) + '">Open &rsaquo;</button>'
+        : (q.how === "filed" ? "sent for adding " : "sent to the owner ") + esc(fmtDate(String(q.at || "").slice(0, 10)))) + "</li>";
+    }).join("") + "</ul>" : "";
+  }
+  const requestLink = (q) => appUrl() + "#request=" + toB64url(JSON.stringify({ v: 1, name: q.name, area: q.area, url: q.url }));
+  function readRequestCode(code) {
+    try {
+      const d = JSON.parse(fromB64url(code));
+      const s = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
+      const q = { name: s(d.name, 80), area: s(d.area, 60), url: s(d.url, 200) };
+      if (!/^https:\/\/[^\s/]+\.[^\s/]+/.test(q.url)) q.url = "";
+      return q.name ? q : null;
+    } catch (e) { return null; }
+  }
+  async function askForPlace() {
+    const name = $("reqName").value.trim(), area = $("reqArea").value.trim();
+    let url = $("reqUrl").value.trim();
+    const status = $("reqStatus");
+    status.classList.remove("done");
+    if (!name || !area) { status.textContent = "Add the place's name and its city or country."; return; }
+    if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
+    if (url && !/^https:\/\/[^\s/]+\.[^\s/]+/.test(url)) { status.textContent = "That website address doesn't look right. Leave it out if you're not sure."; return; }
+    const have = inApp(name);
+    if (have) {
+      status.innerHTML = "<b>" + esc(have.name) + "</b> is already in the app. " + '<button type="button" class="link-btn" data-gotorest-req="' + esc(have.id) + '">Open it &rsaquo;</button>';
+      return;
+    }
+    const q = { name, area, url, at: new Date().toISOString() };
+    const btn = $("reqSend");
+    btn.disabled = true;
+    try {
+      if (store.get(KEY_KEY)) {
+        status.textContent = "Sending…";
+        const file = "inbox/requests/" + q.at.slice(0, 16).replace(/:/g, "") + "-" + slug(name) + "-" + slug(area) + ".json";
+        const meta = { name, area, url, requestedAt: q.at, requestedFrom: "Twoo's Treat Temple app" };
+        await commitFiles([{ path: file, b64: btoa(unescape(encodeURIComponent(JSON.stringify(meta, null, 2)))) }], "Request " + name + " (" + area + ")");
+        q.how = "filed";
+        status.textContent = "Asked. Its allergen information will be looked up and sent to GitHub for you to approve.";
+      } else {
+        const sent = await shareOrCopy("Please add " + name + " to Treat Temple", "Could you add " + name + " (" + area + ") to Twoo's Treat Temple? Open this link on your phone to file it.",
+          requestLink(q), "Link copied. Send it to whoever looks after the app.");
+        if (!sent) { status.textContent = "Not sent."; return; }
+        q.how = "shared";
+        status.textContent = "Sent to the app's owner. Thank you!";
+      }
+      status.classList.add("done");
+      requests.push(q);
+      saveRequests();
+      renderRequests();
+      ["reqName", "reqArea", "reqUrl"].forEach((id) => { $(id).value = ""; });
+    } catch (err) {
+      if (err.message === "EXPIRED_KEY") { status.textContent = "This GitHub key no longer works (it may have expired). Make a new one below."; showUploadState(); }
+      else status.textContent = "It didn't send (" + (err instanceof TypeError ? "no connection" : err.message) + "). Try again when you have signal.";
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  $("reqSend").addEventListener("click", askForPlace);
+  ["reqName", "reqArea", "reqUrl"].forEach((id) => $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); askForPlace(); } }));
+  // a request link (#request=...) from another phone fills the fields in; a tap on Ask for it files it (a link alone files nothing)
+  function openRequestFrom(code) {
+    const q = readRequestCode(code);
+    if (!q) { toast("That request link is damaged. Ask for it to be sent again."); return; }
+    openAddMenu();
+    $("reqName").value = q.name;
+    $("reqArea").value = q.area;
+    $("reqUrl").value = q.url;
+    $("reqStatus").textContent = store.get(KEY_KEY) ? "From a link. Tap Ask for it to file it." : "From a link. This phone doesn't hold the upload key, so Ask for it passes it on again.";
+    $("reqName").focus();
+  }
+
   // ---------- share an item, and "Something wrong?" ----------
   function openReport(subject, lines) {
     $("reportSubject").textContent = subject;
@@ -1683,13 +1986,27 @@
   // The link holds the saved keys (restaurant|section|name, or city:<id>|place) as base64url JSON after #favs=
   const toB64url = (str) => btoa(unescape(encodeURIComponent(str))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const fromB64url = (code) => decodeURIComponent(escape(atob(code.replace(/-/g, "+").replace(/_/g, "/"))));
-  const favsLink = () => appUrl() + "#favs=" + toB64url(JSON.stringify({ v: 1, f: [...favs].sort() }));
+  // The link carries the notes too (v2, "n"), so a backup or a move to another phone keeps them. A link from an
+  // older release has none, and an older release ignores them.
+  const favsLink = () => appUrl() + "#favs=" + toB64url(JSON.stringify({ v: 2, f: [...favs].sort(), n: Object.fromEntries(Object.entries(notes).slice(0, 200)) }));
   function readFavsCode(code) {
     try {
       const d = JSON.parse(fromB64url(code));
-      const keys = Array.isArray(d && d.f) ? d.f : [];
-      return keys.filter((k) => typeof k === "string" && k.length > 2 && k.length <= 300 && k.includes("|")).slice(0, 500);
+      const keyOk = (k) => typeof k === "string" && k.length > 2 && k.length <= 300 && k.includes("|");
+      const keys = (Array.isArray(d && d.f) ? d.f : []).filter(keyOk).slice(0, 500);
+      const got = {};
+      Object.entries(d && d.n && typeof d.n === "object" ? d.n : {}).slice(0, 200).forEach(([k, t]) => { if (keyOk(k) && typeof t === "string" && t.trim()) got[k] = t.slice(0, NOTE_MAX); });
+      return { keys, notes: got };
     } catch (e) { return null; }
+  }
+  // does a favourite key still name something in the app (for a note that isn't on a favourite)
+  function keyExists(k) {
+    const [head, ...rest] = k.split("|");
+    if (head.startsWith("city:")) { const c = cities[head.slice(5)]; return !!c && c.places.some((p) => p.name === rest.join("|")); }
+    const r = byId(head);
+    const [section, ...nm] = rest;
+    const name = nm.join("|");
+    return !!r && r.items.concat(r.avoid).some((x) => x.section === section && x.name === name);
   }
   // Sort a link's favourites against this phone and the menus as they are now. A dish whose section was renamed
   // follows its name (as saved favourites do); one now on the Avoid list, or gone, isn't added.
@@ -1723,18 +2040,22 @@
   let importing = null;
   function maybeImport() {
     if (!importCode || !importReady.data || !importReady.cities || !data) return;
-    const keys = readFavsCode(importCode);
+    const got = readFavsCode(importCode);
     importCode = "";
-    if (!keys) { toast("That favourites link is damaged. Ask for it to be sent again."); return; }
-    importing = sortFavs(keys);
+    if (!got) { toast("That favourites link is damaged. Ask for it to be sent again."); return; }
+    importing = sortFavs(got.keys);
+    // notes come along for anything still in the app, without replacing a note this phone already has
+    importing.notes = Object.fromEntries(Object.entries(got.notes).filter(([k]) => !noteOf(k) && (importing.add.has(k) || favs.has(k) || keyExists(k))));
     const { add, have, skip } = importing;
+    const nNotes = Object.keys(importing.notes).length;
     const li = (t) => "<li>" + esc(t) + "</li>";
     $("favImportBody").innerHTML =
       (add.size ? "<h3>To add (" + add.size + ")</h3><ul class=\"chg-list\">" + [...add.values()].map(li).join("") + "</ul>" : '<p class="muted">Nothing new to add.</p>') +
       (have.length ? '<p class="muted">' + have.length + (have.length === 1 ? " is" : " are") + " already saved on this phone.</p>" : "") +
+      (nNotes ? '<p class="muted">' + nNotes + (nNotes === 1 ? " note comes" : " notes come") + " with the link.</p>" : "") +
       (skip.length ? "<h3>Not added (" + skip.length + ")</h3><ul class=\"chg-list\">" + skip.map((x) => li(x.label + " " + x.why + ".")).join("") + "</ul>" : "");
-    $("favImportAdd").hidden = !add.size;
-    $("favImportAdd").textContent = add.size === 1 ? "Add this to this phone" : "Add these " + add.size + " to this phone";
+    $("favImportAdd").hidden = !add.size && !nNotes;
+    $("favImportAdd").textContent = add.size === 1 ? "Add this to this phone" : add.size ? "Add these " + add.size + " to this phone" : "Add the notes to this phone";
     ["picker", "info"].forEach((id) => { if ($(id).open) $(id).close(); });
     openDialog($("favImport"));
   }
@@ -1742,12 +2063,14 @@
     if (!importing) return;
     const n = importing.add.size;
     importing.add.forEach((_, k) => favs.add(k));
-    store.set(FAV_KEY, JSON.stringify([...favs]));
+    saveFavs();
+    const nNotes = Object.keys(importing.notes || {}).length;
+    Object.entries(importing.notes || {}).forEach(([k, t]) => setNote(k, t));
     importing = null;
     $("favImport").close();
     if (region === UK) filter = { kind: "fav" }; else cityFilter = "fav";
     render();
-    toast(n === 1 ? "Added 1 favourite" : "Added " + n + " favourites");
+    toast((n === 1 ? "Added 1 favourite" : n ? "Added " + n + " favourites" : "Added") + (nNotes ? " and " + nNotes + (nNotes === 1 ? " note" : " notes") : ""));
   });
   $("favImport").addEventListener("close", () => { importing = null; });
   function shareFavs() {
@@ -1900,6 +2223,12 @@
     order: (key, b, e) => { e.preventDefault(); toggleOrderButton(key); },
     whatchanged: (rid) => openChanges(byId(rid)),
     addmenu: () => openAddMenu(),
+    map: () => { mapOn = !mapOn; renderCity(); },
+    placeOpen: (name) => openPlaceRow(name),
+    nearUk: () => nearMe(),
+    gonear: (rid) => { $("near").close(); select(rid); },
+    say: (n) => { const p = phrases[cardLang]; if (p && p.card[n]) say(p.card[n].text, cardLang); },
+    gotorestReq: (rid) => { $("upload").close(); select(rid); },
     elsewhere: (to) => goElsewhere(to),
     sharefavs: () => shareFavs(),
     shareItem: (ref) => { const { r, i } = itemByRef(ref); if (i) shareLink("Twoo's Treat Temple", i.name + " at " + r.name, itemUrl(r, i)); },
@@ -1921,7 +2250,7 @@
     e.preventDefault();
     const k = b.dataset.fav;
     if (favs.has(k)) favs.delete(k); else favs.add(k);
-    store.set(FAV_KEY, JSON.stringify([...favs]));
+    saveFavs();
     const on = favs.has(k);
     document.querySelectorAll("#list .fav-btn, #cityList .fav-btn").forEach((btn) => {
       if (btn.dataset.fav !== k) return;
@@ -1967,7 +2296,7 @@
     }
   });
   $("infoBtn").addEventListener("click", () => { renderLastChecked(); openDialog($("info")); });
-  ["picker", "info", "gfcard", "warnings", "staff", "changes", "report", "favImport", "order"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
+  ["picker", "info", "gfcard", "warnings", "staff", "changes", "report", "favImport", "order", "near"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
   ["staff", "gfcard"].forEach((id) => $(id).addEventListener("close", () => { if (!$("staff").open && !$("gfcard").open) letGo(); }));
   $("refreshBtn").addEventListener("click", () => load(true));
   $("shareBtn").addEventListener("click", () => {
@@ -1982,6 +2311,7 @@
   window.addEventListener("hashchange", () => {
     const raw = hashText();
     if (raw.startsWith("favs=")) { importCode = raw.slice(5); history.replaceState(null, "", location.pathname); maybeImport(); return; }
+    if (raw.startsWith("request=")) { history.replaceState(null, "", location.pathname); openRequestFrom(raw.slice(8)); return; }
     const [id, item] = raw.split("/");
     if (cities[id]) { if (id !== region) setRegion(id); }
     else if (data && id && byId(id)) { if (item) showItem(id, item); else if (id !== selected || region !== UK) select(id); }
@@ -2014,6 +2344,62 @@
   $("installHelp").hidden = standalone;
   $("installClose").addEventListener("click", () => { $("installTip").hidden = true; store.set(TIP_KEY, "1"); });
 
+  // ---------- notifications about new menus (Home Screen app only) ----------
+  // The phone subscribes with the public half of the app's push key; the private half is a GitHub secret, and
+  // tools/push.py sends one notification after a publish that brought a new guide. There's no server, so the phone's
+  // subscription (its notification address) is sent to the owner, who saves it by hand as the PUSH_SUBSCRIPTIONS secret.
+  const PUSH_KEY = "BL9p-_E-Ln3CxCioOhIz0WHw9AfDbdNGMfnPuQpZTZiztpvgMxtuS8JBPJSGs5f4qmxAmEUy0pmOIXihW9ncHdk";
+  const PUSH_SAVED = "gf-push"; // the subscription this phone last showed, so a replacement by the phone is noticed
+  const canPush = () => standalone && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  const b64ToBytes = (s) => { const b = atob(s.replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(b, (c) => c.charCodeAt(0)); };
+  async function pushState() {
+    if (!canPush()) { $("pushHelp").hidden = true; return; }
+    $("pushHelp").hidden = false;
+    const el = $("pushState");
+    if (Notification.permission === "denied") {
+      el.textContent = "Switched off for this app under Settings, Notifications.";
+      $("pushOn").hidden = true;
+      $("pushBox").hidden = true;
+      return;
+    }
+    let sub = null;
+    try { sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription(); } catch (e) { /* none */ }
+    const was = store.get(PUSH_SAVED);
+    $("pushOn").hidden = !!sub;
+    $("pushBox").hidden = !sub;
+    if (sub) {
+      const now = JSON.stringify(sub.toJSON());
+      $("pushSub").value = now;
+      el.textContent = was && was !== now ? "This phone's address has changed, so send it again." : "On, once the owner has this phone's address.";
+    } else el.textContent = was ? "Switched off, or the phone let it go. Tap to switch it on again, then send the new address." : "";
+  }
+  $("pushOn").addEventListener("click", async () => {
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") { toast("Notifications weren't allowed"); pushState(); return; }
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(PUSH_KEY) });
+      store.set(PUSH_SAVED, JSON.stringify(sub.toJSON()));
+      await pushState();
+      toast("Now send the address to the app's owner");
+    } catch (e) { logError(e.message, "push"); toast("Couldn't switch notifications on: " + e.message); }
+  });
+  $("pushSend").addEventListener("click", () => shareOrCopy("Treat Temple notifications",
+    "My phone's notification address for Twoo's Treat Temple (add it as a line of the PUSH_SUBSCRIPTIONS secret):\n" + $("pushSub").value, "", "Copied. Paste it into a message to the owner."));
+  $("pushOff").addEventListener("click", async () => {
+    try { const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription(); if (sub) await sub.unsubscribe(); } catch (e) { /* nothing to undo */ }
+    store.remove(PUSH_SAVED);
+    pushState();
+    toast("Notifications off. Tell the owner to remove this phone's address.");
+  });
+  pushState();
+  // the icon's badge counts guides not yet looked at; opening the app clears it
+  if (navigator.clearAppBadge) {
+    const clearBadge = () => navigator.clearAppBadge().catch(() => { /* no badge */ });
+    clearBadge();
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) clearBadge(); });
+  }
+
   // Ask the phone not to clear this site's storage under space pressure, and say in Help whether that worked.
   async function setUpStorage() {
     const el = $("storageState");
@@ -2030,8 +2416,9 @@
   // ---------- start ----------
   const rawHash = hashText();
   importCode = rawHash.startsWith("favs=") ? rawHash.slice(5) : "";
-  if (importCode) history.replaceState(null, "", location.pathname); // added or not, a reload shouldn't ask again
-  const hashId = importCode ? "" : rawHash;
+  const requestCode = rawHash.startsWith("request=") ? rawHash.slice(8) : "";
+  if (importCode || requestCode) history.replaceState(null, "", location.pathname); // added or not, a reload shouldn't ask again
+  const hashId = importCode || requestCode ? "" : rawHash;
   const [hashRid, hashItem] = hashId.split("/");
   const saved = store.get(DATA_KEY);
   if (saved) {
@@ -2042,6 +2429,7 @@
   if (hashRid) region = data && byId(hashRid) ? UK : hashRid;
   selected = (region === UK && hashRid) || store.get(SEL_KEY) || ALL;
   render();
+  if (requestCode) openRequestFrom(requestCode); // a place asked for on another phone, passed on by link
   let itemPending = hashItem || "";
   if (itemPending && data && byId(hashRid)) { showItem(hashRid, itemPending); itemPending = ""; }
   try { // back where you were after the app reloaded itself for new code
@@ -2057,7 +2445,7 @@
     if (data && itemPending && byId(hashRid)) { showItem(hashRid, itemPending); itemPending = ""; }
     importReady.data = true;
     maybeImport();
-    if (data && region === UK && !hashId && !fromFavLink && !store.get(SEL_KEY)) {
+    if (data && region === UK && !hashId && !fromFavLink && !requestCode && !store.get(SEL_KEY)) { // not over a request link's form
       if (data.restaurants.length === 1) select(data.restaurants[0].id);
       else { renderPicker(); openDialog($("picker")); }
     }

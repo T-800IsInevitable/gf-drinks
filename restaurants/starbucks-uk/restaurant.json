@@ -7,6 +7,7 @@
   "readers": ["starbucks_uk_pdf", "starbucks_uk_food_pdf"],
   "optionLabel": "milk",
   "officialUrl": "https://www.starbucks.co.uk",
+  "osm": ["Starbucks", "Starbucks Coffee"],
   "watch": {"page": "https://www.starbucks.co.uk/nutrition", "link": "UK_AllergenBook_CORE_(BEVERAGE|FOOD)"},
   "headline": "Never oat drink.",
   "tips": [

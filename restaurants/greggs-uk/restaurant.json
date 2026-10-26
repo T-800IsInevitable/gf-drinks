@@ -7,6 +7,7 @@
   "reader": "greggs_uk_pdf",
   "optionLabel": "option",
   "officialUrl": "https://www.greggs.com/nutrition",
+  "osm": ["Greggs"],
   "watch": {"page": "https://www.greggs.com/nutrition", "link": "allergen-guide"},
   "recheckDays": 61,
   "headline": "Cappuccino, hot chocolate and mocha may contain wheat.",

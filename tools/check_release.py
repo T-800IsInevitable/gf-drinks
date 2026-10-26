@@ -20,7 +20,7 @@ import sys
 # the app's own files, plus the chains' logos: the service worker serves them from the release's saved copy, so a
 # change to any of them reaches phones only with a new release
 CODE = ["site/app.js", "site/compare.js", "site/theme.js", "site/styles.css", "site/index.html", "site/sw.js", "site/manifest.webmanifest",
-        "site/icons", "restaurants/*/logo.png"]
+        "site/icons", "site/vendor", "restaurants/*/logo.png"]
 APP_VERSION = re.compile(r"const APP_VERSION = (\d+);")
 CACHE = re.compile(r'const CACHE = "gf-menus-v(\d+)"')
 

@@ -7,6 +7,7 @@
   "reader": "caffe_nero_uk_pdf",
   "optionLabel": "milk",
   "officialUrl": "https://www.caffenero.com/uk/menu/coffee",
+  "osm": ["Caffè Nero", "Caffe Nero"],
   "logoUrl": "https://www.caffenero.com/assets/img/brand/caffenero-logo_black.png",
   "watch": {
     "page": "https://www.caffenero.com/uk/menu/coffee",

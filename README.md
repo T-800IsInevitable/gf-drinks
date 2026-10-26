@@ -64,7 +64,9 @@ Live at **https://t-800isinevitable.github.io/gf-drinks/**
 
 **New guides found for you:** each Monday `.github/workflows/guide-watch.yml` (`tools/watch_guides.py`) opens each restaurant's own guide page (`watch` in its `restaurant.json`: the page, and a pattern its guide's link matches), downloads the guides it links and compares them with the ones here. A new one becomes a pull request with the PDF in `guides/`, the guide it replaces moved to `guides/archive/`, and what changed according to the build. Read it and merge it as above; nothing merges by itself. Older editions a page still links are left alone. If a page can't be checked (blocked, moved, no guide link), or Knoops (kept by hand) links a new guide, it opens an issue instead. To try it without opening anything: `python tools/watch_guides.py`.
 
-**Uploads from the app:** every 15 minutes `.github/workflows/upload-notice.yml` (`tools/upload_notice.py`) opens an issue, "Upload waiting: <folder>", for each menu sent from the app. The scan routine can start on that issue, so a menu is scanned within minutes; the routine's weekly schedule is the fallback. The scan closes the issue once its pull request is open.
+**Uploads from the app:** every 15 minutes `.github/workflows/upload-notice.yml` (`tools/upload_notice.py`) opens an issue, "Upload waiting: <folder>", for each menu sent from the app, and "Place requested: <name> (<area>)" for each place asked for by name (`inbox/requests/` on the `uploads` branch). The scan routine can start on that issue, so a menu is scanned within minutes; the routine's weekly schedule is the fallback. The scan closes the issue once its pull request is open. For a place asked for by name it looks for the place's own published allergen information (the "Places asked for by name" section of `tools/SCAN_INSTRUCTIONS.md`); if there is none, it says so on the issue and leaves it open for you.
+
+**Notifications:** after a publish that brought a new guide, the `notify` job in `publish.yml` runs `tools/push.py`, which sends one push notification (what changed, and a warning on the phone if a favourite now contains gluten) and sets the app's icon badge. There is no server, so the setup is by hand, once: the private half of the push key pair is the repository secret `VAPID_PRIVATE_KEY`, as the PEM text or the raw base64url value (its public half is `PUSH_KEY` in `site/app.js`; `tools/push.py` says how to make a new pair if it's lost), and each phone's notification address goes in the secret `PUSH_SUBSCRIPTIONS`, one JSON line per phone. A phone gets its address from **Help, Tell me about new menus** in the Home Screen app, then sends it to you. With no phones saved, the job says so and sends nothing. If a phone's address expires, the job's summary says which one; switch notifications on again on that phone and replace its line.
 
 **Reminders:** each morning `.github/workflows/guide-reminders.yml` opens an issue for any guide that has ended or ends within three weeks, and for a city list due a re-check. Close the issue if there's no newer guide yet; you won't be reminded again until the end date changes.
 
@@ -155,7 +157,10 @@ python -m http.server -d site 8000               # open http://localhost:8000
 - `tools/adapters/common.py`: what the readers share (the cereal words, tidying, picking the newest guide); `tools/gh.py`: the GitHub API for the tools that open issues and pull requests
 - `tools/reminders.py`: guides ending soon (opens GitHub issues each morning)
 - `tools/watch_guides.py`: new guides on the restaurants' websites (opens pull requests each Monday)
-- `tools/upload_notice.py`: opens an issue for each upload waiting on the `uploads` branch
+- `tools/upload_notice.py`: opens an issue for each upload, and each place asked for by name, waiting on the `uploads` branch
+- `tools/push.py`: the notification after a publish with a new guide (`--plan` in the build job, `--send` after the deploy)
+- `site/vendor/leaflet/`: the map library (Leaflet 1.9.4, BSD licence), a copy because the app's security policy allows scripts from its own files only; the map's tiles come from OpenStreetMap while the map is open and are never kept
+- `site/guides/` (generated): each restaurant's current guide, published so "Guide page 7" can open it
 - `tools/adapters/`: readers for each kind of allergen guide
 - `tools/SCAN_INSTRUCTIONS.md`: what the daily scan does with uploads
 - `inbox/` on the `uploads` branch: uploads waiting to be scanned

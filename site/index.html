@@ -15,10 +15,11 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/favicon.png">
 <link rel="stylesheet" href="styles.css">
-<!-- Scripts and styles only from this app's own files (nothing inline), connections only to this app and the
-     GitHub API that uploads use. Images also from blob: URLs, which is how a photo picked for Add a menu is read
-     before it's re-saved as a JPEG. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://api.github.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<!-- Scripts and styles only from this app's own files (nothing inline; the map library is a copy in vendor/),
+     connections only to this app, the GitHub API that uploads use, and the OpenStreetMap query service that Near me
+     uses. Images also from blob: URLs, which is how a photo picked for Add a menu is read before it's re-saved as a
+     JPEG, and from OpenStreetMap's tile server for the map. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://tile.openstreetmap.org; connect-src 'self' https://api.github.com https://overpass-api.de; base-uri 'none'; form-action 'none'; object-src 'none'">
 <script src="theme.js"></script>
 </head>
 <body>
@@ -127,7 +128,7 @@
     <p>Each restaurant's own allergen warnings, word for word, plus what its guide doesn't tell you.</p>
     <p><button type="button" id="openWarnings2" class="pill-btn">Read the warnings</button></p>
     <h3>Add a menu</h3>
-    <p id="uploadInfo">Send a restaurant's allergen menu (PDF or photos) to whoever shared this app, so they can add it. The app's owner can upload it straight to the app, where it's checked within a day and added once approved.</p>
+    <p id="uploadInfo">Know a place that should be here? Ask for it by name: its own allergen information is looked up and sent to the app's owner to approve. Or send its allergen menu (PDF or photos) to whoever shared this app. The owner can send either straight to the app, where it's checked within a day and added once approved.</p>
     <p><button type="button" id="openUpload" class="pill-btn">Add a menu</button></p>
     <h3>Reading the tags</h3>
     <ul class="legend">
@@ -150,10 +151,25 @@
       <p>Everything shows until you choose. Tap the buttons under the search box to show only items with <b>No gluten ingredients</b> (as served, or with any milk except the ones named), items that <b>Need a change</b> (ask for a swap or a change), and items to <b>Avoid</b> (they contain gluten, or the restaurant says they aren't suitable because of how they're prepared). The Avoid list under the menu opens when you search or choose Avoid.</p>
     </details>
     <details class="more">
-      <summary>Favourites</summary>
+      <summary>Favourites and notes</summary>
       <p>Open any item and tap <b>☆ Save</b>. Favourites stay on this phone. If a new guide puts a favourite on the Avoid list, or drops it, you'll see a warning at the top until you remove it.</p>
-      <p><b>Share my favourites</b> makes a link holding them all: keep it as a backup, or open it on another phone to add them there. Anything that has since gone, or is now on the Avoid list, isn't added.</p>
+      <p>Every opened item and city place has a <b>Your note</b> box ("ask for a clean jug", "staff at King's Cross were careful"). Notes stay on this phone, and rows with one show ✎.</p>
+      <p><b>Share my favourites</b> makes a link holding them all, notes included: keep it as a backup, or open it on another phone to add them there. Anything that has since gone, or is now on the Avoid list, isn't added.</p>
       <p><button type="button" class="pill-btn" data-sharefavs>Share my favourites</button></p>
+    </details>
+    <details class="more">
+      <summary>Near me</summary>
+      <p>On <b>All restaurants</b>, the <b>Near me</b> chip under the search box lists which of the app's chains have a branch within a kilometre, nearest first, with its menu and directions one tap away. The branches come from OpenStreetMap, which doesn't list every one; each chain's allergen guide covers all its branches. The last answer is kept for when there's no signal.</p>
+    </details>
+    <details class="more" id="pushHelp" hidden>
+      <summary>Tell me about new menus</summary>
+      <p>A notification when a restaurant's guide changes, a badge on the app's icon, and a warning if a favourite now contains gluten. There's no server behind this app: your phone's notification address is saved by the app's owner, by hand, in the project's settings on GitHub, and nothing else leaves the phone.</p>
+      <p><button type="button" id="pushOn" class="pill-btn">Tell me about new menus</button> <span id="pushState" class="muted"></span></p>
+      <div id="pushBox" hidden>
+        <p>Send this to whoever looks after the app. If that's you, add it as a line of the <b>PUSH_SUBSCRIPTIONS</b> secret under the project's Settings, Secrets and variables, Actions.</p>
+        <label class="field">Notification address<textarea id="pushSub" rows="4" readonly></textarea></label>
+        <p class="report-btns"><button type="button" id="pushSend" class="pill-btn">Send…</button><button type="button" id="pushOff" class="link-btn">Switch off</button></p>
+      </div>
     </details>
     <details class="more">
       <summary>Show staff</summary>
@@ -165,15 +181,15 @@
     </details>
     <details class="more">
       <summary>Share an item, or report a mistake</summary>
-      <p>Open any item and tap <b>Share this item</b> for a link that opens straight to it. Tap <b>Something wrong?</b> (on any item or city place) for a ready message with the restaurant, item and guide page, to send to whoever looks after the app.</p>
+      <p>Open any item and tap <b>Share this item</b> for a link that opens straight to it. Tap <b>Something wrong?</b> (on any item or city place) for a ready message with the restaurant, item and guide page, to send to whoever looks after the app. <b>Guide page 7</b> in an opened item opens the restaurant's own guide, at that page where the phone's PDF viewer can, to show staff or to double-check.</p>
     </details>
     <details class="more">
       <summary>International: Berlin and Amsterdam</summary>
-      <p>Choose a country from the title (they're listed under <b>International</b>, like the restaurants; the app also offers a city when your phone is on its time) for places there that are all gluten free, by their own word or the coeliac society's list, or that say they make gluten free food in a separate kitchen. <b>International</b> next to the title goes straight to the city you last looked at. Each tag says who makes that claim. Each row says whether it's open now (local time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Open near me</b> shows what's still open today, nearest first; <b>Still open today</b>, <b>Near me</b> and <b>★ Saved</b> narrow the list on their own. The <b>German card</b> or <b>Dutch card</b> chip opens the coeliac card, and <b>About the tags</b> and <b>Before you go</b> open under the introduction. Tap <b>UK</b> to go back to the menus.</p>
+      <p>Choose a country from the title (they're listed under <b>International</b>, like the restaurants; the app also offers a city when your phone is on its time) for places there that are all gluten free, by their own word or the coeliac society's list, or that say they make gluten free food in a separate kitchen. <b>International</b> next to the title goes straight to the city you last looked at. Each tag says who makes that claim. Each row says whether it's open now (local time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Open near me</b> shows what's still open today, nearest first; <b>Still open today</b>, <b>Near me</b> and <b>★ Saved</b> narrow the list on their own. <b>Map</b> shows the places as pins in the row's colours (OpenStreetMap, while you have signal); tap a pin, then Open. The <b>German card</b> or <b>Dutch card</b> chip opens the coeliac card, and <b>About the tags</b> and <b>Before you go</b> open under the introduction. Tap <b>UK</b> to go back to the menus.</p>
     </details>
     <details class="more">
       <summary>Travelling</summary>
-      <p>Menus in other languages show each item in English with the original name underneath, so you can point to it when ordering. A coeliac card you can show staff is available in: <span id="cardLangs"></span>. Open it from a city's page, or from a restaurant whose menu is in that language.</p>
+      <p>Menus in other languages show each item in English with the original name underneath, so you can point to it when ordering. A coeliac card you can show staff is available in: <span id="cardLangs"></span>. Open it from a city's page, or from a restaurant whose menu is in that language. <b>Say it</b> under each phrase reads it aloud in the phone's own voice for that language, which works without signal once the voice is installed.</p>
     </details>
     <details class="more">
       <summary>Appearance</summary>
@@ -268,12 +284,31 @@
   </form>
 </dialog>
 
+<dialog id="near" aria-labelledby="nearTitle">
+  <form method="dialog" class="sheet">
+    <div class="sheet-head">
+      <h2 id="nearTitle">Near me</h2>
+      <button class="link-btn" value="close">Done</button>
+    </div>
+    <div id="nearBody"></div>
+  </form>
+</dialog>
+
 <dialog id="upload" aria-labelledby="uploadTitle">
   <form class="sheet" id="uploadForm" novalidate>
     <div class="sheet-head">
       <h2 id="uploadTitle">Add a menu</h2>
       <button type="button" class="link-btn" id="uploadClose">Close</button>
     </div>
+    <h3 class="first">Ask for a place by name</h3>
+    <p>Know somewhere that should be here? Its own allergen information is looked up and added for the app's owner to approve.</p>
+    <label class="field">Place<input id="reqName" placeholder="e.g. Wagamama" autocomplete="off"></label>
+    <label class="field">City or country<input id="reqArea" placeholder="e.g. London" autocomplete="off"></label>
+    <label class="field">Its website (optional)<input id="reqUrl" inputmode="url" placeholder="e.g. wagamama.com" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+    <p><button type="button" id="reqSend" class="pill-btn">Ask for it</button></p>
+    <p id="reqStatus" class="muted" role="status"></p>
+    <div id="reqList" hidden></div>
+    <h3>Or send its menu</h3>
     <div id="keySetup" hidden>
       <p>Take photos of the restaurant's allergen menu (or save its PDF), then send them to whoever shared this app with you. They'll add it.</p>
       <div class="field">Photos or PDF

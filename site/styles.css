@@ -412,6 +412,34 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 .report-btns { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
 #report textarea { font: inherit; font-size: 1rem; width: 100%; resize: vertical; }
 
+/* ---- a map of the city's places (Leaflet; its own stylesheet loads with it) ---- */
+.city-map { height: 52vh; min-height: 280px; border-radius: 12px; border: 1px solid var(--line); overflow: hidden; background: var(--chip); margin-bottom: 8px; color-scheme: light; }
+.city-map .leaflet-popup-content { font: 0.9375rem/1.35 var(--body); color: #231c18; margin: 10px 14px; }
+.city-map .leaflet-popup-content .link-btn { color: #5b3a29; padding: 4px 0; }
+.city-map .leaflet-container a { color: #5b3a29; }
+.map-note { margin: 0 0 10px; }
+/* ---- Near me on the UK menus: the chains within a kilometre ---- */
+.near-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; }
+.near-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.near-list .nm { flex: 1; min-width: 0; color: var(--fg); }
+.near-list .nm small { display: block; font-size: 0.8125rem; color: var(--muted); }
+.near-btns { display: flex; gap: 6px; flex: none; }
+.near-btns a { text-decoration: none; display: inline-flex; align-items: center; }
+/* ---- the coeliac card read aloud ---- */
+.say-btn { margin-top: 8px; border: 1px solid var(--line); background: var(--bg); border-radius: 999px; padding: 8px 14px; min-height: 44px; font-size: 0.8438rem; font-weight: 600; color: var(--accent); cursor: pointer; }
+/* ---- personal notes on items and places ---- */
+.note-box { display: flex; flex-direction: column; gap: 4px; font-size: 0.8125rem; font-weight: 600; color: var(--fg); }
+.note-box textarea { font: inherit; font-weight: 400; font-size: 0.9375rem; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); resize: vertical; min-height: 40px; }
+.note-mark { color: var(--accent); margin-right: 5px; }
+/* ---- "Guide page 7" opens the guide ---- */
+.guide-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent); font-weight: 600; text-decoration: none; }
+/* ---- places asked for by name ---- */
+.req-list { padding-left: 18px; font-size: 0.875rem; display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.req-list li { color: var(--fg); }
+.sheet h3.first { margin-top: 12px; }
+/* ---- notifications: the phone's address, to pass on ---- */
+#pushSub { font-size: 0.75rem; font-family: ui-monospace, Menlo, monospace; }
+
 /* ---- floating notices ---- */
 .toast {
   position: fixed; left: 16px; right: 16px; margin: 0 auto;
