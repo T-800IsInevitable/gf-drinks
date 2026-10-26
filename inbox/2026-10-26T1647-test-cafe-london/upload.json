@@ -1,8 +1,0 @@
-{
-  "restaurant": "Test Cafe (test upload, ignore)",
-  "area": "London",
-  "notes": "TEST upload from the assistant to check the scan starts. Process it as normal; the pull request will be closed unmerged.",
-  "files": 1,
-  "uploadedAt": "2026-10-26T16:47:37.046156+00:00",
-  "uploadedFrom": "test"
-}
