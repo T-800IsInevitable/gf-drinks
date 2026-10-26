@@ -16,24 +16,15 @@ The guide has no date in its text: the season comes from the file name
 ("...Autumn26.pdf") and the version from the PDF's creation date.
 """
 import re
-from datetime import date, timedelta
 from pathlib import Path
 
 import pdfplumber
 
-CONTAINS = re.compile(r"\b(WHEAT|OATS?|BARLEY|RYE|SPELT|KAMUT|GLUTEN|MALT(?:ED)?)\b")
-MAY = re.compile(r"\b(oats?|wheat|gluten|barley|rye|spelt|cereals)\b", re.I)
+from .common import CEREAL_CAPS as CONTAINS, CEREAL_WORDS, cereal_code as cereal, clean, newest_by, result
+
+MAY = re.compile(rf"\b({CEREAL_WORDS}|cereals)\b", re.I)
 VERSION = re.compile(r"With\s+(\w+)\s*:", re.I)
 MIN_ROWS = 60
-
-
-def clean(s):
-    return re.sub(r"\s+", " ", s or "").strip()
-
-
-def cereal(word):
-    w = word.upper()
-    return {"OATS": "OAT", "MALTED": "MALT"}.get(w, w)
 
 
 def guide_info(pdf, path):
@@ -149,17 +140,7 @@ def classify(p, warnings):
 
 
 def newest_pdf(folder):
-    pdfs = sorted(folder.glob("*.pdf"), key=lambda p: p.stat().st_mtime)
-    if not pdfs:
-        raise SystemExit(f"ERROR: no PDF found in {folder}")
-    dated = []
-    for p in pdfs:
-        with pdfplumber.open(p) as pdf:
-            dated.append((guide_info(pdf, p)["version"] or "0000-00-00", p.stat().st_mtime, p))
-    dated.sort()
-    for v, _, p in dated:
-        print(f"  found {p.name} (version {v})")
-    return dated[-1][2]
+    return newest_by(folder, lambda pdf, p: guide_info(pdf, p)["version"])
 
 
 def build(folder, config):
@@ -177,17 +158,6 @@ def build(folder, config):
         if note:
             item["info"] = note
         (ok if kind == "ok" else avoid).append(item)
-    if info["version"]:
-        info["validUntil"] = (date.fromisoformat(info["version"]) + timedelta(days=int(config.get("recheckDays", 91)))).isoformat()
-    return {
-        "notices": [],
-        "source": pdf_path.name,
-        "guide": info,
-        "rule": "Blank Street: excludes anything whose ingredients list wheat, oats, barley, rye, spelt, kamut, gluten or malt, "
-                "or whose 'May Contain' line names oats, gluten or cereals containing gluten.",
-        "sections": list(dict.fromkeys(i["section"] for i in ok + avoid)),
-        "items": ok,
-        "avoid": avoid,
-        "warnings": warnings,
-        "stats": {"rows": len(rows), "items": len(ok), "avoid": len(avoid)},
-    }
+    return result(pdf_path.name, info,
+                  "Blank Street: excludes anything whose ingredients list wheat, oats, barley, rye, spelt, kamut, gluten or malt, "
+                  "or whose 'May Contain' line names oats, gluten or cereals containing gluten.", ok, avoid, warnings, rows=len(rows))

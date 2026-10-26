@@ -106,9 +106,9 @@ AVOID | Extras | Extra Breakfast Sausage | WHEAT
 AVOID | Extras | Extra Lorne Sausage | WHEAT
 AVOID | Pastries | All Butter Croissant | WHEAT
 AVOID | Pastries | Pain au Chocolat | WHEAT
-AVOID | Porridge | Apple & Cinnamon Flavour Porridge | OATS
-AVOID | Porridge | Golden Syrup Flavour Porridge | OATS
-AVOID | Porridge | Simply Creamy Porridge | OATS
+AVOID | Porridge | Apple & Cinnamon Flavour Porridge | OAT
+AVOID | Porridge | Golden Syrup Flavour Porridge | OAT
+AVOID | Porridge | Simply Creamy Porridge | OAT
 AVOID | Baguettes | Free Range Egg Mayonnaise Baguette | WHEAT
 AVOID | Baguettes | Free Range Egg Mayonnaise Half Baguette | WHEAT
 AVOID | Baguettes | Ham & Cheese Baguette | WHEAT
@@ -166,12 +166,12 @@ AVOID | Savouries & Bakes | Cheese & Onion Bake | WHEAT
 AVOID | Savouries & Bakes | Chicken Bake | WHEAT
 AVOID | Savouries & Bakes | Corned Beef Bake | WHEAT
 AVOID | Savouries & Bakes | Festive Bake | WHEAT;BARLEY
-AVOID | Savouries & Bakes | Haggis Pie | WHEAT;OATS
+AVOID | Savouries & Bakes | Haggis Pie | WHEAT;OAT
 AVOID | Savouries & Bakes | Salt & Chilli Chicken Roll | WHEAT
 AVOID | Savouries & Bakes | Sausage, Bean & Cheese Melt | WHEAT
 AVOID | Savouries & Bakes | Sausage Roll | WHEAT;BARLEY
 AVOID | Savouries & Bakes | Savoury Mince Pie | WHEAT;BARLEY
-AVOID | Savouries & Bakes | Scotch Pie | WHEAT;OATS
+AVOID | Savouries & Bakes | Scotch Pie | WHEAT;OAT
 AVOID | Savouries & Bakes | Steak & Stilton® Bake | WHEAT;BARLEY
 AVOID | Savouries & Bakes | Steak Bake | WHEAT;BARLEY
 AVOID | Savouries & Bakes | Vegetable Bake | WHEAT
@@ -182,14 +182,14 @@ AVOID | Pizzas | Pepperoni Pizza with Hot Honey | WHEAT;BARLEY
 AVOID | Pizzas | Spicy Chicken Pizza | WHEAT;BARLEY
 AVOID | Sweet Treats | Apple Danish | WHEAT
 AVOID | Sweet Treats | Bavarian Slice | WHEAT
-AVOID | Sweet Treats | Bbc Children in Need Novelty Bun | WHEAT;OATS
+AVOID | Sweet Treats | Bbc Children in Need Novelty Bun | WHEAT;OAT
 AVOID | Sweet Treats | Belgian Bun | WHEAT
 AVOID | Sweet Treats | Bonfire Toffee Muffin | WHEAT
 AVOID | Sweet Treats | Caramel Custard Doughnut | WHEAT
 AVOID | Sweet Treats | Cheese Scones | WHEAT
 AVOID | Sweet Treats | Chocolate Brownie Bar | WHEAT
-AVOID | Sweet Treats | Chocolate Cake Bar | WHEAT;OATS
-AVOID | Sweet Treats | Christmas Buns | WHEAT;OATS
+AVOID | Sweet Treats | Chocolate Cake Bar | WHEAT;OAT
+AVOID | Sweet Treats | Christmas Buns | WHEAT;OAT
 AVOID | Sweet Treats | Christmas Cake Slice | WHEAT
 AVOID | Sweet Treats | Christmas Mini Caramel Shortbread/Offcuts | WHEAT
 AVOID | Sweet Treats | Cream Éclair | WHEAT
@@ -197,7 +197,7 @@ AVOID | Sweet Treats | Cream Iced Finger | WHEAT
 AVOID | Sweet Treats | Double Chocolate Doughnut | WHEAT
 AVOID | Sweet Treats | Empire Biscuit | WHEAT
 AVOID | Sweet Treats | Fruit Scones | WHEAT
-AVOID | Sweet Treats | Fruity Flapjack | OATS
+AVOID | Sweet Treats | Fruity Flapjack | OAT
 AVOID | Sweet Treats | Gingerbread Man | WHEAT
 AVOID | Sweet Treats | Jam Doughnut | WHEAT
 AVOID | Sweet Treats | Jammy Heart Biscuit | WHEAT
@@ -205,7 +205,7 @@ AVOID | Sweet Treats | Mango & Passion Fruit Doughnut | WHEAT
 AVOID | Sweet Treats | Milk Chocolate Caramel Shortbreads/Offcuts | WHEAT
 AVOID | Sweet Treats | Milk Chocolate Cookie | WHEAT
 AVOID | Sweet Treats | Millionaire’s Doughnut | WHEAT
-AVOID | Sweet Treats | Novelty Buns | WHEAT;OATS
+AVOID | Sweet Treats | Novelty Buns | WHEAT;OAT
 AVOID | Sweet Treats | Peach Melba | WHEAT
 AVOID | Sweet Treats | Pineapple Cake | WHEAT
 AVOID | Sweet Treats | Pink Jammie | WHEAT
@@ -213,7 +213,7 @@ AVOID | Sweet Treats | Pudsey Biscuit | WHEAT
 AVOID | Sweet Treats | Pudsey Jammy Biscuit | WHEAT
 AVOID | Sweet Treats | Pumpkin Biscuit | WHEAT
 AVOID | Sweet Treats | Pumpkin Spice Doughnut | WHEAT
-AVOID | Sweet Treats | Spooky Buns | WHEAT;OATS
+AVOID | Sweet Treats | Spooky Buns | WHEAT;OAT
 AVOID | Sweet Treats | Star Biscuit | WHEAT
 AVOID | Sweet Treats | Strawberries & Cream Muffin | WHEAT
 AVOID | Sweet Treats | Sugar Strand Doughnut | WHEAT

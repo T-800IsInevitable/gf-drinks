@@ -349,14 +349,14 @@ AVOID | Appetisers, Dough Balls & Starters | Garlic Bread with Vegan Mozzarella 
 AVOID | Appetisers, Dough Balls & Starters | Garlic Bread with Vegan Mozzarella Alternative Sharer | WHEAT
 AVOID | Appetisers, Dough Balls & Starters | Mozzarella Sticks | WHEAT
 AVOID | Appetisers, Dough Balls & Starters | Sharing Trio | WHEAT
-AVOID | Appetisers, Dough Balls & Starters | Truffle Cacio e Pepe Bites | WHEAT;BARLEY
+AVOID | Appetisers, Dough Balls & Starters | Truffle Cacio e Pepe Bites | BARLEY;WHEAT
 AVOID | Appetisers, Dough Balls & Starters | Vegan Dough Balls ‘PizzaExpress’ | WHEAT
 AVOID | Appetisers, Dough Balls & Starters | Vegan Dough Ball Sharer | WHEAT
 AVOID | Sides | Dough Sticks | WHEAT
 AVOID | Sides | Polenta Chips | WHEAT
-AVOID | Salads | Goat’s Cheese & Beetroot Buddha Bowl (with Dough Sticks) | WHEAT;BARLEY;SPELT
+AVOID | Salads | Goat’s Cheese & Beetroot Buddha Bowl (with Dough Sticks) | BARLEY;SPELT;WHEAT
 AVOID | Salads | Grand Chicken Caesar (with Dough Sticks) | WHEAT
-AVOID | Salads | Vegan Buddha Bowl (with Dough Sticks) | WHEAT;BARLEY;SPELT
+AVOID | Salads | Vegan Buddha Bowl (with Dough Sticks) | BARLEY;SPELT;WHEAT
 AVOID | Salads | Warm Roasted Veg & Chicken Bowl | GLUTEN tag=May contain gluten
 AVOID | Al Forno | Cannelloni | WHEAT
 AVOID | Al Forno | Large Lasagne | WHEAT
@@ -370,7 +370,7 @@ AVOID | Leggera Pizza | Leggera Giardiniera | WHEAT
 AVOID | Leggera Pizza | Leggera Padana | WHEAT
 AVOID | Leggera Pizza | Leggera Pollo ad Astra | WHEAT
 AVOID | Leggera Pizza | Leggera Pomodoro | WHEAT
-AVOID | Desserts, Gelato & Sorbet | Baked Vanilla Cheesecake (with Vanilla Gelato) | WHEAT;OATS
+AVOID | Desserts, Gelato & Sorbet | Baked Vanilla Cheesecake (with Vanilla Gelato) | OAT;WHEAT
 AVOID | Desserts, Gelato & Sorbet | Biscoff® Billionaire’s Sundae | WHEAT
 AVOID | Desserts, Gelato & Sorbet | Biscoff® Cheesecake | WHEAT
 AVOID | Desserts, Gelato & Sorbet | Chocolate Fudge Cake (with Vanilla Gelato) | WHEAT
@@ -384,7 +384,7 @@ AVOID | Dolcetti (Not Including Drinks) | Choc Ice Bites | WHEAT tag=May contain
 AVOID | Piccolo Starters | Baked Dough Balls with Garlic Butter | WHEAT
 AVOID | Piccolo Starters | Baked Dough Balls with Houmous | WHEAT
 AVOID | Piccolo Salad | Buttermilk Chicken Goujons | WHEAT
-AVOID | Piccolo Drinks | Bambinoccino with Oat Drink | OATS tag=Oats
+AVOID | Piccolo Drinks | Bambinoccino with Oat Drink | OAT tag=Oats
 AVOID | Ingredients | Baby Cones | WHEAT role=ingredient
 AVOID | Ingredients | Biscoff® Biscuits | WHEAT role=ingredient
 AVOID | Ingredients | Biscoff® Cheesecake (ingredient) | WHEAT role=ingredient
@@ -401,7 +401,7 @@ AVOID | Ingredients | Honeycomb Cream Slice (ingredient) | WHEAT role=ingredient
 AVOID | Ingredients | Lasagna (ingredient) | WHEAT role=ingredient
 AVOID | Ingredients | Lemon & Raspberry Cheesecake (ingredient) | WHEAT role=ingredient
 AVOID | Ingredients | Macaroni Pasta | WHEAT role=ingredient
-AVOID | Ingredients | Mixed Grains with Chickpeas | WHEAT;BARLEY;SPELT role=ingredient
+AVOID | Ingredients | Mixed Grains with Chickpeas | BARLEY;SPELT;WHEAT role=ingredient
 AVOID | Ingredients | Mozzarella Sticks (ingredient) | WHEAT role=ingredient
 AVOID | Ingredients | Mushroom Pappardelle (ingredient) | WHEAT role=ingredient
 AVOID | Ingredients | Penne Pasta | WHEAT role=ingredient
@@ -409,8 +409,8 @@ AVOID | Ingredients | Polenta Chips (ingredient) | WHEAT role=ingredient
 AVOID | Ingredients | Potato Bites (ingredient) | WHEAT role=ingredient
 AVOID | Ingredients | Pretzel Pieces | WHEAT role=ingredient
 AVOID | Ingredients | Tiramisu (ingredient) | WHEAT role=ingredient
-AVOID | Ingredients | Truffle Cacio e Peppe Bites (ingredient) | WHEAT;BARLEY role=ingredient
-AVOID | Ingredients | Vanilla Cheesecake – Round (ingredient) | WHEAT;OATS role=ingredient
+AVOID | Ingredients | Truffle Cacio e Peppe Bites (ingredient) | BARLEY;WHEAT role=ingredient
+AVOID | Ingredients | Vanilla Cheesecake – Round (ingredient) | OAT;WHEAT role=ingredient
 AVOID | Ingredients | Wafer | WHEAT role=ingredient
 AVOID | Ingredients | White Chocolate Blondie (ingredient) | WHEAT role=ingredient
 AVOID | Beer & Cider | London Pride | BARLEY
@@ -419,16 +419,16 @@ AVOID | Beer & Cider | Peroni Nastro Azzurro | BARLEY
 AVOID | Beer & Cider | Peroni 0.0 Blood Orange | BARLEY
 AVOID | Beer & Cider | Peroni 0.0 Sicilian Lemon | BARLEY
 AVOID | Beer & Cider | Peroni Nastro Azzurro 0.0% | BARLEY
-AVOID | Coffee & Tea | Americano with Oat Drink | OATS tag=Oats
-AVOID | Coffee & Tea | Cappuccino with Oat Drink | OATS tag=Oats
-AVOID | Coffee & Tea | Flat White with Oat Drink | OATS tag=Oats
-AVOID | Coffee & Tea | Hot Chocolate with Oat Drink | OATS tag=Oats
-AVOID | Coffee & Tea | Iced Latte with Oat Drink | OATS tag=Oats
-AVOID | Coffee & Tea | Latte with Oat Drink | OATS tag=Oats
-AVOID | Coffee & Tea | Macchiato with Oat Drink | OATS tag=Oats
-AVOID | Coffee & Tea | Mocha with Oat Drink | OATS tag=Oats
-AVOID | Coffee & Tea | Salted Caramel Iced Latte with Oat Drink | OATS tag=Oats
-AVOID | Ingredients - Drinks | Oat Drink – Gluten-Free | OATS tag=Oats role=ingredient
+AVOID | Coffee & Tea | Americano with Oat Drink | OAT tag=Oats
+AVOID | Coffee & Tea | Cappuccino with Oat Drink | OAT tag=Oats
+AVOID | Coffee & Tea | Flat White with Oat Drink | OAT tag=Oats
+AVOID | Coffee & Tea | Hot Chocolate with Oat Drink | OAT tag=Oats
+AVOID | Coffee & Tea | Iced Latte with Oat Drink | OAT tag=Oats
+AVOID | Coffee & Tea | Latte with Oat Drink | OAT tag=Oats
+AVOID | Coffee & Tea | Macchiato with Oat Drink | OAT tag=Oats
+AVOID | Coffee & Tea | Mocha with Oat Drink | OAT tag=Oats
+AVOID | Coffee & Tea | Salted Caramel Iced Latte with Oat Drink | OAT tag=Oats
+AVOID | Ingredients - Drinks | Oat Drink – Gluten-Free | OAT tag=Oats role=ingredient
 AVOID | Breakfast Eggs | Eggs Benedict | WHEAT
 AVOID | Breakfast Eggs | Eggs Florentine | WHEAT
 AVOID | Breakfast Eggs | Eggs on Bruschetta – Fried OR Poached egg | WHEAT
@@ -440,7 +440,7 @@ AVOID | Cooked Breakfast | Dough Sticks | WHEAT
 AVOID | Cooked Breakfast | The Full Veggie | WHEAT
 AVOID | Cooked Breakfast | The Light Works | WHEAT
 AVOID | Cooked Breakfast | The Light Veggie | WHEAT
-AVOID | Cooked Breakfast | Toast – Sourdough | WHEAT;RYE
+AVOID | Cooked Breakfast | Toast – Sourdough | RYE;WHEAT
 AVOID | Breakfast pancakes & Pastries | All-butter Croissant | WHEAT
 AVOID | Breakfast pancakes & Pastries | Blueberry & Mascarpone Pancakes | WHEAT
 AVOID | Breakfast pancakes & Pastries | Pain au Chocolat | WHEAT
@@ -455,5 +455,5 @@ AVOID | Breakfast ingredients | Bruschetta Bread | WHEAT role=ingredient
 AVOID | Breakfast ingredients | Croissant All Butter | WHEAT role=ingredient
 AVOID | Breakfast ingredients | Pain au Chocolat (ingredient) | WHEAT role=ingredient
 AVOID | Breakfast ingredients | Pancakes | WHEAT role=ingredient
-AVOID | Breakfast ingredients | Sour dough bread | WHEAT;RYE role=ingredient
+AVOID | Breakfast ingredients | Sour dough bread | RYE;WHEAT role=ingredient
 AVOID | Breakfast ingredients | Vegetarian Sausage | WHEAT tag=May contain gluten role=ingredient

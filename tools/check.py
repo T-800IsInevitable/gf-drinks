@@ -2,6 +2,9 @@
 """
 Sanity checks on the built data before it is published. Run after build.py.
 Fails (and so blocks publishing) if anything looks wrong.
+
+Usage:
+  python tools/check.py
 """
 import json
 import re
@@ -10,29 +13,24 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build import CAPS_WORDS  # noqa: E402  (needs the path above)
+from check_release import app_number, cache_number  # noqa: E402
 
-DATA = Path(__file__).resolve().parent.parent / "site" / "data"
+SITE = Path(__file__).resolve().parent.parent / "site"
+DATA = SITE / "data"
 ORDERS = {"asis", "any", "except", "swap", "modify"}
-errors = []
+# cities.json: who says a place is gluten free: the place (all or part of its range), only the support groups' list,
+# or a separate kitchen
+CITY_CLAIMS = {"place-all", "list-all", "place-part", "separate"}
+# opening hours as the app reads them (site/app.js, span()): "HH:MM–HH:MM", a note may follow
+HOURS = re.compile(r"(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})")
 
 
-def err(msg):
-    errors.append(msg)
-
-
-index = json.loads((DATA / "restaurants.json").read_text(encoding="utf-8"))
-ids = [r["id"] for r in index["restaurants"]]
-if not ids:
-    err("no restaurants in restaurants.json")
-if len(ids) != len(set(ids)):
-    err("duplicate restaurant ids")
-
-for r in index["restaurants"]:
+def check_restaurant(r, err):
     rid = r["id"]
-    path = DATA.parent / r["file"]
+    path = SITE / r["file"]
     if not path.exists():
         err(f"{rid}: {r['file']} missing")
-        continue
+        return
     d = json.loads(path.read_text(encoding="utf-8"))
     if not d["items"]:
         err(f"{rid}: no items without gluten ingredients")
@@ -85,15 +83,12 @@ for r in index["restaurants"]:
     for n in d.get("notices", []):
         if not n.get("text"):
             err(f"{rid}: a warning has no text")
-    # the order builder's settings (restaurant.json "order"): its words, and the sections to show first
+    # the order builder's words (restaurant.json "order"); build.py already stops on a section it names that has gone
     cfg = d.get("order")
     if cfg is not None:
         if not isinstance(cfg, dict):
             err(f"{rid}: \"order\" in restaurant.json must be an object")
         else:
-            for s in cfg.get("first", []):
-                if s not in d["sections"]:
-                    err(f"{rid}: order.first names {s!r}, which isn't a section in the guide")
             for k in ("intro", "cardLine"):
                 if k in cfg and not (isinstance(cfg[k], str) and cfg[k].strip()):
                     err(f"{rid}: order.{k} must be a sentence")
@@ -101,23 +96,22 @@ for r in index["restaurants"]:
                 err(f"{rid}: order.intro is {len(cfg['intro'])} characters; keep it under 320")
             if cfg.get("cardLine") and not cfg["cardLine"].rstrip().endswith("please."):
                 err(f"{rid}: order.cardLine is what the staff card asks for, so end it with 'please.'")
-    if d.get("logo") and not (DATA.parent / d["logo"]).exists():
+    if d.get("logo") and not (SITE / d["logo"]).exists():
         err(f"{rid}: logo {d['logo']} wasn't written")
+    if not d.get("hash") or r.get("hash") != d["hash"]:
+        err(f"{rid}: the index and the menu file don't carry the same fingerprint")
+    if "built" in d:
+        err(f"{rid}: the menu file carries a build time, which would make every release re-download it")
     print(f"{rid}: {len(d['items'])} with no gluten ingredients, {len(d['avoid'])} to avoid, guide valid until {d['guide'].get('validUntil')}")
 
-# cities.json: hand-checked places (not built from guides)
-# who says it's gluten free: the place (all or part of its range), only the support groups' list, or a separate kitchen
-CITY_CLAIMS = {"place-all", "list-all", "place-part", "separate"}
-cities = json.loads((DATA.parent / "cities.json").read_text(encoding="utf-8"))
-phrases = json.loads((DATA.parent / "phrases.json").read_text(encoding="utf-8"))
-for cid, c in cities.items():
-    for key in ("name", "language", "checked", "list", "tips", "sections", "places"):
+
+def check_city(cid, c, phrases, err):
+    for key in ("name", "language", "checked", "list", "tips", "sections", "places", "country", "bounds"):
         if not c.get(key):
             err(f"city {cid}: missing {key}")
     if c.get("language") not in phrases:
         err(f"city {cid}: no coeliac card for language {c.get('language')!r}")
-    if not c.get("country"):
-        err(f"city {cid}: missing country (the chooser lists cities by country under International)")
+    box = c.get("bounds") or {"lat": [0, 0], "lon": [0, 0]}
     for p in c.get("places", []):
         where = f"city {cid}: {p.get('name')!r}"
         if p.get("section") not in c.get("sections", []):
@@ -142,8 +136,7 @@ for cid, c in cities.items():
         if not p.get("locations") or any(not l.get("address") or not l.get("area") for l in p["locations"]):
             err(f"{where}: every location needs an address and area")
         for l in p.get("locations", []):
-            # coordinates for "Near me": must fall inside the city (catches swapped or mistyped numbers)
-            box = c.get("bounds", {"lat": [52.3, 52.7], "lon": [13.0, 13.8]})
+            # coordinates for "Near me": must fall inside the city's own bounds (catches swapped or mistyped numbers)
             if not (box["lat"][0] < l.get("lat", 0) < box["lat"][1] and box["lon"][0] < l.get("lon", 0) < box["lon"][1]):
                 err(f"{where}: {l.get('address')} has no coordinates inside {cid}")
             h = l.get("hours")
@@ -153,8 +146,7 @@ for cid, c in cities.items():
                 err(f"{where}: {l.get('address')} kitchenCloses {l['kitchenCloses']!r} isn't HH:MM")
             for day, x in zip("Mon Tue Wed Thu Fri Sat Sun".split(), h or []):
                 x = x or ""
-                # the app reads "HH:MM–HH:MM" (a note may follow); a time it can't read would show the place as closed
-                m = re.match(r"(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})", x)
+                m = HOURS.match(x)  # a time the app can't read would show the place as closed
                 if x and not m:
                     err(f"{where}: {l.get('address')} {day} hours {x!r} aren't HH:MM–HH:MM")
                 elif m and int(m[3]) * 60 + int(m[4]) <= int(m[1]) * 60 + int(m[2]):
@@ -164,16 +156,34 @@ for cid, c in cities.items():
                 err(f"{where}: link {u!r} isn't https")
     print(f"city {cid}: {len(c.get('places', []))} places, checked {c.get('checked')}")
 
-# the release number: the app's APP_VERSION and the service worker's cache number must be the same (tools/check_release.py)
-SITE = DATA.parent
-app_v = re.search(r"const APP_VERSION = (\d+);", (SITE / "app.js").read_text(encoding="utf-8"))
-sw_v = re.search(r'const CACHE = "gf-menus-v(\d+)"', (SITE / "sw.js").read_text(encoding="utf-8"))
-if not app_v or not sw_v or app_v.group(1) != sw_v.group(1):
-    err(f"release: APP_VERSION in site/app.js ({app_v and app_v.group(1)}) and CACHE in site/sw.js ({sw_v and sw_v.group(1)}) must match")
 
-if errors:
-    print("\nCHECK FAILED:")
-    for e in errors:
-        print(" -", e)
-    sys.exit(1)
-print("All checks passed")
+def main():
+    errors = []
+    err = errors.append
+    index = json.loads((DATA / "restaurants.json").read_text(encoding="utf-8"))
+    ids = [r["id"] for r in index["restaurants"]]
+    if not ids:
+        err("no restaurants in restaurants.json")
+    if len(ids) != len(set(ids)):
+        err("duplicate restaurant ids")
+    for r in index["restaurants"]:
+        check_restaurant(r, err)
+    cities = json.loads((SITE / "cities.json").read_text(encoding="utf-8"))
+    phrases = json.loads((SITE / "phrases.json").read_text(encoding="utf-8"))
+    for cid, c in cities.items():
+        check_city(cid, c, phrases, err)
+    # the release number: the app's APP_VERSION and the service worker's cache number must be the same
+    app_v = app_number((SITE / "app.js").read_text(encoding="utf-8"))
+    sw_v = cache_number((SITE / "sw.js").read_text(encoding="utf-8"))
+    if app_v != sw_v:
+        err(f"release: APP_VERSION in site/app.js ({app_v}) and CACHE in site/sw.js ({sw_v}) must match")
+    if errors:
+        print("\nCHECK FAILED:")
+        for e in errors:
+            print(" -", e)
+        sys.exit(1)
+    print("All checks passed")
+
+
+if __name__ == "__main__":
+    main()

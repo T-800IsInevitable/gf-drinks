@@ -16,15 +16,15 @@ The column headers are rotated, so they're read by position. The build stops if 
 a mark doesn't sit under a column.
 """
 import re
-from datetime import date, timedelta
 from pathlib import Path
 
 import pdfplumber
 
 from . import notices
+from .common import cereal_word, clean, newest_by, result
 
 TICK, BULLET = "\u2713", "\uf09f"
-CEREALS = {"Wheat": "WHEAT", "Rye": "RYE", "Barley": "BARLEY", "Oats": "OATS", "Spelt (Wheat)": "SPELT", "Kamut (Wheat)": "KAMUT"}
+CEREALS = {"Wheat": "WHEAT", "Rye": "RYE", "Barley": "BARLEY", "Oats": "OAT", "Spelt (Wheat)": "SPELT", "Kamut (Wheat)": "KAMUT"}
 GF_HEAD = "Gluten Free (GF)"
 OTHERS = ["Soya", "Nuts", "Peanut", "Sesame", "Milk", "Eggs", "Fish", "Crustaceans", "Celery", "Sulphites", "Mustard", "Molluscs", "Lupin"]
 # the guide's own labels after a name: "(NEW)", "(NEW / NEW RECIPE)", "(NEW RECIPE/ ALLERGEN UPDATE)", "(GF)", "(HS)"
@@ -33,13 +33,8 @@ LABELS = re.compile(rf"\s*\(\s*{LABEL}(?:\s*/\s*{LABEL})*\s*\)\s*", re.I)
 MIN_ROWS = 150
 
 
-def clean(s):
-    return re.sub(r"\s+", " ", s or "").strip()
-
-
 def guide_info(pdf):
     first = pdf.pages[0].extract_text() or ""
-    v = re.search(r"Version\s+(\d+)", first)
     d = re.search(r"\b(\d{2})\.(\d{2})\.(\d{2})\b", first)
     return {
         "title": "Allergen guide",
@@ -169,15 +164,15 @@ def classify(r, warnings):
     claim = "Greggs calls this gluten free: it's marked GF in its allergen guide."
     if r["gf"] and (has or may):
         warnings.append(f"p.{r['page']} {r['name']}: marked gluten free and with a cereal; treated as containing gluten")
-        named = " and ".join(x.lower() for x in has + may)
+        named = " and ".join(cereal_word(x) for x in has + may)
         item["decided"] = (f"The guide marks this as gluten free but also marks {named}, which this app counts as gluten, "
                            "so it's on the Avoid list.")
     if has or may:
         parts = []
         if has:
-            parts.append("Contains " + " and ".join(x.lower() for x in has))
+            parts.append("Contains " + " and ".join(cereal_word(x) for x in has))
         if may:
-            parts.append(("May contain " if not has else "may contain ") + " and ".join(x.lower() for x in may))
+            parts.append(("May contain " if not has else "may contain ") + " and ".join(cereal_word(x) for x in may))
         out = {**item, "gluten": has or may, "reason": "; ".join(parts) + "."}
         if not has:
             out["tag"] = "May contain gluten"
@@ -209,16 +204,7 @@ def updates(pdf):
 
 
 def newest_pdf(folder):
-    dated = []
-    for p in Path(folder).glob("*.pdf"):
-        with pdfplumber.open(p) as pdf:
-            dated.append((guide_info(pdf)["version"] or "0000-00-00", p.stat().st_mtime, p))
-    if not dated:
-        raise SystemExit(f"ERROR: no PDF found in {folder}")
-    dated.sort()
-    for v, _, p in dated:
-        print(f"  found {p.name} (version {v})")
-    return dated[-1][2]
+    return newest_by(folder, lambda pdf, p: guide_info(pdf)["version"])
 
 
 def build(folder, config):
@@ -261,16 +247,6 @@ def build(folder, config):
             continue
         seen[key] = (kind, item)
         (ok if kind == "ok" else avoid).append(item)
-    if info["version"]:
-        info["validUntil"] = (date.fromisoformat(info["version"]) + timedelta(days=int(config.get("recheckDays", 91)))).isoformat()
-    return {
-        "notices": guide_notices,
-        "source": pdf_path.name,
-        "guide": info,
-        "rule": "Greggs: excludes anything the guide marks as containing, or maybe containing, wheat, rye, barley, oats, spelt or kamut.",
-        "sections": list(dict.fromkeys(i["section"] for i in ok + avoid)),
-        "items": ok,
-        "avoid": avoid,
-        "warnings": warnings,
-        "stats": {"rows": len(found), "items": len(ok), "avoid": len(avoid)},
-    }
+    return result(pdf_path.name, info,
+                  "Greggs: excludes anything the guide marks as containing, or maybe containing, wheat, rye, barley, oats, spelt or kamut.",
+                  ok, avoid, warnings, guide_notices, rows=len(found))

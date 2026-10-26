@@ -15,11 +15,13 @@ Usage:
 """
 import argparse
 import json
-import os
 import re
 import subprocess
-import urllib.request
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gh  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 BRANCH = "origin/uploads"
@@ -49,17 +51,6 @@ def waiting():
     return out
 
 
-def github(method, path, body=None):
-    api = os.environ.get("GITHUB_API_URL", "https://api.github.com")
-    req = urllib.request.Request(
-        f"{api}/repos/{os.environ['GITHUB_REPOSITORY']}{path}", method=method,
-        data=json.dumps(body).encode() if body is not None else None,
-        headers={"Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}", "Accept": "application/vnd.github+json",
-                 "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=30) as res:
-        return json.loads(res.read() or "null")
-
-
 def issue_body(u):
     what = " ".join(x for x in (u["restaurant"], u["area"]) if x) or "a menu"
     return (f"A menu is waiting in `inbox/{u['folder']}/` on the `uploads` branch ({what}).\n\n"
@@ -76,13 +67,7 @@ def main():
     if not uploads:
         print("No uploads waiting.")
         return
-    titles = set()
-    if args.github:
-        for page in range(1, 11):
-            batch = github("GET", f"/issues?state=all&per_page=100&page={page}")
-            titles |= {i["title"] for i in batch}
-            if len(batch) < 100:
-                break
+    titles = gh.issue_titles() if args.github else set()
     for u in uploads:
         title = TITLE + u["folder"]
         print(f"{u['folder']}: {u['restaurant'] or 'unnamed'}, {u['area'] or 'no area'}")
@@ -90,7 +75,7 @@ def main():
             if title in titles:
                 print("  issue already opened")
             else:
-                made = github("POST", "/issues", {"title": title, "body": issue_body(u)})
+                made = gh.request("POST", "/issues", {"title": title, "body": issue_body(u)})
                 print(f"  opened {made['html_url']}")
 
 

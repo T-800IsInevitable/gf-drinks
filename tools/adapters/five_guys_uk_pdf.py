@@ -26,19 +26,14 @@ from pathlib import Path
 import pdfplumber
 
 from . import notices
+from .common import CEREAL_CAPS as GLUTEN_WORDS, cereal_code, clean, newest_by, result
 
 GLUTEN_COL = 7  # 0-based position of "Cereals containing gluten" among the 14 allergen icons
-GLUTEN_WORDS = re.compile(r"\b(WHEAT|RYE|BARLEY|OATS?|SPELT|KAMUT|GLUTEN)\b")
 LEGEND = {
     "1": "Not suitable for this allergen sufferer due to manufacturing and preparation methods.",
     "2": "Due to cooking methods used not suitable for allergy sufferers during Breakfast operation hours.",
 }
 MIN_ROWS = 60
-
-
-def clean(s):
-    s = re.sub(r"[​-‍﻿]", "", s or "")
-    return re.sub(r"\s+", " ", s).strip()
 
 
 def norm_name(s):
@@ -61,8 +56,13 @@ def band_rows(page, top, bottom, left_max):
     return rows
 
 
-def parse(pdf_path):
-    pdf = pdfplumber.open(pdf_path)
+def guide_version(pdf, pdf_path):
+    """The date in the guide's own file name (FGUK_YYYYMMDD), printed on its page, else in the file's name here."""
+    m = re.search(r"FGUK_(\d{4})(\d{2})(\d{2})", pdf.pages[0].extract_text() or "") or re.search(r"(\d{4})(\d{2})(\d{2})", Path(pdf_path).name)
+    return f"{m.group(1)}-{m.group(2)}-{m.group(3)}" if m else None
+
+
+def parse(pdf, pdf_path):
     page = pdf.pages[0]
     words = page.extract_words(extra_attrs=["fontname", "non_stroking_color"])
     ing_head = find_heading(words, "INGREDIENT")
@@ -153,10 +153,7 @@ def parse(pdf_path):
         text = clean(" ".join(w["text"] for w in sorted(right, key=lambda w: (round(w["top"]), w["x0"]))))
         ing.setdefault(norm_name(nm), []).append(((ing_section or "").split(" ")[0].upper(), text))
 
-    version = None
-    m = re.search(r"FGUK_(\d{4})(\d{2})(\d{2})", page.extract_text() or "") or re.search(r"(\d{4})(\d{2})(\d{2})", Path(pdf_path).name)
-    if m:
-        version = f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
+    version = guide_version(pdf, pdf_path)
 
     # footnotes (legend at the top, notes under the nutrition table) for the warnings page
     foot = [w for w in words if w["text"].startswith("*Products")]
@@ -177,22 +174,14 @@ def parse(pdf_path):
 
 
 def newest_pdf(folder):
-    pdfs = sorted(Path(folder).glob("*.pdf"))
-    if not pdfs:
-        raise SystemExit(f"ERROR: no PDF in {folder}")
-    # newest by the date in the guide (FGUK_YYYYMMDD), else by file name
-    dated = []
-    for p in pdfs:
-        with pdfplumber.open(p) as pdf:
-            m = re.search(r"FGUK_(\d{8})", pdf.pages[0].extract_text() or "")
-        dated.append((m.group(1) if m else "", p.name, p))
-    return sorted(dated)[-1][2]
+    return newest_by(folder, guide_version)
 
 
 def build(folder, config):
     pdf_path = newest_pdf(Path(folder, "guides"))
     print(f"  building from {pdf_path.name}")
-    rows, ing, version, guide_notices, warnings = parse(pdf_path)
+    with pdfplumber.open(pdf_path) as pdf:
+        rows, ing, version, guide_notices, warnings = parse(pdf, pdf_path)
     stars_note = {1: "Available at participating locations only.", 2: "Available in non-halal stores only.",
                   3: "Not available at the Heathrow Airport location."}
     items, avoid = [], []
@@ -236,7 +225,7 @@ def build(folder, config):
                 warnings.append(f"{r['name']}: ingredients list {listed} but the grid has no gluten dot; treated as containing gluten")
                 item["reason"] = item["decided"] = ("Its ingredient list names " + " and ".join(g.lower() for g in listed) +
                                                     " but the allergen grid has no gluten mark, so the app treats it as containing gluten.")
-            item["gluten"] = [g.rstrip("S") if g == "OATS" else g for g in listed] or ["GLUTEN"]
+            item["gluten"] = sorted({cereal_code(g) for g in listed}) or ["GLUTEN"]
             avoid.append(item)
         elif "1" in r["marks"]:
             item["gluten"] = ["PREPARATION"]
@@ -251,17 +240,6 @@ def build(folder, config):
         else:
             item["order"] = "asis"
             items.append(item)
-    sections = list(dict.fromkeys(i["section"] for i in items + avoid))
-    from datetime import date, timedelta
-    valid = (date.fromisoformat(version) + timedelta(days=int(config.get("recheckDays", 91)))).isoformat() if version else None
-    return {
-        "notices": guide_notices,
-        "source": pdf_path.name,
-        "guide": {"title": "Allergen guide", "runs": None, "version": version, "validUntil": valid},
-        "rule": "Excludes anything Five Guys marks for cereals containing gluten, either as an ingredient (dot) or as not suitable because of preparation (1).",
-        "sections": sections,
-        "items": items,
-        "avoid": avoid,
-        "warnings": warnings,
-        "stats": {"rows": len(rows), "items": len(items), "avoid": len(avoid)},
-    }
+    return result(pdf_path.name, {"title": "Allergen guide", "runs": None, "version": version},
+                  "Excludes anything Five Guys marks for cereals containing gluten, either as an ingredient (dot) or as not suitable because of preparation (1).",
+                  items, avoid, warnings, guide_notices, rows=len(rows))

@@ -47,8 +47,10 @@ def main():
         try:
             (OUT / "r" / f"{r['id']}.json").write_bytes(get(base + r["file"]))
             print(f"  live {r['id']}: {r.get('source')}")
-        except Exception as e:
-            print(f"  live {r['id']}: couldn't download ({e})")
+        except Exception as e:  # one menu missing would publish that restaurant with its change marks dropped
+            raise SystemExit(f"ERROR: couldn't download the live {r['id']} menu to compare with ({e}). Not publishing: "
+                             "a failed download must not wipe a restaurant's change marks. Retry, or pass "
+                             "a different --previous DIR to tools/build.py to publish anyway.")
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 25;
+  const APP_VERSION = 26;
   document.documentElement.dataset.version = APP_VERSION;
   const DATA_KEY = "gf-data-v2";
   const SEL_KEY = "gf-selected";
@@ -18,6 +18,7 @@
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } },
+    remove(k) { try { localStorage.removeItem(k); } catch (e) { /* storage unavailable */ } },
   };
 
   // A simple error log: the last few things that went wrong are kept on this phone (nowhere else, no outside service),
@@ -42,7 +43,9 @@
   // state
   let data = null;               // { built, restaurants: [ full restaurant objects ] }
   let selected = ALL;            // restaurant id or ALL
-  let filter = "all";            // "all" | "fav" | section name | "r:<id>"
+  // the chip under the search box: everything, favourites, one section of a restaurant, or (on All) one restaurant or area
+  let filter = { kind: "all" };  // { kind: "all" | "fav" | "section" | "restaurant" | "area", value }
+  const sameFilter = (a, b) => a.kind === b.kind && (a.value || "") === (b.value || "");
   let favs = new Set(JSON.parse(store.get(FAV_KEY) || "[]"));
   const firstVisit = !store.get(DATA_KEY); // a new user has nothing to compare, so no "what changed" banners
   let region = store.get(REGION_KEY) || UK;
@@ -266,12 +269,21 @@
   function terms(q) { return norm(q).split(/[^a-z0-9ßäöü]+/).filter((w) => w && !STOP.has(w)).map(stem); }
   // everyday words for the same thing as a menu word, so "chips" finds "fries" (one-way: not the reverse)
   const ALIAS = { chip: ["frie"] };
+  // each row's searchable words, worked out once: the search runs over every row on every keystroke
+  // notes ("info") aren't searched: "wheat" shouldn't find dishes whose note merely mentions wheat
+  const wordsCache = new WeakMap();
+  function wordsOf(i) {
+    let words = wordsCache.get(i);
+    if (!words) {
+      words = norm([i.name, i.sub, i.note, i.original, i.section, ...(i.ok || [])].filter(Boolean).join(" ")).split(/[^a-z0-9ßäöü]+/).map(stem);
+      wordsCache.set(i, words);
+    }
+    return words;
+  }
   const matches = (i, q) => {
     const ts = typeof q === "string" ? terms(q) : q;
     if (!ts.length) return true;
-    // match at the start of words, so "latte" doesn't find "platter"
-    // notes ("info") aren't searched: "wheat" shouldn't find dishes whose note merely mentions wheat
-    const words = norm([i.name, i.sub, i.note, i.original, i.section, ...(i.ok || [])].filter(Boolean).join(" ")).split(/[^a-z0-9ßäöü]+/).map(stem);
+    const words = wordsOf(i); // match at the start of words, so "latte" doesn't find "platter"
     return ts.every((t) => words.some((w) => w.startsWith(t) || (ALIAS[t] || []).some((a) => w.startsWith(a))));
   };
   // A stable link to one item: #<restaurant>/<slug>. A name used more than once also gets its section (and version).
@@ -337,22 +349,25 @@
     }
   }
 
+  // a chip: its kind and value as data attributes, which the click handler reads back
+  const chipHtml = (kind, value, label, pressed) => '<button type="button" data-kind="' + esc(kind) + '"' + (value ? ' data-value="' + esc(value) + '"' : "") +
+    ' aria-pressed="' + pressed + '">' + esc(label) + "</button>";
   function renderChips() {
-    const chips = [["all", "All"], ["fav", "★ Favourites"]];
+    const chips = [{ kind: "all", label: "All" }, { kind: "fav", label: "★ Favourites" }];
     if (selected === ALL) {
       const as = areas();
-      if (as.length > 1) as.forEach((a) => chips.push(["a:" + a, a]));
-      if (data.restaurants.length > 1) data.restaurants.forEach((r) => chips.push(["r:" + r.id, r.name]));
+      if (as.length > 1) as.forEach((a) => chips.push({ kind: "area", value: a, label: a }));
+      if (data.restaurants.length > 1) data.restaurants.forEach((r) => chips.push({ kind: "restaurant", value: r.id, label: r.name }));
     } else {
       const r = byId(selected);
-      r.sections.filter((s) => r.items.some((i) => i.section === s) || r.avoid.some((a) => a.section === s)).forEach((s) => chips.push([s, shortSection(s)]));
+      r.sections.filter((s) => r.items.some((i) => i.section === s) || r.avoid.some((a) => a.section === s))
+        .forEach((s) => chips.push({ kind: "section", value: s, label: shortSection(s) }));
     }
-    if (!chips.some(([v]) => v === filter)) filter = "all";
+    if (!chips.some((c) => sameFilter(c, filter))) filter = { kind: "all" };
     // on a restaurant's page the order builder is a chip after Favourites: it costs no height above the menu
     const r = byId(selected);
-    $("chips").innerHTML = chips.map(([v, l]) =>
-      '<button type="button" data-f="' + esc(v) + '" aria-pressed="' + (v === filter) + '">' + esc(l) + "</button>" +
-      (v === "fav" && r ? '<button type="button" data-order-open>' + orderChipText(r) + "</button>" : "")).join("");
+    $("chips").innerHTML = chips.map((c) => chipHtml(c.kind, c.value, c.label, sameFilter(c, filter)) +
+      (c.kind === "fav" && r ? '<button type="button" data-order-open>' + orderChipText(r) + "</button>" : "")).join("");
   }
   const orderChipText = (r) => { const n = orderItems(r).length; return n ? "Your order (" + n + ") &rsaquo;" : "Build an order"; };
 
@@ -592,14 +607,23 @@
   }
   const addMenuLink = '<button type="button" class="link-btn" data-addmenu>A place not here? Send its menu &rsaquo;</button>';
   const emptyExtras = (raw) => raw.trim() ? '<div class="empty-links">' + elsewhere(raw) + addMenuLink + "</div>" : "";
-  function renderList() {
+  // What the search box and the chip leave to show: the restaurants in scope, and each one's matching items and
+  // Avoid rows (the status buttons are applied by the callers, so the counts on them can be worked out here too).
+  function visibleRows() {
     let q = $("q").value.trim().toLowerCase();
     const multi = selected === ALL;
     let rs = scope();
-    if (filter.startsWith("r:")) rs = rs.filter((r) => r.id === filter.slice(2));
-    if (filter.startsWith("a:")) rs = rs.filter((r) => r.area === filter.slice(2));
+    if (filter.kind === "restaurant") rs = rs.filter((r) => r.id === filter.value);
+    if (filter.kind === "area") rs = rs.filter((r) => r.area === filter.value);
     ({ rs, q } = withNameFilter(rs, q));
     const { ts, note } = searchTerms(rs, q);
+    const inFilter = (r, i) => (filter.kind === "fav" ? favs.has(favKey(r, i)) : filter.kind !== "section" || multi || i.section === filter.value);
+    const items = new Map(rs.map((r) => [r, r.items.filter((i) => matches(i, ts) && inFilter(r, i))]));
+    const avoid = new Map(rs.map((r) => [r, r.avoid.filter((a) => matches(a, ts) && inFilter(r, a))]));
+    return { q, rs, ts, note, multi, items, avoid };
+  }
+  function renderList() {
+    const { q, rs, multi, note, items: found, avoid: avoidFound } = visibleRows();
     $("searchNote").hidden = !note;
     $("searchNote").innerHTML = note;
     let html = "";
@@ -607,7 +631,7 @@
     // "Your usuals": saved favourites first, grouped by restaurant on All. Not while searching or on another chip,
     // and they stay in their own sections too, so nothing moves.
     let usuals = "", usualsN = 0;
-    if (!$("q").value.trim() && filter === "all") {
+    if (!$("q").value.trim() && filter.kind === "all") {
       for (const r of rs) {
         const fav = r.items.filter((i) => favs.has(favKey(r, i)) && visible(kindOf(i)));
         if (!fav.length) continue;
@@ -617,9 +641,7 @@
       if (usuals) usuals = '<h2 class="group-h">Your usuals<small>' + usualsN + "</small></h2>" + usuals;
     }
     for (const r of rs) {
-      let items = r.items.filter((i) => matches(i, ts) && visible(kindOf(i)));
-      if (filter === "fav") items = items.filter((i) => favs.has(favKey(r, i)));
-      else if (!multi && filter !== "all") items = items.filter((i) => i.section === filter);
+      const items = found.get(r).filter((i) => visible(kindOf(i)));
       if (!items.length) continue;
       shown += items.length;
       if (multi) html += '<h2 class="rest-h">' + esc(r.name) + "<small>" + items.length + "</small></h2>";
@@ -639,17 +661,17 @@
       }
     }
     let empty = "No matches with no gluten ingredients";
-    const glutenHits = rs.reduce((n, r) => n + r.avoid.filter((a) => matches(a, ts)).length, 0);
-    if (filter === "fav") empty = favs.size ? "No saved favourites here yet" : "No favourites yet. Open an item and tap ☆ Save.";
+    const glutenHits = rs.reduce((n, r) => n + avoidFound.get(r).length, 0);
+    if (filter.kind === "fav") empty = favs.size ? "No saved favourites here yet" : "No favourites yet. Open an item and tap ☆ Save.";
     else if (q) empty = 'No items with no gluten ingredients match "' + esc(q) + '".' +
       (glutenHits ? " " + glutenHits + (glutenHits === 1 ? " match is" : " matches are") + " on the Avoid list" + (visible("gluten") ? " below." : ". Tap Avoid above to see " + (glutenHits === 1 ? "it." : "them.")) : "");
     if (!visible("straight") || !visible("change")) empty += " Some items are hidden by the buttons above.";
-    $("list").innerHTML = (filter === "fav" ? favShareBar() : "") + (html ? usuals + html : '<p class="empty">' + empty + "</p>" + emptyExtras($("q").value));
+    $("list").innerHTML = (filter.kind === "fav" ? favShareBar() : "") + (html ? usuals + html : '<p class="empty">' + empty + "</p>" + emptyExtras($("q").value));
 
     let avoidHtml = "";
-    if (filter !== "fav" && visible("gluten")) {
+    if (filter.kind !== "fav" && visible("gluten")) {
       for (const r of rs) {
-        const av = r.avoid.filter((a) => matches(a, ts) && (multi || filter === "all" || a.section === filter));
+        const av = avoidFound.get(r);
         if (!av.length) continue;
         if (multi) avoidHtml += '<div class="sub-h">' + esc(r.name) + "</div>";
         // a name used more than once (Blank Street's croissants, one per store list) says which one it is
@@ -678,28 +700,16 @@
     $("avoidWrap").hidden = !avoidHtml;
     $("avoid").innerHTML = avoidHtml;
     // folded until wanted: it opens by itself while searching or when the Avoid button is chosen, and a tap on it overrides that
-    const total = rs.reduce((n, r) => n + r.avoid.filter((a) => matches(a, ts) && (multi || filter === "all" || a.section === filter)).length, 0);
-    $("avoidTitle").textContent = "Avoid: contains gluten or not suitable" + (total ? " (" + total + ")" : "");
+    $("avoidTitle").textContent = "Avoid: contains gluten or not suitable" + (glutenHits ? " (" + glutenHits + ")" : "");
     $("avoidWrap").open = avoidUser !== null ? avoidUser : !!($("q").value.trim() || pick.gluten);
     return shown;
   }
 
   function renderStatus() {
-    let q = $("q").value.trim().toLowerCase();
-    const multi = selected === ALL;
-    let rs = scope();
-    if (filter.startsWith("r:")) rs = rs.filter((r) => r.id === filter.slice(2));
-    if (filter.startsWith("a:")) rs = rs.filter((r) => r.area === filter.slice(2));
-    ({ rs, q } = withNameFilter(rs, q));
+    const { rs, items, avoid } = visibleRows();
     const n = { straight: 0, change: 0, gluten: 0 };
-    const { ts } = searchTerms(rs, q);
     for (const r of rs) {
-      for (const i of r.items.concat(r.avoid)) {
-        if (!matches(i, ts)) continue;
-        if (filter === "fav" && !favs.has(favKey(r, i))) continue;
-        if (!multi && !["all", "fav"].includes(filter) && i.section !== filter) continue;
-        n[kindOf(i)]++;
-      }
+      for (const i of items.get(r).concat(avoid.get(r))) n[kindOf(i)]++;
     }
     // dot and count on one line, the label under them, so the three buttons are one even row
     const b = (k, cls, label) => '<button type="button" data-k="' + k + '" aria-pressed="' + pick[k] + '"><span class="dot ' + cls + '"></span>' +
@@ -708,13 +718,8 @@
     $("status").innerHTML =b("straight", "d-ok", "No gluten ingredients") + b("change", "d-swap", "Needs a change") + b("gluten", "d-bad", "Avoid");
   }
 
-  const THEMES = [
-    ["auto", "Match phone", "linear-gradient(135deg,#f6f5f2 50%,#171412 50%)"],
-    ["light", "Light", "#f6f5f2"],
-    ["dark", "Dark", "#171412"],
-    ["pink-light", "Pink light", "linear-gradient(135deg,#fbf3f6 50%,#c2185b 50%)"],
-    ["pink-dark", "Pink dark", "linear-gradient(135deg,#1a1116 50%,#f48fb1 50%)"],
-  ];
+  // each theme's swatch is a class in styles.css (.sw-auto and so on), so no inline styles are needed anywhere
+  const THEMES = [["auto", "Match phone"], ["light", "Light"], ["dark", "Dark"], ["pink-light", "Pink light"], ["pink-dark", "Pink dark"]];
   function applyTheme(t) {
     const root = document.documentElement;
     if (t === "auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", t);
@@ -725,8 +730,8 @@
   }
   function renderThemes() {
     const cur = store.get(THEME_KEY) || "auto";
-    $("themes").innerHTML = THEMES.map(([id, label, sw]) => '<button type="button" data-t="' + id + '" aria-pressed="' + (cur === id) +
-      '"><span class="swatch" style="background:' + sw + '"></span>' + label + "</button>").join("");
+    $("themes").innerHTML = THEMES.map(([id, label]) => '<button type="button" data-t="' + id + '" aria-pressed="' + (cur === id) +
+      '"><span class="swatch sw-' + id + '"></span>' + label + "</button>").join("");
   }
   $("themes").addEventListener("click", (e) => {
     const b = e.target.closest("[data-t]");
@@ -856,7 +861,7 @@
 
   function select(id) {
     selected = id;
-    filter = "all";
+    filter = { kind: "all" };
     region = UK;
     store.set(REGION_KEY, UK);
     store.set(SEL_KEY, id);
@@ -911,8 +916,9 @@
     if (!chips.some(([v]) => v === cityFilter)) cityFilter = "all";
     const card = phrases[c.language];
     $("chips").innerHTML = '<button type="button" data-nearopen aria-pressed="' + (nearSort && cityFilter === "open") + '">Open near me</button>' +
-      '<button type="button" data-near aria-pressed="' + nearSort + '">Near me</button>' + chips.map(([v, l]) =>
-      '<button type="button" data-f="' + esc(v) + '" aria-pressed="' + (v === cityFilter && !(v === "all" && nearSort)) + '">' + esc(l) + "</button>").join("") +
+      '<button type="button" data-near aria-pressed="' + nearSort + '">Near me</button>' +
+      chips.map(([v, l]) => chipHtml(["all", "open", "fav"].includes(v) ? v : "section", ["all", "open", "fav"].includes(v) ? "" : v, l,
+        v === cityFilter && !(v === "all" && nearSort))).join("") +
       (card ? '<button type="button" data-card>' + esc(card.language) + " card</button>" : "");
     const n = (claim) => c.places.filter((p) => p.claim === claim).length;
     $("cityIntroLine").innerHTML = "<b>Tags say who calls a place gluten free</b>, not the app. Tell staff you're coeliac.";
@@ -943,14 +949,14 @@
       .formatToParts(new Date()).map((x) => [x.type, x.value]));
     return { day: DAYS.indexOf(parts.weekday), min: +parts.hour * 60 + +parts.minute };
   }
-  const cityDay = (c) => cityNow(c).day;
   // "09:30–14:30" (perhaps with a note after it) -> [570, 870]; "" -> null
   const span = (h) => { const m = (h || "").match(/(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/); return m ? [m[1] * 60 + +m[2], m[3] * 60 + +m[4]] : null; };
   const hhmm = (n) => String(Math.floor(n / 60)).padStart(2, "0") + ":" + String(n % 60).padStart(2, "0");
   // still open today: open now, or opening later today
-  // The branches that matter: the nearest one when sorting by distance, otherwise all of them.
-  // A branch's day is: a span [open, close] (close = when the kitchen stops, if earlier), "closed", or unknown (no hours, or null).
+  // The branches that matter: the nearest one when sorting by distance, otherwise all of them. Worked out once per
+  // render (placeBranches), since sorting by distance per place per line adds up.
   const branches = (p) => (nearSort && here ? [p.locations.slice().sort((a, b) => kmTo(a, here) - kmTo(b, here))[0]] : p.locations);
+  // A branch's day is: a span [open, close] (close = when the kitchen stops, if earlier), "closed", or unknown (no hours, or null).
   function branchToday(l, day) {
     if (!l.hours || l.hours[day] == null) return { unknown: true };
     const s = span(l.hours[day]);
@@ -958,15 +964,16 @@
     const kitchen = span("00:00–" + (l.kitchenCloses || "24:00"));
     return { open: s[0], close: Math.min(s[1], kitchen[1]), kitchen: !!l.kitchenCloses && kitchen[1] < s[1] };
   }
-  const stillOpen = (c, p) => { const { day, min } = cityNow(c); return branches(p).some((l) => { const b = branchToday(l, day); return b.close > min; }); };
-  function todayLine(c, p) {
-    const { day, min } = cityNow(c);
-    const ls = branches(p);
+  // now: { day, min } from cityNow(c), worked out once for a whole render; ls: the place's branches, likewise
+  const stillOpen = (p, now, ls) => (ls || branches(p)).some((l) => { const b = branchToday(l, now.day); return b.close > now.min; });
+  function todayLine(p, now, ls) {
+    const { day, min } = now;
+    ls = ls || branches(p);
     const bs = ls.map((l) => ({ l, ...branchToday(l, day) }));
     if (bs.every((b) => b.unknown)) return "";
     const where = (list) => (ls.length > 1 && list.length < ls.length ? " at " + listOr([...new Set(list.map((b) => b.l.area))]) : "");
-    const now = bs.filter((b) => b.open <= min && min < b.close);
-    if (now.length) return "Open now" + where(now) + ", " + (now.some((b) => b.kitchen) ? "kitchen until " : "until ") + hhmm(Math.max(...now.map((b) => b.close)));
+    const openNow = bs.filter((b) => b.open <= min && min < b.close);
+    if (openNow.length) return "Open now" + where(openNow) + ", " + (openNow.some((b) => b.kitchen) ? "kitchen until " : "until ") + hhmm(Math.max(...openNow.map((b) => b.close)));
     const later = bs.filter((b) => b.open > min);
     if (later.length) return "Opens at " + hhmm(Math.min(...later.map((b) => b.open))) + where(later);
     if (bs.some((b) => b.open != null && b.kitchen && min < span(b.l.hours[day])[1])) return "Kitchen closed";
@@ -987,10 +994,11 @@
   const kmTo = (l, at) => Math.hypot((l.lat - at.lat) * 111.2, (l.lon - at.lon) * 111.2 * Math.cos(at.lat * Math.PI / 180));
   const placeKm = (p) => Math.min(...p.locations.map((l) => kmTo(l, here)));
   const placeFav = (p) => "city:" + region + "|" + p.name;
-  function placeHtml(c, p) {
+  function placeHtml(c, p, now) {
+    const ls = branches(p);
     const subs = [esc(p.type), esc([...new Set(p.locations.map((l) => l.area))].join(", "))];
-    if (nearSort && here) subs.unshift(placeKm(p).toFixed(1) + " km" + (p.locations.length > 1 ? " (" + esc(branches(p)[0].area) + ")" : ""));
-    const today = todayLine(c, p);
+    if (nearSort && here) subs.unshift(placeKm(p).toFixed(1) + " km" + (p.locations.length > 1 ? " (" + esc(ls[0].area) + ")" : ""));
+    const today = todayLine(p, now, ls);
     if (today) subs.push('<span class="today' + (/^(Closed|Kitchen closed)/.test(today) ? " shut" : "") + '">' + esc(today) + "</span>");
     if (p.caution) subs.push('<span class="chg">' + esc(p.flag) + "</span>");
     if (p.status !== "confirmed") subs.push('<span class="chg bad">Opening not confirmed</span>');
@@ -1028,16 +1036,17 @@
     const c = city();
     if (!c) return;
     const ts = terms($("q").value.trim());
-    const places = c.places.filter((p) => matches(placeText(p), ts) && (cityFilter === "all" || (cityFilter === "open" ? stillOpen(c, p)
+    const now = cityNow(c); // once for the whole list, not once per place
+    const places = c.places.filter((p) => matches(placeText(p), ts) && (cityFilter === "all" || (cityFilter === "open" ? stillOpen(p, now)
       : cityFilter === "fav" ? favs.has(placeFav(p)) : p.section === cityFilter)));
     let html = "";
     if (nearSort && here && places.length) {
       const near = places.slice().sort((a, b) => placeKm(a) - placeKm(b));
-      html = '<h2 class="group-h">Nearest first<small>' + near.length + "</small></h2>" + '<div class="card">' + near.map((p) => placeHtml(c, p)).join("") + "</div>";
+      html = '<h2 class="group-h">Nearest first<small>' + near.length + "</small></h2>" + '<div class="card">' + near.map((p) => placeHtml(c, p, now)).join("") + "</div>";
     } else for (const s of c.sections) {
       const inSec = places.filter((p) => p.section === s);
       if (!inSec.length) continue;
-      html += '<h2 class="group-h">' + esc(s) + "<small>" + inSec.length + "</small></h2>" + '<div class="card">' + inSec.map((p) => placeHtml(c, p)).join("") + "</div>";
+      html += '<h2 class="group-h">' + esc(s) + "<small>" + inSec.length + "</small></h2>" + '<div class="card">' + inSec.map((p) => placeHtml(c, p, now)).join("") + "</div>";
     }
     const unknown = c.places.filter((p) => !p.locations.some((l) => l.hours)).length;
     const empty = cityFilter === "fav" ? "No saved places yet. Open a place and tap ☆ Save."
@@ -1095,7 +1104,7 @@
       ((sinceLooked(r) || r.changes) ? '. <button type="button" class="link-btn" data-whatchanged="' + esc(r.id) + '">What changed, noticed ' +
         esc(fmtDate((sinceLooked(r) || r.changes).date)) + " &rsaquo;</button>" : ".") + "</p>";
     if (groups.length) {
-      html += "<h4>What " + esc(r.name) + (/s$/.test(r.name) ? "'" : "'s") + " guide says</h4>";
+      html += "<h4>What " + esc(possessive(r.name)) + " guide says</h4>";
       for (const g of groups) {
         html += '<div class="w-group"><div class="w-label">' + esc(g.label) + "</div>" + g.list.map((n) =>
           '<blockquote class="w-quote">' + esc(n.text) + "<cite>" + esc(n.pages && n.pages.length
@@ -1234,7 +1243,7 @@
       (local ? local.card.slice(0, 2).map((c) => '<p class="staff-coeliac" lang="' + esc(r.language) + '">' + esc(c.text) + "</p>").join("") : "") +
       '<p class="staff-coeliac">I have coeliac disease, so I can\'t have any gluten, even a trace.</p>' +
       '<p class="staff-coeliac">Could you please use clean equipment?</p>' +
-      '<p class="muted">Turn the screen towards staff. From ' + esc(r.name) + (/s$/.test(r.name) ? "'" : "'s") + " allergen guide" +
+      '<p class="muted">Turn the screen towards staff. From ' + esc(possessive(r.name)) + " allergen guide" +
       (i.pages && i.pages.length ? ", " + esc(pageText(i.pages).toLowerCase()) : "") + ".</p>";
     openDialog($("staff"));
     keepAwake();
@@ -1383,16 +1392,12 @@
   $("orderClear").addEventListener("click", () => { if (!orderFor) return; orders[orderFor.id] = []; saveOrders(); renderOrder(orderFor); syncOrderButtons(orderFor); });
   $("orderCard").addEventListener("click", () => { if (orderFor) openOrderCard(orderFor); });
   $("order").addEventListener("close", () => { if (orderFor) delete orderNotes[orderFor.id]; orderFor = null; });
-  document.addEventListener("click", (e) => {
-    if (e.target.closest("[data-order-open]")) { openOrder(byId(selected)); return; }
-    const b = e.target.closest(".order-btn[data-order]");
-    if (!b) return;
-    e.preventDefault();
-    const r = byId(b.dataset.order.split("|")[0]);
+  function toggleOrderButton(key) {
+    const r = byId(key.split("|")[0]);
     if (!r) return;
-    const on = toggleOrder(r, b.dataset.order);
+    const on = toggleOrder(r, key);
     if (on !== null) toast(on ? "Added to your " + r.name + " order (" + orderItems(r).length + ")" : "Taken out of your " + r.name + " order");
-  });
+  }
 
   // ---------- add a menu (owner only): uploads go to inbox/ on the "uploads" branch, never to main ----------
   const KEY_KEY = "gf-github-key";
@@ -1419,7 +1424,6 @@
     openDialog($("upload"));
   }
   $("openUpload").addEventListener("click", openAddMenu);
-  document.addEventListener("click", (e) => { if (e.target.closest("[data-addmenu]")) openAddMenu(); });
   $("uploadClose").addEventListener("click", () => $("upload").close());
   $("upload").addEventListener("click", (e) => { if (e.target === $("upload")) $("upload").close(); });
   $("keySave").addEventListener("click", async () => {
@@ -1434,7 +1438,7 @@
       toast("Key saved");
       showUploadState();
     } catch (e) {
-      localStorage.removeItem(KEY_KEY);
+      store.remove(KEY_KEY);
       toast("That key can't upload to " + repo.name + ". Check it has Contents: Read and write.");
     }
   });
@@ -1494,7 +1498,7 @@
       if (e.name !== "AbortError") status.textContent = "Couldn't send: " + e.message + ". Send the photos by message instead.";
     }
   });
-  $("keyForget").addEventListener("click", () => { try { localStorage.removeItem(KEY_KEY); } catch (e) {} showUploadState(); toast("Key removed from this phone"); });
+  $("keyForget").addEventListener("click", () => { store.remove(KEY_KEY); showUploadState(); toast("Key removed from this phone"); });
 
   const slug = (s) => s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "menu";
   const toB64 = (blob) => new Promise((ok, bad) => {
@@ -1528,7 +1532,7 @@
     const body = await res.json().catch(() => ({}));
     const limited = res.status === 429 || res.headers.get("x-ratelimit-remaining") === "0" || /rate limit/i.test(body.message || "");
     if (res.status === 401 || (res.status === 403 && !limited)) {
-      try { localStorage.removeItem(KEY_KEY); } catch (e) { /* storage unavailable */ }
+      store.remove(KEY_KEY);
       throw new Error("EXPIRED_KEY");
     }
     const err = new Error(limited ? "GitHub is limiting uploads for now, so wait an hour" : (body.message || "HTTP " + res.status) + " while " + what);
@@ -1615,13 +1619,6 @@
   });
 
   // ---------- share an item, and "Something wrong?" ----------
-  async function shareLink(title, text, url) {
-    if (navigator.share) {
-      try { await navigator.share({ title, text, url }); } catch (e) { /* share sheet closed */ }
-      return;
-    }
-    try { await navigator.clipboard.writeText(url); toast("Link copied"); } catch (e) { toast(url); }
-  }
   function openReport(subject, lines) {
     $("reportSubject").textContent = subject;
     $("reportText").value = ["Something looks wrong in Twoo's Treat Temple.", ...lines, "", "What happened: "].join("\n");
@@ -1640,26 +1637,16 @@
     openReport(p.name + " in " + c.name, ["Place: " + p.name + " (" + c.name + ")", "The app shows: " + (p.claimLabel || CLAIM_TAGS[p.claim]),
       "List checked: " + fmtDate(c.checked), "Link: " + appUrl() + "#" + region]);
   }
-  document.addEventListener("click", (e) => {
-    const sh = e.target.closest("[data-share-item]");
-    const wr = e.target.closest("[data-wrong]");
-    const wp = e.target.closest("[data-wrong-place]");
-    if (sh || wr) {
-      const { r, i } = itemByRef((sh || wr).dataset.shareItem || (sh || wr).dataset.wrong);
-      if (!i) return;
-      if (sh) shareLink("Twoo's Treat Temple", i.name + " at " + r.name, itemUrl(r, i)); else reportItem(r, i);
-    } else if (wp && city()) {
-      const p = city().places.find((x) => x.name === wp.dataset.wrongPlace);
-      if (p) reportPlace(p);
-    }
-  });
-  $("reportSend").addEventListener("click", async () => {
-    const text = $("reportText").value;
+  // share text (or a link) through the phone's share sheet, else copy it; true if it went somewhere
+  async function shareOrCopy(title, text, url, copied) {
     if (navigator.share) {
-      try { await navigator.share({ title: "Something wrong in Treat Temple", text }); $("report").close(); } catch (e) { /* share sheet closed */ }
-      return;
+      try { await navigator.share(url ? { title, text, url } : { title, text }); return true; } catch (e) { return false; /* share sheet closed */ }
     }
-    try { await navigator.clipboard.writeText(text); toast("Message copied. Paste it into a message."); $("report").close(); } catch (e) { toast("Couldn't copy it. Select the text and copy it by hand."); }
+    try { await navigator.clipboard.writeText(url || text); toast(copied); return true; } catch (e) { toast(url || "Couldn't copy it. Select the text and copy it by hand."); return false; }
+  }
+  const shareLink = (title, text, url) => shareOrCopy(title, text, url, "Link copied");
+  $("reportSend").addEventListener("click", async () => {
+    if (await shareOrCopy("Something wrong in Treat Temple", $("reportText").value, "", "Message copied. Paste it into a message.")) $("report").close();
   });
   $("reportIssue").addEventListener("click", () => {
     const [first, ...rest] = $("reportText").value.split("\n").filter((l) => l.trim());
@@ -1758,16 +1745,15 @@
     store.set(FAV_KEY, JSON.stringify([...favs]));
     importing = null;
     $("favImport").close();
-    if (region === UK) filter = "fav"; else cityFilter = "fav";
+    if (region === UK) filter = { kind: "fav" }; else cityFilter = "fav";
     render();
     toast(n === 1 ? "Added 1 favourite" : "Added " + n + " favourites");
   });
   $("favImport").addEventListener("close", () => { importing = null; });
-  document.addEventListener("click", (e) => {
-    if (!e.target.closest("[data-sharefavs]")) return;
+  function shareFavs() {
     if (!favs.size) { toast("No favourites to share yet. Open an item and tap ☆ Save."); return; }
     shareLink("My favourites in Twoo's Treat Temple", "My " + favs.size + (favs.size === 1 ? " favourite" : " favourites") + " in Twoo's Treat Temple. Open the link to add them.", favsLink());
-  });
+  }
   const favShareBar = () => favs.size ? '<p class="fav-share"><button type="button" class="link-btn" data-sharefavs>Share my favourites (' + favs.size + ") &rsaquo;</button></p>" : "";
 
   // ---------- new app code without a restart ----------
@@ -1804,7 +1790,10 @@
     return { json: await res.json(), offline: res.headers.get("X-GF-Offline") === "1" };
   }
 
-  const menusOf = (d) => JSON.stringify(d.restaurants.map(({ built, ...r }) => r));
+  // what the menus say, as one short string: each restaurant's fingerprint from the build (menus saved by an older
+  // release carry none, so they're compared in full once)
+  const menusOf = (d) => (d.restaurants.every((r) => r.hash) ? d.restaurants.map((r) => r.id + ":" + r.hash).join(",")
+    : JSON.stringify(d.restaurants.map(({ built, ...r }) => r)));
   async function load(manual) {
     if (manual) checkForUpdate();
     const btn = $("refreshBtn");
@@ -1876,21 +1865,18 @@
     else if (data) { renderStatus(); renderList(); }
   });
   $("chips").addEventListener("click", (e) => {
-    const b = e.target.closest("button");
-    if (!b) return;
-    const f = b.dataset.f;
+    const b = e.target.closest("button[data-kind]");
+    if (!b) return; // Open near me, Near me, the card and the order chip have listeners of their own
+    const { kind, value } = b.dataset;
     if (region !== UK) {
-      if (b.hasAttribute("data-nearopen")) { toggleNearOpen(); return; }
-      if (b.hasAttribute("data-near")) { toggleNear(); return; }
-      if (b.hasAttribute("data-card")) { openCard(city().language); return; }
-      cityFilter = f;
+      cityFilter = kind === "section" ? value : kind;
       renderCity();
       window.scrollTo({ top: 0 });
       return;
     }
-    if (!data || f === undefined) return; // the order chip is handled by its own listener
-    if (f.startsWith("r:")) { select(f.slice(2)); return; }
-    filter = f;
+    if (!data) return;
+    if (kind === "restaurant") { select(value); return; }
+    filter = value ? { kind, value } : { kind };
     renderChips();
     renderStatus();
     renderList();
@@ -1904,7 +1890,29 @@
     if (region !== UK) renderCityList(); else { renderStatus(); renderList(); }
     window.scrollTo({ top: 0 });
   }
-  document.addEventListener("click", (e) => { const b = e.target.closest("[data-elsewhere]"); if (b) goElsewhere(b.dataset.elsewhere); });
+  // The buttons that can sit anywhere on the page (in lists, sheets and notes), one listener for all of them: each
+  // data attribute names what its button does, and the attribute's value is what it does it to.
+  const ACTIONS = {
+    nearopen: () => toggleNearOpen(),
+    near: () => toggleNear(),
+    card: () => openCard(city().language),
+    orderOpen: () => openOrder(byId(selected)),
+    order: (key, b, e) => { e.preventDefault(); toggleOrderButton(key); },
+    whatchanged: (rid) => openChanges(byId(rid)),
+    addmenu: () => openAddMenu(),
+    elsewhere: (to) => goElsewhere(to),
+    sharefavs: () => shareFavs(),
+    shareItem: (ref) => { const { r, i } = itemByRef(ref); if (i) shareLink("Twoo's Treat Temple", i.name + " at " + r.name, itemUrl(r, i)); },
+    wrong: (ref) => { const { r, i } = itemByRef(ref); if (i) reportItem(r, i); },
+    wrongPlace: (name) => { const p = city() && city().places.find((x) => x.name === name); if (p) reportPlace(p); },
+  };
+  const attrOf = (name) => "data-" + name.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
+  document.addEventListener("click", (e) => {
+    for (const [name, act] of Object.entries(ACTIONS)) {
+      const b = e.target.closest("[" + attrOf(name) + "]");
+      if (b) { act(b.dataset[name], b, e); return; }
+    }
+  });
   $("list").addEventListener("click", onFav);
   $("cityList").addEventListener("click", onFav);
   function onFav(e) {
@@ -1962,20 +1970,17 @@
   ["picker", "info", "gfcard", "warnings", "staff", "changes", "report", "favImport", "order"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
   ["staff", "gfcard"].forEach((id) => $(id).addEventListener("close", () => { if (!$("staff").open && !$("gfcard").open) letGo(); }));
   $("refreshBtn").addEventListener("click", () => load(true));
-  $("shareBtn").addEventListener("click", async () => {
+  $("shareBtn").addEventListener("click", () => {
     const r = region === UK && byId(selected);
     const c = city();
-    const url = location.origin + location.pathname.replace(/index\.html$/, "") + (c ? "#" + region : r ? "#" + r.id : "");
+    const url = appUrl() + (c ? "#" + region : r ? "#" + r.id : "");
     const text = c ? "Places in " + c.name + " for coeliacs, from the coeliac support groups' list"
       : r ? "Food and drinks with no gluten ingredients at " + r.name : "Food and drinks with no gluten ingredients at restaurants and coffee shops";
-    if (navigator.share) {
-      try { await navigator.share({ title: "Twoo's Treat Temple", text, url }); } catch (e) { /* share sheet closed */ }
-      return;
-    }
-    try { await navigator.clipboard.writeText(url); toast("Link copied"); } catch (e) { toast(url); }
+    shareLink("Twoo's Treat Temple", text, url);
   });
+  const hashText = () => { try { return decodeURIComponent(location.hash.slice(1)); } catch (e) { return ""; } };
   window.addEventListener("hashchange", () => {
-    const raw = (() => { try { return decodeURIComponent(location.hash.slice(1)); } catch (e) { return ""; } })();
+    const raw = hashText();
     if (raw.startsWith("favs=")) { importCode = raw.slice(5); history.replaceState(null, "", location.pathname); maybeImport(); return; }
     const [id, item] = raw.split("/");
     if (cities[id]) { if (id !== region) setRegion(id); }
@@ -1995,9 +2000,8 @@
     ticking = true;
     requestAnimationFrame(() => {
       const y = window.scrollY;
-      const top = document.querySelector(".top");
-      if (y > 160 && y > lastY + 6) top.classList.add("collapsed");
-      else if (y < lastY - 6 || y < 160) top.classList.remove("collapsed");
+      if (y > 160 && y > lastY + 6) topEl.classList.add("collapsed");
+      else if (y < lastY - 6 || y < 160) topEl.classList.remove("collapsed");
       lastY = y;
       ticking = false;
     });
@@ -2024,7 +2028,7 @@
   setUpStorage();
 
   // ---------- start ----------
-  const rawHash = (() => { try { return decodeURIComponent(location.hash.slice(1)); } catch (e) { return ""; } })();
+  const rawHash = hashText();
   importCode = rawHash.startsWith("favs=") ? rawHash.slice(5) : "";
   if (importCode) history.replaceState(null, "", location.pathname); // added or not, a reload shouldn't ask again
   const hashId = importCode ? "" : rawHash;
@@ -2071,10 +2075,11 @@
     const c = city();
     if (!c || document.visibilityState !== "visible") return;
     if (cityFilter === "open" && !document.querySelector("#cityList details[open]")) { renderCityList(); return; }
+    const now = cityNow(c);
     document.querySelectorAll("#cityList details[data-place]").forEach((d) => {
       const p = c.places.find((x) => x.name === d.dataset.place);
       const el = d.querySelector(".today");
-      const t = p && todayLine(c, p);
+      const t = p && todayLine(p, now);
       if (el && t) { el.textContent = t; el.classList.toggle("shut", /^(Closed|Kitchen closed)/.test(t)); }
     });
   }, 60000);

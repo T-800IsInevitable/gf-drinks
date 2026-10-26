@@ -2,6 +2,7 @@ name: Guide reminders
 
 # Each morning, open an issue for any restaurant guide that has ended or ends
 # within three weeks (one issue per guide and end date; see tools/reminders.py).
+# The end dates come from the live index, so nothing is built here.
 on:
   schedule:
     - cron: "0 7 * * *"
@@ -14,6 +15,7 @@ permissions:
 jobs:
   remind:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
 
@@ -21,14 +23,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install PDF reader
-        run: pip install -r tools/requirements.txt
-
-      - name: Build menus to read their end dates
-        run: python tools/build.py
+      - name: Download the menus that are live now, for their end dates
+        run: python tools/fetch_previous.py
 
       - name: Open reminders
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: python tools/reminders.py --github
+        run: python tools/reminders.py --github --index .previous/restaurants.json

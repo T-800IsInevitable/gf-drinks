@@ -7,6 +7,16 @@
     "timeZone": "Europe/Berlin",
     "checked": "2026-10-25",
     "recheckDays": 90,
+    "bounds": {
+      "lat": [
+        52.3,
+        52.7
+      ],
+      "lon": [
+        13.0,
+        13.8
+      ]
+    },
     "list": {
       "name": "Berlin glutenfrei",
       "by": "the Berlin contacts of the German Coeliac Society (DZG)",

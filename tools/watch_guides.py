@@ -43,6 +43,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import changes  # noqa: E402
+import gh  # noqa: E402
 
 UA = "Mozilla/5.0 (compatible; gf-drinks guide watch; +https://github.com/T-800IsInevitable/gf-drinks)"
 PAGE_LIMIT = 5_000_000
@@ -194,15 +195,7 @@ def check(folder):
 
 
 # ---------- GitHub ----------
-def github(method, path, body=None):
-    api = os.environ.get("GITHUB_API_URL", "https://api.github.com")
-    req = urllib.request.Request(
-        f"{api}/repos/{os.environ['GITHUB_REPOSITORY']}{path}", method=method,
-        data=json.dumps(body).encode() if body is not None else None,
-        headers={"Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}", "Accept": "application/vnd.github+json",
-                 "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=30) as res:
-        return json.loads(res.read() or "null")
+github = gh.request
 
 
 def git(*args):
@@ -279,13 +272,7 @@ def propose(r):
 
 
 def open_issues():
-    titles = set()
-    for page in range(1, 6):
-        batch = github("GET", f"/issues?state=open&per_page=100&page={page}")
-        titles |= {i["title"] for i in batch}
-        if len(batch) < 100:
-            break
-    return titles
+    return gh.issue_titles("open")
 
 
 def issue(title, body, existing):

@@ -81,61 +81,61 @@ OK    | Sides | Tenderstem® Broccoli | asis
 OK    | Drinks | Pickle House Bloody | asis
 OK    | Drinks | Water | asis
 OK    | Drinks | Wines | asis
-AVOID | Sweet Treats | All-Butter Croissant | WHEAT
-AVOID | The Classics | Banana & Blueberry Porridge | OAT;OATS
-AVOID | Burgers, Pittas, Wraps | Beanie Burger | OAT;OATS;WHEAT
+AVOID | Sweet Treats | All-Butter Croissant | GLUTEN;WHEAT
+AVOID | The Classics | Banana & Blueberry Porridge | OAT
+AVOID | Burgers, Pittas, Wraps | Beanie Burger | OAT;WHEAT
 AVOID | Burgers, Pittas, Wraps | Beanie Pitta | WHEAT
 AVOID | Burgers, Pittas, Wraps | Beanie Wrap | WHEAT
-AVOID | Drinks | Beavertown Lazer Crush Alcohol Free IPA | BARLEY;MALTED
-AVOID | Drinks | Beer | BARLEY;MALTED;WHEAT
-AVOID | Drinks | Bero Kingston Golden Pils | BARLEY;MALTED
-AVOID | Burgers, Pittas, Wraps | Butterfly Burger | OAT;OATS;WHEAT
+AVOID | Drinks | Beavertown Lazer Crush Alcohol Free IPA | BARLEY;MALT
+AVOID | Drinks | Beer | BARLEY;GLUTEN;MALT;WHEAT
+AVOID | Drinks | Bero Kingston Golden Pils | BARLEY;MALT
+AVOID | Burgers, Pittas, Wraps | Butterfly Burger | OAT;WHEAT
 AVOID | Sweet Treats | Buttermilk Pancakes | WHEAT
 AVOID | Salads & Bowls | Caesar Salad | BARLEY;MALT;WHEAT
 AVOID | Starters | Cheesy Garlic Pitta | WHEAT
 AVOID | Eggs | Chicken Benedict | RYE;WHEAT
 AVOID | Desserts | Choc-a-Lot Cake | WHEAT
 AVOID | Sweet Treats | Chocolate Twist | WHEAT
-AVOID | Eggs | Eggs on Toast | BARLEY;MALTED;WHEAT
+AVOID | Eggs | Eggs on Toast | BARLEY;MALT;WHEAT
 AVOID | Burgers, Pittas, Wraps | Fino Pitta | BARLEY;MALT;WHEAT
-AVOID | Sides | Garlic Bread | RYE;WHEAT
-AVOID | Burgers, Pittas, Wraps | Garlic Churrasco Burger | RYE;WHEAT
+AVOID | Sides | Garlic Bread | GLUTEN;RYE;WHEAT
+AVOID | Burgers, Pittas, Wraps | Garlic Churrasco Burger | GLUTEN;RYE;WHEAT
 AVOID | Desserts | Gooey Caramel Cheesecake | WHEAT
-AVOID | Burgers, Pittas, Wraps | Grilled Chicken Burger | OAT;OATS;WHEAT
+AVOID | Burgers, Pittas, Wraps | Grilled Chicken Burger | OAT;WHEAT
 AVOID | Burgers, Pittas, Wraps | Grilled Chicken Pitta | WHEAT
 AVOID | Burgers, Pittas, Wraps | Grilled Chicken Wrap | WHEAT
 AVOID | Salads & Bowls | Hearty Bowl | BARLEY;SPELT;WHEAT
 AVOID | Sides | Hearty Grains | BARLEY;SPELT;WHEAT
-AVOID | Drinks | Hot Drinks with Oat | OAT;OATS
+AVOID | Drinks | Hot Drinks with Oat | OAT
 AVOID | Starters | Houmous with PERi-PERi Drizzle and Pitta Bread | WHEAT
-AVOID | Drinks | Kinsale Pale Ale | BARLEY;MALTED
+AVOID | Drinks | Kinsale Pale Ale | BARLEY;GLUTEN;MALT
 AVOID | Nandinos | Little Pitta | WHEAT
 AVOID | Sides | Loaded PERi-Mac | WHEAT
 AVOID | Spices & Sauces | Malt Vinegar | BARLEY;MALT
-AVOID | Nandinos | Nandino Burger | OAT;OATS;WHEAT
+AVOID | Nandinos | Nandino Burger | GLUTEN;OAT;WHEAT
 AVOID | Nandinos | Nandinos Buttermilk Pancakes | WHEAT
-AVOID | Nandinos | Nandinos Egg on Toast | BARLEY;MALTED;WHEAT
+AVOID | Nandinos | Nandinos Egg on Toast | BARLEY;MALT;WHEAT
 AVOID | Nandinos | Nandinos Mac & Cheese | WHEAT
-AVOID | Chicken | Chicken Livers & Rustic Portuguese Roll | OAT;OATS;WHEAT
+AVOID | Chicken | Chicken Livers & Rustic Portuguese Roll | OAT;WHEAT
 AVOID | Sides | PERi-Mac & Cheese | WHEAT
 AVOID | Starters | PERi-PERi Nuts | GLUTEN tag=May contain gluten
-AVOID | Extras & Garnish | PERi-Plant Fillet | WHEAT
-AVOID | The Classics | PERi-Powered Avo Toast | OAT;OATS;WHEAT
-AVOID | Chicken | Phantom Wings | BARLEY;MALT
+AVOID | Extras & Garnish | PERi-Plant Fillet | GLUTEN;WHEAT
+AVOID | The Classics | PERi-Powered Avo Toast | OAT;WHEAT
+AVOID | Chicken | Phantom Wings | BARLEY;GLUTEN;MALT
 AVOID | Extras & Garnish | Pitta | WHEAT
-AVOID | Extras & Garnish | Rustic Portuguese Roll | OAT;OATS;WHEAT
-AVOID | Breakfast Rolls | Sausage Breakfast Roll | OAT;OATS;WHEAT
-AVOID | Breakfast Rolls | Sausage & Fried Egg Roll | OAT;OATS;WHEAT
+AVOID | Extras & Garnish | Rustic Portuguese Roll | OAT;WHEAT
+AVOID | Breakfast Rolls | Sausage Breakfast Roll | OAT;WHEAT
+AVOID | Breakfast Rolls | Sausage & Fried Egg Roll | OAT;WHEAT
 AVOID | Eggs | Sunrise Egg Wrap | WHEAT
-AVOID | Burgers, Pittas, Wraps | Sunset Burger | OAT;OATS;WHEAT
-AVOID | The Works | The Big Breakfast | BARLEY;MALTED;WHEAT
-AVOID | Burgers, Pittas, Wraps | The Big Cheese | OAT;OATS;WHEAT
-AVOID | The Works | The Big Veggie Breakfast | BARLEY;MALTED;WHEAT
-AVOID | Breakfast Rolls | The Daybreaker | OAT;OATS;WHEAT
-AVOID | Burgers, Pittas, Wraps | 'The Great Imitator' Wrap | WHEAT
-AVOID | The Classics | Toast | BARLEY;MALTED;WHEAT
+AVOID | Burgers, Pittas, Wraps | Sunset Burger | OAT;WHEAT
+AVOID | The Works | The Big Breakfast | BARLEY;MALT;WHEAT
+AVOID | Burgers, Pittas, Wraps | The Big Cheese | OAT;WHEAT
+AVOID | The Works | The Big Veggie Breakfast | BARLEY;MALT;WHEAT
+AVOID | Breakfast Rolls | The Daybreaker | OAT;WHEAT
+AVOID | Burgers, Pittas, Wraps | 'The Great Imitator' Wrap | GLUTEN;WHEAT
+AVOID | The Classics | Toast | BARLEY;MALT;WHEAT
 AVOID | Desserts | Toffee Apple Pastel de Nata | WHEAT
-AVOID | Sides | Tombstone Chips | BARLEY;MALT
+AVOID | Sides | Tombstone Chips | BARLEY;GLUTEN;MALT
 AVOID | Extras & Garnish | Tortilla Wrap | WHEAT
 AVOID | Desserts | Ultimate Chocolate Brownie | WHEAT
-AVOID | Breakfast Rolls | Veggie Breakfast Roll | OAT;OATS;WHEAT
+AVOID | Breakfast Rolls | Veggie Breakfast Roll | OAT;WHEAT

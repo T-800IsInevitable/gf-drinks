@@ -20,6 +20,7 @@ from pathlib import Path
 import pdfplumber
 
 from . import notices
+from .common import cereal_code, newest_by, result
 from .starbucks_uk_pdf import GLUTEN, clean, decided, is_food_guide
 
 MIN_ROWS = 60  # a real guide has well over a hundred products
@@ -44,8 +45,7 @@ def guide_info(pdf):
     }
 
 
-def parse_rows(pdf_path):
-    pdf = pdfplumber.open(pdf_path)
+def parse_rows(pdf, pdf_path):
     info = guide_info(pdf)
     rows, warnings, table = [], [], []
     section = sub = None
@@ -103,7 +103,7 @@ def parse_rows(pdf_path):
     for r in rows:
         a = set(GLUTEN.findall(r["allergens"]))
         i = set(GLUTEN.findall(r["ingredients"]))
-        r["gluten"] = sorted({g.rstrip("S") if g == "OATS" else g for g in a | i})
+        r["gluten"] = sorted({cereal_code(g) for g in a | i})
         if bool(a) != bool(i):
             warnings.append(f"food p.{r['page']} {r['name']}: allergen column {sorted(a) or 'none'} vs "
                             f"ingredients {sorted(i) or 'none'}; treated as containing gluten")
@@ -114,26 +114,18 @@ def parse_rows(pdf_path):
 
 
 def newest_pdf(folder):
-    dated = []
-    for p in folder.glob("*.pdf"):
-        with pdfplumber.open(p) as pdf:
-            if not is_food_guide(pdf):
-                continue
-            v = guide_info(pdf)["version"] or "0000-00-00"
-        dated.append((v, p.stat().st_mtime, p))
-    if not dated:
-        raise SystemExit(f"ERROR: no food guide PDF found in {folder}")
-    dated.sort()
-    for v, _, p in dated:
-        print(f"  found {p.name} (version {v})")
-    return dated[-1][2]
+    return newest_by(folder, lambda pdf, p: guide_info(pdf)["version"], keep=is_food_guide)
 
 
 def build(folder, config):
     """Build the food part of the menu from the newest food guide in guides/."""
     pdf_path = newest_pdf(Path(folder) / "guides")
     print(f"  building from {pdf_path.name}")
-    info, rows, warnings, table = parse_rows(pdf_path)
+    with pdfplumber.open(pdf_path) as pdf:
+        info, rows, warnings, table = parse_rows(pdf, pdf_path)
+        intro = [n for n in range(2, table[0]) if n not in table]
+        regions = {n: [(0, pdf.pages[n - 1].height - 60, pdf.pages[n - 1].width, pdf.pages[n - 1].height)] for n in table}
+        guide_notices = notices.collect(pdf, intro, regions=regions)
     ok, avoid, seen = [], [], set()
     for r in rows:
         key = (r["section"], r["name"])
@@ -152,18 +144,5 @@ def build(folder, config):
             avoid.append({**item, "gluten": r["gluten"]})
         else:
             ok.append({**item, "order": "asis"})
-    with pdfplumber.open(pdf_path) as pdf:
-        intro = [n for n in range(2, table[0]) if n not in table]
-        regions = {n: [(0, pdf.pages[n - 1].height - 60, pdf.pages[n - 1].width, pdf.pages[n - 1].height)] for n in table}
-        guide_notices = notices.collect(pdf, intro, regions=regions)
-    return {
-        "notices": guide_notices,
-        "source": pdf_path.name,
-        "guide": info,
-        "rule": "Food: excludes anything listing wheat, oats, barley, rye, spelt, kamut, gluten or malt.",
-        "sections": list(dict.fromkeys(i["section"] for i in ok + avoid)),
-        "items": ok,
-        "avoid": avoid,
-        "warnings": warnings,
-        "stats": {"rows": len(rows), "items": len(ok), "avoid": len(avoid)},
-    }
+    return result(pdf_path.name, info, "Food: excludes anything listing wheat, oats, barley, rye, spelt, kamut, gluten or malt.",
+                  ok, avoid, warnings, guide_notices, rows=len(rows))

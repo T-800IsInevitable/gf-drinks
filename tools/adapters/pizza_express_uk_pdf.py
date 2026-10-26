@@ -16,29 +16,28 @@ PizzaExpress is accredited by Coeliac UK; its own words are kept on the Warnings
 Columns are found from each page's rotated headers, because the drinks pages order them differently.
 """
 import re
-from datetime import date, timedelta
 from pathlib import Path
 
 import pdfplumber
 
 from . import notices
+from .common import CEREAL, MONTHS, cereal_code, cereal_word, clean, newest_by, result
 
 TICK = "\u2713"
-CEREALS = ["wheat", "oats", "oat", "barley", "rye", "spelt", "kamut", "gluten", "malt"]
 MIN_ROWS = 200
-
-
-def clean(s):
-    return re.sub(r"\s+", " ", s or "").strip()
 
 
 def guide_info(pdf):
     text = " ".join(pdf.pages[n].extract_text() or "" for n in range(min(2, len(pdf.pages))))
     m = re.search(r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\s+V(\d+)", text)
-    months = "January February March April May June July August September October November December".split()
-    version = f"{m.group(2)}-{months.index(m.group(1)) + 1:02d}-01" if m else None
-    return {"title": "Allergen guide",
-            "runs": None, "version": version}
+    version = f"{m.group(2)}-{MONTHS[m.group(1)]:02d}-01" if m else None
+    return {"title": "Allergen guide", "runs": None, "version": version}
+
+
+def is_england_guide(pdf):
+    """The England, Scotland, Wales and Jersey guide; not the ingredients list or another region's guide in the same folder."""
+    first = pdf.pages[0].extract_text() or ""
+    return "Allergen Information" in first and "England" in first
 
 
 def text_in(chars, box):
@@ -175,7 +174,8 @@ def classify(r, extra, warnings):
     item = {"name": name, "section": r["section"], "sub": None, "pages": [r["page"]]}
     gl = r["marks"].get("gluten", set())
     coeliac = "tick" in r["marks"].get("coeliacs", set())
-    named = [c for c in CEREALS if re.search(rf"\b{c}\b", r["gluten_words"], re.I)]
+    codes = sorted({cereal_code(c) for c in CEREAL.findall(r["gluten_words"])})
+    named = [cereal_word(c) for c in codes]
     said = re.sub(r"gluten\s*-\s*free", "gluten-free", r["note"].split("*")[0].strip(), flags=re.I)
     quoted = f'PizzaExpress says: "{said}"' if said else None
     if re.search(r"cannot guarantee", r["across"], re.I):
@@ -190,7 +190,7 @@ def classify(r, extra, warnings):
         reason = ("Contains " if "tick" in gl else "May contain ") + what + "."
         if "tick" in gl and "star" in gl:
             reason = "Contains gluten (" + what + "), some of it as a may-contain."
-        out = {**item, "gluten": [x.upper() for x in named] or ["GLUTEN"], "reason": reason}
+        out = {**item, "gluten": codes or ["GLUTEN"], "reason": reason}
         if "tick" not in gl:
             out["tag"] = "May contain gluten"
         if coeliac:
@@ -200,7 +200,7 @@ def classify(r, extra, warnings):
             out["info"] = " ".join(notes)
         return "avoid", out
     if re.search(r"\boat", name, re.I):  # oats count as gluten here, gluten free oats included
-        return "avoid", {**item, "gluten": ["OATS"], "reason": "Made with oat drink.", "tag": "Oats",
+        return "avoid", {**item, "gluten": ["OAT"], "reason": "Made with oat drink.", "tag": "Oats",
                          "decided": "The guide marks no gluten for this and ticks it for coeliacs (it uses gluten free oat drink), "
                                     "but this app counts oats as gluten, so it's on the Avoid list.",
                          **({"info": " ".join(notes)} if notes else {})}
@@ -216,19 +216,7 @@ def classify(r, extra, warnings):
 
 
 def newest_pdf(folder):
-    dated = []
-    for p in Path(folder).glob("*.pdf"):
-        with pdfplumber.open(p) as pdf:
-            first = pdf.pages[0].extract_text() or ""
-            if "Allergen Information" not in first or "England" not in first:
-                continue  # an ingredients list or another region's guide
-            dated.append((guide_info(pdf)["version"] or "0000-00-00", p.stat().st_mtime, p))
-    if not dated:
-        raise SystemExit(f"ERROR: no PizzaExpress allergen guide in {folder}")
-    dated.sort()
-    for v, _, p in dated:
-        print(f"  found {p.name} (version {v})")
-    return dated[-1][2]
+    return newest_by(folder, lambda pdf, p: guide_info(pdf)["version"], keep=is_england_guide)
 
 
 def build(folder, config):
@@ -279,17 +267,8 @@ def build(folder, config):
     for i in ok + avoid:
         if "ingredients" in i["section"].lower() and plain(i["name"]) in dishes and "(ingredient)" not in i["name"]:
             i["name"] += " (ingredient)"
-    if info["version"]:
-        info["validUntil"] = (date.fromisoformat(info["version"]) + timedelta(days=int(config.get("recheckDays", 91)))).isoformat()
-    return {
-        "notices": guide_notices,
-        "source": pdf_path.name,
-        "guide": info,
-        "rule": "PizzaExpress: lists items with no gluten mark that PizzaExpress ticks for coeliacs, and dishes with a gluten mark only "
-                "with the change the guide says makes them suitable for coeliacs. Everything else is on the Avoid list.",
-        "sections": list(dict.fromkeys(i["section"] for i in sorted(ok + avoid, key=lambda i: i["pages"][0]))),
-        "items": ok,
-        "avoid": avoid,
-        "warnings": warnings,
-        "stats": {"rows": len(found), "items": len(ok), "avoid": len(avoid)},
-    }
+    return result(pdf_path.name, info,
+                  "PizzaExpress: lists items with no gluten mark that PizzaExpress ticks for coeliacs, and dishes with a gluten mark only "
+                  "with the change the guide says makes them suitable for coeliacs. Everything else is on the Avoid list.",
+                  ok, avoid, warnings, guide_notices, rows=len(found),
+                  sections=list(dict.fromkeys(i["section"] for i in sorted(ok + avoid, key=lambda i: i["pages"][0]))))
