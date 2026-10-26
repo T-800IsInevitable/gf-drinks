@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 21;
+  const APP_VERSION = 22;
   document.documentElement.dataset.version = APP_VERSION;
   const DATA_KEY = "gf-data-v2";
   const SEL_KEY = "gf-selected";
@@ -18,6 +18,25 @@
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } },
   };
+
+  // A simple error log: the last few things that went wrong are kept on this phone (nowhere else, no outside service),
+  // and Help can copy them with the app version and menu date to send to the owner.
+  const ERR_KEY = "gf-errors";
+  const ERR_MAX = 20;
+  const errors = (() => { try { const a = JSON.parse(store.get(ERR_KEY) || "[]"); return Array.isArray(a) ? a.slice(-ERR_MAX) : []; } catch (e) { return []; } })();
+  function logError(msg, where) {
+    errors.push({ at: new Date().toISOString(), v: APP_VERSION, msg: String(msg || "Unknown error").slice(0, 300), where: String(where || "").slice(0, 120) });
+    while (errors.length > ERR_MAX) errors.shift();
+    store.set(ERR_KEY, JSON.stringify(errors));
+    if (typeof renderErrors === "function") renderErrors();
+  }
+  window.addEventListener("error", (e) => {
+    if (e.message) logError(e.message, (e.filename || "").split("/").pop() + (e.lineno ? ":" + e.lineno : ""));
+  });
+  window.addEventListener("unhandledrejection", (e) => {
+    const r = e.reason;
+    logError("Unhandled: " + (r && r.message ? r.message : r), r && r.stack ? String(r.stack).split("\n")[1] || "" : "");
+  });
 
   // state
   let data = null;               // { built, restaurants: [ full restaurant objects ] }
@@ -1750,6 +1769,26 @@
   });
   $("picker").addEventListener("close", () => { welcomeNow = false; });
   $("appVersion").textContent = "App version " + APP_VERSION + ".";
+  // what to send the owner if something breaks: no tracking, nothing leaves the phone unless you send it
+  function errorDetails() {
+    const lines = ["Twoo's Treat Temple, app version " + APP_VERSION, "Menus built: " + (data ? data.built : "not loaded"),
+      "Phone: " + navigator.userAgent, "Time: " + new Date().toISOString(), "",
+      errors.length ? "Last " + errors.length + (errors.length === 1 ? " error:" : " errors:") : "No errors recorded."];
+    errors.forEach((x) => lines.push(x.at + " (v" + x.v + ") " + x.msg + (x.where ? " [" + x.where + "]" : "")));
+    return lines.join("\n");
+  }
+  function renderErrors() {
+    $("errorCount").textContent = errors.length ? errors.length + (errors.length === 1 ? " error" : " errors") + " recorded on this phone." : "No errors recorded on this phone.";
+  }
+  renderErrors();
+  $("copyDetails").addEventListener("click", async () => {
+    const text = errorDetails();
+    try { await navigator.clipboard.writeText(text); toast("Details copied. Paste them into a message to the owner."); }
+    catch (e) {
+      if (navigator.share) { try { await navigator.share({ title: "Treat Temple details", text }); } catch (err) { /* share sheet closed */ } }
+      else toast("Couldn't copy them.");
+    }
+  });
   $("infoBtn").addEventListener("click", () => { renderLastChecked(); openDialog($("info")); });
   ["picker", "info", "gfcard", "warnings", "staff", "changes", "report", "favImport"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
   ["staff", "gfcard"].forEach((id) => $(id).addEventListener("close", () => { if (!$("staff").open && !$("gfcard").open) letGo(); }));

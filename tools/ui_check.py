@@ -1639,6 +1639,44 @@ def main():
         httpd3.shutdown()
         shutil.rmtree(tmp.parent, ignore_errors=True)
 
+        # O4: a simple error log. The last 20 errors stay on the phone, and Help copies them with the app version and menu date
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.grant_permissions(["clipboard-read", "clipboard-write"], origin=base.rstrip("/"))
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+        page = ctx.new_page()  # no pageerror handler here: the errors are on purpose
+        page.goto(base)
+        page.wait_for_selector("#list .row")
+        v = re.search(r"const APP_VERSION = (\d+);", (SITE / "app.js").read_text(encoding="utf-8")).group(1)
+        page.evaluate("setTimeout(() => { throw new Error('Test error one'); })")
+        page.evaluate("void Promise.reject(new Error('Test rejection two'))")
+        page.wait_for_timeout(300)
+        logged = json.loads(page.evaluate("localStorage.getItem('gf-errors')"))
+        if [e["msg"] for e in logged] != ["Uncaught Error: Test error one", "Unhandled: Test rejection two"] or any(e["v"] != int(v) for e in logged):
+            problems.append(f"error log: recorded {[e['msg'] for e in logged]}")
+        for n in range(25):
+            page.evaluate(f"setTimeout(() => {{ throw new Error('Burst {n}'); }})")
+        page.wait_for_timeout(500)
+        logged = json.loads(page.evaluate("localStorage.getItem('gf-errors')"))
+        if len(logged) != 20 or logged[-1]["msg"] != "Uncaught Error: Burst 24" or logged[0]["msg"] != "Uncaught Error: Burst 5":
+            problems.append(f"error log: kept {len(logged)} errors, from {logged[0]['msg']!r} to {logged[-1]['msg']!r}; expected the last 20")
+        page.reload()
+        page.wait_for_selector("#list .row")
+        page.locator("#infoBtn").click()
+        page.wait_for_selector("#info[open]")
+        if "20 errors recorded" not in page.locator("#errorCount").inner_text():
+            problems.append(f"error log: Help says {page.locator('#errorCount').inner_text()!r} after a reload, expected 20 errors")
+        page.locator("#copyDetails").click()
+        page.wait_for_timeout(300)
+        copied = page.evaluate("navigator.clipboard.readText()")
+        built = json.loads((SITE / "data" / "restaurants.json").read_text(encoding="utf-8"))["built"]
+        for want in (f"app version {v}", f"Menus built: {built}", "Last 20 errors:", "Burst 24", "(v" + v + ")"):
+            if want not in copied:
+                problems.append(f"error log: the copied details don't include {want!r}")
+        if re.search(r"Burst [0-4](?!\d)", copied):
+            problems.append("error log: the copied details include an error older than the last 20")
+        print(f"error log: {len(logged)} kept of 30, survives a reload, copied with version {v} and menu date")
+        ctx.close()
+
         # F12: what changed since you last looked. The phone keeps each restaurant's menu as you last saw it and compares
         # the newest with that, so a guide you never saw (two out between visits) can't hide an item that now contains gluten
         sys.path.insert(0, str(SITE.parent / "tools"))

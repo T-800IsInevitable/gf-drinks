@@ -1,0 +1,30 @@
+name: Upload notice
+
+# Every 15 minutes, open an issue ("Upload waiting: <folder>") for each menu
+# uploaded to inbox/ on the uploads branch (tools/upload_notice.py). The Claude
+# scan routine starts on that issue, so a menu is scanned within minutes rather
+# than at the next daily run. It runs here, on main, because a workflow
+# triggered by a push to uploads would use the old copy of itself on that branch.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  notice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Fetch the uploads branch
+        run: git fetch --depth=1 origin uploads || echo "No uploads branch yet."
+
+      - name: Open an issue for each upload waiting
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python3 tools/upload_notice.py --github
