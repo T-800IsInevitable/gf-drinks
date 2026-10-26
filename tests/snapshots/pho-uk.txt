@@ -23,8 +23,8 @@ OK    | Starters & Sides | Stir fried Chinese leaf - classic or spicy | asis
 OK    | Starters & Sides | Vietnamese pancake - tofu | asis
 OK    | Starters & Sides | Vietnamese pancake - THIS™ isn’t chicken | asis
 OK    | Starters & Sides | Vietnamese pancake - chicken & prawn | asis
-OK    | Starters & Sides | Prawn crackers - WITHOUT sauce | asis
-OK    | Starters & Sides | Prawnless crackers - WITHOUT sauce | asis
+OK    | Starters & Sides | Prawn crackers - Without sauce | asis
+OK    | Starters & Sides | Prawnless crackers - Without sauce | asis
 OK    | Vietnamese salads | Chicken salad (incl. dressing) | asis
 OK    | Vietnamese salads | Veggie salad - veggie (incl. dressing) | asis
 OK    | Vietnamese salads | Veggie salad - THIS™ isn’t chicken (incl. dressing) | asis

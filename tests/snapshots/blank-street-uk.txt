@@ -1,14 +1,14 @@
 # source: BlankStreetUKAllergenGuideAutumn26.pdf
-OK    | Coffee | Americano (BLACK) | asis
-OK    | Coffee | Double Espresso (BLACK) | asis
-OK    | Not Coffee & Teas | Earl Grey - HOT | asis
-OK    | Not Coffee & Teas | Chamomile - HOT | asis
-OK    | Not Coffee & Teas | Green Tea - HOT | asis
-OK    | Not Coffee & Teas | English Breakfast - HOT | asis
+OK    | Coffee | Americano (Black) | asis
+OK    | Coffee | Double Espresso (Black) | asis
+OK    | Not Coffee & Teas | Earl Grey - Hot | asis
+OK    | Not Coffee & Teas | Chamomile - Hot | asis
+OK    | Not Coffee & Teas | Green Tea - Hot | asis
+OK    | Not Coffee & Teas | English Breakfast - Hot | asis
 OK    | Not Coffee & Teas | Matcha Tea | asis
 OK    | Not Coffee & Teas | Iced Lemon Tea | asis
 OK    | Not Coffee & Teas | Iced Peach Tea | asis
-OK    | Cold Brew | Original Cold Brew (DEFAULT BLACK) | asis
+OK    | Cold Brew | Original Cold Brew (Default Black) | asis
 OK    | Ingredients | Milk (whole and semi-skimmed) | asis role=ingredient
 OK    | Ingredients | Coconut Drink | asis role=ingredient
 OK    | Ingredients | Espresso Double Shot | asis role=ingredient
@@ -87,7 +87,7 @@ AVOID | Custom | Shortcake Dusting | WHEAT
 AVOID | Pastries: London Stores | Plain Croissant | BARLEY;OAT;WHEAT
 AVOID | Pastries: London Stores | Almond Croissant | BARLEY;WHEAT
 AVOID | Pastries: London Stores | Pain au Chocolat | BARLEY;OAT;WHEAT
-AVOID | Pastries: London Stores | Cinnamon Bun (NEW) | GLUTEN;WHEAT
+AVOID | Pastries: London Stores | Cinnamon Bun (New) | GLUTEN;WHEAT
 AVOID | Pastries: London Stores | Pistachio Pain Au Chocolat | BARLEY;WHEAT
 AVOID | Pastries: London Stores | Vegan Chocolate Banana Bread | WHEAT
 AVOID | Pastries: London Stores | Pistachio Cream Cookie | WHEAT
@@ -95,7 +95,7 @@ AVOID | Pastries: London Stores | Milk Chocolate & Sea Salt Cookie | WHEAT
 AVOID | Manchester Pastries & Savouries | Plan Croissant | WHEAT
 AVOID | Manchester Pastries & Savouries | Pain au Chocolat | WHEAT
 AVOID | Manchester Pastries & Savouries | Almond Croissant | WHEAT
-AVOID | Manchester Pastries & Savouries | Cinnamon Bun (NEW) | GLUTEN;WHEAT
+AVOID | Manchester Pastries & Savouries | Cinnamon Bun (New) | GLUTEN;WHEAT
 AVOID | Manchester Pastries & Savouries | Vegan Chocolate Banana Bread | WHEAT
 AVOID | Manchester Pastries & Savouries | Pistachio Cream Cookie | WHEAT
 AVOID | Manchester Pastries & Savouries | Milk Chocolate & Sea Salt Cookie | WHEAT
@@ -105,7 +105,7 @@ AVOID | Birmingham Pastries & Savouries | Pain Au Chocolate | WHEAT
 AVOID | Birmingham Pastries & Savouries | Chocolate Brownie | GLUTEN tag=May contain gluten
 AVOID | Birmingham Pastries & Savouries | Maple & Pecan Danish | WHEAT
 AVOID | Birmingham Pastries & Savouries | Vegan Chocolate Banana Bread | WHEAT
-AVOID | Birmingham Pastries & Savouries | Cinnamon Bun (NEW) | GLUTEN;WHEAT
+AVOID | Birmingham Pastries & Savouries | Cinnamon Bun (New) | GLUTEN;WHEAT
 AVOID | Birmingham Pastries & Savouries | Pistachio Cream Cookie | WHEAT
 AVOID | Birmingham Pastries & Savouries | Milk Chocolate & Sea Salt Cookie | WHEAT
 AVOID | Scotland Pastries & Sweets | Plain Croissant | BARLEY;WHEAT
@@ -113,7 +113,7 @@ AVOID | Scotland Pastries & Sweets | Almond Croissant | BARLEY;WHEAT
 AVOID | Scotland Pastries & Sweets | Pain Au Chocolate | BARLEY;WHEAT
 AVOID | Scotland Pastries & Sweets | Morning Bun | BARLEY;WHEAT
 AVOID | Scotland Pastries & Sweets | Vegan Chocolate Banana Bread | WHEAT
-AVOID | Scotland Pastries & Sweets | Cinnamon Bun (NEW) | GLUTEN;WHEAT
+AVOID | Scotland Pastries & Sweets | Cinnamon Bun (New) | GLUTEN;WHEAT
 AVOID | Scotland Pastries & Sweets | Pistachio Cream Cookie | WHEAT
 AVOID | Scotland Pastries & Sweets | Milk Chocolate & Sea Salt Cookie | WHEAT
 AVOID | Leeds Pastries & Sweets | Plain Croissant | WHEAT
@@ -123,7 +123,7 @@ AVOID | Leeds Pastries & Sweets | Pistachio Bun | WHEAT
 AVOID | Leeds Pastries & Sweets | Spinach & Cheese Scroll | WHEAT
 AVOID | Leeds Pastries & Sweets | Marmite & Cheese Scroll | BARLEY;OAT;RYE;WHEAT
 AVOID | Leeds Pastries & Sweets | Vegan Chocolate Banana Bread | WHEAT
-AVOID | Leeds Pastries & Sweets | Cinnamon Bun (NEW) | GLUTEN;WHEAT
+AVOID | Leeds Pastries & Sweets | Cinnamon Bun (New) | GLUTEN;WHEAT
 AVOID | Leeds Pastries & Sweets | Pistachio Cream Cookie | WHEAT
 AVOID | Leeds Pastries & Sweets | Milk Chocolate & Sea Salt Cookie | WHEAT
 AVOID | Cambridge Pastries & Sweets | Croissant | WHEAT
@@ -131,20 +131,20 @@ AVOID | Cambridge Pastries & Sweets | Almond Croissant | OAT;WHEAT
 AVOID | Cambridge Pastries & Sweets | Pain Au Chocolat | WHEAT
 AVOID | Cambridge Pastries & Sweets | Pan Suisse | WHEAT
 AVOID | Cambridge Pastries & Sweets | Vegan Chocolate Banana Bread | WHEAT
-AVOID | Cambridge Pastries & Sweets | Cinnamon Bun (NEW) | GLUTEN;WHEAT
+AVOID | Cambridge Pastries & Sweets | Cinnamon Bun (New) | GLUTEN;WHEAT
 AVOID | Cambridge Pastries & Sweets | Pistachio Cream Cookie | WHEAT
 AVOID | Cambridge Pastries & Sweets | Milk Chocolate & Sea Salt Cookie | WHEAT
 AVOID | Bristol Pastries & Sweets | Croissant | WHEAT
 AVOID | Bristol Pastries & Sweets | Pain au Chocolat | WHEAT
 AVOID | Bristol Pastries & Sweets | Almond Croissant | WHEAT
-AVOID | Bristol Pastries & Sweets | Cinnamon Bun (NEW) | GLUTEN;WHEAT
+AVOID | Bristol Pastries & Sweets | Cinnamon Bun (New) | GLUTEN;WHEAT
 AVOID | Bristol Pastries & Sweets | Pistachio Cream Cookie | WHEAT
 AVOID | Bristol Pastries & Sweets | Milk Chocolate & Sea Salt Cookie | WHEAT
 AVOID | Bristol Pastries & Sweets | Vegan Chocolate Banana Bread | WHEAT
 AVOID | Brighton Pastries & Sweets | Croissant | WHEAT
 AVOID | Brighton Pastries & Sweets | Pain au Chocolat | WHEAT
 AVOID | Brighton Pastries & Sweets | Almond Croissant | WHEAT
-AVOID | Brighton Pastries & Sweets | Cinnamon Bun (NEW) | GLUTEN;WHEAT
+AVOID | Brighton Pastries & Sweets | Cinnamon Bun (New) | GLUTEN;WHEAT
 AVOID | Brighton Pastries & Sweets | Blueberry & Custard Brioche | WHEAT
 AVOID | Brighton Pastries & Sweets | Pistachio Cream Cookie | WHEAT
 AVOID | Brighton Pastries & Sweets | Milk Chocolate & Sea Salt Cookie | WHEAT

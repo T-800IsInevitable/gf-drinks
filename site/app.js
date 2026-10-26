@@ -64,6 +64,12 @@
     const d = new Date(iso.length === 10 ? iso + "T12:00:00Z" : iso);
     return isNaN(d) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
   }
+  // month and year only ("Mar 2024"), so a date in the chooser never breaks across two lines
+  function fmtMonth(iso) {
+    if (!iso) return "";
+    const d = new Date(iso.length === 10 ? iso + "T12:00:00Z" : iso);
+    return isNaN(d) ? iso : d.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+  }
   const shortRuns = (s) => (s || "").replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*/g, "$1");
   const possessive = (name) => name + (/s$/.test(name) ? "'" : "'s");
   // a plain name for a guide, for the footer, Warnings and pop-ups. The raw file name (r.source) is kept
@@ -85,7 +91,7 @@
     const g = r.guide || {};
     const season = (g.title || "").replace(/\s*Beverages$/, "");
     const named = season && season !== "Allergen guide";
-    return [named ? season + " menu" : "", shortRuns(g.runs) || (g.version && !named ? "Guide " + fmtDate(g.version) : "")]
+    return [named ? season + " menu" : "", shortRuns(g.runs) || (g.version && !named ? "Guide " + fmtMonth(g.version) : "")]
       .filter(Boolean).join(" · ");
   }
   function tagFor(r, i) {
@@ -173,8 +179,9 @@
     if (i.original) subs.push('<span lang="' + esc(r.language || "") + '">' + esc(i.original) + "</span>");
     if (showRestaurant) subs.push(esc(r.name));
     const sub = subs.length ? "<small>" + subs.join(" · ") + "</small>" : "";
-    return '<details class="row"><summary><span class="nm">' + star + esc(i.name) + sub + '</span><span class="tag ' + cls + '">' +
-      esc(label) + "</span>" + chev + '</summary><div class="detail">' + detailFor(r, i) + "</div></details>";
+    // the tag sits under the name, so even "Any milk except oat, almond, coconut" has the full width
+    return '<details class="row"><summary><span class="nm">' + star + esc(i.name) + sub + '<span class="tag ' + cls + '">' +
+      esc(label) + "</span></span>" + chev + '</summary><div class="detail">' + detailFor(r, i) + "</div></details>";
   }
 
   // Search: every word must match (in English or the original language). Words like "gluten free" / "gf" are
@@ -198,6 +205,14 @@
   const scope = () => (selected === ALL ? data.restaurants : [byId(selected)].filter(Boolean));
 
   // ---------- rendering ----------
+  // The Avoid list opens by itself while searching (or when its status button is chosen). A tap on its heading wins
+  // over that until the next search, status button or restaurant.
+  let avoidUser = null;
+  $("avoidWrap").querySelector("summary").addEventListener("click", (e) => {
+    e.preventDefault();
+    avoidUser = !$("avoidWrap").open;
+    $("avoidWrap").open = avoidUser;
+  });
   function renderHeader() {
     const r = byId(selected);
     if (r) {
@@ -232,7 +247,11 @@
   function renderBanners() {
     const stale = scope().filter(isStale);
     $("stale").hidden = !stale.length;
-    $("stale").innerHTML = stale.map((r) =>
+    // on All it's one line pointing to the restaurant; the full banner stays on that restaurant's own page
+    if (selected === ALL) {
+      $("stale").innerHTML = stale.length ? '<p class="stale-line"><b>' + stale.length + (stale.length === 1 ? " guide may" : " guides may") + " be out of date:</b>" +
+        stale.map((r) => ' <button type="button" class="link-btn" data-gotorest="' + esc(r.id) + '">' + esc(r.name) + " &rsaquo;</button>").join("") + "</p>" : "";
+    } else $("stale").innerHTML = stale.map((r) =>
       "<p><b>" + esc(r.name) + " guide may be out of date.</b> It covered up to " + esc(fmtDate(r.guide.validUntil)) +
       ". Check in store before ordering" + (r.officialUrl ? ', or see <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">their allergen info</a>' : "") + "." +
       (r.latestGuide ? " " + esc(r.latestGuide.note) + " (checked " + esc(fmtDate(r.latestGuide.checked)) + ")" : "") + "</p>").join("");
@@ -325,6 +344,8 @@
     const go = e.target.closest("[data-gotorest]");
     if (go) select(go.dataset.gotorest);
   });
+
+  $("stale").addEventListener("click", (e) => { const go = e.target.closest("[data-gotorest]"); if (go) select(go.dataset.gotorest); });
 
   const seen = () => new Set(JSON.parse(store.get(SEEN_KEY) || "[]"));
   const counts = (c) => [["nowAvoid", "now contain gluten"], ["nowOk", "no longer to avoid"], ["changed", "ordered differently"],
@@ -463,14 +484,23 @@
         const av = r.avoid.filter((a) => matches(a, ts) && (multi || filter === "all" || a.section === filter));
         if (!av.length) continue;
         if (multi) avoidHtml += '<div class="sub-h">' + esc(r.name) + "</div>";
+        // a name used more than once (Blank Street's croissants, one per store list) says which one it is
+        const times = {};
+        av.forEach((a) => { const k = norm(a.name); times[k] = (times[k] || 0) + 1; });
+        const place = {};
+        av.forEach((a) => { const k = norm(a.name) + "|" + a.section + "|" + (a.sub || ""); place[k] = (place[k] || 0) + 1; });
         avoidHtml += '<div class="card">' + av.map((a) => {
           const c = changeOf(r, a);
           const subs = [];
           if (c) subs.push('<span class="chg bad">' + CHG_LABEL[c.kind] + "</span>");
+          if (times[norm(a.name)] > 1) {
+            subs.push(esc([shortSection(a.section), a.sub && cap(a.sub)].filter(Boolean).join(" · ")) +
+              (place[norm(a.name) + "|" + a.section + "|" + (a.sub || "")] > 1 ? " · " + esc(pageText(a.pages).toLowerCase()) : ""));
+          }
           if (a.original) subs.push('<span lang="' + esc(r.language || "") + '">' + esc(a.original) + "</span>");
           return '<details class="row"><summary><span class="nm">' + esc(a.name) +
-            (subs.length ? "<small>" + subs.join(" · ") + "</small>" : "") + '</span><span class="tag t-bad">' +
-            esc(a.tag || a.gluten.map(cap).join(" & ")) + "</span>" + chev + '</summary><div class="detail">' + (c ? changeNote(r, c) : "") + "<div>" +
+            (subs.length ? "<small>" + subs.join(" · ") + "</small>" : "") + '<span class="tag t-bad">' +
+            esc(a.tag || a.gluten.map(cap).join(" & ")) + "</span></span>" + chev + '</summary><div class="detail">' + (c ? changeNote(r, c) : "") + "<div>" +
             (a.reason ? esc(a.reason) : "Every version contains " + esc(a.gluten.join(" and ").toLowerCase()) + ".") + "</div>" +
             (a.info ? "<div>" + esc(a.info) + "</div>" : "") + (a.decided && a.decided !== a.reason ? decidedNote(a) : "") +
             "<div>" + esc(pageText(a.pages)) + "</div></div></details>";
@@ -479,6 +509,10 @@
     }
     $("avoidWrap").hidden = !avoidHtml;
     $("avoid").innerHTML = avoidHtml;
+    // folded until wanted: it opens by itself while searching or when the Avoid button is chosen, and a tap on it overrides that
+    const total = rs.reduce((n, r) => n + r.avoid.filter((a) => matches(a, ts) && (multi || filter === "all" || a.section === filter)).length, 0);
+    $("avoidTitle").textContent = "Avoid: contains gluten or not suitable" + (total ? " (" + total + ")" : "");
+    $("avoidWrap").open = avoidUser !== null ? avoidUser : !!($("q").value.trim() || pick.gluten);
     return shown;
   }
 
@@ -499,8 +533,9 @@
         n[kindOf(i)]++;
       }
     }
+    // dot and count on one line, the label under them, so the three buttons are one even row
     const b = (k, cls, label) => '<button type="button" data-k="' + k + '" aria-pressed="' + pick[k] + '"><span class="dot ' + cls + '"></span>' +
-      label + " <small>" + n[k] + "</small></button>";
+      '<span class="lbl">' + label + '</span> <span class="cnt">' + n[k] + "</span></button>";
     $("status").classList.toggle("picking", picking());
     $("status").innerHTML =b("straight", "d-ok", "No gluten ingredients") + b("change", "d-swap", "Needs a change") + b("gluten", "d-bad", "Avoid");
   }
@@ -540,6 +575,7 @@
     const b = e.target.closest("[data-k]");
     if (!b || !data) return;
     pick[b.dataset.k] = !pick[b.dataset.k];
+    avoidUser = null;
     store.set(PICK_KEY, JSON.stringify(pick));
     renderStatus();
     renderList();
@@ -563,24 +599,41 @@
       " If the allergen column and ingredients disagree, the item is left out.</p><p>Last built " + esc(fmtDate(data.built)) + ".</p>";
   }
 
+  // The chooser lists the restaurant used last first, then those with saved favourites, then the rest A to Z.
+  const LAST_KEY = "gf-last-restaurant";
+  const WELCOME_KEY = "gf-welcome-seen";
+  let welcomeNow = false; // the welcome is showing in this visit's first chooser
+  const hasFavs = (r) => [...favs].some((k) => k.startsWith(r.id + "|"));
+  function chooserOrder(rs) {
+    const last = store.get(LAST_KEY);
+    const rank = (r) => (r.id === last ? 0 : hasFavs(r) ? 1 : 2);
+    return rs.slice().sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
+  }
   function renderPicker() {
+    const last = store.get(LAST_KEY);
+    // first run: say what the app is, and put Berlin next to All restaurants so it's on the first screen without scrolling
+    if (!welcomeNow && !store.get(SEL_KEY) && !store.get(WELCOME_KEY)) { welcomeNow = true; store.set(WELCOME_KEY, "1"); }
+    $("pickWelcome").hidden = !welcomeNow;
     const opt = (id, name, line, meta, stale) =>
       '<button type="button" class="pick-opt" data-r="' + esc(id) + '" aria-pressed="' + (region === UK && selected === id) + '"><span class="po-main"><b>' +
       esc(name) + "</b><span>" + esc(line) + "</span></span>" + (stale ? '<span class="tag t-swap">Out of date</span>' : '<span class="po-meta">' + esc(meta) + "</span>") + "</button>";
     const total = data.restaurants.reduce((n, r) => n + r.stats.items, 0);
     const as = areas();
+    const lineOf = (r, withArea) => [r.id === last ? "Last used" : "", r.type, withArea ? r.area : "", guideLine(r)].filter(Boolean).join(" · ");
+    const one = (r, withArea) => opt(r.id, r.name, lineOf(r, withArea), r.stats.items + " items", isStale(r));
     const grouped = as.length > 1
-      ? as.map((a) => '<div class="sub-h">' + esc(a) + "</div>" + data.restaurants.filter((r) => r.area === a)
-          .map((r) => opt(r.id, r.name, [r.type, guideLine(r)].filter(Boolean).join(" · "), r.stats.items + " items", isStale(r))).join("")).join("") +
-        data.restaurants.filter((r) => !r.area).map((r) => opt(r.id, r.name, r.type, r.stats.items + " items", isStale(r))).join("")
-      : data.restaurants.map((r) => opt(r.id, r.name, [r.type, r.area, guideLine(r)].filter(Boolean).join(" · "), r.stats.items + " items", isStale(r))).join("");
+      ? as.map((a) => '<div class="sub-h">' + esc(a) + "</div>" + chooserOrder(data.restaurants.filter((r) => r.area === a)).map((r) => one(r, false)).join("")).join("") +
+        chooserOrder(data.restaurants.filter((r) => !r.area)).map((r) => opt(r.id, r.name, r.type, r.stats.items + " items", isStale(r))).join("")
+      : chooserOrder(data.restaurants).map((r) => one(r, true)).join("");
     // other cities (cities.json) are lists of places rather than menus, so they switch region instead of restaurant
-    const others = Object.entries(cities).map(([cid, c]) => '<div class="sub-h">' + esc(c.name) + "</div>" +
+    const others = Object.entries(cities).map(([cid, c]) => (welcomeNow ? "" : '<div class="sub-h">' + esc(c.name) + "</div>") +
       '<button type="button" class="pick-opt" data-region="' + esc(cid) + '" aria-pressed="' + (region === cid) + '"><span class="po-main"><b>' +
       esc(c.name) + "</b><span>Places that are all gluten free, by their own word or the coeliac support groups'" +
       (c.places.some((p) => p.claim === "separate") ? ", or that say they have a separate gluten free kitchen" : "") + "</span></span>" +
       '<span class="po-meta">' + c.places.length + " places</span></button>").join("");
-    $("pickList").innerHTML = '<div class="sub-h">UK</div>' + opt(ALL, "All restaurants", "Search and browse everything", total + " items", false) + grouped + others +
+    const all = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false);
+    $("pickList").innerHTML = '<div class="sub-h">' + (welcomeNow ? "Choose where" : "UK") + "</div>" + all +
+      (welcomeNow ? others + '<div class="sub-h">Or one restaurant</div>' + grouped : grouped + others) +
       '<p class="pick-note">More restaurants can be added by the app\'s owner from each restaurant\'s allergen guide.</p>';
   }
 
@@ -605,6 +658,8 @@
     region = UK;
     store.set(REGION_KEY, UK);
     store.set(SEL_KEY, id);
+    if (id !== ALL) store.set(LAST_KEY, id);
+    avoidUser = null;
     history.replaceState(null, "", id === ALL ? location.pathname : "#" + id);
     $("q").value = "";
     render();
@@ -747,11 +802,12 @@
       (p.listPage ? '<a href="' + esc(p.listPage) + '" target="_blank" rel="noopener">Support groups\' entry</a>' : "") +
       '<button type="button" class="fav-btn" data-fav="' + esc(placeFav(p)) + '" aria-pressed="' + favs.has(placeFav(p)) + '">' + (favs.has(placeFav(p)) ? "★ Saved" : "☆ Save") + "</button></div>");
     // green only when the place itself says everything is gluten free and the app has nothing to add
-    const cls = p.claim === "place-all" && !p.caution ? "t-asis" : "t-swap";
+    // amber is for items that need a change; here it marks a place the app has a caution about, and the rest are plain
+    const cls = p.claim === "place-all" && !p.caution ? "t-asis" : p.caution ? "t-swap" : "t-info";
     const label = p.claimLabel || CLAIM_TAGS[p.claim];
     const star = favs.has(placeFav(p)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
-    return '<details class="row" data-place="' + esc(p.name) + '"><summary><span class="nm">' + star + esc(p.name) + "<small>" + subs.join(" · ") + '</small></span><span class="tag ' + cls + '">' +
-      esc(label) + "</span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
+    return '<details class="row" data-place="' + esc(p.name) + '"><summary><span class="nm">' + star + esc(p.name) + "<small>" + subs.join(" · ") + '</small><span class="tag ' + cls + '">' +
+      esc(label) + "</span></span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
   }
   // search what a place is and where it is, not street names or notes ("Sonntag" shouldn't find Sonntagstraße)
   const placeText = (p) => ({ name: [p.name, p.type, p.listed, p.flag, p.caution, p.says && p.says.text, p.says && p.says.en,
@@ -790,9 +846,22 @@
   }
 
   // ---------- warnings page ----------
-  function warningsFor(r) {
+  // The guide's own warnings in the order that matters to a coeliac: cross-contact, then its gluten free claim, then updates
+  // that name a gluten cereal, then other updates, then the rest. The quotes themselves are never touched.
+  const GLUTEN_WORD = /\b(gluten|wheat|barley|rye|oats?|malt|cereals?)\b/i;
+  const WARN_ORDER = ["cross-contact", "accreditation", "update-gluten", "update", "recipes", "diet", "delivery", "coverage", "nutrition"];
+  function warnGroups(notices) {
     const groups = {};
-    (r.notices || []).forEach((n) => { (groups[n.label] = groups[n.label] || []).push(n); });
+    notices.forEach((n) => {
+      const split = n.kind === "update" && GLUTEN_WORD.test(n.text);
+      const label = split ? "Allergen updates that name gluten" : n.kind === "update" ? "Other allergen updates" : n.label;
+      const g = groups[label] = groups[label] || { label, rank: WARN_ORDER.indexOf(split ? "update-gluten" : n.kind), list: [] };
+      g.list.push(n);
+    });
+    return Object.values(groups).sort((a, b) => (a.rank < 0 ? 99 : a.rank) - (b.rank < 0 ? 99 : b.rank));
+  }
+  function warningsFor(r) {
+    const groups = warnGroups(r.notices || []);
     let html = "";
     if (selected === ALL) html += '<h3 class="w-rest">' + esc(r.name) + "</h3>";
     // a restaurant's own tips lead its page of the sheet, so they're one tap away once folded off the first screen
@@ -800,11 +869,10 @@
     html += '<p class="muted">From ' + esc(plainGuideName(r)) +
       (r.changes ? '. <button type="button" class="link-btn" data-whatchanged="' + esc(r.id) + '">What changed, noticed ' +
         esc(fmtDate(r.changes.date)) + " &rsaquo;</button>" : ".") + "</p>";
-    const labels = Object.keys(groups);
-    if (labels.length) {
+    if (groups.length) {
       html += "<h4>What " + esc(r.name) + (/s$/.test(r.name) ? "'" : "'s") + " guide says</h4>";
-      for (const l of labels) {
-        html += '<div class="w-group"><div class="w-label">' + esc(l) + "</div>" + groups[l].map((n) =>
+      for (const g of groups) {
+        html += '<div class="w-group"><div class="w-label">' + esc(g.label) + "</div>" + g.list.map((n) =>
           '<blockquote class="w-quote">' + esc(n.text) + "<cite>" + esc(n.pages && n.pages.length
             ? "Guide page " + n.pages[0] + (n.pagesTotal > 1 ? ", repeated on " + n.pagesTotal + " pages" : "") : "From the menu") +
           "</cite></blockquote>").join("") + "</div>";
@@ -979,10 +1047,45 @@
       toast("That key can't upload to " + repo.name + ". Check it has Contents: Read and write.");
     }
   });
+  // A big "Take photos or choose a PDF" button stands in for the browser's own file box, with a small preview of each pick
+  function filePreview(input, box) {
+    const show = () => {
+      box.querySelectorAll("img").forEach((i) => URL.revokeObjectURL(i.src));
+      box.textContent = "";
+      const files = [...input.files];
+      files.forEach((f) => {
+        const t = document.createElement("span");
+        t.className = "thumb";
+        if (/^image\//.test(f.type)) {
+          const img = document.createElement("img");
+          img.alt = f.name;
+          img.src = URL.createObjectURL(f);
+          t.appendChild(img);
+        } else {
+          t.append("PDF");
+          const small = document.createElement("small");
+          small.textContent = f.name;
+          t.appendChild(small);
+        }
+        box.appendChild(t);
+      });
+      if (files.length) {
+        const c = document.createElement("span");
+        c.className = "thumb-count";
+        c.textContent = files.length === 1 ? "1 file chosen" : files.length + " files chosen";
+        box.appendChild(c);
+      }
+    };
+    input.addEventListener("change", show);
+    return show;
+  }
+  const showShareFiles = filePreview($("shareFiles"), $("shareThumbs"));
+  const showUpFiles = filePreview($("upFiles"), $("upThumbs"));
   // Anyone without the key sends the menu to the owner through the iPhone share sheet (Messages, WhatsApp, Mail…)
   $("shareSend").addEventListener("click", async () => {
     const files = [...$("shareFiles").files];
     const status = $("shareStatus");
+    status.classList.remove("done");
     if (!files.length) { status.textContent = "Pick at least one photo or PDF of the allergen menu first."; return; }
     const name = $("shareName").value.trim();
     const msg = { files, title: "Allergen menu", text: "Allergen menu" + (name ? " for " + name : "") + ", for Twoo's Treat Temple" };
@@ -993,6 +1096,9 @@
     try {
       await navigator.share(msg);
       status.textContent = "Sent. Thank you!";
+      status.classList.add("done");
+      $("shareFiles").value = "";
+      showShareFiles();
     } catch (e) {
       if (e.name !== "AbortError") status.textContent = "Couldn't send: " + e.message + ". Send the photos by message instead.";
     }
@@ -1074,6 +1180,7 @@
     const notes = $("upNotes").value.trim();
     const files = [...$("upFiles").files];
     const status = $("upStatus");
+    status.classList.remove("done");
     if (!name || !area || !files.length) { status.textContent = "Add the restaurant, the city or country, and at least one file."; return; }
     const btn = $("upSend");
     btn.disabled = true;
@@ -1099,7 +1206,9 @@
       await commitFiles(pending.files, "Upload " + name + " menu (" + pending.folder.split("/").pop() + ")");
       pending = null;
       status.textContent = "Uploaded. It'll be scanned within a day and sent to GitHub for you to approve.";
+      status.classList.add("done");
       $("uploadForm").reset();
+      showUpFiles();
       toast("Menu uploaded");
     } catch (err) {
       if (err.message === "EXPIRED_KEY") {
@@ -1133,11 +1242,13 @@
 
   async function load(manual) {
     const btn = $("refreshBtn");
-    btn.classList.add("spin");
+    btn.disabled = true;
+    btn.textContent = "Checking…";
     try {
       const idx = await getJSON("data/restaurants.json");
       const full = await Promise.all(idx.json.restaurants.map((r) => getJSON(r.file)));
       const offline = idx.offline || full.some((f) => f.offline);
+      if (!offline) { store.set(CHECKED_KEY, new Date().toISOString()); renderLastChecked(); }
       const fresh = { built: idx.json.built, restaurants: full.map((f) => f.json) };
       const prev = data;
       const changed = !prev || prev.built !== fresh.built;
@@ -1170,14 +1281,26 @@
         $("list").innerHTML = '<p class="empty">Couldn\'t load the menus. Check your connection and tap ↻.</p>';
       }
     } finally {
-      btn.classList.remove("spin");
+      btn.disabled = false;
+      btn.textContent = "Check for new menus";
     }
+  }
+  // When the app last reached the menus, shown in Help beside "Check for new menus"
+  const CHECKED_KEY = "gf-last-checked";
+  function renderLastChecked() {
+    const iso = store.get(CHECKED_KEY);
+    const d = iso ? new Date(iso) : null;
+    const sameDay = d && d.toDateString() === new Date().toDateString();
+    $("lastChecked").textContent = !d || isNaN(d) ? "Not checked yet."
+      : "Last checked " + (sameDay ? "today at " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
+        : d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ".") + (offlineNow ? " You're offline, so these are the menus saved on this phone." : "");
   }
 
   // ---------- events ----------
   // While searching, tips and notes step aside so results sit just under the search box, above the keyboard
   const syncSearching = () => document.body.classList.toggle("searching", !!$("q").value.trim() || (region !== UK && (cityFilter !== "all" || nearSort)));
   $("q").addEventListener("input", () => {
+    avoidUser = null;
     syncSearching();
     window.scrollTo({ top: 0 });
     if (region !== UK) renderCityList();
@@ -1231,7 +1354,8 @@
     if (b.dataset.region) setRegion(b.dataset.region);
     else select(b.dataset.r);
   });
-  $("infoBtn").addEventListener("click", () => openDialog($("info")));
+  $("picker").addEventListener("close", () => { welcomeNow = false; });
+  $("infoBtn").addEventListener("click", () => { renderLastChecked(); openDialog($("info")); });
   ["picker", "info", "gfcard", "warnings", "staff", "changes"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
   $("refreshBtn").addEventListener("click", () => load(true));
   $("shareBtn").addEventListener("click", async () => {
@@ -1277,6 +1401,7 @@
   const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const standalone = window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
   if (isIOS && !standalone && store.get(TIP_KEY) !== "1") $("installTip").hidden = false;
+  $("installHelp").hidden = standalone;
   $("installClose").addEventListener("click", () => { $("installTip").hidden = true; store.set(TIP_KEY, "1"); });
 
   // Ask the phone not to clear this site's storage under space pressure, and say in Help whether that worked.
@@ -1306,7 +1431,7 @@
   loadCities();
   load(false).then(() => {
     // first visit: one restaurant opens directly; several, the picker opens so you start somewhere specific
-    if (data && region === UK && hashId && byId(hashId)) store.set(SEL_KEY, hashId);
+    if (data && region === UK && hashId && byId(hashId)) { store.set(SEL_KEY, hashId); store.set(LAST_KEY, hashId); }
     if (data && region === UK && !hashId && !store.get(SEL_KEY)) {
       if (data.restaurants.length === 1) select(data.restaurants[0].id);
       else { renderPicker(); openDialog($("picker")); }

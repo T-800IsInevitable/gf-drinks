@@ -36,7 +36,7 @@ OK    | Milks and cream | Cream | asis
 OK    | Milks and cream | Vegan Whipped Cream | asis
 OK    | Sauces and ice cream | Milk Choc Sauce | asis
 OK    | Sauces and ice cream | Dark Choc Sauce | asis
-OK    | Sauces and ice cream | 'KNOOPS' Chocolate Plaques | asis
+OK    | Sauces and ice cream | 'Knoops' Chocolate Plaques | asis
 OK    | Sauces and ice cream | Jersey Gold Ice Cream Mix | asis
 OK    | Bakery | Marshmallow | asis
 OK    | Bakery | 41% Honeycomb | asis
