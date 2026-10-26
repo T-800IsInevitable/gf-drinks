@@ -158,10 +158,10 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 .notes { padding-left: 18px; font-size: 0.8125rem; }
 
 .toast {
-  position: fixed; left: 50%; transform: translateX(-50%);
+  position: fixed; left: 16px; right: 16px; margin: 0 auto;
   bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 20;
-  background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 999px;
-  font-size: 0.875rem; max-width: calc(100% - 32px); text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 16px;
+  font-size: 0.875rem; width: fit-content; max-width: 100%; text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,0.2);
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
@@ -220,6 +220,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 }
 .muted { color: var(--muted); font-size: 0.8438rem; }
 .sheet p + p { margin-top: 8px; }
+.field + p { margin-top: 12px; }
 
 /* ---- status filter + themes ---- */
 .status { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }

@@ -15,6 +15,10 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/favicon.png">
 <link rel="stylesheet" href="styles.css">
+<!-- Scripts only from this app (the inline theme script below, allowed by its hash), connections only to
+     this app and the GitHub API that uploads use. Changing the inline script below changes its hash, so
+     the script-src value here must be recomputed (sha256, base64) whenever its text changes. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Gd4+D20kfajAfxKsda36N7czDnRj2s6rBz8wVzUpe1g='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.github.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <script>
   // apply the saved theme before first paint to avoid a flash
   try { var t = localStorage.getItem("gf-theme"); if (t && t !== "auto") document.documentElement.setAttribute("data-theme", t); } catch (e) {}
@@ -58,7 +62,7 @@
     <button type="button" id="installClose" class="link-btn">Dismiss</button>
   </div>
   <div id="ukView" class="view">
-  <div id="stale" class="stale" hidden></div>
+  <div id="stale" class="stale hide-searching" hidden></div>
   <div id="favAlert" class="fav-alert" role="alert" hidden></div>
   <div id="news" class="news hide-searching" hidden></div>
   <section id="tips" class="rules hide-searching" aria-label="How to order"></section>
@@ -114,6 +118,7 @@
       <li>Keep <b>Open as Web App</b> switched on, then tap <b>Add</b>. If it's off, you get a plain bookmark instead.</li>
     </ol>
     <p>It opens full screen and works without signal using the last menus it downloaded.</p>
+    <p id="storageState" class="muted" hidden></p>
     <h3>Show or hide</h3>
     <p>Everything shows until you choose. Tap the buttons under the search box to show only items with <b>No gluten ingredients</b> (as served, or with any milk except the ones named), items that <b>Need a change</b> (ask for a swap or a change), and items to <b>Avoid</b> (they contain gluten, or the restaurant says they aren't suitable because of how they're prepared).</p>
     <h3>Reading the tags</h3>

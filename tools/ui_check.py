@@ -543,6 +543,185 @@ def main():
         print(f"wording: {len(found)} sentences say gluten free without saying whose claim it is")
         ctx.close()
 
+        # X5: a restaurant's own name at the start of a search in All restaurants narrows to it
+        # ("pret latte" means lattes at Pret), and an everyday word finds the menu's own word ("chips" -> "fries")
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+        page = ctx.new_page()
+        page.goto(base)
+        page.wait_for_selector("#list .row")
+        for q, want_restaurant, want_name in (("pret latte", "Pret A Manger", "latte"), ("five guys fries", "Five Guys", "fries")):
+            page.locator("#q").fill(q)
+            page.wait_for_timeout(300)
+            heads = page.locator("#list .rest-h").all_inner_texts()
+            if any(want_restaurant not in h for h in heads) or not heads:
+                problems.append(f"search {q!r}: restaurant headings are {heads}, expected only {want_restaurant!r}")
+            names = [r["name"] for r in page.evaluate(ROWS_JS)]
+            if not any(want_name in n.lower() for n in names):
+                problems.append(f"search {q!r}: no row named like {want_name!r} ({names})")
+        page.locator("#q").fill("chips")
+        page.wait_for_timeout(300)
+        names = [r["name"] for r in page.evaluate(ROWS_JS)]
+        if not any("fries" in n.lower() for n in names):
+            problems.append(f"search 'chips': no Fries found, the everyday-word alias isn't matching ({names})")
+        page.locator("#q").fill("")
+        print("search: a restaurant's own name narrows results, and 'chips' finds 'fries'")
+        ctx.close()
+
+        # X6: a saved favourite that's changed shows in full on its own restaurant's page and on All,
+        # but elsewhere only a short line points to where it is
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-favourites', JSON.stringify("
+                             "['pret-uk|Hot drinks|Gone From Pret','starbucks-uk|Hot drinks|Gone From Starbucks']))")
+        page = ctx.new_page()
+        page.goto(base + "#five-guys-uk")
+        page.wait_for_selector("#list .row")
+        alert = page.locator("#favAlert")
+        if alert.is_hidden():
+            problems.append("favourites changed elsewhere: the alert doesn't show on an unrelated restaurant's page")
+        text = alert.inner_text()
+        if "saved item" not in text or "Pret" not in text or "Starbucks" not in text:
+            problems.append(f"favourites changed elsewhere: short line is {text!r}, expected to name both restaurants")
+        if "Gone From Pret" in text:
+            problems.append("favourites changed elsewhere: the full warning shows on an unrelated restaurant's page")
+        page.locator("[data-gotorest]").first.click()
+        page.wait_for_selector("#list .row")
+        if "pret-uk" not in page.url or "Gone From Pret" not in page.locator("#favAlert").inner_text():
+            problems.append(f"favourites changed: following the line (url {page.url!r}) doesn't show Pret's full warning")
+        page.locator("#pickBtn").click()
+        page.locator('#pickList [data-r="all"]').click()
+        page.wait_for_selector("#list .row")
+        allt = page.locator("#favAlert").inner_text()
+        if "Gone From Pret" not in allt or "Gone From Starbucks" not in allt:
+            problems.append(f"favourites changed: All doesn't show both full warnings ({allt!r})")
+        print("favourites changed: short line elsewhere, full detail on its own page and on All")
+        ctx.close()
+
+        # X3: "What changed" stays reopenable from Warnings and from Help, even once the dismissable news banner is gone
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        page.goto(base + "#starbucks-uk")
+        page.wait_for_selector("#list .row")
+        if page.locator("#news").is_visible():
+            page.locator("#news [data-seen]").click()
+        page.locator("#openWarnings").click()
+        page.wait_for_selector("#warnings[open]")
+        link = page.locator("#warnBody [data-whatchanged]")
+        if not link.count():
+            problems.append("starbucks-uk: no 'What changed' link in Warnings once the news banner is dismissed")
+        else:
+            link.first.click()
+            page.wait_for_selector("#changes[open]")
+            if not page.locator("#changesBody").inner_text().strip():
+                problems.append("starbucks-uk: 'What changed' from Warnings opened an empty dialog")
+            page.keyboard.press("Escape")
+        page.keyboard.press("Escape")
+        page.locator("#infoBtn").click()
+        page.wait_for_selector("#info[open]")
+        if not page.locator("#infoSources [data-whatchanged]").count():
+            problems.append("starbucks-uk: no 'What changed' link in Help, 'Menus in this app'")
+        print("what changed: reopenable from Warnings and Help once the news banner is dismissed")
+        ctx.close()
+
+        # X9: the out-of-date banner hides while searching, like the other tips and notices
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        page.goto(base + "#knoops-uk")
+        page.wait_for_selector("#list .row")
+        if not page.locator("#stale").is_visible():
+            problems.append("knoops-uk: the out-of-date banner isn't showing, so hiding it can't be checked")
+        page.locator("#q").fill("latte")
+        page.wait_for_timeout(200)
+        if page.locator("#stale").is_visible():
+            problems.append("knoops-uk: the out-of-date banner still shows while searching")
+        page.locator("#q").fill("")
+        print("Knoops banner: hides while searching")
+        ctx.close()
+
+        # X11: the toast sits within both edges and doesn't need a tall oval for a two-restaurant message
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        page.goto(base + "#five-guys-uk")
+        page.wait_for_selector("#list .row")
+        page.evaluate("document.getElementById('toast').textContent = 'New guides: Pret, Starbucks';"
+                       "document.getElementById('toast').hidden = false;")
+        box = page.locator("#toast").bounding_box()
+        vw = IPHONE["viewport"]["width"]
+        if box["x"] < 8 or box["x"] + box["width"] > vw - 8:
+            problems.append(f"toast: box {box} isn't within the screen's edges (viewport {vw}px wide)")
+        if box["height"] > 50:
+            problems.append(f"toast: 'New guides: Pret, Starbucks' is {box['height']:.0f}px tall, more than one line")
+        print(f"toast: 'New guides: Pret, Starbucks' fits in {box['width']:.0f}x{box['height']:.0f}")
+        ctx.close()
+
+        # X12: the Send button doesn't touch the field above it
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        page.goto(base + "#knoops-uk")
+        page.wait_for_selector("#list .row")
+        page.locator("#infoBtn").click()
+        page.locator("#openUpload").click()
+        page.wait_for_selector("#upload[open]")
+        field_box = page.locator("label.field", has=page.locator("#shareName")).bounding_box()
+        btn_box = page.locator("#shareSend").bounding_box()
+        gap = btn_box["y"] - (field_box["y"] + field_box["height"])
+        if gap < 8:
+            problems.append(f"Add a menu: the Send button sits {gap:.0f}px from the field above it")
+        print(f"Add a menu: Send button is {gap:.0f}px below the field above it")
+        ctx.close()
+
+        # X7: an invalid or expired GitHub key gives the right advice and removes itself, rather than blaming the connection
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-github-key', 'expired-token')")
+        page = ctx.new_page()
+        page.route("https://api.github.com/**", lambda r: r.fulfill(status=401, content_type="application/json", body='{"message":"Bad credentials"}'))
+        page.goto(base + "#knoops-uk")
+        page.wait_for_selector("#list .row")
+        page.locator("#infoBtn").click()
+        page.locator("#openUpload").click()
+        page.wait_for_selector("#upload[open]")
+        if page.locator("#uploadFields").is_hidden():
+            problems.append("expired key: the upload fields should show before the upload is tried (the key looked saved)")
+        page.locator("#upName").fill("Test Cafe")
+        page.locator("#upArea").fill("Berlin")
+        page.set_input_files("#upFiles", files=[{"name": "menu.pdf", "mimeType": "application/pdf", "buffer": b"%PDF-1.4"}])
+        page.locator("#upSend").click()
+        page.wait_for_timeout(500)
+        status = page.locator("#upStatus").inner_text()
+        if "no longer works" not in status.lower() or "signal" in status.lower():
+            problems.append(f"expired key: the message is {status!r}, doesn't say the key has expired")
+        if page.locator("#keySetup").is_hidden():
+            problems.append("expired key: the key setup steps didn't reopen")
+        print(f"expired key: {status!r}")
+        ctx.close()
+
+        # F3: the app asks the phone to keep its storage, and says the answer in Help
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        page.goto(base + "#knoops-uk")
+        page.wait_for_selector("#list .row")
+        page.wait_for_timeout(300)
+        page.locator("#infoBtn").click()
+        page.wait_for_selector("#info[open]")
+        state = page.locator("#storageState")
+        if state.is_hidden():
+            problems.append("Help: the storage line doesn't show (navigator.storage should be available in Chromium)")
+        elif not state.inner_text().strip():
+            problems.append("Help: the storage line is empty")
+        print(f"storage: {'hidden' if state.is_hidden() else state.inner_text()!r}")
+        ctx.close()
+
+        # O6: a content security policy is in place
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        page.goto(base)
+        csp = page.evaluate("document.querySelector('meta[http-equiv=\"Content-Security-Policy\"]')?.content || ''")
+        for want in ("script-src 'self'", "connect-src 'self' https://api.github.com", "object-src 'none'"):
+            if want not in csp:
+                problems.append(f"content security policy is missing {want!r} ({csp!r})")
+        print(f"content security policy: {csp!r}")
+        ctx.close()
+
         # tap through one restaurant
         ctx = browser.new_context(color_scheme="light", **IPHONE)
         page = ctx.new_page()
