@@ -1,0 +1,39 @@
+{
+  "name": "Test Cafe",
+  "type": "Cafe (test upload)",
+  "covers": "Allergen guide (test document)",
+  "area": "London",
+  "language": "en",
+  "reader": "manual_csv",
+  "optionLabel": "option",
+  "guide": {
+    "title": "Test Cafe allergen guide",
+    "source": "menu.pdf, Test Cafe allergen guide",
+    "version": "2026-10-26",
+    "validUntil": "2027-01-26"
+  },
+  "tips": [
+    "Oat milk counts as oats, so ask for another milk."
+  ],
+  "headline": "Oat milk counts as oats, so ask for another milk.",
+  "reviewed": {
+    "by": "pending owner review",
+    "date": "2026-10-26"
+  },
+  "notices": [
+    {
+      "label": "Cross-contact",
+      "text": "May contain traces of other allergens.",
+      "page": 1
+    },
+    {
+      "label": "What the guide covers",
+      "text": "Gluten cereals: wheat, rye, barley, oats.",
+      "page": 1
+    }
+  ],
+  "gaps": [
+    "The guide says it may contain traces of other allergens, but doesn't say whether that includes gluten.",
+    "The guide never claims anything is gluten free."
+  ]
+}
