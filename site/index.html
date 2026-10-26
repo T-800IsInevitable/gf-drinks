@@ -141,7 +141,7 @@
       <li><span class="tag t-swap">Ask</span> no gluten ingredients only with the change shown</li>
       <li><span class="tag t-bad">Wheat</span> contains gluten whatever you order</li>
       <li><span class="tag t-bad">Not suitable</span> the restaurant says it isn't suitable for coeliacs because of how it's prepared</li>
-      <li><span class="tag t-info">Ingredient</span> an ingredient the guide lists on its own, not something to order. Rows marked <b>Part of a dish</b> are the same for parts such as burger toppings. Neither has a staff card</li>
+      <li><span class="tag t-info">Ingredient</span> an ingredient the guide lists on its own, not something to order. Rows marked <b>Part of a dish</b> are the same for parts such as burger toppings. Neither has a staff card of its own; a part goes on an order instead (see Build an order)</li>
     </ul>
     <details class="more">
       <summary>Staying up to date</summary>
@@ -164,12 +164,16 @@
       <p>Open any item and tap <b>Show staff</b> for a large-print card with the item, how to order it, and that you have coeliac disease. The screen stays lit while a card is open.</p>
     </details>
     <details class="more">
+      <summary>Build an order</summary>
+      <p>On a restaurant's page, tap the <b>Build an order</b> chip under the search box (or <b>Add to order</b> in any opened item) to tick several things, such as a burger's patty and toppings, or a dish and its sauce, and show staff one card with all of them, how to order each, and the restaurant's own cross-contact warning. Only items with no gluten ingredients can be ticked: anything on the Avoid list is shown but can't be added, and if a new guide moves something in your order to the Avoid list, it's taken out and the builder says so. Orders stay on this phone.</p>
+    </details>
+    <details class="more">
       <summary>Share an item, or report a mistake</summary>
       <p>Open any item and tap <b>Share this item</b> for a link that opens straight to it. Tap <b>Something wrong?</b> (on any item or city place) for a ready message with the restaurant, item and guide page, to send to whoever looks after the app.</p>
     </details>
     <details class="more">
-      <summary>Berlin and Amsterdam</summary>
-      <p>Tap <b>Berlin</b> or <b>Amsterdam</b> next to the title (or choose one from the title; the app also offers it when your phone is on that city's time) for places there that are all gluten free, by their own word or the coeliac society's list, or that say they make gluten free food in a separate kitchen. Each tag says who makes that claim. Each row says whether it's open now (local time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Open near me</b> shows what's still open today, nearest first; <b>Still open today</b>, <b>Near me</b> and <b>★ Saved</b> narrow the list on their own. The <b>German card</b> or <b>Dutch card</b> chip opens the coeliac card, and <b>About the tags</b> and <b>Before you go</b> open under the introduction. Tap <b>UK</b> to go back to the menus.</p>
+      <summary>International: Berlin and Amsterdam</summary>
+      <p>Choose a country from the title (they're listed under <b>International</b>, like the restaurants; the app also offers a city when your phone is on its time) for places there that are all gluten free, by their own word or the coeliac society's list, or that say they make gluten free food in a separate kitchen. <b>International</b> next to the title goes straight to the city you last looked at. Each tag says who makes that claim. Each row says whether it's open now (local time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Open near me</b> shows what's still open today, nearest first; <b>Still open today</b>, <b>Near me</b> and <b>★ Saved</b> narrow the list on their own. The <b>German card</b> or <b>Dutch card</b> chip opens the coeliac card, and <b>About the tags</b> and <b>Before you go</b> open under the introduction. Tap <b>UK</b> to go back to the menus.</p>
     </details>
     <details class="more">
       <summary>Travelling</summary>
@@ -226,6 +230,22 @@
       <button class="link-btn" value="close">Done</button>
     </div>
     <div id="staffBody" class="staff"></div>
+  </form>
+</dialog>
+
+<!-- Build an order: tick several items (parts of dishes included) for one staff card -->
+<dialog id="order" class="full" aria-labelledby="orderTitle">
+  <form method="dialog" class="sheet">
+    <div class="sheet-head">
+      <h2 id="orderTitle">Build an order</h2>
+      <button class="link-btn" value="close">Done</button>
+    </div>
+    <div id="orderBody"></div>
+    <div class="order-foot">
+      <span id="orderCount"></span>
+      <button type="button" id="orderClear" class="link-btn" hidden>Clear</button>
+      <button type="button" id="orderCard" class="pill-btn" disabled>Show staff</button>
+    </div>
   </form>
 </dialog>
 

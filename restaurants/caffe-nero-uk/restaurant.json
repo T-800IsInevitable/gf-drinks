@@ -7,7 +7,11 @@
   "reader": "caffe_nero_uk_pdf",
   "optionLabel": "milk",
   "officialUrl": "https://www.caffenero.com/uk/menu/coffee",
-  "watch": {"page": "https://www.caffenero.com/uk/menu/coffee", "link": "nutrition_allergens-en_GB"},
+  "logoUrl": "https://www.caffenero.com/assets/img/brand/caffenero-logo_black.png",
+  "watch": {
+    "page": "https://www.caffenero.com/uk/menu/coffee",
+    "link": "nutrition_allergens-en_GB"
+  },
   "recheckDays": 91,
   "headline": "Any milk but oat drink.",
   "tips": [

@@ -8,7 +8,10 @@ For every restaurant page and the "All restaurants" page it checks:
   * nothing wider than the screen (no sideways scrolling)
   * the list shows items
 the same for each city page in cities.json (every place shown and opened), then
-it switches UK -> city (search, coeliac card, reload) -> UK; Berlin on a
+it switches UK -> International (search, coeliac card, reload) -> UK, with the
+countries listed under International in the chooser; the order builder (parts
+tickable, Avoid items blocked, dropped items named, one card with the chain's
+cross-contact warning); each chain's logo in the chooser; Berlin on a
 Sunday evening (open today, near me, saving); the staff card, German card and
 offline header; the tags under item names, even status buttons, the lighter header, Help in sections, the
 cross-contact-first warnings, the chooser's order and first-run welcome, the photo button, the folded Avoid
@@ -440,8 +443,10 @@ def main():
         page.goto(base)
         page.wait_for_selector("#list .row")
         cid = next(iter(cities))
-        page.locator(f'#region [data-region="{cid}"]').click()
+        page.locator('#region [data-region="intl"]').click()  # International: the first city, nothing having been looked at yet
         page.wait_for_selector("#cityList .row")
+        if page.locator("#pickName").inner_text().strip() != cities[cid]["name"]:
+            problems.append(f"International went to {page.locator('#pickName').inner_text()!r}, expected the first city, {cities[cid]['name']}")
         page.locator("#q").fill(cities[cid]["places"][0]["name"])
         if page.locator("#cityList .row").count() < 1:
             problems.append(f"{cid}: searching for the first place found nothing")
@@ -457,7 +462,27 @@ def main():
         page.wait_for_selector("#list .row")
         if not page.locator("#cityView").is_hidden():
             problems.append(f"switching back to UK left {cid} showing")
-        print(f"switch: UK -> {cid} (search, card, reload) -> UK")
+        # the chooser lists the other countries under International, like the restaurants; International then remembers the city
+        other = [c for c in cities if c != cid]
+        page.locator("#pickBtn").click()
+        page.wait_for_selector("#picker[open]")
+        heads = [h.strip().title() for h in page.locator("#pickList .sub-h").all_inner_texts()]  # shown in capitals
+        if "International" not in heads or heads.index("International") < 1:
+            problems.append(f"the chooser's groups are {heads}, expected UK then International")
+        for c, city in cities.items():
+            opt = page.locator(f'#pickList [data-region="{c}"]')
+            if not opt.count() or city["country"] not in opt.locator("b").inner_text() or city["name"] not in opt.inner_text():
+                problems.append(f"the chooser doesn't list {city['name']} as {city['country']} under International")
+        if other:
+            page.locator(f'#pickList [data-region="{other[0]}"]').click()
+            page.wait_for_selector("#cityList .row")
+            page.locator('#region [data-region="uk"]').click()
+            page.wait_for_selector("#list .row")
+            page.locator('#region [data-region="intl"]').click()
+            page.wait_for_selector("#cityList .row")
+            if page.locator("#pickName").inner_text().strip() != cities[other[0]]["name"]:
+                problems.append(f"International went to {page.locator('#pickName').inner_text()!r}, not the city last looked at ({cities[other[0]]['name']})")
+        print(f"switch: UK -> {cid} (search, card, reload) -> UK; countries under International in the chooser; International remembers the city")
         ctx.close()
 
         # Berlin on a Sunday evening at Alexanderplatz: open today, nearest first, saving a place
@@ -766,6 +791,109 @@ def main():
         print("food safety: no green row named like an Avoid row; parts and ingredients have no staff card")
         ctx.close()
 
+        # F13, build an order: dishes and parts can be ticked (ingredients listed on their own can't), the Avoid list is
+        # shown but can't be added, the card lists what was ticked with how to order each and the chain's own cross-contact
+        # warning, and a saved order naming an Avoid item or an unknown one (a new guide, or a tampered phone) loses it and says so
+        for rid in ("five-guys-uk", "pho-uk"):
+            built = json.loads((SITE / "data" / "r" / f"{rid}.json").read_text(encoding="utf-8"))
+            key = lambda i: f"{rid}|{i['section']}|{i['name']}"
+            tickable = [i for i in built["items"] if i.get("role") != "ingredient"]
+            avoid_names = {a["name"] for a in built["avoid"]}
+            saved = [key(tickable[0]), key(built["avoid"][0]), f"{rid}|Nowhere|Nothing of the sort"]
+            ctx = browser.new_context(color_scheme="light", **IPHONE)
+            ctx.add_init_script(f"localStorage.setItem('gf-order', {json.dumps(json.dumps({rid: saved}))})")
+            page = ctx.new_page()
+            errors = []
+            page.on("pageerror", lambda e, errors=errors: errors.append(f"page error: {e}"))
+            page.goto(base + f"#{rid}")
+            page.wait_for_selector("#list .row")
+            launch = page.locator("#chips [data-order-open]")
+            launch_text = launch.inner_text() if launch.count() else ""
+            if "Your order (1)" not in launch_text:
+                problems.append(f"{rid}: the order pill says {launch_text!r}, expected 'Your order (1)' once the Avoid item and the unknown one are dropped")
+            launch.click()
+            page.wait_for_selector("#order[open]")
+            keys = page.evaluate("[...document.querySelectorAll('#orderBody input[data-key]')].map((b) => b.dataset.key)")
+            if sorted(keys) != sorted(key(i) for i in tickable):
+                problems.append(f"{rid}: the builder offers {len(keys)} items, expected the {len(tickable)} with no gluten ingredients (parts in, ingredients out)")
+            if key(built["avoid"][0]) in keys or page.locator("#orderBody input:checked").count() != 1:
+                problems.append(f"{rid}: an Avoid item can be ticked, or a dropped item is still ticked")
+            note = page.locator("#orderBody .chg-note").inner_text() if page.locator("#orderBody .chg-note").count() else ""
+            if built["avoid"][0]["name"] not in note or "Nothing of the sort" not in note or "Avoid list" not in note:
+                problems.append(f"{rid}: the builder doesn't say what was taken out of the order ({note!r})")
+            blocked = page.locator("#orderBody .o-avoid .o-row").count()
+            if blocked != len(built["avoid"]):
+                problems.append(f"{rid}: {blocked} Avoid items shown as blocked, expected {len(built['avoid'])}")
+            change = next((i for i in tickable if i["order"] == "modify"), None)
+            picks = [tickable[1]] + ([change] if change else [])
+            tick = "(k) => [...document.querySelectorAll('#orderBody input[data-key]')].find((x) => x.dataset.key === k).click()"
+            for i in picks:
+                page.evaluate(tick, key(i))
+            if f"{1 + len(picks)} items" not in page.locator("#orderCount").inner_text():
+                problems.append(f"{rid}: after ticking, the builder says {page.locator('#orderCount').inner_text()!r}, expected {1 + len(picks)} items")
+            page.locator("#orderCard").click()
+            page.wait_for_selector("#staff[open]")
+            listed = [t.strip() for t in page.locator("#staffBody .staff-list li b").all_inner_texts()]
+            want = [i["name"] for i in [tickable[0]] + picks]
+            if sorted(listed) != sorted(want):
+                problems.append(f"{rid}: the order card lists {listed}, expected {want}")
+            if set(listed) & avoid_names:
+                problems.append(f"{rid}: the order card lists something from the Avoid list: {sorted(set(listed) & avoid_names)}")
+            card = page.locator("#staffBody").inner_text()
+            if change and change["note"] not in card:
+                problems.append(f"{rid}: the order card doesn't say how to order {change['name']!r} ({change['note']!r})")
+            cc = [n["text"] for n in built["notices"] if n["kind"] == "cross-contact"]
+            if not any(t in card for t in cc):
+                problems.append(f"{rid}: the order card doesn't quote the chain's own cross-contact warning")
+            if rid == "five-guys-uk" and "no bun" not in card.lower():
+                problems.append("five-guys-uk: the order card doesn't ask for no bun")
+            if "coeliac disease" not in card:
+                problems.append(f"{rid}: the order card doesn't say the person has coeliac disease")
+            page.locator("#staff .link-btn").click()
+            page.locator("#orderClear").click()
+            if page.locator("#orderBody input:checked").count() or not page.locator("#orderCard").is_disabled():
+                problems.append(f"{rid}: Clear left items ticked, or Show staff enabled with nothing ticked")
+            page.keyboard.press("Escape")
+            # the button in an opened item adds it, and the pill follows
+            row = page.locator("#list .row", has=page.locator(f'.order-btn[data-order="{key(tickable[0])}"]')).first
+            row.locator("summary").click()
+            row.locator(".order-btn").click()
+            page.wait_for_timeout(100)
+            if row.locator(".order-btn").get_attribute("aria-pressed") != "true" or "Your order (1)" not in page.locator("#chips [data-order-open]").inner_text():
+                problems.append(f"{rid}: Add to order in an opened item didn't add it ({row.locator('.order-btn').inner_text()!r}, pill {page.locator('#chips [data-order-open]').inner_text()!r})")
+            problems += [f"{rid} order: {e}" for e in errors]
+            print(f"{rid}: order builder offers {len(keys)}, blocks {blocked}; dropped items named; card lists {len(listed)} with the cross-contact warning")
+            ctx.close()
+
+        # logos: each restaurant's own mark in the chooser and the title, a lettered badge where there's none
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+        page = ctx.new_page()
+        page.goto(base)
+        page.wait_for_selector("#list .row")
+        page.locator("#pickBtn").click()
+        page.wait_for_selector("#picker[open]")
+        page.wait_for_timeout(500)
+        marks = page.evaluate("""() => [...document.querySelectorAll('#pickList [data-r]')].map((b) => {
+            const w = b.querySelector('.logo-wrap'), img = w && w.querySelector('img');
+            return { id: b.dataset.r, wrap: !!w, img: !!img, loaded: !!img && img.complete && img.naturalWidth > 0, badge: w && w.querySelector('.mono') && getComputedStyle(w.querySelector('.mono')).display !== 'none' };
+        })""")
+        with_logo = {r["id"] for r in index["restaurants"] if r.get("logo")}
+        for m in marks:
+            if not m["wrap"]:
+                problems.append(f"chooser: {m['id']} has no mark")
+            elif m["id"] in with_logo and not m["loaded"]:
+                problems.append(f"chooser: {m['id']}'s logo didn't load")
+            elif m["id"] not in with_logo and m["id"] != "all" and not m["badge"]:
+                problems.append(f"chooser: {m['id']} has no logo and no lettered badge")
+        page.keyboard.press("Escape")
+        page.goto(base + f"#{sorted(with_logo)[0]}")
+        page.wait_for_selector("#list .row")
+        if not page.evaluate("(() => { const i = document.querySelector('#pickName .logo-wrap img'); return i && i.complete && i.naturalWidth > 0; })()"):
+            problems.append("the title doesn't show the chosen restaurant's logo")
+        print(f"logos: {len(with_logo)} restaurants with their own mark, {len(marks) - 1 - len(with_logo)} with a lettered badge; title shows the logo")
+        ctx.close()
+
         # wording: the app never calls anything gluten free in its own voice (CLAUDE.md), on any page, sheet or list
         ctx = browser.new_context(color_scheme="light", **IPHONE)
         ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
@@ -780,6 +908,10 @@ def main():
                 page.keyboard.press("Escape")
                 page.locator("#pickBtn").click()
                 page.wait_for_selector("#picker[open]")
+                page.keyboard.press("Escape")
+            elif url[1:] in ids:  # the order builder too, with its own words for this restaurant
+                page.locator("#chips [data-order-open]").click()
+                page.wait_for_selector("#order[open]")
                 page.keyboard.press("Escape")
             found |= set(page.evaluate(WORDING_JS))
         problems += [f"calls something gluten free in the app's own voice: {s!r}" for s in sorted(found)]
@@ -951,7 +1083,9 @@ def main():
         if page.locator("#shareBtn").is_visible() or page.locator("#refreshBtn").is_visible():
             problems.append("the header still has share or refresh buttons")
         if not page.locator(".titlebar #region").count():
-            problems.append("the UK / Berlin switch isn't in the title row")
+            problems.append("the UK / International switch isn't in the title row")
+        if [b.strip() for b in page.locator("#region button").all_inner_texts()] != ["UK", "International"]:
+            problems.append(f"the header switch reads {page.locator('#region button').all_inner_texts()}, expected UK and International")
         search = page.locator(".search").bounding_box()
         if search["width"] < IPHONE["viewport"]["width"] - 40:
             problems.append(f"the search box is {search['width']:.0f}pt wide, not the full width")
@@ -1230,7 +1364,7 @@ def main():
         page.wait_for_timeout(100)
         if wl()["released"] != 2:
             problems.append(f"Show staff: the screen lock isn't let go of when the card closes ({wl()})")
-        page.locator(f'#region [data-region="{cid}"]').click()
+        page.locator('#region [data-region="intl"]').click()
         page.wait_for_selector("#cityList .row")
         page.locator("#chips [data-card]").click()
         page.wait_for_selector("#gfcard[open]")

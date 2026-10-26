@@ -1,0 +1,143 @@
+# source: nandos-allergens-2026-10-26.json
+# intro: Nando's lists its chicken, sauces, extras and sides on their own, so tick each part of your order. Its pittas, wraps, rolls and burgers are on the Avoid list.
+# card: 
+TICK  | Chicken | Boneless Platter | asis
+TICK  | Chicken | Chicken Sausage | asis
+TICK  | Chicken | Chicken Thighs | asis
+TICK  | Chicken | Extra Saucy Wings | asis
+TICK  | Chicken | Nando's Chicken Butterfly | asis
+TICK  | Chicken | Nando's Chicken – Quarter, Half | asis
+TICK  | Chicken | Chicken Wings | asis
+TICK  | Chicken | Chicken – Whole | asis
+TICK  | Chicken | Pulled Chicken/Chicken Fillet | asis
+BLOCK | Chicken | Chicken Livers & Rustic Portuguese Roll | OAT;OATS;WHEAT
+BLOCK | Chicken | Phantom Wings | BARLEY;MALT
+TICK  | Spices & Sauces | Balsamic Vinegar | asis
+TICK  | Spices & Sauces | Extra Virgin Olive Oil | asis
+TICK  | Spices & Sauces | PERi-PERi Sauces | asis
+TICK  | Spices & Sauces | Spices | asis
+BLOCK | Spices & Sauces | Malt Vinegar | BARLEY;MALT
+TICK  | Extras & Garnish | Avocado | asis
+TICK  | Extras & Garnish | Beanie Patty | asis
+TICK  | Extras & Garnish | Cheddar Cheese Slice | asis
+TICK  | Extras & Garnish | Chicken Breast Fillet | asis
+TICK  | Extras & Garnish | Chilli Jam | asis
+TICK  | Extras & Garnish | Garlic PERinaise | asis
+TICK  | Extras & Garnish | Grilled Halloumi Cheese | asis
+TICK  | Extras & Garnish | Herby Pickle Bowl | asis
+TICK  | Extras & Garnish | Mayonnaise Pot | asis
+TICK  | Extras & Garnish | PERi-Honey | asis
+TICK  | Extras & Garnish | PERi-PERi Drizzle | asis
+TICK  | Extras & Garnish | PERi-PERi Gravy | asis
+TICK  | Extras & Garnish | PERi-Salt | asis
+TICK  | Extras & Garnish | PERinaise | asis
+TICK  | Extras & Garnish | Grilled Pineapple | asis
+BLOCK | Extras & Garnish | PERi-Plant Fillet | WHEAT
+BLOCK | Extras & Garnish | Pitta | WHEAT
+BLOCK | Extras & Garnish | Rustic Portuguese Roll | OAT;OATS;WHEAT
+BLOCK | Extras & Garnish | Tortilla Wrap | WHEAT
+TICK  | Sides | Charred Corn | asis
+TICK  | Sides | Chips | asis
+TICK  | Sides | Coleslaw | asis
+TICK  | Sides | Corn on the Cob | asis
+TICK  | Sides | Creamy Mash | asis
+TICK  | Sides | Fully Loaded Chips | asis
+TICK  | Sides | Macho Peas | asis
+TICK  | Sides | PERi-Salted Chips | asis
+TICK  | Sides | Portuguese Tomato Salad | asis
+TICK  | Sides | Rainbow Slaw | asis
+TICK  | Sides | Spicy Rice | asis
+TICK  | Sides | Tenderstem® Broccoli | asis
+BLOCK | Sides | Garlic Bread | RYE;WHEAT
+BLOCK | Sides | Hearty Grains | BARLEY;SPELT;WHEAT
+BLOCK | Sides | Loaded PERi-Mac | WHEAT
+BLOCK | Sides | PERi-Mac & Cheese | WHEAT
+BLOCK | Sides | Tombstone Chips | BARLEY;MALT
+TICK  | Sides, Extras & Garnish | Baked Beans | asis
+TICK  | Sides, Extras & Garnish | Egg | asis
+TICK  | Sides, Extras & Garnish | Grilled Tomatoes | asis
+TICK  | Sides, Extras & Garnish | Hash Browns | asis
+TICK  | Sides, Extras & Garnish | Mushroom | asis
+TICK  | Drinks | Bombay Sapphire Gin & Tonic Can | asis
+TICK  | Drinks | Bottomless Rubro | asis
+TICK  | Drinks | Cloudy Lemonade | asis
+TICK  | Drinks | Pink Berry & Tropical Crush | asis
+TICK  | Drinks | Frozen Cocktails | asis
+TICK  | Drinks | Hot Drinks with Milk | asis
+TICK  | Drinks | Karma Drinks Gingerella | asis
+TICK  | Drinks | Mimosa | asis
+TICK  | Drinks | Momo Elderflower Kombucha | asis
+TICK  | Drinks | Orange Juice | asis
+TICK  | Drinks | Portuguese Sparkling | asis
+TICK  | Drinks | Rubro Iced Tea | asis
+TICK  | Drinks | Soft Drinks | asis
+TICK  | Drinks | Sxollie Cider | asis
+TICK  | Drinks | Tea | asis
+TICK  | Drinks | Pickle House Bloody | asis
+TICK  | Drinks | Water | asis
+TICK  | Drinks | Wines | asis
+BLOCK | Drinks | Beavertown Lazer Crush Alcohol Free IPA | BARLEY;MALTED
+BLOCK | Drinks | Beer | BARLEY;MALTED;WHEAT
+BLOCK | Drinks | Bero Kingston Golden Pils | BARLEY;MALTED
+BLOCK | Drinks | Hot Drinks with Oat | OAT;OATS
+BLOCK | Drinks | Kinsale Pale Ale | BARLEY;MALTED
+TICK  | Starters | Chicken Chorizo | asis
+TICK  | Starters | HalloOoOoOoumi Sticks | asis
+TICK  | Starters | Halloumi Sticks & Chilli Jam | asis
+TICK  | Starters | Halloumi Sticks & PERi-Honey | asis
+TICK  | Starters | Spicy Mixed Olives | asis
+TICK  | Starters | Sweet Potato Wedges with Garlic PERinaise | asis
+BLOCK | Starters | Cheesy Garlic Pitta | WHEAT
+BLOCK | Starters | Houmous with PERi-PERi Drizzle and Pitta Bread | WHEAT
+BLOCK | Starters | PERi-PERi Nuts | May contain gluten
+TICK  | Nandinos | Cucumber Sticks | asis
+TICK  | Nandinos | Kids Pip Organic | asis
+TICK  | Nandinos | Nandino Chicken Wings | asis
+TICK  | Nandinos | Nandino Chips | asis
+TICK  | Nandinos | Corn on the Cob | asis
+TICK  | Nandinos | Nandino Spicy Rice | asis
+TICK  | Nandinos | Nandinos Chicken Breast Fillet | asis
+TICK  | Nandinos | Bottomless Soft Swirl | asis
+TICK  | Nandinos | Semi-skimmed Milk | asis
+BLOCK | Nandinos | Little Pitta | WHEAT
+BLOCK | Nandinos | Nandino Burger | OAT;OATS;WHEAT
+BLOCK | Nandinos | Nandinos Buttermilk Pancakes | WHEAT
+BLOCK | Nandinos | Nandinos Egg on Toast | BARLEY;MALTED;WHEAT
+BLOCK | Nandinos | Nandinos Mac & Cheese | WHEAT
+TICK  | Desserts | Mango Gelado | asis
+BLOCK | Desserts | Choc-a-Lot Cake | WHEAT
+BLOCK | Desserts | Gooey Caramel Cheesecake | WHEAT
+BLOCK | Desserts | Toffee Apple Pastel de Nata | WHEAT
+BLOCK | Desserts | Ultimate Chocolate Brownie | WHEAT
+TICK  | Salads & Bowls | Mediterranean Salad | asis
+TICK  | Salads & Bowls | Sol Bowl | asis
+TICK  | Salads & Bowls | Spicy Rice Bowl | asis
+BLOCK | Salads & Bowls | Caesar Salad | BARLEY;MALT;WHEAT
+BLOCK | Salads & Bowls | Hearty Bowl | BARLEY;SPELT;WHEAT
+BLOCK | Sweet Treats | All-Butter Croissant | WHEAT
+BLOCK | Sweet Treats | Buttermilk Pancakes | WHEAT
+BLOCK | Sweet Treats | Chocolate Twist | WHEAT
+BLOCK | The Classics | Banana & Blueberry Porridge | OAT;OATS
+BLOCK | The Classics | PERi-Powered Avo Toast | OAT;OATS;WHEAT
+BLOCK | The Classics | Toast | BARLEY;MALTED;WHEAT
+BLOCK | Burgers, Pittas, Wraps | Beanie Burger | OAT;OATS;WHEAT
+BLOCK | Burgers, Pittas, Wraps | Beanie Pitta | WHEAT
+BLOCK | Burgers, Pittas, Wraps | Beanie Wrap | WHEAT
+BLOCK | Burgers, Pittas, Wraps | Butterfly Burger | OAT;OATS;WHEAT
+BLOCK | Burgers, Pittas, Wraps | Fino Pitta | BARLEY;MALT;WHEAT
+BLOCK | Burgers, Pittas, Wraps | Garlic Churrasco Burger | RYE;WHEAT
+BLOCK | Burgers, Pittas, Wraps | Grilled Chicken Burger | OAT;OATS;WHEAT
+BLOCK | Burgers, Pittas, Wraps | Grilled Chicken Pitta | WHEAT
+BLOCK | Burgers, Pittas, Wraps | Grilled Chicken Wrap | WHEAT
+BLOCK | Burgers, Pittas, Wraps | Sunset Burger | OAT;OATS;WHEAT
+BLOCK | Burgers, Pittas, Wraps | The Big Cheese | OAT;OATS;WHEAT
+BLOCK | Burgers, Pittas, Wraps | 'The Great Imitator' Wrap | WHEAT
+BLOCK | Eggs | Chicken Benedict | RYE;WHEAT
+BLOCK | Eggs | Eggs on Toast | BARLEY;MALTED;WHEAT
+BLOCK | Eggs | Sunrise Egg Wrap | WHEAT
+BLOCK | Breakfast Rolls | Sausage Breakfast Roll | OAT;OATS;WHEAT
+BLOCK | Breakfast Rolls | Sausage & Fried Egg Roll | OAT;OATS;WHEAT
+BLOCK | Breakfast Rolls | The Daybreaker | OAT;OATS;WHEAT
+BLOCK | Breakfast Rolls | Veggie Breakfast Roll | OAT;OATS;WHEAT
+BLOCK | The Works | The Big Breakfast | BARLEY;MALTED;WHEAT
+BLOCK | The Works | The Big Veggie Breakfast | BARLEY;MALTED;WHEAT

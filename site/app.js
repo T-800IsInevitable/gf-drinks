@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 24;
+  const APP_VERSION = 25;
   document.documentElement.dataset.version = APP_VERSION;
   const DATA_KEY = "gf-data-v2";
   const SEL_KEY = "gf-selected";
@@ -12,6 +12,7 @@
   const REGION_KEY = "gf-region";
   const ALL = "all";
   const UK = "uk"; // the restaurant menus; any other region is a city in cities.json
+  const INTL = "intl"; // the header switch's other side: the city last looked at
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const store = {
@@ -129,6 +130,12 @@
     }
   }
   const pageText = (p) => (!p || !p.length ? "" : (p.length > 1 ? "Guide pages " : "Guide page ") + p.join(", "));
+  // a restaurant's own mark (restaurants/<id>/logo.png, the icon its site publishes) or, without one, a lettered badge
+  const logoHtml = (name, src, cls) => '<span class="logo-wrap' + (src ? "" : " none") + (cls ? " " + cls : "") + '" aria-hidden="true">' +
+    (src ? '<img class="logo" src="' + esc(src) + '" alt="">' : "") +
+    '<span class="mono">' + esc(String(name || "?").replace(/^(the|a)\s+/i, "").charAt(0).toUpperCase()) + "</span></span>";
+  // a mark that doesn't load (offline before it was ever seen) leaves the lettered badge showing
+  document.addEventListener("error", (e) => { const w = e.target && e.target.closest && e.target.closest(".logo-wrap"); if (w) w.classList.add("broken"); }, true);
 
   // ---------- what changed: the guide's own list (r.changes, built by tools/changes.py) and since you last looked ----------
   // The phone keeps each restaurant's menu as it was when you last dismissed its "new guide" note (or first had it), and
@@ -191,7 +198,7 @@
   const chev = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   // rows that aren't things to order as they are (restaurant.json "roles"): no staff card, and they say why
   const ROLE_NOTE = {
-    part: "Part of other dishes, listed on its own in the guide. It isn't something to order as it is, so there's no staff card for it.",
+    part: "Part of other dishes, listed on its own in the guide. It isn't something to order as it is, so there's no staff card for it on its own: add it to an order for one card with everything on it.",
     ingredient: "An ingredient, listed on its own in the guide. It isn't something to order as it is, so there's no staff card for it.",
   };
 
@@ -225,7 +232,9 @@
     }
     const k = favKey(r, i);
     const on = favs.has(k);
+    const inOrder = canOrder(i) && (orders[r.id] || []).includes(k);
     out.push('<div class="detail-foot"><span>' + esc(pageText(i.pages)) + '</span><span class="foot-btns">' +
+      (canOrder(i) ? '<button type="button" class="order-btn" data-order="' + esc(k) + '" aria-pressed="' + inOrder + '">' + (inOrder ? "✓ In order" : "Add to order") + "</button>" : "") +
       (i.role ? "" : '<button type="button" class="staff-btn" data-staff="' + esc(k) + '">Show staff</button>') + '<button type="button" class="fav-btn" data-fav="' + esc(k) +
       '" aria-pressed="' + on + '">' + (on ? "★ Saved" : "☆ Save") + "</button></span></div>");
     out.push(moreLinks(r, i));
@@ -315,7 +324,7 @@
   function renderHeader() {
     const r = byId(selected);
     if (r) {
-      $("pickName").textContent = r.name;
+      $("pickName").innerHTML = logoHtml(r.name, r.logo, "logo-s") + esc(r.name);
       $("pickBtn").setAttribute("aria-label", r.name + ". Choose where to eat");
       $("guideLine").textContent = (guideLine(r) || r.covers) + offlineTag();
       $("q").placeholder = "Search " + r.name;
@@ -339,9 +348,13 @@
       r.sections.filter((s) => r.items.some((i) => i.section === s) || r.avoid.some((a) => a.section === s)).forEach((s) => chips.push([s, shortSection(s)]));
     }
     if (!chips.some(([v]) => v === filter)) filter = "all";
+    // on a restaurant's page the order builder is a chip after Favourites: it costs no height above the menu
+    const r = byId(selected);
     $("chips").innerHTML = chips.map(([v, l]) =>
-      '<button type="button" data-f="' + esc(v) + '" aria-pressed="' + (v === filter) + '">' + esc(l) + "</button>").join("");
+      '<button type="button" data-f="' + esc(v) + '" aria-pressed="' + (v === filter) + '">' + esc(l) + "</button>" +
+      (v === "fav" && r ? '<button type="button" data-order-open>' + orderChipText(r) + "</button>" : "")).join("");
   }
+  const orderChipText = (r) => { const n = orderItems(r).length; return n ? "Your order (" + n + ") &rsaquo;" : "Build an order"; };
 
   function renderBanners() {
     const stale = scope().filter(isStale);
@@ -766,29 +779,32 @@
   }
   function renderPicker() {
     const last = store.get(LAST_KEY);
-    // first run: say what the app is, and put Berlin next to All restaurants so it's on the first screen without scrolling
+    // first run: say what the app is, and put the other countries next to All restaurants so they're on the first screen without scrolling
     if (!welcomeNow && !store.get(SEL_KEY) && !store.get(WELCOME_KEY)) { welcomeNow = true; store.set(WELCOME_KEY, "1"); }
     $("pickWelcome").hidden = !welcomeNow;
-    const opt = (id, name, line, meta, stale) =>
-      '<button type="button" class="pick-opt" data-r="' + esc(id) + '" aria-pressed="' + (region === UK && selected === id) + '"><span class="po-main"><b>' +
+    const opt = (id, name, line, meta, stale, logo) =>
+      '<button type="button" class="pick-opt" data-r="' + esc(id) + '" aria-pressed="' + (region === UK && selected === id) + '">' + logo + '<span class="po-main"><b>' +
       esc(name) + "</b><span>" + esc(line) + "</span></span>" + (stale ? '<span class="tag t-swap">Out of date</span>' : '<span class="po-meta">' + esc(meta) + "</span>") + "</button>";
     const total = data.restaurants.reduce((n, r) => n + r.stats.items, 0);
     const as = areas();
     const lineOf = (r, withArea) => [r.id === last ? "Last used" : "", r.type, withArea ? r.area : "", guideLine(r)].filter(Boolean).join(" · ");
-    const one = (r, withArea) => opt(r.id, r.name, lineOf(r, withArea), r.stats.items + " items", isStale(r));
+    const one = (r, withArea) => opt(r.id, r.name, lineOf(r, withArea), r.stats.items + " items", isStale(r), logoHtml(r.name, r.logo));
     const grouped = as.length > 1
       ? as.map((a) => '<div class="sub-h">' + esc(a) + "</div>" + chooserOrder(data.restaurants.filter((r) => r.area === a)).map((r) => one(r, false)).join("")).join("") +
-        chooserOrder(data.restaurants.filter((r) => !r.area)).map((r) => opt(r.id, r.name, r.type, r.stats.items + " items", isStale(r))).join("")
+        chooserOrder(data.restaurants.filter((r) => !r.area)).map((r) => opt(r.id, r.name, r.type, r.stats.items + " items", isStale(r), logoHtml(r.name, r.logo))).join("")
       : chooserOrder(data.restaurants).map((r) => one(r, true)).join("");
-    // other cities (cities.json) are lists of places rather than menus, so they switch region instead of restaurant
-    const others = Object.entries(cities).map(([cid, c]) => (welcomeNow ? "" : '<div class="sub-h">' + esc(c.name) + "</div>") +
-      '<button type="button" class="pick-opt" data-region="' + esc(cid) + '" aria-pressed="' + (region === cid) + '"><span class="po-main"><b>' +
-      esc(c.name) + "</b><span>Places that are all gluten free, by their own word or the coeliac support groups'" +
+    // other countries (cities.json) are hand-checked lists of places rather than menus, so they switch region instead of restaurant.
+    // They're listed like the restaurants: the country, with its city and what the list holds underneath.
+    const intl = Object.entries(cities).map(([cid, c]) =>
+      '<button type="button" class="pick-opt" data-region="' + esc(cid) + '" aria-pressed="' + (region === cid) + '">' +
+      '<span class="logo-wrap flag" aria-hidden="true">' + esc(c.flag || "") + '</span><span class="po-main"><b>' + esc(c.country || c.name) + "</b><span>" + esc(c.name) +
+      ": places that are all gluten free, by their own word or the coeliac society's list" +
       (c.places.some((p) => p.claim === "separate") ? ", or that say they have a separate gluten free kitchen" : "") + "</span></span>" +
       '<span class="po-meta">' + c.places.length + " places</span></button>").join("");
-    const all = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false);
+    const intlGroup = intl ? '<div class="sub-h">International</div>' + intl : "";
+    const all = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false, logoHtml("All restaurants", "icons/icon-192.png"));
     $("pickList").innerHTML = '<div class="sub-h">' + (welcomeNow ? "Choose where" : "UK") + "</div>" + all +
-      (welcomeNow ? others + '<div class="sub-h">Or one restaurant</div>' + grouped : grouped + others) +
+      (welcomeNow ? intlGroup + '<div class="sub-h">Or one UK restaurant</div>' + grouped : grouped + intlGroup) +
       '<p class="pick-note">More restaurants can be added by the app\'s owner from each restaurant\'s allergen guide.</p><p class="pick-share">' + addMenuLink + "</p>";
   }
 
@@ -852,33 +868,40 @@
     window.scrollTo({ top: 0 });
   }
 
-  // ---------- UK / city switch: a city is a hand-checked list of places (cities.json), not menus ----------
+  // ---------- UK / International switch: a city is a hand-checked list of places (cities.json), not menus ----------
+  // International goes to the city last looked at (the chooser picks the country); UK goes back to the menus.
+  const LAST_CITY_KEY = "gf-last-city";
   function renderRegion() {
-    const ids = [UK, ...Object.keys(cities)];
-    $("region").hidden = ids.length < 2;
-    $("region").innerHTML = ids.map((id) => '<button type="button" data-region="' + esc(id) + '" aria-pressed="' + (region === id) + '">' +
-      esc(id === UK ? "UK" : cities[id].name) + "</button>").join("");
     const inCity = region !== UK;
+    $("region").hidden = !Object.keys(cities).length;
+    $("region").innerHTML = '<button type="button" data-region="' + UK + '" aria-pressed="' + !inCity + '">UK</button>' +
+      '<button type="button" data-region="' + INTL + '" aria-pressed="' + inCity + '">International</button>';
     $("ukView").hidden = inCity;
     $("cityView").hidden = !inCity;
     $("status").hidden = inCity;
   }
   function setRegion(id) {
+    if (id === INTL) { const lastCity = store.get(LAST_CITY_KEY); id = cities[lastCity] ? lastCity : Object.keys(cities)[0] || UK; }
     region = id;
     store.set(REGION_KEY, id);
+    if (id !== UK) store.set(LAST_CITY_KEY, id);
     $("q").value = "";
     cityFilter = "all";
     history.replaceState(null, "", id !== UK ? "#" + id : selected === ALL ? location.pathname : "#" + selected);
     render();
     window.scrollTo({ top: 0 });
   }
-  $("region").addEventListener("click", (e) => { const b = e.target.closest("[data-region]"); if (b && b.dataset.region !== region) setRegion(b.dataset.region); });
+  $("region").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-region]");
+    if (b && (b.dataset.region === UK) !== (region === UK)) setRegion(b.dataset.region);
+  });
 
   const mapLink = (p, l) => "https://maps.apple.com/?q=" + encodeURIComponent(p.name) + "&address=" + encodeURIComponent(l.address);
   const cityStale = (c) => new Date(c.checked + "T12:00:00Z").getTime() + (c.recheckDays || 90) * 864e5 < Date.now();
   function renderCity() {
     const c = city();
     if (!c) { $("cityList").innerHTML = '<p class="empty">Loading…</p>'; return; }
+    store.set(LAST_CITY_KEY, region); // where International goes next time
     syncSearching();
     $("pickName").textContent = c.name;
     $("pickBtn").setAttribute("aria-label", c.name + ". Choose where to eat");
@@ -1224,6 +1247,151 @@
     const r = byId(rid);
     const i = r && r.items.find((x) => x.section === section && x.name === rest.join("|"));
     if (i) openStaff(r, i);
+  });
+
+  // ---------- build an order: several items, parts of dishes included, on one staff card ----------
+  // What's in an order is only ever a key into the restaurant's own list of items with no gluten ingredients (r.items),
+  // never into the Avoid list. A key that no longer resolves (the item is now on the Avoid list, gone from the guide,
+  // or an ingredient listed on its own) is dropped whenever the order is next looked at, and the builder says so.
+  const ORDER_KEY = "gf-order"; // { <restaurant id>: [keys, as favKey] }
+  let orders = (() => { try { const o = JSON.parse(store.get(ORDER_KEY) || "{}"); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } })();
+  const saveOrders = () => store.set(ORDER_KEY, JSON.stringify(orders));
+  const canOrder = (i) => i.role !== "ingredient"; // dishes and parts of dishes; an ingredient listed on its own isn't something to order
+  const orderable = (r, k) => r.items.find((i) => canOrder(i) && favKey(r, i) === k) || null;
+  const orderNotes = {}; // what was dropped from each order, shown in the builder until it's closed
+  function orderItems(r) {
+    const keys = Array.isArray(orders[r.id]) ? orders[r.id].filter((k) => typeof k === "string") : [];
+    const items = [], dropped = [];
+    for (const k of keys) {
+      const i = orderable(r, k);
+      if (i) { if (!items.includes(i)) items.push(i); } else dropped.push(k);
+    }
+    if (dropped.length || items.length !== keys.length) {
+      orders[r.id] = items.map((i) => favKey(r, i));
+      saveOrders();
+      orderNotes[r.id] = (orderNotes[r.id] || []).concat(dropped.map((k) => {
+        const name = k.split("|").slice(2).join("|");
+        const avoid = r.avoid.some((a) => favKey(r, a) === k || norm(a.name) === norm(name));
+        return name + (avoid ? " (now on the Avoid list)" : " (not something to order from this guide)");
+      }));
+    }
+    return items;
+  }
+  // true: added; false: taken out; null: refused, because it isn't on the list of items with no gluten ingredients
+  function toggleOrder(r, k) {
+    if (!orderable(r, k)) { toast("That can't go in an order: it isn't on " + possessive(r.name) + " list of items with no gluten ingredients"); return null; }
+    const keys = orderItems(r).map((x) => favKey(r, x));
+    const at = keys.indexOf(k);
+    if (at < 0) keys.push(k); else keys.splice(at, 1);
+    orders[r.id] = keys;
+    saveOrders();
+    syncOrderButtons(r);
+    return at < 0;
+  }
+  // the buttons on the page follow the order: each item's "Add to order", and the pill at the top
+  function syncOrderButtons(r) {
+    const keys = new Set(orders[r.id] || []);
+    document.querySelectorAll("#list .order-btn[data-order]").forEach((b) => {
+      if (!b.dataset.order.startsWith(r.id + "|")) return;
+      const on = keys.has(b.dataset.order);
+      b.setAttribute("aria-pressed", on);
+      b.textContent = on ? "✓ In order" : "Add to order";
+    });
+    if (byId(selected) === r) document.querySelectorAll("#chips [data-order-open]").forEach((b) => { b.innerHTML = orderChipText(r); });
+  }
+  const ORDER_INTRO = "Tick what you'd like, for one staff card with everything on it.";
+  function renderOrder(r) {
+    const items = orderItems(r);
+    const keys = new Set(items.map((i) => favKey(r, i)));
+    const cfg = r.order || {};
+    const first = (cfg.first || []).filter((s) => r.sections.includes(s));
+    const secs = first.concat(r.sections.filter((s) => !first.includes(s)));
+    const notes = orderNotes[r.id] || [];
+    let html = "<p>" + esc(cfg.intro || ORDER_INTRO) + "</p>" +
+      '<p class="muted">Only items with no gluten ingredients can be ticked. Anything on the Avoid list is shown but can\'t be added. The card ends with ' +
+      esc(possessive(r.name)) + " own cross-contact warning.</p>";
+    if (notes.length) html += '<div class="chg-note bad"><b>Taken out of your order:</b> ' + notes.map(esc).join("; ") + ".</div>";
+    for (const s of secs) {
+      const ok = r.items.filter((i) => i.section === s && canOrder(i));
+      const av = r.avoid.filter((a) => a.section === s);
+      if (!ok.length && !av.length) continue;
+      html += "<h3>" + esc(shortSection(s)) + "</h3>";
+      let sub = null;
+      for (const i of ok) {
+        if ((i.sub || "") !== sub) { sub = i.sub || ""; if (sub) html += '<div class="sub-h">' + esc(cap(sub)) + "</div>"; }
+        const k = favKey(r, i);
+        const [cls, label] = tagFor(r, i);
+        html += '<label class="o-row"><input type="checkbox" data-key="' + esc(k) + '"' + (keys.has(k) ? " checked" : "") + '><span class="nm">' + esc(i.name) +
+          (i.order === "modify" ? "<small>" + esc(i.note) + "</small>" : i.original ? '<small lang="' + esc(r.language || "") + '">' + esc(i.original) + "</small>" : "") +
+          '</span><span class="tag ' + cls + '">' + esc(label) + "</span></label>";
+      }
+      if (av.length) {
+        html += '<details class="o-avoid"><summary>' + av.length + (av.length === 1 ? " item" : " items") + " on the Avoid list: can't be added</summary>" +
+          av.map((a) => '<div class="o-row off"><span class="nm">' + esc(a.name) + '</span><span class="tag t-bad">' + esc(a.tag || a.gluten.map(cap).join(" & ")) + "</span></div>").join("") +
+          "</details>";
+      }
+    }
+    $("orderTitle").textContent = "Build an order at " + r.name;
+    $("orderBody").innerHTML = html;
+    renderOrderFoot(r);
+  }
+  function renderOrderFoot(r) {
+    const n = orderItems(r).length;
+    $("orderCount").textContent = n ? n + (n === 1 ? " item" : " items") + " in your order" : "Nothing ticked yet";
+    $("orderCard").disabled = !n;
+    $("orderClear").hidden = !n;
+  }
+  let orderFor = null; // the restaurant whose order the builder shows
+  function openOrder(r) {
+    if (!r) return;
+    orderFor = r;
+    renderOrder(r);
+    openDialog($("order"));
+  }
+  // the chain's own cross-contact warning for the foot of the card: the one that says so most plainly
+  function crossContact(r) {
+    const cc = (r.notices || []).filter((n) => n.kind === "cross-contact");
+    return cc.find((n) => /cross[ -]?contam|cannot guarantee|can't guarantee|\btraces?\b|always/i.test(n.text)) || cc[0] || null;
+  }
+  function openOrderCard(r) {
+    const items = orderItems(r);
+    if (!items.length) { toast("Nothing in the order yet"); return; }
+    const local = phrases[r.language];
+    const warn = crossContact(r);
+    const pages = [...new Set(items.flatMap((i) => i.pages || []))].sort((a, b) => a - b);
+    $("staffBody").innerHTML = '<p class="staff-where">' + esc(r.name) + '</p><p class="staff-name">My order</p>' +
+      '<ul class="staff-list">' + items.map((i) => "<li><b>" + esc(i.name) + "</b>" +
+        (i.original ? '<small lang="' + esc(r.language || "") + '">' + esc(i.original) + "</small>" : "") +
+        "<small>" + esc([shortSection(i.section), i.sub && cap(i.sub)].filter(Boolean).join(" · ")) + "</small>" +
+        (i.order !== "asis" ? '<span class="staff-ask">' + esc(orderLine(r, i)) + "</span>" : "") + "</li>").join("") + "</ul>" +
+      '<p class="staff-order">' + esc((r.order && r.order.cardLine) || "Only what's listed here, please.") + "</p>" +
+      (local ? local.card.slice(0, 2).map((c) => '<p class="staff-coeliac" lang="' + esc(r.language) + '">' + esc(c.text) + "</p>").join("") : "") +
+      '<p class="staff-coeliac">I have coeliac disease, so I can\'t have any gluten, even a trace.</p>' +
+      '<p class="staff-coeliac">Could you please use clean equipment?</p>' +
+      (warn ? '<blockquote class="w-quote staff-warn">' + esc(warn.text) + "<cite>" + esc(possessive(r.name)) + " allergen guide" +
+        (warn.pages && warn.pages.length ? ", page " + esc(warn.pages[0]) : "") + "</cite></blockquote>" : "") +
+      '<p class="muted">Turn the screen towards staff. From ' + esc(possessive(r.name)) + " allergen guide" + (pages.length ? ", " + esc(pageText(pages).toLowerCase()) : "") + ".</p>";
+    openDialog($("staff"));
+    keepAwake();
+  }
+  $("orderBody").addEventListener("change", (e) => {
+    const cb = e.target.closest("input[data-key]");
+    if (!cb || !orderFor) return;
+    cb.checked = toggleOrder(orderFor, cb.dataset.key) === true;
+    renderOrderFoot(orderFor);
+  });
+  $("orderClear").addEventListener("click", () => { if (!orderFor) return; orders[orderFor.id] = []; saveOrders(); renderOrder(orderFor); syncOrderButtons(orderFor); });
+  $("orderCard").addEventListener("click", () => { if (orderFor) openOrderCard(orderFor); });
+  $("order").addEventListener("close", () => { if (orderFor) delete orderNotes[orderFor.id]; orderFor = null; });
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("[data-order-open]")) { openOrder(byId(selected)); return; }
+    const b = e.target.closest(".order-btn[data-order]");
+    if (!b) return;
+    e.preventDefault();
+    const r = byId(b.dataset.order.split("|")[0]);
+    if (!r) return;
+    const on = toggleOrder(r, b.dataset.order);
+    if (on !== null) toast(on ? "Added to your " + r.name + " order (" + orderItems(r).length + ")" : "Taken out of your " + r.name + " order");
   });
 
   // ---------- add a menu (owner only): uploads go to inbox/ on the "uploads" branch, never to main ----------
@@ -1720,7 +1888,7 @@
       window.scrollTo({ top: 0 });
       return;
     }
-    if (!data) return;
+    if (!data || f === undefined) return; // the order chip is handled by its own listener
     if (f.startsWith("r:")) { select(f.slice(2)); return; }
     filter = f;
     renderChips();
@@ -1791,7 +1959,7 @@
     }
   });
   $("infoBtn").addEventListener("click", () => { renderLastChecked(); openDialog($("info")); });
-  ["picker", "info", "gfcard", "warnings", "staff", "changes", "report", "favImport"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
+  ["picker", "info", "gfcard", "warnings", "staff", "changes", "report", "favImport", "order"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
   ["staff", "gfcard"].forEach((id) => $(id).addEventListener("close", () => { if (!$("staff").open && !$("gfcard").open) letGo(); }));
   $("refreshBtn").addEventListener("click", () => load(true));
   $("shareBtn").addEventListener("click", async () => {
