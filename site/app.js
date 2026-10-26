@@ -65,6 +65,14 @@
     return isNaN(d) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
   }
   const shortRuns = (s) => (s || "").replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*/g, "$1");
+  const possessive = (name) => name + (/s$/.test(name) ? "'" : "'s");
+  // a plain name for a guide, for the footer, Warnings and pop-ups. The raw file name (r.source) is kept
+  // in Help, "Menus in this app", for the record.
+  function plainGuideName(r) {
+    const g = r.guide || {};
+    const named = g.title && g.title !== "Allergen guide";
+    return possessive(r.name) + " " + (named ? g.title.toLowerCase() + " guide" : "allergen guide" + (g.version ? " (" + fmtDate(g.version) + ")" : ""));
+  }
   function listOr(arr) {
     return arr.length < 2 ? arr.join("") : arr.slice(0, -1).join(", ") + " or " + arr[arr.length - 1];
   }
@@ -168,13 +176,15 @@
   const stem = (w) => w.replace(/ies$/, "ie").replace(/(ches|shes|xes)$/, (m) => m.slice(0, -2)).replace(/([^s])s$/, "$1");
   const norm = (t) => t.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
   function terms(q) { return norm(q).split(/[^a-z0-9ßäöü]+/).filter((w) => w && !STOP.has(w)).map(stem); }
+  // everyday words for the same thing as a menu word, so "chips" finds "fries" (one-way: not the reverse)
+  const ALIAS = { chip: ["frie"] };
   const matches = (i, q) => {
     const ts = typeof q === "string" ? terms(q) : q;
     if (!ts.length) return true;
     // match at the start of words, so "latte" doesn't find "platter"
     // notes ("info") aren't searched: "wheat" shouldn't find dishes whose note merely mentions wheat
     const words = norm([i.name, i.sub, i.note, i.original, i.section, ...(i.ok || [])].filter(Boolean).join(" ")).split(/[^a-z0-9ßäöü]+/).map(stem);
-    return ts.every((t) => words.some((w) => w.startsWith(t)));
+    return ts.every((t) => words.some((w) => w.startsWith(t) || (ALIAS[t] || []).some((a) => w.startsWith(a))));
   };
   const areas = () => [...new Set(data.restaurants.map((r) => r.area).filter(Boolean))];
   const scope = () => (selected === ALL ? data.restaurants : [byId(selected)].filter(Boolean));
@@ -254,19 +264,29 @@
   }
   function renderFavAlerts() {
     const ids = new Set(scope().map((r) => r.id));
-    const probs = favProblems().filter((p) => ids.has(p.r.id));
-    $("favAlert").hidden = !probs.length;
-    $("favAlert").innerHTML = probs.map((p) => "<div class=\"fa-row\"><p>★ <b>" + esc(p.name) + "</b> (" + esc(shortSection(p.section)) + ") at " + esc(p.r.name) + (p.avoid
+    const all = favProblems();
+    const here = all.filter((p) => ids.has(p.r.id));
+    const elsewhere = all.filter((p) => !ids.has(p.r.id));
+    $("favAlert").hidden = !all.length;
+    let html = here.map((p) => "<div class=\"fa-row\"><p>★ <b>" + esc(p.name) + "</b> (" + esc(shortSection(p.section)) + ") at " + esc(p.r.name) + (p.avoid
       ? " is now on the Avoid list: " + esc((p.avoid.reason || "contains " + p.avoid.gluten.join(" and ").toLowerCase()).replace(/\.$/, "")) + "."
       : " isn't in the latest guide. Check in store before ordering it.") +
       '</p><button type="button" class="link-btn" data-unfav="' + esc(p.k) + '">Remove from favourites</button></div>').join("");
+    // On other pages, just a line pointing to where the full warning is (All, or that restaurant's page)
+    if (elsewhere.length) {
+      const names = [...new Set(elsewhere.map((p) => p.r.name))];
+      const rid = elsewhere[0].r.id;
+      html += '<div class="fa-row"><p><button type="button" class="link-btn" data-gotorest="' + esc(rid) + '">' +
+        elsewhere.length + (elsewhere.length === 1 ? " saved item" : " saved items") + " at " + esc(listOr(names)) +
+        (elsewhere.length === 1 && names.length === 1 ? " has" : " have") + " changed &rsaquo;</button></p></div>";
+    }
+    $("favAlert").innerHTML = html;
   }
   $("favAlert").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-unfav]");
-    if (!b) return;
-    favs.delete(b.dataset.unfav);
-    store.set(FAV_KEY, JSON.stringify([...favs]));
-    render();
+    const un = e.target.closest("[data-unfav]");
+    if (un) { favs.delete(un.dataset.unfav); store.set(FAV_KEY, JSON.stringify([...favs])); render(); return; }
+    const go = e.target.closest("[data-gotorest]");
+    if (go) select(go.dataset.gotorest);
   });
 
   const seen = () => new Set(JSON.parse(store.get(SEEN_KEY) || "[]"));
@@ -341,12 +361,26 @@
     return { ts, note };
   }
 
+  // In All restaurants, a restaurant's own name at the start of the search narrows to it, so
+  // "pret latte" means lattes at Pret. Tries the longest run of words first ("five guys" before "five").
+  function withNameFilter(rs, q) {
+    if (selected !== ALL || rs.length < 2) return { rs, q };
+    const words = terms(q);
+    for (let n = Math.min(3, words.length); n > 0; n--) {
+      const head = words.slice(0, n);
+      const hit = rs.filter((r) => { const nm = terms(r.name); return head.every((t) => nm.some((w) => w.startsWith(t))); });
+      if (hit.length === 1) return { rs: hit, q: words.slice(n).join(" ") };
+    }
+    return { rs, q };
+  }
+
   function renderList() {
-    const q = $("q").value.trim().toLowerCase();
+    let q = $("q").value.trim().toLowerCase();
     const multi = selected === ALL;
     let rs = scope();
     if (filter.startsWith("r:")) rs = rs.filter((r) => r.id === filter.slice(2));
     if (filter.startsWith("a:")) rs = rs.filter((r) => r.area === filter.slice(2));
+    ({ rs, q } = withNameFilter(rs, q));
     const { ts, note } = searchTerms(rs, q);
     $("searchNote").hidden = !note;
     $("searchNote").innerHTML = note;
@@ -407,11 +441,12 @@
   }
 
   function renderStatus() {
-    const q = $("q").value.trim().toLowerCase();
+    let q = $("q").value.trim().toLowerCase();
     const multi = selected === ALL;
     let rs = scope();
     if (filter.startsWith("r:")) rs = rs.filter((r) => r.id === filter.slice(2));
     if (filter.startsWith("a:")) rs = rs.filter((r) => r.area === filter.slice(2));
+    ({ rs, q } = withNameFilter(rs, q));
     const n = { straight: 0, change: 0, gluten: 0 };
     const { ts } = searchTerms(rs, q);
     for (const r of rs) {
@@ -469,14 +504,20 @@
   });
 
   function renderSources() {
-    const line = (r) => {
+    const whatChanged = (r) => r.changes ? ' <button type="button" class="link-btn" data-whatchanged="' + esc(r.id) + '">What changed, noticed ' +
+      esc(fmtDate(r.changes.date)) + " &rsaquo;</button>" : "";
+    const lineShort = (r) => "<p><b>" + esc(r.name) + ":</b> " + esc(r.covers ? r.covers + ". " : "") + "From " + esc(plainGuideName(r)) + ". " +
+      esc(r.stats.items) + " with no gluten ingredients, " + esc(r.stats.avoid) + " to avoid." +
+      (r.officialUrl ? ' <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">Official site</a>' : "") + "</p>";
+    // "Menus in this app" (Help) keeps the raw file name, for the record
+    const lineFull = (r) => {
       const g = r.guide || {};
       return "<p><b>" + esc(r.name) + ":</b> " + esc(r.covers ? r.covers + ". " : "") + "From " + esc(r.source) +
         (g.version ? " (version " + esc(fmtDate(g.version)) + ")" : "") + ". " + esc(r.stats.items) + " with no gluten ingredients, " + esc(r.stats.avoid) +
-        " to avoid." + (r.officialUrl ? ' <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">Official site</a>' : "") + "</p>";
+        " to avoid." + (r.officialUrl ? ' <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">Official site</a>' : "") + whatChanged(r) + "</p>";
     };
-    $("sources").innerHTML = scope().map(line).join("");
-    $("infoSources").innerHTML = data.restaurants.map(line).join("") + "<p>Rules: " + esc([...new Set(data.restaurants.map((r) => r.rule))].join(" ")) +
+    $("sources").innerHTML = scope().map(lineShort).join("");
+    $("infoSources").innerHTML = data.restaurants.map(lineFull).join("") + "<p>Rules: " + esc([...new Set(data.restaurants.map((r) => r.rule))].join(" ")) +
       " If the allergen column and ingredients disagree, the item is left out.</p><p>Last built " + esc(fmtDate(data.built)) + ".</p>";
     const notes = data.restaurants.flatMap((r) => (r.warnings || []).map((w) => r.name + ": " + w));
     $("notesWrap").hidden = !notes.length;
@@ -670,7 +711,7 @@
     const label = p.claimLabel || CLAIM_TAGS[p.claim];
     const star = favs.has(placeFav(p)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
     return '<details class="row" data-place="' + esc(p.name) + '"><summary><span class="nm">' + star + esc(p.name) + "<small>" + subs.join(" · ") + '</small></span><span class="tag ' + cls + '">' +
-      label + "</span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
+      esc(label) + "</span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
   }
   // search what a place is and where it is, not street names or notes ("Sonntag" shouldn't find Sonntagstraße)
   const placeText = (p) => ({ name: [p.name, p.type, p.listed, p.flag, p.caution, p.says && p.says.text, p.says && p.says.en,
@@ -715,7 +756,9 @@
     (r.notices || []).forEach((n) => { (groups[n.label] = groups[n.label] || []).push(n); });
     let html = "";
     if (selected === ALL) html += '<h3 class="w-rest">' + esc(r.name) + "</h3>";
-    html += '<p class="muted">From ' + esc(r.source) + (r.guide && r.guide.version ? ", version " + esc(fmtDate(r.guide.version)) : "") + ".</p>";
+    html += '<p class="muted">From ' + esc(plainGuideName(r)) +
+      (r.changes ? '. <button type="button" class="link-btn" data-whatchanged="' + esc(r.id) + '">What changed, noticed ' +
+        esc(fmtDate(r.changes.date)) + " &rsaquo;</button>" : ".") + "</p>";
     const labels = Object.keys(groups);
     if (labels.length) {
       html += "<h4>What " + esc(r.name) + (/s$/.test(r.name) ? "'" : "'s") + " guide says</h4>";
@@ -760,6 +803,11 @@
   }
   $("openWarnings").addEventListener("click", openWarnings);
   $("openWarnings2").addEventListener("click", openWarnings);
+  // "What changed" link in Warnings and in Help: stays reopenable until the next guide, unlike the dismissable news banner
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-whatchanged]");
+    if (b) openChanges(byId(b.dataset.whatchanged));
+  });
 
   // ---------- coeliac card (phrases for staff) ----------
   let phrases = {};
@@ -929,6 +977,10 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, content: b64 }),
     });
+    if (res.status === 401 || res.status === 403) {
+      try { localStorage.removeItem(KEY_KEY); } catch (e) { /* storage unavailable */ }
+      throw new Error("EXPIRED_KEY");
+    }
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || "HTTP " + res.status);
   }
   $("uploadForm").addEventListener("submit", async (e) => {
@@ -959,7 +1011,12 @@
       $("uploadForm").reset();
       toast("Menu uploaded");
     } catch (err) {
-      status.textContent = "Upload failed: " + err.message + ". Nothing was lost; try again with signal.";
+      if (err.message === "EXPIRED_KEY") {
+        status.textContent = "This GitHub key no longer works (it may have expired). Make a new one below.";
+        showUploadState();
+      } else {
+        status.textContent = "Upload failed: " + err.message + ". Nothing was lost; try again with signal.";
+      }
     } finally {
       btn.disabled = false;
     }
@@ -1009,7 +1066,7 @@
           const old = prev.restaurants.find((o) => o.id === r.id);
           return !old || old.source !== r.source;
         });
-        if (news.length) toast("New: " + news.map((r) => r.name + (r.guide && r.guide.title ? " (" + r.guide.title + ")" : "")).join(", "));
+        if (news.length) toast("New guides: " + news.map((r) => r.name).join(", "));
         else if (manual) toast(changed ? "Menus refreshed" : "You have the latest menus");
       }
     } catch (e) {
@@ -1128,6 +1185,19 @@
   const standalone = window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
   if (isIOS && !standalone && store.get(TIP_KEY) !== "1") $("installTip").hidden = false;
   $("installClose").addEventListener("click", () => { $("installTip").hidden = true; store.set(TIP_KEY, "1"); });
+
+  // Ask the phone not to clear this site's storage under space pressure, and say in Help whether that worked.
+  async function setUpStorage() {
+    const el = $("storageState");
+    if (!(navigator.storage && navigator.storage.persist && navigator.storage.persisted)) { el.hidden = true; return; }
+    try {
+      if (standalone) await navigator.storage.persist();
+      const persisted = await navigator.storage.persisted();
+      el.hidden = false;
+      el.textContent = persisted ? "Saved on this phone." : "May be cleared if the phone is short of space.";
+    } catch (e) { el.hidden = true; }
+  }
+  setUpStorage();
 
   // ---------- start ----------
   const hashId = decodeURIComponent(location.hash.slice(1));
