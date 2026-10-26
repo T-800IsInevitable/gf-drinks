@@ -47,7 +47,7 @@ jobs:
       - name: Install the browser for UI checks
         run: |
           pip install -r tools/requirements-dev.txt
-          python -m playwright install --with-deps chromium
+          python -m playwright install --with-deps chromium webkit
 
       - name: Check the app at iPhone size, light and dark
         run: python tools/ui_check.py

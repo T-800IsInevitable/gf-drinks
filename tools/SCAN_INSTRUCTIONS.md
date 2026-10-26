@@ -1,12 +1,17 @@
 # Daily inbox scan: instructions for Claude
 
-You are processing menus uploaded to `inbox/` in this repository (T-800IsInevitable/gf-drinks). The output is a **pull request** that the owner reviews and merges. Never push to `main`.
+You are processing menus uploaded to `inbox/` on the **`uploads` branch** of this repository (T-800IsInevitable/gf-drinks). The app sends uploads there, never to `main`. The output is a **pull request** to `main` that the owner reviews and merges. Never push to `main` (it's protected, so a push would be refused anyway).
+
+## 0. Check the scheduled workflows
+
+GitHub switches off scheduled workflows after 60 days with no repository activity. Run `gh api repos/T-800IsInevitable/gf-drinks/actions/workflows --jq '.workflows[] | "\(.path) \(.state)"'`. If any shows `disabled_inactivity`, re-enable it with `gh api -X PUT repos/T-800IsInevitable/gf-drinks/actions/workflows/<file name>/enable`. If you can't (no permission), say so in the report. Then carry on.
 
 ## 1. Check for work
 
-- List `inbox/`. Ignore `README.md` and `.keep-alive` (a monthly marker file, not an upload). If there are no upload folders, stop: report "Inbox empty" and do nothing else.
+- `git fetch origin uploads`. If there's no `uploads` branch, stop: report "Inbox empty".
+- List `inbox/` on it (`git ls-tree --name-only origin/uploads inbox/`). Ignore `README.md`. If there are no upload folders, stop: report "Inbox empty" and do nothing else.
 - Process each upload folder separately, one branch and one pull request per restaurant.
-- If a pull request for that upload is already open (search open PRs for the folder name), skip it.
+- If a pull request for that upload is already open or merged (search PRs for the folder name), skip it.
 
 ## 2. Read the upload
 
@@ -32,7 +37,7 @@ The app is used by someone who must avoid gluten. A wrong "gluten free" is far w
 - Copy `restaurants/_template/`, then fill in:
   - `restaurant.json`: `name`, `type`, `covers`, `area`, `language` (two-letter code), `reader: "manual_csv"`, `optionLabel`, `officialUrl` if known (only real URLs you found in the document or by search; never guess), `guide.source` (the uploaded file name and document title), `guide.version` (the document's own date if shown, otherwise the upload date), `guide.validUntil` (the document's end date if shown, otherwise 3 months after `version`), and `tips` (1 to 3 short ordering tips taken from the document), `notices` (every warning printed in the document, **word for word**, each as `{"label": …, "text": …, "page": …}`; labels: Allergen updates, Cross-contact, Recipes and ingredients, What the guide covers, Delivery, Vegan and dietary labels, Nutrition), `gaps` (what the document doesn't tell a coeliac, e.g. no "may contain" information, or that it never claims "gluten free"), and `reviewed: {"by": "pending owner review", "date": <today>}`.
   - `menu.csv`: one row per item. `name` and `section` in **English**. `original` and `section_original` in the menu's language, exactly as printed. `page` = page number.
-- Keep the uploaded files: move the upload folder to `restaurants/<id>/source/<upload folder name>/`. This empties it from `inbox/` in the same PR.
+- Make the PR branch from `main`, not from `uploads`. Keep the uploaded files: copy the upload folder from the `uploads` branch (`git checkout origin/uploads -- inbox/<folder>`, then `git mv` it) to `restaurants/<id>/source/<upload folder name>/`.
 - Run `pip install -r tools/requirements.txt` if needed, then `python tools/build.py && python tools/check.py`. Fix any errors before opening the PR.
 
 ## 5. Open the pull request
@@ -47,6 +52,7 @@ The app is used by someone who must avoid gluten. A wrong "gluten free" is far w
   - Any assumptions (e.g. validUntil defaulted to 3 months).
   - Reminder: "Merge to publish. Nothing is live until then."
 - Use the GitHub REST API (`gh api repos/T-800IsInevitable/gf-drinks/pulls -f title=… -f head=… -f base=main -f body=…`). GraphQL isn't available.
+- Once the PR is open, remove the processed folder from the `uploads` branch in one commit (`Processed <folder>: see #<PR number>`) pushed to `uploads`, so tomorrow's scan doesn't see it again. The files are kept in the PR.
 
 ## 6. Report
 

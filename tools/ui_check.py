@@ -20,7 +20,9 @@ Usage:
   python tools/ui_check.py [--shots DIR]   # --shots saves a screenshot of each page
 """
 import argparse
+import base64
 import functools
+import hashlib
 import json
 import math
 import re
@@ -103,6 +105,215 @@ WORDING_JS = r"""() => {
     }
     return out;
 }"""
+
+
+PNG = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")  # 1x1 photo
+
+
+class FakeGitHub:
+    """Just enough of GitHub's API for Add a menu: the Git Data calls an upload makes, kept in memory.
+    fail_blob=n drops the signal on the nth file; lose_answer moves the branch but the answer never arrives;
+    status=(code, headers, message) answers every call with that error."""
+
+    def __init__(self, fail_blob=None, lose_answer=False, status=None):
+        self.refs = {"main": "c0"}
+        self.commits = {"c0": {"tree": "t0", "parents": [], "message": ""}}
+        self.trees = {"t0": {}}
+        self.blobs = {}
+        self.fail_blob, self.lose_answer, self.status = fail_blob, lose_answer, status
+        self.blob_calls = 0
+        self.other = []  # calls an upload shouldn't make, such as the old one-file-at-a-time /contents PUTs
+
+    def commits_on(self, branch):
+        out, sha = [], self.refs.get(branch)
+        while sha and sha != "c0":
+            out.append(sha)
+            sha = (self.commits[sha]["parents"] or [None])[0]
+        return out
+
+    def files(self, branch):
+        sha = self.refs.get(branch)
+        return sorted(self.trees[self.commits[sha]["tree"]]) if sha else []
+
+    def handle(self, route):
+        req = route.request
+
+        def reply(code, body=None, headers=None):
+            route.fulfill(status=code, content_type="application/json", body=json.dumps(body or {}),
+                          headers={"access-control-allow-origin": "*", "access-control-expose-headers": "x-ratelimit-remaining", **(headers or {})})
+
+        def lose():
+            lost, self.lose_answer = self.lose_answer, False
+            return lost
+
+        if self.status:
+            code, headers, msg = self.status
+            return reply(code, {"message": msg}, headers)
+        path = req.url.split("/repos/T-800IsInevitable/gf-drinks", 1)[-1]
+        body = json.loads(req.post_data or "{}") if req.method in ("POST", "PATCH") else {}
+        sha_of = lambda s: hashlib.sha1(s.encode()).hexdigest()[:12]
+        m = re.fullmatch(r"/git/ref/heads/(\w+)", path)
+        if req.method == "GET" and m:
+            return reply(200, {"object": {"sha": self.refs[m[1]]}}) if m[1] in self.refs else reply(404, {"message": "Not Found"})
+        m = re.fullmatch(r"/git/commits/(\w+)", path)
+        if req.method == "GET" and m:
+            return reply(200, {"tree": {"sha": self.commits[m[1]]["tree"]}})
+        if req.method == "POST" and path == "/git/blobs":
+            self.blob_calls += 1
+            if self.blob_calls == self.fail_blob:
+                return route.abort()
+            sha = sha_of(body["content"])
+            self.blobs[sha] = body["content"]
+            return reply(201, {"sha": sha})
+        if req.method == "POST" and path == "/git/trees":
+            tree = {**self.trees[body["base_tree"]], **{e["path"]: e["sha"] for e in body["tree"]}}
+            sha = sha_of(json.dumps(sorted(tree.items())))  # the same files make the same folder, as in git
+            self.trees[sha] = tree
+            return reply(201, {"sha": sha})
+        if req.method == "POST" and path == "/git/commits":
+            sha = sha_of(json.dumps(body) + str(len(self.commits)))
+            self.commits[sha] = body
+            return reply(201, {"sha": sha})
+        if req.method == "POST" and path == "/git/refs":
+            name = body["ref"].removeprefix("refs/heads/")
+            if name in self.refs:
+                return reply(422, {"message": "Reference already exists"})
+            self.refs[name] = body["sha"]
+            return route.abort() if lose() else reply(201, {"object": {"sha": body["sha"]}})
+        m = re.fullmatch(r"/git/refs/heads/(\w+)", path)
+        if req.method == "PATCH" and m:
+            if self.commits[body["sha"]]["parents"] != [self.refs.get(m[1])]:
+                return reply(422, {"message": "Update is not a fast forward"})
+            self.refs[m[1]] = body["sha"]
+            return route.abort() if lose() else reply(200, {"object": {"sha": body["sha"]}})
+        self.other.append(f"{req.method} {path}")
+        return reply(404, {"message": "Not Found"})
+
+
+def upload_checks(browser, base, engine):
+    """Add a menu with the owner's key, against FakeGitHub. Each upload is one commit on the uploads branch (never
+    main), photos are re-saved as JPEG, a dropped signal leaves nothing behind, retrying after a lost answer makes
+    no second copy, a rate limit keeps the key, and an expired key is removed with advice that says so."""
+    problems = []
+    photo_and_pdf = [{"name": "page.png", "mimeType": "image/png", "buffer": PNG},
+                     {"name": "menu.pdf", "mimeType": "application/pdf", "buffer": b"%PDF-1.4"}]
+
+    def session(fake):
+        # no service worker: in WebKit, requests from a page it controls get past page.route to the real GitHub
+        ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-github-key', 'k')")
+        page = ctx.new_page()
+        page.route("https://api.github.com/**", fake.handle)
+        page.goto(base + "#knoops-uk")
+        page.wait_for_selector("#list .row")
+        page.locator("#infoBtn").click()
+        page.locator("#openUpload").click()
+        page.wait_for_selector("#upload[open]")
+        return ctx, page
+
+    def upload(page, name="Test Cafe", files=photo_and_pdf):
+        if not page.locator("#upName").input_value():
+            page.locator("#upName").fill(name)
+            page.locator("#upArea").fill("Berlin")
+            page.set_input_files("#upFiles", files=files)
+        page.locator("#upSend").click()
+        # not wait_for_function: it needs eval, which the app's CSP blocks. "attached": an expired key hides the button
+        page.wait_for_selector("#upSend:not([disabled])", state="attached")
+        return page.locator("#upStatus").inner_text()
+
+    # two uploads in a row: the first starts the uploads branch from main, the second builds on it
+    fake = FakeGitHub()
+    ctx, page = session(fake)
+    said = [upload(page), upload(page, "Second Cafe", photo_and_pdf[1:])]
+    folders = sorted({f.split("/")[1] for f in fake.files("uploads")})
+    if not all(s.startswith("Uploaded") for s in said):
+        problems.append(f"{engine} upload: {said}")
+    if len(fake.commits_on("uploads")) != 2 or fake.refs["main"] != "c0" or fake.other:
+        problems.append(f"{engine} upload: expected one commit per upload on uploads and main untouched; "
+                        f"{len(fake.commits_on('uploads'))} commits, main {fake.refs['main']}, other calls {fake.other}")
+    first = [f for f in fake.files("uploads") if "test-cafe" in f]
+    if [f.split("/")[-1] for f in first] != ["menu-2.pdf", "page-1.jpg", "upload.json"] or len(folders) != 2:
+        problems.append(f"{engine} upload: the folders hold {fake.files('uploads')}")
+    jpg = next((fake.blobs[fake.trees[fake.commits[fake.refs['uploads']]['tree']][f]] for f in first if f.endswith(".jpg")), "")
+    if not base64.b64decode(jpg or "").startswith(b"\xff\xd8"):
+        problems.append(f"{engine} upload: the photo wasn't re-saved as a JPEG (blocked by the content security policy?)")
+    ctx.close()
+
+    # the signal drops on the second file: nothing arrives, the message says retrying is safe, and the retry works
+    fake = FakeGitHub(fail_blob=2)
+    ctx, page = session(fake)
+    said = upload(page)
+    if "uploads" in fake.refs or "safe" not in said:
+        problems.append(f"{engine} dropped signal: branch {fake.refs.get('uploads')}, said {said!r}")
+    said = upload(page)
+    if not said.startswith("Uploaded") or len(fake.commits_on("uploads")) != 1:
+        problems.append(f"{engine} retry after dropped signal: said {said!r}, {len(fake.commits_on('uploads'))} commits")
+    ctx.close()
+
+    # the upload arrives but its answer is lost: trying again mustn't make a second copy
+    fake = FakeGitHub(lose_answer=True)
+    ctx, page = session(fake)
+    said = [upload(page), upload(page)]
+    if len(fake.commits_on("uploads")) != 1 or not said[1].startswith("Uploaded"):
+        problems.append(f"{engine} lost answer: {len(fake.commits_on('uploads'))} commits after retrying, said {said}")
+    ctx.close()
+
+    # GitHub's rate limit isn't the key's fault (403 with no requests left): the key stays
+    fake = FakeGitHub(status=(403, {"x-ratelimit-remaining": "0"}, "API rate limit exceeded"))
+    ctx, page = session(fake)
+    said = upload(page)
+    if "limiting" not in said or not page.evaluate("localStorage.getItem('gf-github-key')"):
+        problems.append(f"{engine} rate limit: said {said!r}, key {'kept' if page.evaluate('localStorage.getItem(`gf-github-key`)') else 'removed'}")
+    ctx.close()
+
+    # an expired or deleted key: removed, with advice that says so rather than blaming the signal
+    fake = FakeGitHub(status=(401, {}, "Bad credentials"))
+    ctx, page = session(fake)
+    said = upload(page)
+    if "no longer works" not in said or "signal" in said or page.evaluate("localStorage.getItem('gf-github-key')") or page.locator("#keySetup").is_hidden():
+        problems.append(f"{engine} expired key: said {said!r}, and the key should be removed with its steps reopened")
+    ctx.close()
+    print(f"{engine} uploads: one commit each on uploads, JPEG photos, safe retries, rate limit keeps the key, expired key removed")
+    return problems
+
+
+def webkit_checks(p, base, ids, cid):
+    """The iPhone runs WebKit: every page loads without errors (a content security policy violation is one),
+    the sheets open and close, and uploads work, in Playwright's WebKit."""
+    try:
+        browser = p.webkit.launch()
+    except Exception as e:
+        return [f"WebKit isn't installed for Playwright (run: python -m playwright install webkit): {e}"]
+    problems = []
+    for url in [""] + [f"#{r}" for r in ids] + [f"#{cid}"]:
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        if not url:
+            ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+        page = ctx.new_page()
+        errors = []
+        page.on("pageerror", lambda e, errors=errors: errors.append(f"page error: {e}"))
+        page.on("console", lambda m, errors=errors: errors.append(f"console {m.type}: {m.text}") if m.type == "error" else None)
+        page.goto(base + url)
+        page.wait_for_selector("#cityList .row" if url == f"#{cid}" else "#list .row", timeout=15000)
+        page.wait_for_timeout(300)
+        if url == f"#{ids[0]}":
+            row = page.locator("#list .row").first
+            row.locator("summary").click()
+            row.locator(".staff-btn").click()
+            page.wait_for_selector("#staff[open]")
+            page.locator("#staff .link-btn").click()
+            page.locator("#infoBtn").click()
+            page.wait_for_selector("#info[open]")
+            page.locator("#info .link-btn").first.click()
+            page.wait_for_timeout(300)
+            if page.locator("dialog[open]").count():
+                problems.append("WebKit: a Done button didn't close its sheet")
+        problems += [f"WebKit {url or 'all restaurants'}: {e}" for e in errors]
+        ctx.close()
+    print(f"WebKit: {len(ids) + 2} pages loaded, sheets open and close")
+    problems += upload_checks(browser, base, "WebKit")
+    browser.close()
+    return problems
 
 
 class Quiet(SimpleHTTPRequestHandler):
@@ -564,6 +775,17 @@ def main():
         names = [r["name"] for r in page.evaluate(ROWS_JS)]
         if not any("fries" in n.lower() for n in names):
             problems.append(f"search 'chips': no Fries found, the everyday-word alias isn't matching ({names})")
+        # a short word or the start of a food word isn't a restaurant: "a latte" is everyone's lattes, not Pret A Manger's,
+        # and "str" (typing "strawberry") isn't Blank Street
+        for q in ("a latte", "str"):
+            page.locator("#q").fill(q)
+            page.wait_for_timeout(300)
+            heads = page.locator("#list .rest-h").all_inner_texts()
+            if len(heads) < 2:
+                problems.append(f"search {q!r}: narrowed to {heads}, as if it named a restaurant")
+        page.locator("#q").fill("")
+        if "autumn beverages and autumn food guides" not in page.locator("#sources").inner_text():
+            problems.append("footer: Starbucks' guide name leaves out its food guide")
         page.locator("#q").fill("")
         print("search: a restaurant's own name narrows results, and 'chips' finds 'fries'")
         ctx.close()
@@ -670,30 +892,8 @@ def main():
         print(f"Add a menu: Send button is {gap:.0f}px below the field above it")
         ctx.close()
 
-        # X7: an invalid or expired GitHub key gives the right advice and removes itself, rather than blaming the connection
-        ctx = browser.new_context(color_scheme="light", **IPHONE)
-        ctx.add_init_script("localStorage.setItem('gf-github-key', 'expired-token')")
-        page = ctx.new_page()
-        page.route("https://api.github.com/**", lambda r: r.fulfill(status=401, content_type="application/json", body='{"message":"Bad credentials"}'))
-        page.goto(base + "#knoops-uk")
-        page.wait_for_selector("#list .row")
-        page.locator("#infoBtn").click()
-        page.locator("#openUpload").click()
-        page.wait_for_selector("#upload[open]")
-        if page.locator("#uploadFields").is_hidden():
-            problems.append("expired key: the upload fields should show before the upload is tried (the key looked saved)")
-        page.locator("#upName").fill("Test Cafe")
-        page.locator("#upArea").fill("Berlin")
-        page.set_input_files("#upFiles", files=[{"name": "menu.pdf", "mimeType": "application/pdf", "buffer": b"%PDF-1.4"}])
-        page.locator("#upSend").click()
-        page.wait_for_timeout(500)
-        status = page.locator("#upStatus").inner_text()
-        if "no longer works" not in status.lower() or "signal" in status.lower():
-            problems.append(f"expired key: the message is {status!r}, doesn't say the key has expired")
-        if page.locator("#keySetup").is_hidden():
-            problems.append("expired key: the key setup steps didn't reopen")
-        print(f"expired key: {status!r}")
-        ctx.close()
+        # Add a menu with the owner's key: one commit per upload, retries, rate limits and expired keys
+        problems += upload_checks(browser, base, "Chromium")
 
         # F3: the app asks the phone to keep its storage, and says the answer in Help
         ctx = browser.new_context(color_scheme="light", **IPHONE)
@@ -759,6 +959,9 @@ def main():
         print(f"tap-through on {ids[0]}: staff card for {name!r}, status filter {before} -> {after} rows")
         ctx.close()
         browser.close()
+
+        # the iPhone runs WebKit, not Chromium: every page, the sheets and uploads again in Safari's engine
+        problems += webkit_checks(p, base, ids, cid)
     httpd.shutdown()
 
     if problems:

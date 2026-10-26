@@ -16,9 +16,10 @@
 <link rel="icon" type="image/png" href="icons/favicon.png">
 <link rel="stylesheet" href="styles.css">
 <!-- Scripts only from this app (the inline theme script below, allowed by its hash), connections only to
-     this app and the GitHub API that uploads use. Changing the inline script below changes its hash, so
+     this app and the GitHub API that uploads use. Images also from blob: URLs, which is how a photo picked
+     for Add a menu is read before it's re-saved as a JPEG. Changing the inline script below changes its hash, so
      the script-src value here must be recomputed (sha256, base64) whenever its text changes. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Gd4+D20kfajAfxKsda36N7czDnRj2s6rBz8wVzUpe1g='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.github.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Gd4+D20kfajAfxKsda36N7czDnRj2s6rBz8wVzUpe1g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.github.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <script>
   // apply the saved theme before first paint to avoid a flash
   try { var t = localStorage.getItem("gf-theme"); if (t && t !== "auto") document.documentElement.setAttribute("data-theme", t); } catch (e) {}
