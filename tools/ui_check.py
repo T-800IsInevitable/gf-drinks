@@ -563,9 +563,12 @@ def main():
         page.clock.set_fixed_time("2026-11-02T13:00:00+01:00")  # Monday 13:00
         page.reload()
         page.wait_for_selector("#cityList .row")
-        tap = page.locator("#cityList .row", has=page.locator(".nm", has_text="Tapiocaria")).first.inner_text()
-        if "Closed today" in tap:
-            problems.append(f"{cid}: Tapiocaria says 'Closed today' on Monday, but its hours for Monday aren't known")
+        aera = page.locator("#cityList .row", has=page.locator(".nm", has_text="AERA")).first.inner_text()
+        if "Closed today" in aera or "Open now" in aera:
+            problems.append(f"{cid}: AERA says open or closed on Monday, but its hours aren't known")
+        jute = page.locator("#cityList .row", has=page.locator(".nm", has_text="Jute")).first.inner_text()
+        if "Closed today" not in jute:
+            problems.append(f"{cid}: Jute doesn't say 'Closed today' on Monday, its day off")
         page.clock.set_fixed_time("2026-11-03T13:00:00+01:00")  # Tuesday 13:00: Prana open until 15:00
         page.reload()
         page.wait_for_selector("#cityList .row")
