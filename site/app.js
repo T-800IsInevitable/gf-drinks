@@ -498,7 +498,7 @@
     const others = Object.entries(cities).map(([cid, c]) => '<div class="sub-h">' + esc(c.name) + "</div>" +
       '<button type="button" class="pick-opt" data-region="' + esc(cid) + '" aria-pressed="' + (region === cid) + '"><span class="po-main"><b>' +
       esc(c.name) + "</b><span>Places that are all gluten free, by their own word or the coeliac support groups'" +
-      (c.places.some((p) => p.claim === "separate") ? ", and with a separate gluten free kitchen" : "") + "</span></span>" +
+      (c.places.some((p) => p.claim === "separate") ? ", or that say they have a separate gluten free kitchen" : "") + "</span></span>" +
       '<span class="po-meta">' + c.places.length + " places</span></button>").join("");
     $("pickList").innerHTML = '<div class="sub-h">UK</div>' + opt(ALL, "All restaurants", "Search and browse everything", total + " items", false) + grouped + others +
       '<p class="pick-note">More restaurants can be added by the app\'s owner from each restaurant\'s allergen guide.</p>';
@@ -570,7 +570,7 @@
     const n = (claim) => c.places.filter((p) => p.claim === claim).length;
     $("cityIntro").innerHTML = "<b>Each place's tag says who calls it gluten free.</b> " +
       [n("place-all") && n("place-all") + " say so themselves", n("list-all") && n("list-all") + " are listed as all gluten free by the support groups but don't say so on their own websites",
-        n("place-part") && n("place-part") + " says only part of its range is", n("separate") && n("separate") + " makes gluten free food in a separate kitchen"]
+        n("place-part") && n("place-part") + " says only part of its range is", n("separate") && n("separate") + " says it makes gluten free food in a separate kitchen"]
         .filter(Boolean).join("; ") + ". That's their claim, not the app's. They come from the list kept by " + esc(c.list.by) +
       ", checked against each place's own website on " + esc(fmtDate(c.checked)) + ". Nobody from this app has seen their kitchens, so tell staff you have coeliac disease.";
     $("cityCard").hidden = !phrases[c.language];
@@ -582,7 +582,7 @@
     }).join("");
     $("cityFoot").innerHTML = '<p><b>Sources:</b> <a href="' + esc(c.list.url) + '" target="_blank" rel="noopener">' + esc(c.list.name) + "</a>, kept by " +
       esc(c.list.by) + ", and each place's own website. Checked " + esc(fmtDate(c.checked)) + ".</p>" +
-      "<p>That list also has places with some gluten free dishes. They're left out here because their kitchens also use gluten, unless they make gluten free food separately.</p>" +
+      "<p>That list also has places it says have some gluten free dishes. They're left out here because their kitchens also use gluten, unless they say they make gluten free food separately.</p>" +
       "<p>Unofficial guide. Not affiliated with any of these places or the DZG.</p>";
     renderCityList();
   }
@@ -648,11 +648,12 @@
     if (p.caution) subs.push('<span class="chg">' + esc(p.flag) + "</span>");
     if (p.status !== "confirmed") subs.push('<span class="chg bad">Opening not confirmed</span>');
     const out = [];
+    // data-quote marks someone else's words, which ui_check.py doesn't hold to the app's own wording rules
     if (p.says) {
       out.push('<blockquote class="w-quote" lang="' + esc(p.says.lang) + '">' + esc(p.says.text) + "<cite>Its website</cite></blockquote>");
-      if (p.says.en) out.push("<div><b>In English:</b> " + esc(p.says.en) + ' <span class="muted">(the app\'s translation)</span></div>');
+      if (p.says.en) out.push("<div data-quote><b>In English:</b> " + esc(p.says.en) + ' <span class="muted">(the app\'s translation)</span></div>');
     }
-    if (p.listed) out.push("<div><b>From the coeliac support groups' list:</b> " + esc(p.listed) + "</div>");
+    if (p.listed) out.push("<div data-quote><b>From the coeliac support groups' list:</b> " + esc(p.listed) + "</div>");
     if (p.caution) out.push('<div class="chg-note"><b>Note from this app:</b> ' + esc(p.caution) + "</div>");
     if (p.status !== "confirmed") out.push('<div class="chg-note bad"><b>Not confirmed open.</b> ' + esc(p.statusNote || "") + "</div>");
     (p.notes || []).forEach((n) => out.push("<div>" + esc(n) + "</div>"));

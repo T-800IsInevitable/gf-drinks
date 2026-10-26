@@ -80,6 +80,29 @@ ROWS_JS = """() => [...document.querySelectorAll('#list details.row')].map((d) =
              green: tag.classList.contains('t-asis') || tag.classList.contains('t-any'),
              staff: !!d.querySelector('.staff-btn'), detail: d.querySelector('.detail').textContent };
 })"""
+# sentences in the app's own words that call something gluten free without saying whose claim it is. Skipped:
+# quotes, translations, other languages, the coeliac card, and item and place names (the restaurants' own words)
+WORDING_JS = r"""() => {
+    const skip = 'blockquote, cite, [data-quote], .star, .staff-name, .chg-list b, #favAlert b, #cardBody, [lang]:not([lang^="en"]), script, style';
+    const block = 'p, li, div, h1, h2, h3, h4, summary, dt, dd, button, label, small, span.po-main > span';
+    const whose = /\b(says?|said|call(s|ed)?|names?|listed|lists|labell?ed|claims?|claimed|certified|accredited|own words?|marks?|marked)\b/i;
+    const texts = new Map();
+    const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+        const el = n.parentElement;
+        if (!el || el.closest(skip) || el.matches('.nm')) continue;  // a row's own text is the item's or place's name
+        const b = el.closest(block) || el;
+        texts.set(b, (texts.get(b) || '') + n.textContent);
+    }
+    const out = [];
+    for (const t of texts.values()) {
+        for (const s of t.replace(/\s+/g, ' ').trim().split(/(?<=[.!;])\s+/)) {
+            const rest = s.replace(/gluten[ -]free (oats|wheat starch)/gi, '');  // kinds of ingredient, not claims
+            if (/gluten[ -]free/i.test(rest) && !/\?$/.test(s) && !whose.test(rest)) out.push(s);
+        }
+    }
+    return out;
+}"""
 
 
 class Quiet(SimpleHTTPRequestHandler):
@@ -498,6 +521,26 @@ def main():
         if not coconut or coconut["green"] or coconut["tag"] != "Ingredient" or coconut["staff"]:
             problems.append(f"blank-street-uk: Coconut Drink isn't tagged as an ingredient with no staff card ({coconut})")
         print("food safety: no green row named like an Avoid row; parts and ingredients have no staff card")
+        ctx.close()
+
+        # wording: the app never calls anything gluten free in its own voice (CLAUDE.md), on any page, sheet or list
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+        page = ctx.new_page()
+        found = set()
+        for url in [""] + [f"#{rid}" for rid in ids] + [f"#{c}" for c in cities]:
+            page.goto(base + url)
+            page.wait_for_selector("#cityList .row" if url[1:] in cities else "#list .row")
+            if not url:  # the warnings and the chooser are only filled in once opened
+                page.locator("#openWarnings").click()
+                page.wait_for_selector("#warnings[open]")
+                page.keyboard.press("Escape")
+                page.locator("#pickBtn").click()
+                page.wait_for_selector("#picker[open]")
+                page.keyboard.press("Escape")
+            found |= set(page.evaluate(WORDING_JS))
+        problems += [f"calls something gluten free in the app's own voice: {s!r}" for s in sorted(found)]
+        print(f"wording: {len(found)} sentences say gluten free without saying whose claim it is")
         ctx.close()
 
         # tap through one restaurant

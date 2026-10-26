@@ -215,8 +215,8 @@ def classify(r, config, warnings):
     info = []
     if r.get("headNote"):
         info.append("The guide lists it " + clean(r["headNote"].lstrip("- ").replace("*", "")) + ".")
-    if r["star"]:  # the footnote with the same colour of asterisk (or every footnote, for a plain "*")
-        info += [clean(f["text"].lstrip("* ")) for f in r["footnotes"]
+    if r["star"]:  # the footnote with the same colour of asterisk (or every footnote, for a plain "*"), quoted as the guide's
+        info += ['The guide says: "' + clean(f["text"].lstrip("* ")) + '"' for f in r["footnotes"]
                  if f["colour"] == r["star"] or r["star"] is True or f["colour"] is None]
     if info:
         item["info"] = " ".join(info).replace("..", ".")
