@@ -1,0 +1,166 @@
+# source: caffenero_nutrition_allergens-en_GB.pdf
+OK    | Extras | Raspberry Jam | asis
+OK    | Extras | Strawberry Jam | asis
+OK    | Extras | Lakeland Butter | asis
+OK    | Extras | Rodda's Cornish Clotted Cream | asis
+OK    | Extras | Marshmallows | asis
+OK    | Extras | Seeds & Fruit Mix Topper | asis
+OK    | Extras | Dates & Pecan Nuts | asis
+OK    | Extras | Banana Chips | asis
+OK    | Extras | Chocolate Curls | asis
+OK    | Extras | Chocolate Chips | asis
+OK    | Extras | Cinnamon | asis
+OK    | Tostati | Gluten Free Mozzarella, Tomato & Pesto Tostati | asis
+OK    | Soups | Tomato & Basil Soup | asis
+OK    | Biscuits & Snacks | Gianduja Chocolate | asis
+OK    | Crisps | Kettle Sea Salt Crisps | asis
+OK    | Crisps | Kettle Sea Salt & Vinegar Crisps | asis
+OK    | Crisps | Kettle Cheddar & Onion Crisps | asis
+OK    | Popcorn | Proper Corn Sea Salted Popcorn | asis
+OK    | Popcorn | Proper Corn Sweet & Salty Popcorn | asis
+OK    | Yogurts & Granola Pot | Tim’s Raspberry Yogurt | asis
+OK    | Yogurts & Granola Pot | Tim’s Vanilla Yogurt | asis
+OK    | Fruit Pots | Mango & Pineapple Fruit Pot | asis
+OK    | Fruit Pots | Fruit Salad | asis
+OK    | Extras | Heinz Ketchup | asis
+OK    | Extras | Honey | asis
+OK    | Extras | Pip & Nut Almond Butter | asis
+OK    | Extras | Plant Based Creamy Topping | asis
+OK    | Extras | Whipped Cream | asis
+OK    | Syrups | All Caffè Nero Syrups | asis
+OK    | Syrups | Caramel Sauce | asis
+OK    | Syrups | White Chocolate Sauce | asis
+OK    | Hot Coffee | Espresso | asis
+OK    | Hot Coffee | Ristretto Espresso | asis
+OK    | Hot Coffee | Espresso Con Panna | asis
+OK    | Hot Coffee | Cortado | except ok=whole;semi-skimmed;skimmed;soya;coconut;almond not=oat
+OK    | Hot Coffee | Macchiato | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Hot Coffee | Americano | except ok=black;semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Hot Coffee | Cappuccino | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Hot Coffee | Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Hot Coffee | Flat White | except ok=whole;semi-skimmed;skimmed;soya;coconut;almond not=oat
+OK    | Hot Coffee | Mocha | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Hot Coffee | Pistachio Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Hot Coffee | Spiced Pecan Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Hot Coffee | Cinnamon Roll Latte | swap ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Iced Coffee | Iced Americano | asis
+OK    | Iced Coffee | Iced Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Iced Coffee | Iced Flat White | asis
+OK    | Iced Coffee | Iced Cappuccino | asis
+OK    | Iced Coffee | Iced Honey Foamed Americano | asis
+OK    | Hot Chocolate | Hot Chocolate | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Hot Chocolate | Kids Hot Chocolate | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Matcha | Matcha Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Matcha | Vanilla Iced Matcha | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Matcha | Strawberry & Vanilla Iced Matcha | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Matcha | Iced Pistachio Matcha Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Matcha | Honeycomb Iced Matcha Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Matcha | Iced Blueberry Muffin Matcha | swap ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Matcha | Banoffee Matcha | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Matcha | Iced Banoffee Matcha | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Matcha | Iced Vanilla Protein Matcha Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Luxury & Chai | Luxury Hot Chocolate | asis
+OK    | Luxury & Chai | Luxury Mocha | asis
+OK    | Luxury & Chai | Luxury Caramelatte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Luxury & Chai | White Chocolate Mocha | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Luxury & Chai | Chai Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Frappe | Frappe Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Frappe | Mocha Frappe | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Flavoured Iced Latte | Tiramisu Iced Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Flavoured Iced Latte | Vanilla Iced Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Flavoured Iced Latte | Caramel Iced Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Flavoured Iced Latte | Pistachio Iced Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Flavoured Iced Latte | Iced Brown Sugar Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Flavoured Iced Latte | Iced Spiced Pecan Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Flavoured Iced Latte | Iced Vanilla Protein Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Luxury Frappe | Espresso & Caramel Luxury Frappe | except ok=whole;semi-skimmed;skimmed;soya;coconut;almond not=oat
+OK    | Luxury Frappe | Strawberry & White Chocolate Luxury Frappe | except ok=whole;semi-skimmed;skimmed;soya;coconut;almond not=oat
+OK    | Luxury Frappe | Espresso & Caramel Frappe Crème | except ok=whole;semi-skimmed;skimmed;soya;coconut;almond not=oat
+OK    | Milkshakes | Vanilla Milkshake with Whipped Cream | except ok=whole;semi-skimmed;skimmed;soya;coconut;almond not=oat
+OK    | Milkshakes | Chocolate Milkshake with Whipped Cream | except ok=whole;semi-skimmed;skimmed;soya;coconut;almond not=oat
+OK    | Milkshakes | Strawberry Milkshake with Whipped Cream | except ok=whole;semi-skimmed;skimmed;soya;coconut;almond not=oat
+OK    | Milkshakes | Vanilla Milkshake | except ok=whole;semi-skimmed;skimmed;soya;coconut;almond not=oat
+OK    | Milkshakes | Chocolate Milkshake | except ok=whole;semi-skimmed;skimmed;soya;coconut;almond not=oat
+OK    | Milkshakes | Strawberry Milkshake | except ok=whole;semi-skimmed;skimmed;soya;coconut;almond not=oat
+OK    | Boosters & Over Ice | Mango & Passionfruit | asis
+OK    | Boosters & Over Ice | Strawberry Lemonade Spritz | asis
+OK    | Boosters & Over Ice | Sicilian Lemon | asis
+AVOID | Pastries | Pastel De Nata | GLUTEN;WHEAT
+AVOID | Pastries | Almond Croissant | GLUTEN;WHEAT
+AVOID | Pastries | Apricot Croissant | GLUTEN;WHEAT
+AVOID | Pastries | Butter Croissant | GLUTEN;WHEAT
+AVOID | Pastries | Cinnamon Swirl | GLUTEN;WHEAT
+AVOID | Pastries | Pain au Chocolat | GLUTEN;WHEAT
+AVOID | Pastries | Pain aux Raisins | GLUTEN;WHEAT
+AVOID | Pastries | Raspberry Croissant | GLUTEN;SPELT;WHEAT
+AVOID | Pastries | Pistachio Croissant | GLUTEN;WHEAT
+AVOID | Pastries | Chocolate and Hazelnut Croissant | GLUTEN;WHEAT
+AVOID | Buns | Cinnamon Bun | WHEAT
+AVOID | Muffins & Scones | Sticky Toffee Muffin | GLUTEN;WHEAT
+AVOID | Muffins & Scones | Ultimate Chocolate Muffin | WHEAT
+AVOID | Muffins & Scones | Blueberry Muffin | GLUTEN;WHEAT
+AVOID | Muffins & Scones | Sicilian Lemon Curd Muffin | WHEAT
+AVOID | Muffins & Scones | Fruit Scone | WHEAT
+AVOID | Porridge | Porridge with Steel Cut Oats | OATS
+AVOID | Porridge | Porridge made with Semi Skimmed Milk | OATS
+AVOID | Porridge | Porridge made with Skimmed Milk | OATS
+AVOID | Porridge | Porridge made with Whole Milk | OATS
+AVOID | Porridge | Porridge made with Alpro Barista Soya | OATS
+AVOID | Porridge | Porridge made with Alpro Barista Coconut | OATS
+AVOID | Porridge | Porridge made with Alpro Barista Oat | OATS
+AVOID | Porridge | Porridge made with Alpro Barista Almond | OATS
+AVOID | Cakes & Slices | Lemon and Blueberry Cake | GLUTEN;WHEAT
+AVOID | Cakes & Slices | Belgian Chocolate Fudge Cake | WHEAT
+AVOID | Cakes & Slices | Cappuccino Cake | WHEAT
+AVOID | Cakes & Slices | Carrot Cake | WHEAT
+AVOID | Loaf Cakes | Lemon Drizzle Loaf Cake | WHEAT
+AVOID | Loaf Cakes | Banana & Walnut Loaf Cake | GLUTEN;WHEAT
+AVOID | Traybakes | Caramel Shortbread | WHEAT
+AVOID | Traybakes | Rocky Road | WHEAT
+AVOID | Traybakes | Belgian Chocolate Brownie | WHEAT
+AVOID | Traybakes | Granola Flapjack | OATS
+AVOID | Cookies | Milk Chocolate Chunk Cookie | WHEAT
+AVOID | Cookies | Triple Chocolate Chunk Cookie | WHEAT
+AVOID | Desserts | Honeycomb Cheesecake | WHEAT
+AVOID | Desserts | Mango & Passionfruit Plant Based Cheesecake | WHEAT
+AVOID | Desserts | Apple Crumble & Custard Tart | WHEAT
+AVOID | Desserts | Sicilian Lemon Meringue Cheesecake | WHEAT
+AVOID | Desserts | Italian Cream Bun 'Maritozzo' | WHEAT
+AVOID | Desserts | Italian Tiramisu | WHEAT
+AVOID | Desserts | Pistachio & Chocolate Mousse Cake | MALT;WHEAT
+AVOID | Savoury Pastries & Rolls | Pork & Pancetta Sausage Roll | WHEAT
+AVOID | Savoury Pastries & Rolls | Sourdough Bread Roll | GLUTEN;MALTED;WHEAT
+AVOID | Savoury Pastries & Rolls | Roasted Vegetable Plant Based Savoury Roll | WHEAT
+AVOID | Savoury Pastries & Rolls | Ham & Cheese Croissant | WHEAT
+AVOID | Nero Deli | Italian Prosciutto & Yellow Datterini Tomato Flatbread | MALTED;WHEAT
+AVOID | Nero Deli | Italian Mozzarella, Pesto & Tomato Pizzetta | MALTED;WHEAT
+AVOID | Panini | Butternut Squash & Pesto Seeded Panini | BARLEY;MALT;WHEAT
+AVOID | Panini | Ham & Mozzarella Panini | GLUTEN;MALTED;WHEAT
+AVOID | Panini | Mozzarella & Tomato Panini | GLUTEN;MALTED;WHEAT
+AVOID | Panini | Tuna Melt Panini | GLUTEN;MALTED;WHEAT
+AVOID | Panini | Brie & Bacon Panini | GLUTEN;MALTED;WHEAT
+AVOID | Tostati | Four Cheese and Balsamic Onion Chutney Tostati Melt | GLUTEN;WHEAT
+AVOID | Tostati | Chicken and Pesto Tostati | WHEAT
+AVOID | Tostati | Chicken and Bacon Tostati Melt | GLUTEN;WHEAT
+AVOID | Tostati | Ham & Cheese Tostati Melt | GLUTEN;WHEAT
+AVOID | Tostati | Mozzarella & Roasted Tomato Tostati Melt | GLUTEN;WHEAT
+AVOID | Tostati | Cheese and Tomato Tostati | WHEAT
+AVOID | Breakfast Rolls | Bacon Ciabatta | MALTED;RYE;WHEAT
+AVOID | Breakfast Rolls | Butcher's Sausage Ciabatta | MALTED;RYE;WHEAT
+AVOID | Sandwiches | Tuna & Cucumber Sandwich | BARLEY;MALTED;WHEAT
+AVOID | Sandwiches | Free Range Egg Mayo Sandwich | BARLEY;MALTED;OATS;WHEAT
+AVOID | Sandwiches | Chicken Salad Sandwich | BARLEY;MALTED;WHEAT
+AVOID | Sandwiches | BLT Sandwich | BARLEY;MALTED;WHEAT
+AVOID | Focaccia | Spicy Chicken & Red Pepper Focaccia | WHEAT
+AVOID | Focaccia | Italian Fennel Salami, Cotto Ham & Mozzarella Focaccia | MALTED;WHEAT
+AVOID | Wraps | Chicken & Bacon Caesar Wrap | WHEAT
+AVOID | Wraps | Smoky Three Bean Wrap | BARLEY;MALT;WHEAT
+AVOID | Salad | Feta & Mixed Grain Salad | BARLEY
+AVOID | Salad | Chicken & Mixed Grain Salad | BARLEY;WHEAT
+AVOID | Biscuits & Snacks | Fruit Teacake | WHEAT
+AVOID | Biscuits & Snacks | Gingerbread Biscuit | WHEAT
+AVOID | Biscuits & Snacks | Loacker Napolitaner | BARLEY;MALT;WHEAT
+AVOID | Biscuits & Snacks | Loacker Vanille | BARLEY;MALT;WHEAT
+AVOID | Biscuits & Snacks | Panettone | WHEAT
+AVOID | Yogurts & Granola Pot | Berry Granola | OATS
+AVOID | Extras | HP Sauce | GLUTEN

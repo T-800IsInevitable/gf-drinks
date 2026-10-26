@@ -34,5 +34,26 @@
       ["kann Spuren enthalten", "may contain traces"],
       ["Fritteuse", "deep fryer"]
     ]
+  },
+  "nl": {
+    "language": "Dutch",
+    "card": [
+      { "text": "Ik heb coeliakie.", "en": "I have coeliac disease." },
+      { "text": "Ik mag geen gluten eten: geen tarwe, gerst, rogge, haver of spelt.", "en": "I can't eat gluten: no wheat, barley, rye, oats or spelt." },
+      { "text": "Zelfs kleine hoeveelheden maken me ziek, zoals kruimels of meel.", "en": "Even small amounts make me ill, such as crumbs or flour." },
+      { "text": "Welke gerechten zijn glutenvrij?", "en": "Which dishes are gluten free?" },
+      { "text": "Heeft u een allergenenlijst?", "en": "Do you have an allergen list?" },
+      { "text": "Geen havermelk, alstublieft.", "en": "No oat milk, please." },
+      { "text": "Zit hier haver of tarwezetmeel in?", "en": "Does this contain oats or wheat starch?" },
+      { "text": "Gebruikt u alstublieft schoon keukengerei en schone snijplanken.", "en": "Please use clean kitchen utensils and boards." },
+      { "text": "Wordt dit in dezelfde frituur gebakken als gepaneerde gerechten?", "en": "Is this fried in the same fryer as breaded food?" },
+      { "text": "Hartelijk dank voor uw hulp!", "en": "Thank you for your help!" }
+    ],
+    "words": [
+      ["glutenvrij", "gluten free"], ["tarwe", "wheat"], ["gerst", "barley"], ["rogge", "rye"], ["haver", "oats"],
+      ["spelt", "spelt"], ["meel / bloem", "flour"], ["paneermeel / gepaneerd", "breadcrumbs / breaded"], ["mout", "malt"],
+      ["tarwezetmeel", "wheat starch"], ["seitan", "wheat gluten (common in vegan dishes)"], ["griesmeel", "semolina, usually wheat"],
+      ["bulgur", "bulgur wheat"], ["couscous", "couscous (wheat)"], ["kan sporen bevatten", "may contain traces"], ["frituur", "deep fryer"]
+    ]
   }
 }

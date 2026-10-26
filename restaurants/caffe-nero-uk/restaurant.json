@@ -1,0 +1,24 @@
+{
+  "name": "Caffè Nero",
+  "type": "Coffee shop",
+  "covers": "Drinks and food in GB Caffè Nero shops",
+  "area": "UK",
+  "language": "en",
+  "reader": "caffe_nero_uk_pdf",
+  "optionLabel": "milk",
+  "officialUrl": "https://www.caffenero.com/uk/menu/coffee",
+  "watch": {"page": "https://www.caffenero.com/uk/menu/coffee", "link": "nutrition_allergens-en_GB"},
+  "recheckDays": 91,
+  "headline": "Any milk but oat drink.",
+  "tips": [
+    "Any milk but oat: the guide lists oats as a gluten cereal. A few drinks come with oat as standard, so ask for another milk.",
+    "Almost all the bakery, panini, sandwiches and cakes contain wheat. Look at the popcorn, crisps, yoghurts and fruit pots.",
+    "Whipped cream: the guide's figures for some drinks don't include it, so the allergen table lists it on its own."
+  ],
+  "gaps": [
+    "Caffè Nero marks a few products GF (its gluten free label) and names one Tostati gluten free. This app lists items whose ingredients name no gluten cereal, and quotes those claims.",
+    "The guide says it lists oats as an allergen even when they're gluten free oats, and that those products may not suit people with coeliac disease because of in-store handling.",
+    "Some extras, sauces and syrups are only in the guide's allergen table, which shows allergens but not ingredients.",
+    "The guide says it can't guarantee an allergen free environment because equipment is shared."
+  ]
+}

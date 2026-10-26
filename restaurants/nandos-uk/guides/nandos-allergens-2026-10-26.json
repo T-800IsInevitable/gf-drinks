@@ -1,0 +1,2639 @@
+{
+ "source": "https://www.nandos.co.uk/allergens",
+ "fetched": "2026-10-26",
+ "notices": [
+  "All our food is prepared in kitchens where allergens are present, and we cannot guarantee that any menu item is completely free from allergens. Cross-contamination can occur during preparation, cooking, and serving."
+ ],
+ "important": "Allergen data/info items are based on the product recipe and cannot be excluded. We handle many allergens in our kitchen and cannot guarantee the product to be allergen free.",
+ "dishes": [
+  {
+   "slug": "all-butter-croissant",
+   "name": "All-Butter Croissant",
+   "variant": "",
+   "category": "Sweet Treats",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/all-butter-croissant",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk"
+   ],
+   "mayContain": [
+    "nuts",
+    "soya"
+   ],
+   "notes": {
+    "gluten": "Contains gluten from wheat",
+    "eggs": "Contains eggs",
+    "milk": "Contains milk. The butter portion contains pasteurised milk",
+    "nuts": "May contain almond, hazelnut and pecan",
+    "soya": "May contain soya"
+   },
+   "summary": "Contains gluten, eggs, milk.",
+   "fullTable": true,
+   "ingredients": "Wheat flour, Butter, Water, Sugar Cane, Yeast, Wheat Gluten, Eggs, Salt, Whole Milk Powder, Sugar, Wheat Sourdough (Water, Fermented Wheat Flour), Colour (Carotene from natural origin), Flour Treatment Agent (E300), Enzyme Served with a portion of butter. . Can be served with strawberry jam, blackcurrant jam or honey"
+  },
+  {
+   "slug": "avocado",
+   "name": "Avocado",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/avocado",
+   "contains": [
+    "sulphites"
+   ],
+   "mayContain": [],
+   "notes": {
+    "sulphites": "Lime Juice contains <10ppm sulphites."
+   },
+   "summary": "Contains sulphites.",
+   "fullTable": true,
+   "ingredients": "Avocado, Lime juice, Essential Lime Oil, Preservative (Potassium Metabisulphite (Sulphites))"
+  },
+  {
+   "slug": "baked-beans",
+   "name": "Baked Beans",
+   "variant": "",
+   "category": "Sides, Extras & Garnish",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/baked-beans",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Beans, Tomatoes, Water, Sugar, Spirit Vinegar, Modified Cornflour, Salt, Spice Extracts, Herb Extract"
+  },
+  {
+   "slug": "balsamic-vinegar",
+   "name": "Balsamic Vinegar",
+   "variant": "",
+   "category": "Spices & Sauces",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/balsamic-vinegar",
+   "contains": [
+    "sulphites"
+   ],
+   "mayContain": [],
+   "notes": {},
+   "summary": "Contains sulphites.",
+   "fullTable": true,
+   "ingredients": "Wine Vinegar, Cooked Grape Must, Sulphites"
+  },
+  {
+   "slug": "banana-blueberry-porridge",
+   "name": "Banana & Blueberry Porridge",
+   "variant": "*Plant-based if served without honey",
+   "category": "The Classics",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/banana-blueberry-porridge",
+   "contains": [
+    "gluten"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Contains gluten from oats"
+   },
+   "summary": "Contains gluten.",
+   "fullTable": true,
+   "ingredients": "PORRIDGE (Oat Drink, Pure Rolled Oats) BANANA BLUEBERRIRES PUMPKINSEEDS Can be served with honey, strawberry jam or blackcurrant jam, maple syrup *Plant-based if served without honey"
+  },
+  {
+   "slug": "beanie-burger-trial",
+   "name": "Updated Allergen Information / New recipe",
+   "variant": "Beanie Burger",
+   "category": "Burgers, Pittas, Wraps",
+   "updated": "29 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/beanie-burger-trial",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "mustard",
+    "soya"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Rustic Portuguese roll contains gluten from wheat and oats",
+    "eggs": "Beanie patty contains pasteurised egg",
+    "milk": "Beanie patty contains cheese made from pasteurised milk",
+    "mustard": "PERI-House sauce contains Mustard",
+    "soya": "Beanie patty contains soya. Rustic roll may contain soya"
+   },
+   "summary": "Contains gluten, eggs, milk, mustard, soya.",
+   "fullTable": true,
+   "ingredients": "BEANIE PATTY (Pea Flour, Cheddar Cheese (Milk), Water, Chickpeas, Carrots, Onions, Adzuki Beans, Sweetcorn, Green Beans, Vegetarian Burger Mix (Textured Soya Protein, Pea Flour, Fibre (Pea Fibre, Guar Gum, Psyllium Fibre), Salt, Potato Fibre, Soya Protein Concentrate, Vegetable Fat (Palm), Tomato Powder, Onion Powder, Yeast Extract, Sage, Onion Extract, Spice Extracts, Herb Extract), Lentils, Tomato Puree, Peas, Egg Powder, Pumpkin Seeds, Medium Fat Hard Cheese (Milk), Salt, Garlic, Coriander, Green Chilli, Black Pepper, Cayenne Pepper), Rapeseed Oil RUSTIC PORTUGUESE ROLL (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate,Iron, Niacin, Thiamin, Folic Acid), Water, Bakery Improver (Fortified Wheat Flour) ((Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid)), Sugar, Salt, Emulsifiers (Mono- And Diglycerides Of Fatty Acids, Sodium Stearoyl-2-Lactylate), Vegetable Oils (Palm, Rapeseed), Inactive Dry Yeast, Flour Treatment Agent (Ascorbic Acid), Potato Flakes (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina. (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina. TOMATO SLICE, LETTUCE LEAF PERI- HOUSE SAUCE : (Water, Rapeseed Oil, Gherkins (Gherkins, Water, Spirit Vinegar, Sugar, Salt), Sugar, American Style Mustard (Mustard) (Garlic Powder, Water, Spirit Vinegar, Yellow Mustard Flour (Mustard), Mustard seed husk (Mustard), Sea Salt, Turmeric, Paprika, Oriental Mustard Flour (Mustard)), Spirit Vinegar, Modified Maize Starch, Lemon Juice, Spice Mix (Yeast Extract, Flavourings, Colour: E100, Salt, Red Chilli Pepper, Paprika, White Pepper), Salt, Garlic Puree, Tapioca Starch, Spice Mix (Salt, Red Chilli Pepper, Birds Eye Chilli, Paprika), Garlic Powder, Colour: Paprika Extract (Rapeseed Oil, Colour: Paprika Extract (Paprika Extract, Sunflower Oil)), Modified Starch, Paprika, Preservative: Potassium Sorbate) PERI KETCHUP (Tomatoes, Brown Sugar, Water, Onion, Red Wine Vinegar, Roasted Red Pepper, Tomato Paste, Cornflour, Cane Molasses, Salt, Worcester Sauce (Water, Black Treacle, Spirit Vinegar, Tamarind, Salt, Onion Powder, Garlic Powder, White Pepper, Pimento, Ginger, Paprika, Clove), Lemon Juice, Garlic Puree, Ginger Puree, Gelling Agent (Pectin), Spices (Paprika, Chilli (Capsicums, African Birds Eye Chillies)), Curry Powder (Ground Spices (Coriander, Turmeric, Cumin, Black Pepper, Paprika, Caraway Seed, Cayenne, Fenugreek), Salt, Garlic Powder, Rapeseed Oil, Ground Oregano), Bay Leaf, Colour (Paprika Extract), Ground Coriander, Ground Cumin BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "beanie-patty",
+   "name": "Beanie Patty",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/beanie-patty",
+   "contains": [
+    "eggs",
+    "milk",
+    "soya"
+   ],
+   "mayContain": [],
+   "notes": {
+    "eggs": "Contains pasteurised egg powder",
+    "milk": "Contains cheese made from pasteurised milk",
+    "soya": "Contains Soya"
+   },
+   "summary": "Contains eggs, milk, soya.",
+   "fullTable": true,
+   "ingredients": "BEANIE PATTY: Pea Flour, Cheddar Cheese (Milk), Water, Chickpeas, Carrots, Onions, Adzuki Beans, Sweetcorn, Green Beans, Vegetarian Burger Mix (Textured Soya Protein, Pea Flour, Fibre (Pea Fibre, Guar Gum, Psyllium Fibre), Salt, Potato Fibre, Soya Protein Concentrate, Vegetable Fat (Palm), Tomato Powder, Onion Powder, Yeast Extract, Sage, Onion Extract, Spice Extracts, Herb Extract), Lentils, Tomato Puree, Peas, Egg Powder, Pumpkin Seeds, Medium Fat Hard Cheese (Milk), Salta, Garlic, Coriander, Green Chilli, Black Pepper, Cayenne Pepper), Vegetable Oil"
+  },
+  {
+   "slug": "beanie-pitta",
+   "name": "Beanie Pitta",
+   "variant": "",
+   "category": "Burgers, Pittas, Wraps",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/beanie-pitta",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "soya"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Pitta bread contains gluten from wheat",
+    "eggs": "Beanie patty contains pasteurised egg",
+    "milk": "Beanie patty contains cheese made from pasteurised milk",
+    "soya": "Beanie patty contains soya"
+   },
+   "summary": "Contains gluten, eggs, milk, soya.",
+   "fullTable": true,
+   "ingredients": "BEANIE PATTY (Pea Flour, Cheddar Cheese (Milk), Water, Chickpeas, Carrots, Onions, Adzuki Beans, Sweetcorn, Green Beans, Vegetarian Burger Mix (Textured Soya Protein, Pea Flour, Fibre (Pea Fibre, Guar Gum, Psyllium Fibre), Salt, Potato Fibre, Soya Protein Concentrate, Vegetable Fat (Palm), Tomato Powder, Onion Powder, Yeast Extract, Sage, Onion Extract, Spice Extracts, Herb Extract), Lentils, Tomato Puree, Peas, Egg Powder, Pumpkin Seeds, Medium Fat Hard Cheese (Milk), Salt, Garlic, Coriander, Green Chilli, Black Pepper, Cayenne Pepper), Rapeseed Oil . PITTA BREAD (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Water, Sourdough (Sourdough, Salt, Brandy Vinegar, Wheat Starch), Yeast, Salt . RAINBOW SLAW (Pink Cabbage, White Cabbage, Savoy Cabbage, Spring Green, Carrot, Radish, Butternut Squash), Dressing (Water, Rapeseed Oil, Olive Oil, Cider Vinegar, Sugar, Roast Shallots (Shallots, Sunflower Oil), Salt, Tapioca Starch, Modified Starch, Garlic Puree, Cornflour, Onion Powder, Spices (Paprika, Chilli (Capsicums, African Birds Eye Chillies)), Dried Red Pepper, Flavouring (Lactic Acid), Black Pepper, Parsley, Oregano, Preservative (Potassium Sorbate), Fennel) . LEMON & HERB MAYO (Water, Rapeseed Oil, Thickener (Modified Maize Starch), Spirit Vinegar, Sugar, Lemon Zest, Onion, Salt, Modified Starch, Tapioca Starch, Concentrated Lemon Juice, Turmeric Solution (Water, Colour (Curcumin)), Garlic Puree, Colour (Paprika Extract), Rosemary, Spice Mix (Sea Salt, Spices (Red Chilli Pepper, Paprika, Birds Eye Chilli)), Thyme, Preservative (Potassium Sorbate) . BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "beanie-wrap",
+   "name": "Beanie Wrap",
+   "variant": "",
+   "category": "Burgers, Pittas, Wraps",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/beanie-wrap",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "mustard",
+    "soya"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Wrap contains gluten from wheat",
+    "eggs": "Lightly spiced yogurt mayo and beanie patty contain pasteurised egg",
+    "milk": "Beanie patty contains cheese made from pasteurised milk. Lightly spiced yogurt mayo contains pasteurised milk",
+    "mustard": "Lightly spiced yogurt mayo contains mustard",
+    "soya": "Beanie patty contains soya"
+   },
+   "summary": "Contains gluten, eggs, milk, mustard, soya.",
+   "fullTable": true,
+   "ingredients": "BEANIE PATTY (Pea Flour, Cheddar Cheese (Milk), Water, Chickpeas, Carrots, Onions, Adzuki Beans, Sweetcorn, Green Beans, Vegetarian Burger Mix (Textured Soya Protein, Pea Flour, Fibre (Pea Fibre, Guar Gum, Psyllium Fibre), Salt, Potato Fibre, Soya Protein Concentrate, Vegetable Fat (Palm), Tomato Powder, Onion Powder, Yeast Extract, Sage, Onion Extract, Spice Extracts, Herb Extract), Lentils, Tomato Puree, Peas, Egg Powder, Pumpkin Seeds, Medium Fat Hard Cheese (Milk), Salt, Garlic, Coriander, Green Chilli, Black Pepper, Cayenne Pepper), Rapeseed Oil WRAP (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamine, Folic Acid), Water, Vegetable Oils (Palm Oil, Rapeseed Oil), Raising Agents (Sodium Carbonates, Malic Acid, Diphosphates), Sugar, Stabiliser (Sodium Carboxymethyl Cellulose), Salt) . LETTUCE LEAF . CHILLI JAM (Tomatoes, Brown Sugar, Red Wine Vinegar, Red Chilli, Red Onions, Cornflour, Tomato Paste, Garlic Puree, Salt, Gelling Agent (Pectin)) . LIGHTLY SPICED YOGURT MAYO (Water, Greek Style Yogurt (Milk), Rapeseed Oil, White Wine Vinegar, Cornflour, Sugar, Egg Yolk Powder, Coriander, Salt, Mustard Powder, Lemon Juice Concentrate, Milled Red Chillies, Onion Powder, Cracked Black Pepper, Preservative (Potassium Sorbate), Stabilisers (Guar Gum, Xanthan Gum), Ground White Pepper, Ground Coriander, African Birds Eye Chillies)"
+  },
+  {
+   "slug": "beavertown-lazer-crush-alcohol-free-ipa",
+   "name": "Beavertown Lazer Crush",
+   "variant": "Alcohol Free IPA",
+   "category": "Drinks",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/beavertown-lazer-crush-alcohol-free-ipa",
+   "contains": [
+    "gluten"
+   ],
+   "mayContain": [],
+   "notes": {},
+   "summary": "Contains gluten.",
+   "fullTable": true,
+   "ingredients": "Water, Malted Barley, Hops, Yeast"
+  },
+  {
+   "slug": "beer",
+   "name": "Beer",
+   "variant": "",
+   "category": "Drinks",
+   "updated": "29 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/beer",
+   "contains": [
+    "gluten"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Freedom Pils and Sagres beer contain gluten from barley."
+   },
+   "summary": "Contains gluten.",
+   "fullTable": true,
+   "ingredients": "FREEDOM PILS (Spring Water, Malted Barley, Hops, Yeast) . SAGRES BEER (Water, Malted Barley, Maize, Barley, Hop Extract) . TINY REBEL (Water, Wheat (Gluten), Barley (Gluten), Hops, Brewers Yeast) Contains barley and wheat (gluten) as an ingredient, but gluten is removed during production. The finished product is tested and verified gluten free. ."
+  },
+  {
+   "slug": "bero-kingston-golden-pils",
+   "name": "BERO",
+   "variant": "Kingston Golden Pils",
+   "category": "Drinks",
+   "updated": "09 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/bero-kingston-golden-pils",
+   "contains": [
+    "gluten"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Contains Barley"
+   },
+   "summary": "Contains gluten.",
+   "fullTable": true,
+   "ingredients": "Water, malted barley , hops, yeast"
+  },
+  {
+   "slug": "bombay-sapphire-gin-tonic",
+   "name": "Only in Gatwick",
+   "variant": "Bombay Sapphire Gin & Tonic Can",
+   "category": "Drinks",
+   "updated": "09 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/bombay-sapphire-gin-tonic",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Carbonated Water, Gin (16%), Sugar, Acid: Citric Acid (E330), Flavouring, Acidity regulator: Sodium Citrate (E331), Preservatives: Potassium Sorbate (E202) and Sodium Benzoate (E211), Quinine Hydrochloride"
+  },
+  {
+   "slug": "boneless-platter",
+   "name": "Boneless Platter",
+   "variant": "",
+   "category": "Chicken",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/boneless-platter",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN THIGHS AND BUTTERFLY BREAST (Chicken Breast, Chicken Thighs, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "bottomless-rubro",
+   "name": "In select restaurants",
+   "variant": "Bottomless Rubro",
+   "category": "Drinks",
+   "updated": "09 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/bottomless-rubro",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Sugar, Water, E300 - Ascorbic Acid, Rooibos tea extract, Natural Flavourings, Salt"
+  },
+  {
+   "slug": "butterfly-burger",
+   "name": "Butterfly Burger",
+   "variant": "",
+   "category": "Burgers, Pittas, Wraps",
+   "updated": "09 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/butterfly-burger",
+   "contains": [
+    "gluten",
+    "mustard"
+   ],
+   "mayContain": [
+    "soya"
+   ],
+   "notes": {
+    "gluten": "Rustic roll contains gluten from wheat and oats",
+    "mustard": "PERI-House sauce contains Mustard",
+    "soya": "Rustic roll may contain soya"
+   },
+   "summary": "Contains gluten, mustard.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN BREAST : (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) RUSTIC PORTUGUESE ROLL : (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate,Iron, Niacin, Thiamin, Folic Acid), Water, Bakery Improver (Fortified Wheat F lour ( Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Sugar, Salt, Emulsifiers (Mono- And Diglycerides Of Fatty Acids, Sodium Stearoyl-2-Lactylate), Vegetable Oils (Palm, Rapeseed), Inactive Dry Yeast, Flour Treatment Agent (Ascorbic Acid), Potato Flakes (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina. (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina. TOMATO SLICE LETTUCE LEAF PERI- HOUSE SAUCE : (Water, Rapeseed Oil, Gherkins (Gherkins, Water, Spirit Vinegar, Sugar, Salt), Sugar, American Style Mustard (Mustard) (Garlic Powder, Water, Spirit Vinegar, Yellow Mustard Flour (Mustard), Mustard seed husk (Mustard), Sea Salt, Turmeric, Paprika, Oriental Mustard Flour (Mustard)), Spirit Vinegar, Modified Maize Starch, Lemon Juice, Spice Mix (Yeast Extract, Flavourings, Colour: E100, Salt, Red Chilli Pepper, Paprika, White Pepper), Salt, Garlic Puree, Tapioca Starch, Spice Mix (Salt, Red Chilli Pepper, Birds Eye Chilli, Paprika), Garlic Powder, Colour: Paprika Extract (Rapeseed Oil, Colour: Paprika Extract (Paprika Extract, Sunflower Oil)), Modified Starch, Paprika, Preservative: Potassium Sorbate) PERI-Tomato Relish : (Tomatoes, Brown Sugar, Water, Onion, Red Wine Vinegar, Roasted Red Pepper, Tomato Paste, Cornflour, Cane Molasses, Salt, Worcester Sauce (Water, Black Treacle, Spirit Vinegar, Tamarind, Salt, Onion Powder, Garlic Powder, White Pepper, Pimento, Ginger, Paprika, Clove), Lemon Juice, Garlic Puree, Ginger Puree, Gelling Agent (Pectin), Spices (Paprika, Chilli (Capsicums, African Birds Eye Chillies)), Curry Powder (Ground Spices (Coriander, Turmeric, Cumin, Black Pepper, Paprika, Caraway Seed, Cayenne, Fenugreek), Salt, Garlic Powder, Rapeseed Oil, Ground Oregano), Bay Leaf, Colour (Paprika Extract), Ground Coriander, Ground Cumin BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "buttermilk-pancakes",
+   "name": "Buttermilk Pancakes",
+   "variant": "",
+   "category": "Sweet Treats",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/buttermilk-pancakes",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "soya"
+   ],
+   "mayContain": [
+    "nuts",
+    "sulphites"
+   ],
+   "notes": {
+    "gluten": "Contains gluten from wheat",
+    "eggs": "Contains pasteurised eggs",
+    "milk": "Buttermilk pancakes and unsalted butter contain pasteurised milk",
+    "nuts": "May contain almons and walnuts",
+    "soya": "Contains soya",
+    "sulphites": "May contain sulphites"
+   },
+   "summary": "Contains gluten, eggs, milk, soya.",
+   "fullTable": true,
+   "ingredients": "Buttermilk Pancakes (Buttermilk, Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin), Sugar, Pasteurised Egg, Water, Non-Hydrogenated Vegetable Oil (Rapeseed), Partially Inverted Refiners Syrup, Raising Agents (Calcium Phosphates, Disodium Diphosphates, Sodium Carbonates Potassium Carbonates), Whey Solids (Milk), Salt, Soya Flour, Dextrose, Preservative (Calcium Propionate)) Banana Maple Syrup Blueberries Unsalted Butter (Pasteurised Cream (Milk)) Icing Sugar . Can be served with maple syrup or honey . This is also applicable for Nandino’s Pancakes"
+  },
+  {
+   "slug": "caesar-salad",
+   "name": "Caesar Salad",
+   "variant": "",
+   "category": "Salads & Bowls",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/caesar-salad",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "mustard"
+   ],
+   "mayContain": [
+    "soya"
+   ],
+   "notes": {
+    "gluten": "Garlic croutons contain gluten from wheat and barley.",
+    "eggs": "Caesar dressing contains pasteurised egg.",
+    "milk": "Italian hard cheese contains unpasteurised milk. Caesar dressing contains pasteurised milk.",
+    "mustard": "Caesar dressing contains mustard. Garlic croutons may contain mustard.",
+    "soya": "Garlic croutons may contain soya."
+   },
+   "summary": "Contains gluten, eggs, milk, mustard.",
+   "fullTable": true,
+   "ingredients": "LETTUCE CAESAR DRESSING (Rapeseed Oil, Water, Medium Fat Hard Cheese (Milk), Lemon Juice, Salted Free Range Egg Yolk (Free Range Egg Yolk, Salt), Spirit Vinegar, Sugar, Garlic Puree, Dijon Mustard (Water, Mustard Flour, Spirit Vinegar, Sea Salt, Mustard Husk, Pimento, Turmeric), Worcester Sauce (Water, Black Treacle, Spirit Vinegar, Tamarind concentrate, Salt, Onion Powder, Garlic Powder, White Pepper, Pimento, Ginger, Paprika, Clove), Cornflour, Tomato Paste, Salt, Puremami (Maltodextrin, Smoked Yeast Powder, Smoked Mushroom Powder), Capers, Black Pepper, Preservative (Potassium Sorbate)) ITALIAN HARD CHEESE (Milk) GARLIC CROUTONS (Wheat Flour, Durum Wheat Semolina, Olive Oil, Extra Virgin Olive Oil, Sea Salt, Brewer’s Yeast, Barley and Corn Malt Extract, Sugar, Dried Garlic, Dried Parsley, Natural Garlic Flavouring, Antioxidant (Rosemary Extract)"
+  },
+  {
+   "slug": "charred-corn",
+   "name": "Charred Corn",
+   "variant": "",
+   "category": "Sides",
+   "updated": "29 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/charred-corn",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "SWEETCORN, GARLIC AND PAPRIKA DRESSING (Water, Rapeseed Oil, Sugar, White Wine Vinegar, Cornflour, Medium Sauce (Water, Spirit Vinegar, Onion, Spice Mix (Salt, Red chilli pepper, Birds eye chilli, Herbs), Rapeseed Oil, Lemon Juice, Green Chilli , Garlic Puree , Lemon Zest ), Salt , Modified starch , Colour: Paprika Extract (Rapeseed Oil, Colour: Paprika Extract (E160C Paprika Extract, Sunflower Oil)), Spice Mix (Flavouring, Salt, Paprika, Red chilli pepper, White Pepper, Yeast Extract, Colour: E100), Coriander , Flavouring: Lactic acid , Garlic Puree , Garlic Powder , Concentrated Lemon Juice , Onion Powder , Paprika , Birds eye chilli , Black Pepper , White Pepper , Ground Coriander ) SPRING ONIONS PERi Salt (PERi-Salt (Salt, Spices (Paprika, Red Chilli Pepper, White Pepper, African Birds Eye Chilli), Sugar, Cornflour, Yeast Extract, Citric Acid, Flavourings, Colour (Paprika Extract))"
+  },
+  {
+   "slug": "cheddar-cheese-slice",
+   "name": "Cheddar Cheese Slice",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/cheddar-cheese-slice",
+   "contains": [
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "milk": "Contains pasteurised milk."
+   },
+   "summary": "Contains milk.",
+   "fullTable": true,
+   "ingredients": "Cheddar Cheese (Milk)"
+  },
+  {
+   "slug": "cheesy-garlic-pitta",
+   "name": "Cheesy Garlic Pitta",
+   "variant": "",
+   "category": "Starters",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/cheesy-garlic-pitta",
+   "contains": [
+    "gluten",
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Pitta Bread contains Gluten from Wheat",
+    "milk": "Cheddar Cheese contains pasteurised milk"
+   },
+   "summary": "Contains gluten, milk.",
+   "fullTable": true,
+   "ingredients": "PITTA BREAD (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Water, Sourdough (Sourdough, Salt, Brandy Vinegar, Wheat Starch), Yeast, Salt GARLIC & CHILLI SPREAD (Vegetable Shortening (Rapeseed Oil, Palm Oil, Water, Colour (Carotenes), Garlic Puree, Water, Green Chilli, Garlic Powder, Salt, White Pepper, Parsley CHEDDAR CHEESE (Milk) RED PEPPER CHUTNEY (Roasted Red Pepper, Brown Sugar, Water, Spirit Vinegar, Lemon Juice, Red Pepper, Red Chilli Purée, Corn Flour, Salt, Chipotle Chilli, Chilli, Spices (Paprika, Cayenne, Birds Eye Chilli), Gelling Agent (Pectin), Ground Coriander, Bay Leaves, Ground Cumin) SPRING ONIONS MEDIUM BASTING SAUCE (Water, Rapeseed Oil, Spirit Vinegar, Green Chilli, Spice Mix (Salt, Red Chilli Pepper, African Birds Eye Chilli, Paprika, Herb (Bay Leaf), Lemon, Stabilisers (Guar Gum, Xanthan Gum), Onion, Preservative (Potassium Sorbate), Garlic Puree)"
+  },
+  {
+   "slug": "chicken-benedict",
+   "name": "Chicken Benedict",
+   "variant": "",
+   "category": "Eggs",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/chicken-benedict",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "mustard",
+    "soya",
+    "sulphites"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "English muffin contains gluten from wheat, rye and may contain barley.",
+    "eggs": "Contains egg and PERi Hollandaise sauce contains pasteurised egg.",
+    "milk": "PERi Hollandaise sauce contains pasteurised milk.",
+    "mustard": "PERi Hollandaise sauce contain mustard.",
+    "soya": "PERi Hollandaise sauce contains soya.",
+    "sulphites": "PERi Hollandaise sauce contains sulphites."
+   },
+   "summary": "Contains gluten, eggs, milk, mustard, soya, sulphites.",
+   "fullTable": true,
+   "ingredients": "EGGS. PERi HOLLANDAISE SAUCE ( HOLLANDAISE SAUCE (Water, Butter, Milk, Double Cream, PASTEURISED Egg Yolk, Cornflour, Sugar, Lemon Juice Concentrate, Dijon Mustard (Water, Mustard Seed, Spirit Vinegar, Salt), Salt, Emulsifier: Soya Lecithin, White Wine Vinegar). PULLED CHICKEN (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water), Medium Basting Sauce (Water, Rapeseed Oil, Spirit Vinegar, Green Chilli, Spice Mix (Salt, Spices (Red Chilli Pepper, African Birds Eye Chilli, Paprika) Herb (Bay Leaf)), Lemon, Stabilisers (Guar gum, Xanthan Gum), Onion, Preservative (Potassium Sorbate), Garlic Puree ENGLISH MUFFIN (White Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Water, Sugar, Rapeseed Oil, [Rye Flour (Wholemeal Rye Flour), Water], Yeast, Salt, Crumb Softener (Enzymes, Wheat Flour), Bread Improver (Wheat Flour, Flour Treatment Agent: Ascorbic Acid)). BABY SPINACH CHILLI JAM (See Extras and Garnish (click to view) ) BASTING SAUCE (see Marinade & Sauces (click to view) ) CHIVES PERI SALT (Salt, Spices (Paprika, Red Chilli Pepper, White Pepper, African Birds Eye Chilli), Sugar, Cornflour, Yeast Extract, Citric Acid, Flavourings, Colour (Paprika Extract)) OLIVE OIL"
+  },
+  {
+   "slug": "chicken-breast-fillet",
+   "name": "Chicken Breast Fillet",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "09 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/chicken-breast-fillet",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Chicken Breast Fillet (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "chicken-chorizo",
+   "name": "Chicken Chorizo",
+   "variant": "Non-Halal restaurants only",
+   "category": "Starters",
+   "updated": "29 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/chicken-chorizo",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "CHICKEN CHORIZO Chicken, Mild Smoked Paprika, Salt, Dextrin, Dextrose, Buffered Vinegar, Garlic (Garlic Cloves, Salt ), Paprika Extract, Spicy Smoked Paprika, E451 (i) Pentasodium triphosphate, Sodium Erythorbate (E 316), Starter Culture, Collagen Casing. PERi HONEY Blossom Honey, Birds Eye Chilli, Natural Capsicum Flavouring."
+  },
+  {
+   "slug": "chicken-sausage",
+   "name": "Chicken Sausage",
+   "variant": "",
+   "category": "Chicken",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/chicken-sausage",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Chicken, Seasoning (Breadcrumbs (Dried Potato, Rice Flour, Salt, Dextrose), Salt, Cayenne Pepper, Ginger Powder, Nutmeg, Black Pepper, Pimento, Ground, Parsley, Sage, Thyme, Dextrose), Water, Rusk (Rice Flour), Dextrose, Bamboo Fibre, Salt, Caramelised Sugar Syrup, Paprika Extract), Tapioca Starch."
+  },
+  {
+   "slug": "chicken-thighs",
+   "name": "Chicken Thighs",
+   "variant": "",
+   "category": "Chicken",
+   "updated": "29 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/chicken-thighs",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN THIGHS (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "chilli-jam",
+   "name": "Chilli Jam",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/chilli-jam",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Tomatoes, Brown Sugar, Red Wine Vinegar, Red Chilli, Red Onions, Cornflour, Tomato Paste, Garlic Puree, Salt, Gelling Agent (Pectin)"
+  },
+  {
+   "slug": "chips",
+   "name": "Chips",
+   "variant": "",
+   "category": "Sides",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/chips",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Potatoes, Vegetable Oils (Rapeseed & Sunflower), Salt, Dextrose, Disodium Diphosphate"
+  },
+  {
+   "slug": "choc-a-lot-cake",
+   "name": "Choc-a-Lot Cake",
+   "variant": "",
+   "category": "Desserts",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/choc-a-lot-cake",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "soya"
+   ],
+   "mayContain": [
+    "nuts"
+   ],
+   "notes": {
+    "gluten": "Contains gluten from wheat. May contain gluten from oats and barley.",
+    "eggs": "Contains pasteurised egg.",
+    "milk": "Contains pasteurised milk from cake and cream.",
+    "nuts": "May contain almonds, walnuts, pecans, hazelnuts and pistachios.",
+    "soya": "Contains soya lecithin."
+   },
+   "summary": "Contains gluten, eggs, milk, soya.",
+   "fullTable": true,
+   "ingredients": "Dark Chocolate (16%) (Cocoa Mass, Sugar, Cocoa Butter, Emulsifier (Soya Lecithin)), Sugar, Whole Milk, Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Free Range Egg, Sour Cream (Milk), Rapeseed Oil, Water, Unsalted Butter (Milk), Stabiliser Blend (Sugar, Maltodextrin, Modified Starch, Thickener (Carrageenan)), Single Cream (Milk), Dark Chocolate Chunks (4%) (Sugar, Cocoa Mass, Cocoa Butter, Emulsifier (Soya Lecithin), Natural Vanilla Flavouring), Dark Chocolate Curls (3%) (Sugar, Cocoa Mass, Cocoa Butter, Emulsifier (Soya Lecithin), Natural Vanilla Flavouring), Fat Reduced Cocoa Powder, Condensed Milk (Milk, Granulated Sugar), Partially Inverted Refiners Syrup, Raising Agent (Sodium Bicarbonate), Salt, Natural Vanilla Flavouring, Raising Agents (Disodium Diphosphate, Sodium Bicarbonate), Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid). Served with a side of Cream (Milk)."
+  },
+  {
+   "slug": "chocolate-twist",
+   "name": "Chocolate Twist",
+   "variant": "",
+   "category": "Sweet Treats",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/chocolate-twist",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "soya"
+   ],
+   "mayContain": [
+    "nuts"
+   ],
+   "notes": {
+    "gluten": "Contains gluten from wheat",
+    "eggs": "Contains eggs",
+    "milk": "Contains milk",
+    "nuts": "May contain almond, hazelnut and pecan",
+    "soya": "Contains soya"
+   },
+   "summary": "Contains gluten, eggs, milk, soya.",
+   "fullTable": true,
+   "ingredients": "Water, Wheat Flour, Chocolate Chips (Sugar, Cocoa Mass, Cocoa Butter, Emulsifier (E322 (Soya)), Butter (Milk), Sugar, Modified Starches, Wheat, Whey Powder, Yeast, Whole Milk Powder, Eggs, Salt, Maltodextrin, Carrot Concentrate, Thickener (E415), Natural Flavouring, Flour Treatment Agent (E300), Enzyme"
+  },
+  {
+   "slug": "cloudy-lemonade",
+   "name": "Cloudy Lemonade",
+   "variant": "",
+   "category": "Drinks",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/cloudy-lemonade",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Water, Lemon Juice, Lime Juice, Sugar, Lemon Pulp, Sweetener (Sucralose)"
+  },
+  {
+   "slug": "coleslaw",
+   "name": "Coleslaw",
+   "variant": "",
+   "category": "Sides",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/coleslaw",
+   "contains": [
+    "eggs",
+    "mustard"
+   ],
+   "mayContain": [],
+   "notes": {
+    "eggs": "Contains pasteurised egg",
+    "mustard": "Contains mustard flour"
+   },
+   "summary": "Contains eggs, mustard.",
+   "fullTable": true,
+   "ingredients": "Cabbage, Mayonnaise (Rapeseed Oil, Water, Sugar, Egg, White Wine Vinegar, Spirit Vinegar, Salt, Stabilisers (Guar Gum, Xanthan Gum), Mustard Flour), Carrots, Onions, Parsley, White Wine Vinegar, Lactic Acid"
+  },
+  {
+   "slug": "corn-on-the-cob",
+   "name": "Corn on the Cob",
+   "variant": "",
+   "category": "Sides",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/corn-on-the-cob",
+   "contains": [
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "milk": "Butter portion contains pasteurised milk."
+   },
+   "summary": "Contains milk.",
+   "fullTable": true,
+   "ingredients": "Sweetcorn. Served with a butter portion (milk)"
+  },
+  {
+   "slug": "creamy-mash",
+   "name": "Creamy Mash",
+   "variant": "",
+   "category": "Sides",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/creamy-mash",
+   "contains": [
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "milk": "Contains butter and cream made from pasteurised milk."
+   },
+   "summary": "Contains milk.",
+   "fullTable": true,
+   "ingredients": "Potato, Double Cream (Milk), Butter (Milk), Salt, White Pepper"
+  },
+  {
+   "slug": "crushes",
+   "name": "Avalible in select restaurants",
+   "variant": "Pink Berry & Tropical Crush",
+   "category": "Drinks",
+   "updated": "09 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/crushes",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "TROPICAL CRUSH: Pineapple juice, Water, Sugar, Coconut drink, Banana puree, Lime juice, Stabilizers: Xanthan gum, Gellan gum, Antioxidant: Ascorbic Acid, Natural flavourings, Citric Acid. PINK BERRY CRUSH: Water, Sugar, Strawberry puree, Lemon juice, Peach concentrate, Blackcurrant juice, Strawberry concentrate, Natural flavouring, Concentrate (Sweet potato, apple, radish and cherry), Citric acid."
+  },
+  {
+   "slug": "cucumber-sticks",
+   "name": "Cucumber Sticks",
+   "variant": "",
+   "category": "Nandinos",
+   "updated": "09 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/cucumber-sticks",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "CUCUMBERS"
+  },
+  {
+   "slug": "egg",
+   "name": "Egg",
+   "variant": "Poached, Scrambled, Fried",
+   "category": "Sides, Extras & Garnish",
+   "updated": "09 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/egg",
+   "contains": [
+    "eggs",
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "eggs": "Scrambled, Poached and Fried contains pasteurised eggs.",
+    "milk": "Scrambled Eggs contain PASTEURISED Semi-Skimmed Milk"
+   },
+   "summary": "Contains eggs, milk.",
+   "fullTable": true,
+   "ingredients": "EGGS ((Eggs can be poached, fried or scrambled) (only Scrambled Eggs, PASTEURISED Semi Skimmed Milk, Black Pepper)), RAPESEED OIL."
+  },
+  {
+   "slug": "eggs-on-toast",
+   "name": "Eggs on Toast",
+   "variant": "",
+   "category": "Eggs",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/eggs-on-toast",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "soya"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Bloomers contains gluten from wheat and malted bloomer contains gluten from barley.",
+    "eggs": "Contains egg.",
+    "milk": "Scrambled eggs and butter portion contain pasteurised milk.",
+    "soya": "Bloomer bread contains soya."
+   },
+   "summary": "Contains gluten, eggs, milk, soya.",
+   "fullTable": true,
+   "ingredients": "WHITE BLOOMER (Wheat Flour (with Calcium, Iron, Niacin, Thiamine, Folic Acid), Water, Vegetable Oils (Rapeseed, Palm), Yeast, Salt, Dextrose, Wheat Protein, Spirit Vinegar, Emulsifiers (E471, E472 (e)), Palm Fat, Flour Treatment Agent (E300), Wheat Flour, Soya OR MALTED BROWN BLOOMER (Wheat Flour (with Calcium Carbonate, Iron, Niacin, Thiamine, Folic Acid), Water, Malted Wheat Flakes, Wheat Bran, Yeast, Malted Barley Flour, Salt, Vegetable Oils (Rapeseed Oil, Palm Oil), Wheat Protein, Spirit Vinegar, Emulsifiers (E471, E472(e)), Malted Wheat Flour, Flour Treatment Agents (E300), Palm Fat, Wheat Flour, Soya. EGGS: Eggs can be poached, fried or scrambled. Only Scrambled Eggs contain PASTEURISED Semi-Skimmed Milk, Black Pepper. RAPESEED OIL."
+  },
+  {
+   "slug": "extra-saucy-wings",
+   "name": "Extra Saucy Wings",
+   "variant": "",
+   "category": "Chicken",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/extra-saucy-wings",
+   "contains": [
+    "eggs",
+    "milk",
+    "mustard"
+   ],
+   "mayContain": [],
+   "notes": {
+    "eggs": "Lightly spiced yogurt mayo contains pasteurised egg",
+    "milk": "Lightly spiced yogurt mayo contains pasteurised milk",
+    "mustard": "Lightly spiced yogurt mayo contains mustard"
+   },
+   "summary": "Contains eggs, milk, mustard.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN WINGS (Chicken Wings, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) BASTING SAUCE ( View Spices (click to view) ) PERi TAMER (Water, Brown Sugar, Sugar, Tomato Paste, Spirit Vinegar, Cane Molasses, Lemon Juice, Rapeseed Oil, Smoked Paprika, Apple Juice From concentrate, Salt, Garlic Puree, Stabiliser: Xanthan Gum, Stabiliser: Guar Gum) LIGHTLY SPICED YOGURT MAYO (Water, Yogurt (Milk), Rapeseed Oil, White Wine Vinegar, Cornflour, Sugar, Free Range Egg Yolk Powder, Coriander Leaves, Salt, Mustard Powder, Lemon Juice Concentrate, Red Chillies, Onion Powder, Stabilisers (Xanthan Gum, Guar Gum), Cracked Black Pepper, Preservative (Potassium Sorbate), Ground White Pepper, Ground Coriander, Birds Eye Chillies)"
+  },
+  {
+   "slug": "extra-virgin-olive-oil",
+   "name": "Extra Virgin Olive Oil",
+   "variant": "",
+   "category": "Spices & Sauces",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/extra-virgin-olive-oil",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Extra Virgin Olive Oil"
+  },
+  {
+   "slug": "fino-pitta",
+   "name": "Fino Pitta",
+   "variant": "",
+   "category": "Burgers, Pittas, Wraps",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/fino-pitta",
+   "contains": [
+    "gluten",
+    "milk",
+    "mustard"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Pitta bread contains gluten from wheat. Caramelised red onion made using malt vinegar, gluten present at <20ppm from barley",
+    "milk": "Halloumi cheese contains pasteurised cow’s, sheep’s and goat’s milk",
+    "mustard": "Roast Garlic aioli contains mustard"
+   },
+   "summary": "Contains gluten, milk, mustard.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN FILLET OR THIGHS (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water). PITTA BREAD (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Water, Sourdough (Sourdough, Salt, Brandy Vinegar, Wheat Starch), Yeast, Salt) HALLOUMI CHEESE ((Milk, Salt, Mint), Rapeseed Oil) CARAMELISED RED ONION RELISH (Sliced Red Onions, Malt Vinegar (From Barley), Colour (Ammonia Caramel), Demerara Sugar, Muscovado Sugar, Sugar, Modified Maize Starch, Garlic Puree, Lemon Juice Concentrate, Salt, Ground Cumin, Paprika, African Birds Eye Chillies, Dried Oregano, Ground Coriander) OR ( Caramelised Red Onions (Red Onion, Balsamic Vinegar (Wine Vinegar, Grape Must), Muscovado Sugar, Sunflower Oil), Water, Brown Sugar, Malt Vinegar (From Barley), Sugar, Cornflour, Dehydrated Onion, Garlic Puree, Concentrated Lemon Juice, Salt, Onion Powder, Ground Cumin, Paprika, Birds Eye Chilli, Ground Coriander, Oregano LETTUCE LEAF Roast GARLIC AIOLI (Water, Rapeseed Oil, Garlic Puree, Cornflour, Lemon Juice, Chives, Spirit Vinegar, Parsley, Salt, Modified Starch, Tapioca Starch, Dijon Mustard (Water, Mustard Seeds, Spirit Vinegar, Salt), Spices (Paprika, Chilli (Capsicums, African Bird’s Eye Chillies)), Flavouring: Lactic Acid)"
+  },
+  {
+   "slug": "frozen-cocktails",
+   "name": "In select restaurants",
+   "variant": "Frozen Cocktails",
+   "category": "Drinks",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/frozen-cocktails",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "SAVANNA BEACH: Tropical Crush ( Pineapple juice, Water, Sugar, Coconut drink , Banana puree, Lime juice, Stabilizers: Xanthan gum, Gellan gum, Antioxidant: Ascorbic Acid, Natural flavourings: Citric Acid), Vodka, Lime Wedge. STRAWBERRY SUNSET: Pink Berry Crush (Water, Sugar, Strawberry puree, Lemon juice, Peach concentrate, Blackcurrant juice, Strawberry concentrate, Natural flavouring, Concentrate (Sweet potato, apple, radish and cherry), Citric acid), Vodka, Lime Wedge. NOTE: Our cocktails are served with a wedge of lime which contains shellac. Cocktails are plant based when served without the lime."
+  },
+  {
+   "slug": "garlic-bread",
+   "name": "Garlic Bread",
+   "variant": "",
+   "category": "Sides",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/garlic-bread",
+   "contains": [
+    "gluten"
+   ],
+   "mayContain": [
+    "soya"
+   ],
+   "notes": {
+    "gluten": "Contains gluten from wheat and rye",
+    "soya": "Portuguese roll may contain soya"
+   },
+   "summary": "Contains gluten.",
+   "fullTable": true,
+   "ingredients": "PORTUGUESE ROLL (Fortified Wheat Flour (Wheat Flour, CalciumCarbonate, Iron, Niacin, Thiamine, Folic Acid), Water, Biga Dough (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin,Thiamine, Folic Acid), Water, Yeast, Salt), Rye Flour (Gluten), Yeast,Salt, Olive Oil, Crumb Softener (Wheat Flour, Enzymes, Sunflower Oil),Bread Improver (Wheat Flour, Emulsifier (Mono- And Diacetyltartaric AcidEsters Of Mono- And Diglycerides Of Fatty Acids)), Flour Treatment Agent(Ascorbic Acid), Sunflower Oil, Enzymes) GARLIC & CHILLI SPREAD (Vegetable Shortening (Rapeseed Oil, Palm Oil, Water, Colour (Carotenes)), Garlic Puree, Water, Green Chilli, Garlic Powder, Salt, White Pepper, Parsley"
+  },
+  {
+   "slug": "garlic-churrasco-burger",
+   "name": "Garlic Churrasco Burger",
+   "variant": "",
+   "category": "Burgers, Pittas, Wraps",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/garlic-churrasco-burger",
+   "contains": [
+    "gluten"
+   ],
+   "mayContain": [
+    "soya"
+   ],
+   "notes": {
+    "gluten": "Portuguese roll contains gluten from wheat and rye",
+    "soya": "Portuguese roll may contain soya"
+   },
+   "summary": "Contains gluten.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil,Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) PORTUGUESE ROLL (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamine, Folic Acid), Water, Biga Dough (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamine, Folic Acid), Water, Yeast, Salt), Rye Flour (Gluten), Yeast, Salt, Olive Oil, Crumb Softener (Wheat Flour, Enzymes, Sunflower Oil), Bread Improver (Wheat Flour, Emulsifier (Mono & Diacetyltartaric Acid Esters of Mono & Diglycerides of Fatty Acids)), Flour Treatment Agent (Ascorbic Acid), Sunflower Oil, Enzymes) GARLIC & CHILLI SPREAD (Vegetable Shortening (Rapeseed Oil, Palm Oil, Water, Colour (Carotenes)), Garlic Puree, Water, Green Chilli, Garlic Powder, Salt, White Pepper, Parsley MIXED SALAD LEAVES PINK PICKLED ONIONS (Red Onions, White Sugar, Spirit Vinegar) SMOKY CHURRASCO PERINAISE (Water, Rapeseed Oil, Sugar, Vinegar Blend (Spirit Vinegar, Cider Vinegar), Thickener (Modified Maize Starch), Medium Bulk (Water, Spirit Vinegar, Onion, Spice Mix (Salt, Spices (Red Chilli Pepper, Birds Eye Chilli), Herb (Bay Leaf)), Rapeseed Oil, Lemon Juice, Green Chilli, Garlic Puree, Lemon Zest, Stabiliser (Guar Gum, Xanthan Gum), Spice Mix (Salt, Spices (Paprika, Red Chilli Pepper, White Pepper), Yeast Extract, Flavourings, Colour (Curcumin), Salt, Modified Starch, Garlic Puree, Tapioca Starch, Garlic Powder, Smoked Maltodextrin, Paprika, Colour (Paprika Extract) BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "garlic-perinaise",
+   "name": "Garlic PERinaise",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/garlic-perinaise",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Water, Rapeseed Oil, Sugar, Vinegar Blend (Spirit Vinegar, Cider Vinegar), Thickener (Modified Maize Starch), Medium Sauce (Water, Spirit Vinegar, Onion, Spice Mix (Salt, Spices (Red Chilli Pepper, Birds Eye Chilli), Herb (Bay Leaf)), Rapeseed Oil, Lemon Juice, Green Chilli, Garlic Puree, Un-waxed Lemon Zest, Stabilisers (Guar Gum, Xanthan Gum), Spice Mix (Salt, Spices (Paprika, Red Chilli Pepper, White Pepper)), Yeast Extract, Flavourings, Colour (Curcumin, Paprika Extract), Salt, Modified Starch, Garlic Puree, Tapioca Starch, Garlic Powder, Paprika"
+  },
+  {
+   "slug": "gooey-caramel-cheesecake",
+   "name": "Gooey Caramel Cheesecake",
+   "variant": "",
+   "category": "Desserts",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/gooey-caramel-cheesecake",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "soya"
+   ],
+   "mayContain": [
+    "nuts"
+   ],
+   "notes": {
+    "gluten": "Contains gluten from wheat. May contain gluten from oats and barley.",
+    "eggs": "Contains pasteurised egg.",
+    "milk": "Contains pasteurised milk from cheesecake and cream.",
+    "nuts": "May contain almonds, walnuts, pecans, hazelnuts and pistachios.",
+    "soya": "Contains soya lecithin."
+   },
+   "summary": "Contains gluten, eggs, milk, soya.",
+   "fullTable": true,
+   "ingredients": "Cream Cheese (33%) (Milk, Salt, Thickener (Guar Gum)), Dulce De Leche (14%) (Sugar, Water, Full Cream Milk Powder, Glucose Syrup, Fructose Syrup, Skimmed Milk Powder), Digestive Biscuit Crumb (Wheat Flour (Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Wholemeal Wheat Flour, Vegetable Oil (Palm Oil, Rapeseed Oil), Sugar, Invert Sugar Syrup, Raising Agents (Sodium Bicarbonate, Ammonium Bicarbonate) Salt), White Chocolate (8%) (Sugar, Cocoa Butter, Whole Milk Powder, Emulsifier (Soya Lecithin), Natural Vanilla Flavouring), Sour Cream (Milk), Single Cream (Milk), Egg, Sugar, Unsalted Butter (Milk), Wheat Flour (Calcium Carbonate, Niacin, Iron, Thiamin, Folic Acid), Brown Sugar, Black Treacle, Natural Vanilla Flavouring, Thickener (Xanthan Gum). Served with a side of Cream (Milk)."
+  },
+  {
+   "slug": "grilled-chicken-burger",
+   "name": "Updated Allergen Information / New recipe",
+   "variant": "Grilled Chicken Burger",
+   "category": "Burgers, Pittas, Wraps",
+   "updated": "29 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/grilled-chicken-burger",
+   "contains": [
+    "gluten",
+    "mustard"
+   ],
+   "mayContain": [
+    "soya"
+   ],
+   "notes": {
+    "gluten": "Rustic roll contains gluten from wheat and Oats",
+    "mustard": "PERI-House sauce contains Mustard",
+    "soya": "Rustic roll may contain soya"
+   },
+   "summary": "Contains gluten, mustard.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN FILLET (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) . RUSTIC PORTUGUESE ROLL (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate,Iron, Niacin, Thiamin), Water, Bakery Improver (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin), Sugar, Salt, Emulsifiers (Mono- And Diglycerides Of Fatty Acids, Sodium Stearoyl-2-Lactylate), Vegetable Oils (Palm, Rapeseed), Inactive Dry Yeast, Flour Treatment Agent (Ascorbic Acid), Potato Flakes (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Gluten Free Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina. (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Gluten Free Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina. . TOMATO SLICE, LETTUCE LEAF . PERI- HOUSE SAUCE : (Water, Rapeseed Oil, Gherkins (Gherkins, Water, Spirit Vinegar, Sugar, Salt), Sugar, American Style Mustard (Mustard) (Garlic Powder, Water, Spirit Vinegar, Yellow Mustard Flour (Mustard), Mustard seed husk (Mustard), Sea Salt, Turmeric, Paprika, Oriental Mustard Flour (Mustard)), Spirit Vinegar, Modified Maize Starch, Lemon Juice, Spice Mix (Yeast Extract, Flavourings, Colour: E100, Salt, Red Chilli Pepper, Paprika, White Pepper), Salt, Garlic Puree, Tapioca Starch, Spice Mix (Salt, Red Chilli Pepper, Birds Eye Chilli, Paprika), Garlic Powder, Colour: Paprika Extract (Rapeseed Oil, Colour: Paprika Extract (Paprika Extract, Sunflower Oil)), Modified Starch, Paprika, Preservative: Potassium Sorbate) . PERI KETCHUP (Tomatoes, Brown Sugar, Water, Onion, Red Wine Vinegar, Roasted Red Pepper, Tomato Paste, Cornflour, Cane Molasses, Salt, Worcester Sauce (Water, Black Treacle, Spirit Vinegar, Tamarind, Salt, Onion Powder, Garlic Powder, White Pepper, Pimento, Ginger, Paprika, Clove), Lemon Juice, Garlic Puree, Ginger Puree, Gelling Agent (Pectin), Spices (Paprika, Chilli (Capsicums, African Birds Eye Chillies)), Curry Powder (Ground Spices (Coriander, Turmeric, Cumin, Black Pepper, Paprika, Caraway Seed, Cayenne, Fenugreek), Salt, Garlic Powder, Rapeseed Oil, Ground Oregano), Bay Leaf, Colour (Paprika Extract), Ground Coriander, Ground Cumin . BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "grilled-chicken-pitta",
+   "name": "Grilled Chicken Pitta",
+   "variant": "Single & double",
+   "category": "Burgers, Pittas, Wraps",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/grilled-chicken-pitta",
+   "contains": [
+    "gluten"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Pitta bread contains gluten from wheat"
+   },
+   "summary": "Contains gluten.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN FILLET (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) PITTA BREAD (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Water, Sourdough (Sourdough, Salt, Brandy Vinegar, Wheat Starch), Yeast, Salt) RAINBOW SLAW (Pink Cabbage, White Cabbage, Savoy Cabbage, Spring Green, Carrot, Radish, Butternut Squash), Dressing (Water, Rapeseed Oil, Olive Oil, Cider Vinegar, Sugar, Roast Shallots (Shallots, Sunflower Oil), Salt, Tapioca Starch, Modified Starch, Garlic Puree, Cornflour, Onion Powder, Spices (Paprika, Chilli (Capsicums, African Birds Eye Chillies)), Dried Red Pepper, Flavouring (Lactic Acid), Black Pepper, Parsley, Oregano, Preservative (Potassium Sorbate), Fennel) LEMON & HERB MAYO (Water, Rapeseed Oil, Thickener (Modified Maize Starch), Spirit Vinegar, Sugar, Lemon Zest, Onion, Salt, Modified Starch, Tapioca Starch, Concentrated Lemon Juice, Turmeric Solution (Water, Colour (Curcumin)), Garlic Puree, Colour (Paprika Extract), Rosemary, Spice Mix (Sea Salt, Spices (Red Chilli Pepper, Paprika, Birds Eye Chilli)), Thyme, Preservative (Potassium Sorbate) BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "grilled-chicken-wrap",
+   "name": "Grilled Chicken Wrap",
+   "variant": "Single & double",
+   "category": "Burgers, Pittas, Wraps",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/grilled-chicken-wrap",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "mustard"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Wrap contains gluten from wheat",
+    "eggs": "Lightly spiced yogurt mayo contains pasteurised egg",
+    "milk": "Lightly spiced yogurt mayo contains pasteurised milk",
+    "mustard": "Lightly spiced yogurt mayo contains mustard"
+   },
+   "summary": "Contains gluten, eggs, milk, mustard.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN FILLET (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) WRAP (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamine, Folic Acid), Water, Vegetable Oils (Palm Oil, Rapeseed Oil), Raising Agents (Sodium Carbonates, Malic Acid, Diphosphates), Sugar, Stabiliser (Sodium Carboxymethyl Cellulose), Salt) LETTUCE LEAF CHILLI JAM (Tomatoes, Brown Sugar, Red Wine Vinegar, Red Chilli, Red Onions, Cornflour, Tomato Paste, Garlic Puree, Salt, Gelling Agent (Pectin)) LIGHTLY SPICED YOGURT MAYO (Water, Greek Style Yogurt (Milk), Rapeseed Oil, White Wine Vinegar, Cornflour, Sugar, Egg Yolk Powder, Coriander, Salt, Mustard Powder, Lemon Juice Concentrate, Milled Red Chillies, Onion Powder, Cracked Black Pepper, Preservative (Potassium Sorbate), Stabilisers (Guar Gum, Xanthan Gum), Ground White Pepper, Ground Coriander, African Birds Eye Chillies) BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "grilled-halloumi-cheese",
+   "name": "Grilled Halloumi Cheese",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/grilled-halloumi-cheese",
+   "contains": [
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "milk": "Contains pasteurised cow’s, sheep’s and goat’s milk."
+   },
+   "summary": "Contains milk.",
+   "fullTable": true,
+   "ingredients": "Halloumi Cheese ((Milk, Salt, Mint), Vegetable Oil)"
+  },
+  {
+   "slug": "grilled-tomato",
+   "name": "Grilled Tomatoes",
+   "variant": "",
+   "category": "Sides, Extras & Garnish",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/grilled-tomato",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Grilled Tomatoes - Tomatoes"
+  },
+  {
+   "slug": "halloooooooumi-sticks",
+   "name": "HalloOoOoOoumi Sticks",
+   "variant": "",
+   "category": "Starters",
+   "updated": "29 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/halloooooooumi-sticks",
+   "contains": [
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "milk": "Contains pasteurised cow’s, sheep’s and goat’s milk"
+   },
+   "summary": "Contains milk.",
+   "fullTable": true,
+   "ingredients": "HALLOUMI Cheese (Milk, Salt, Mint), Vegetable Oil) . PINEAPPLE AND RED PEPPER SALSA (Red Pepper, Pineapple Slices, Chilli, Garlic, Cider Vinegar, Olive Oil, Brown Sugar, Lemon Juice Concentrate, Cornflour, Salt, Smoked Paprika). . PERi-PERi VUSA (Olive Oil, Lemon Juice, Spice Mix (African Birds Eye Chilli, Salt), Garlic Puree, Red Chilli Puree, Chilli Infused Sunflower Oil (Sunflower Oil, Chilli, Salt),Red Wine Vinegar - Plant-Based"
+  },
+  {
+   "slug": "halloumi-sticks-chilli-jam",
+   "name": "Halloumi Sticks & Chilli Jam",
+   "variant": "",
+   "category": "Starters",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/halloumi-sticks-chilli-jam",
+   "contains": [
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "milk": "Halloumi contains Cow's, Sheep's and Goats' milk"
+   },
+   "summary": "Contains milk.",
+   "fullTable": true,
+   "ingredients": "HALLOUMI STICKS (Milk, Salt, Mint), CHILLI JAM (Tomatoes, Brown Sugar, Red Wine Vinegar, Red Chilli, Red Onions, Cornflour, Tomato Paste, Garlic Puree, Salt, Gelling Agent (Pectin)) RAPESEED OIL"
+  },
+  {
+   "slug": "halloumi-sticks-peri-honey",
+   "name": "Halloumi Sticks & PERi-Honey",
+   "variant": "",
+   "category": "Starters",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/halloumi-sticks-peri-honey",
+   "contains": [
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "milk": "Halloumi contains pasteurised Cow's, Sheep's and Goats' milk"
+   },
+   "summary": "Contains milk.",
+   "fullTable": true,
+   "ingredients": "HALLOUMI STICKS (Milk, Salt, Mint) PERi-Honey (Blossom Honey, Birds Eye Chilli, Natural Capsicum Flavouring) RAPESEED OIL"
+  },
+  {
+   "slug": "hash-browns",
+   "name": "Hash Browns",
+   "variant": "",
+   "category": "Sides, Extras & Garnish",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/hash-browns",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Potatoes, Sunflower Oil, Dehydrated Potato, Salt, Sugar, Potato Starch, Flavourings, Spices OR Potatoes, Potato Starch, vegetable Oils (Rapeseed and Sunflower oil), Onions, Potato Flakes, and starch, Salt, Pea Starch, Dextrose, White Pepper, Glycose Syrup, Onion Oil OR Potatoes, Palm Oil, Onion, Potato Flakes, Salt, White Pepper, Dextrose, Turmeric OR Potatoes, Sunflower Oil, Salt, Onion Powder, Stabilisers, Hydoxypropylmethylcellulose, Diphosphates, Spices OR Potatoes, Sunflower Oil, Potato Starch, Onions, Potato Flakes, Salt, Pea fibers, Dextrose, Flavouring (Onion), Pepper OR Potatoes Potato starch, Vegetable oils (Rapeseed, Sunflower, in varying proportions), Diced onions, Potato flakes, Pea starch, Dextrose, Salt, White pepper, Glucose syrup, Onion oil CHILLI JAM (Tomatoes, Brown Sugar, Red Wine Vinegar, Red Chilli, Red Onions, Cornflour, Tomato Paste, Garlic Puree, Salt, Gelling Agent (Pectin)) PERi SALT (PERi-Salt (Salt, Spices (Paprika, Red Chilli, Pepper, White Pepper, African Birds Eye Chilli), Sugar, Cornflour, Yeast Extract, Citric Acid, Flavourings, Colour (Paprika Extract)"
+  },
+  {
+   "slug": "hearty-bowl",
+   "name": "Select Restaurants",
+   "variant": "Hearty Bowl",
+   "category": "Salads & Bowls",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/hearty-bowl",
+   "contains": [
+    "gluten",
+    "sulphites"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Hearty Grains contains barley, spelt and wheat.",
+    "sulphites": "Pickles contain sulphites at <6ppm."
+   },
+   "summary": "Contains gluten, sulphites.",
+   "fullTable": true,
+   "ingredients": "HEARTY GRAINS (Butternut Squash, Cooked Musu Black Barley (Water, Musu Black Barley), Cooked Pearl Barley (Peal Barley, Water), Cooked Spelt (Spelt, Water), Cooked Giant Cous Cous (Water, Giant Cous Cous [Wheat Flour]), Cooked Piccolo Wheat (Piccolo Wheat, Water), Green Chickpeas, Red Pepper, Kale, Rapeseed Oil, Pumpkin Seeds, Sweetened Dried Cranberries (Cranberries, Sugar, Sunflower Oil), Rapeseed Oil, Lemon Infused Rapeseed Oil (Rapeseed Oil, Natural Lemon Flavouring), Grain Spice Mix (Salt, Ground Paprika, Ground Coriander, Ground Cayenne Chilli, Cumin Seed, Cracked Black Pepper, Rapeseed Oil), Salt), PERi-RAINBOW SLAW MIX (Pink Cabbage, White Cabbage, Savoy Cabbage, Spring Green, Carrot, Radish, Butternut Squash), Dressing (Water, Rapeseed Oil, Olive Oil, Cider Vinegar, Sugar, Roast Shallots (Shallots, Sunflower Oil), Salt, Tapioca Starch, Modified Starch, Garlic Puree, Cornflour, Onion Powder, Spices (Paprika, Chilli (Capsicums, African Birds Eye Chillies)), Dried Red Pepper, Flavouring (Lactic Acid), Black Pepper, Parsley, Oregano, Preservative (Potassium Sorbate), Fennel PERi-PERi Seeds (Sunflower Seeds, Pumpkin Seeds, Rapeseed Oil, White Sugar, Salt, Paprika, Garlic Powder, African Birds Eye Chilli Flakes, Oregano), CREAMY SALAD DRESSING (Water, Rapeseed Oil, Olive Oil, Cider Vinegar, Roast Shallots (Shallots, Rapeseed Oil), Sugar, Salt, Cornflour, Tapioca starch, Modified Starch, Garlic Puree, Flavouring: Lactic Acid, Black pepper, Parsley, Oregano, Preservative: Potassium Sorbate, Fennel, Turmeric, MIXED LEAF SALAD, PICKLED CUCUMBER (Cucumber, Onion, Sugar , Sea Salt , Garlic Puree (Garlic Puree, Garlic, Citric Acid), Fennel Seeds, Coriander Seeds, Caraway Seeds, Black peppercorns, Turmeric, Dried Dill, Water, Spirit Vinegar) CHARRED CORN (Water, Rapeseed Oil, Sugar, White Wine Vinegar, Cornflour, Medium Sauce (Water, Spirit Vinegar, Onion, Spice Mix (Salt, Red chilli pepper, Birds eye chilli, Herbs), Rapeseed Oil, Lemon Juice, Green Chilli , Garlic Puree , Lemon Zest ), Salt , Modified starch, Colour: Paprika Extract (Rapeseed Oil, Colour: Paprika Extract (E160C Paprika Extract, Sunflower Oil)), Spice Mix (Flavouring, Salt, Paprika, Red chilli pepper, White Pepper, Yeast Extract, Colour: E100), Coriander , Flavouring: Lactic acid , Garlic Puree , Garlic Powder , Concentrated Lemon Juice , Onion Powder , Paprika , Birds eye chilli , Black Pepper , White Pepper , Ground Coriander)"
+  },
+  {
+   "slug": "hearty-grains",
+   "name": "Hearty Grains",
+   "variant": "",
+   "category": "Sides",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/hearty-grains",
+   "contains": [
+    "gluten"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Contains Musu Black Barley, Pearl Barley, Spelt, Wheat, Piccolo Wheat."
+   },
+   "summary": "Contains gluten.",
+   "fullTable": true,
+   "ingredients": "HEARTY GRAINS (Butternut Squash, Cooked Musu Black Barley (Water, Musu Black Barley), Cooked Pearl Barley (Peal Barley, Water), Cooked Spelt (Spelt, Water), Cooked Giant Cous Cous (Water, Giant Cous Cous [Wheat Flour]), Cooked Piccolo Wheat (Piccolo Wheat, Water), Green Chickpeas, Red Pepper, Kale, Rapeseed Oil, Pumpkin Seeds, Sweetened Dried Cranberries (Cranberries, Sugar, Sunflower Oil), Rapeseed Oil, Lemon Infused Rapeseed Oil (Rapeseed Oil, Natural Lemon Flavouring), Grain Spice Mix (Salt, Ground Paprika, Ground Coriander, Ground Cayenne Chilli, Cumin Seed, Cracked Black Pepper, Rapeseed Oil), Salt) CREAMY SALAD DRESSING (Water, Rapeseed Oil, Olive Oil, Cider Vinegar, Roast Shallots (Shallots, Rapeseed Oil), Sugar, Salt, Cornflour, Tapioca starch, Modified Starch, Garlic Puree, Flavouring: Lactic Acid, Black pepper, Parsley, Oregano, Preservative: Potassium Sorbate, Fennel, Turmeric."
+  },
+  {
+   "slug": "herby-pickle-bowl",
+   "name": "Herby Pickle Bowl",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/herby-pickle-bowl",
+   "contains": [
+    "sulphites"
+   ],
+   "mayContain": [],
+   "notes": {
+    "sulphites": "Pickles contain sulphites at <6ppm"
+   },
+   "summary": "Contains sulphites.",
+   "fullTable": true,
+   "ingredients": "PICKLED CUCUMBER (Cucumber, Onion, Sugar , Sea Salt , Garlic Puree (Garlic Puree, Garlic, Citric Acid), Fennel Seeds, Coriander Seeds, Caraway Seeds, Black peppercorns, Turmeric, Dried Dill, Water, Spirit Vinegar)"
+  },
+  {
+   "slug": "hot-drinks-with-milk",
+   "name": "In select restaurants",
+   "variant": "Hot Drinks with Milk",
+   "category": "Drinks",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/hot-drinks-with-milk",
+   "contains": [
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "milk": "Contains semi-skimmed milk. Hot chocolate powder contains milk powder"
+   },
+   "summary": "Contains milk.",
+   "fullTable": true,
+   "ingredients": "CAPPUCCINO - Espresso (Water, coffee), milk LATTE - Espresso (Water, coffee), milk WHITE AMERICANO - Americano (Water, coffee), milk GALAO - Espresso (Water, coffee), milk EVERYDAY BREW - Tea, milk EARL GREY - Tea, milk HOT CHOCOLATE - (Milk, Sugar, Skimmed Milk Powder, Milk Permeate Powder, Cocoa Powder)"
+  },
+  {
+   "slug": "hot-drinks-with-oat",
+   "name": "Only in Gatwick",
+   "variant": "Hot Drinks with Oat",
+   "category": "Drinks",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/hot-drinks-with-oat",
+   "contains": [
+    "gluten"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Oat drink contains gluten from oats"
+   },
+   "summary": "Contains gluten.",
+   "fullTable": true,
+   "ingredients": "CAPPUCCINO - Espresso (Water, coffee), Oat Drink (Water, Oats (10%), Rapeseed Oil, Acidity Regulator (Dipotassium Phosphate), Minerals (Calcium Carbonate, Potassium Iodide), Salt, Vitamins (D2, Riboflavin, B12) LATTE - Espresso (Water, coffee), Oat Drink (Water, Oats (10%), Rapeseed Oil, Acidity Regulator (Dipotassium Phosphate), Minerals (Calcium Carbonate, Potassium Iodide), Salt, Vitamins (D2, Riboflavin, B12) WHITE AMERICANO - Americano (Water, coffee), Oat Drink (Water, Oats (10%), Rapeseed Oil, Acidity Regulator (Dipotassium Phosphate), Minerals (Calcium Carbonate, Potassium Iodide), Salt, Vitamins (D2, Riboflavin, B12) GALAO - Espresso (Water, coffee), Oat Drink (Water, Oats (10%), Rapeseed Oil, Acidity Regulator (Dipotassium Phosphate), Minerals (Calcium Carbonate, Potassium Iodide), Salt, Vitamins (D2, Riboflavin, B12) EVERYDAY BREW - Tea, Oat Drink (Water, Oats (10%), Rapeseed Oil, Acidity Regulator (Dipotassium Phosphate), Minerals (Calcium Carbonate, Potassium Iodide), Salt, Vitamins (D2, Riboflavin, B12) EARL GREY - Tea, Oat Drink (Water, Oats (10%), Rapeseed Oil, Acidity Regulator (Dipotassium Phosphate), Minerals (Calcium Carbonate, Potassium Iodide), Salt, Vitamins (D2, Riboflavin, B12)"
+  },
+  {
+   "slug": "houmous-with-peri-peri-drizzle-and-pitta-bread",
+   "name": "Houmous with PERi-PERi Drizzle and Pitta Bread",
+   "variant": "",
+   "category": "Starters",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/houmous-with-peri-peri-drizzle-and-pitta-bread",
+   "contains": [
+    "gluten",
+    "sesame"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Pitta Bread contains Gluten from Wheat",
+    "sesame": "Houmous contains Sesame paste"
+   },
+   "summary": "Contains gluten, sesame.",
+   "fullTable": true,
+   "ingredients": "PITTA BREAD (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Water, Sourdough (Sourdough, Salt, Brandy Vinegar, Wheat Starch), Yeast, Salt HOUMOUS (Chickpeas (Chickpeas, Water, Sodium Bicarbonate), Lemon Juice, Rapeseed Oil, Water, Sesame Paste, Salt, Garlic Puree, Preservative (Potassium Sorbate)) PERi-PERi Drizzle (Olive Oil, Lemon Juice, Chilli Infused Sunflower Oil (Sunflower Oil, Red Chilli, Salt), Garlic Puree, Red Chilli Puree, Red Wine Vinegar, Salt, Spices (Paprika, African Birds Eye Chilli)"
+  },
+  {
+   "slug": "karma-drinks-gingerella",
+   "name": "Karma Drinks Gingerella",
+   "variant": "",
+   "category": "Drinks",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/karma-drinks-gingerella",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Carbonated water, organic sugar, organic ginger extract (0.6%), organic lemon juice from concentrate, natural flavours (ginger and sweet blackberry), antioxidant: ascorbic acid."
+  },
+  {
+   "slug": "kids-pip-organic",
+   "name": "Kids Pip Organic",
+   "variant": "",
+   "category": "Nandinos",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/kids-pip-organic",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "CLOUDY APPLE JUICE (Organic Apple Juice (100%)) PINEAPPLE & MANGO SMOOTHIE (Organic Apple Juice, Organic Pineapple Juice (15%), Organic Banana Puree, Organic Mango Puree (7%), Organic Orange Juice)"
+  },
+  {
+   "slug": "kinsale-pale-ale",
+   "name": "Blacks Brewery",
+   "variant": "Kinsale Pale Ale",
+   "category": "Drinks",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/kinsale-pale-ale",
+   "contains": [
+    "gluten"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Contains Barley"
+   },
+   "summary": "Contains gluten.",
+   "fullTable": false,
+   "ingredients": "Water, Malted Barley (Gluten), Hops, Yeast"
+  },
+  {
+   "slug": "little-pitta",
+   "name": "Little Pitta",
+   "variant": "",
+   "category": "Nandinos",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/little-pitta",
+   "contains": [
+    "celery",
+    "gluten"
+   ],
+   "mayContain": [],
+   "notes": {
+    "celery": "Heinz Ketchup contains celery",
+    "gluten": "Pitta bread contains gluten from wheat"
+   },
+   "summary": "Contains celery, gluten.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN FILLET (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) . PITTA BREAD (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Water, Sourdough (Sourdough, Salt, Brandy Vinegar, Wheat Starch), Yeast, Salt . LEMON & HERB MAYO (Water, Rapeseed Oil, Thickener (Modified Maize Starch), Spirit Vinegar, Sugar, Lemon Zest, Onion, Salt, Modified Starch, Tapioca Starch, Concentrated Lemon Juice, Turmeric Solution (Water, Colour (Curcumin)), Garlic Puree, Colour (Paprika Extract), Rosemary, Spice Mix (Sea Salt, Spices (Red Chilli Pepper, Paprika, Birds Eye Chilli)), Thyme, Preservative (Potassium Sorbate) . LETTUCE LEAF . HEINZ KETCHUP Tomatoes, Spirit Vinegar, Sugar, Salt, Spices, Spice & Herb Extract (Celery) . BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "loaded-chips",
+   "name": "Fully Loaded Chips",
+   "variant": "",
+   "category": "Sides",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/loaded-chips",
+   "contains": [
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "milk": "Cheddar cheese contains pasteurised milk."
+   },
+   "summary": "Contains milk.",
+   "fullTable": true,
+   "ingredients": "PERi SALTED CHIPS (Potatoes, Vegetable Oils (Rapeseed & Sunflower), Salt, PERi-Salt (Salt, Spices (Paprika, Red Chilli Pepper, White Pepper, African Birds Eye Chilli), Sugar, Cornflour, Yeast Extract, Citric Acid, Flavourings, Colour (Paprika Extract)) PULLED CHICKEN (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water), Medium Basting Sauce (Water, Rapeseed Oil, Spirit Vinegar, Green Chilli, Spice Mix (Salt, Spices (Red Chilli Pepper, African Birds Eye Chilli, Paprika) Herb (Bay Leaf)), Lemon, Stabilisers (Guar gum, Xanthan Gum), Onion, Preservative (Potassium Sorbate), Garlic Puree CHEDDAR CHEESE (Milk) RAINBOW SLAW DRESSING (Water, Rapeseed Oil, Olive Oil, Cider Vinegar, Sugar, Roast Shallots (Shallots, Sunflower Oil), Salt, Tapioca Starch, Modified Starch, Garlic Puree, Cornflour, Onion Powder, Spices (Paprika, Chilli (Capsicums, African Birds Eye Chillies)), Dried Red Pepper, Flavouring (Lactic Acid), Black Pepper, Parsley, Oregano, Preservative (Potassium Sorbate), Fennel) PERi-TAMER BASTE (Water, Brown Sugar, Sugar, Tomato Paste, Spirit Vinegar, Cane Molasses, Lemon Juice, Rapeseed Oil, Smoked Paprika, Apple Juice from Concentrate, Salt, Garlic Puree, Stabilisers (Xanthan Gum, Guar Gum) SPRING ONIONS BASTING SAUCE (View Spices) (click to view)"
+  },
+  {
+   "slug": "loaded-mac-cheese",
+   "name": "Loaded PERi-Mac",
+   "variant": "",
+   "category": "Sides",
+   "updated": "29 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/loaded-mac-cheese",
+   "contains": [
+    "gluten",
+    "milk",
+    "mustard"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Pasta contains gluten from wheat."
+   },
+   "summary": "Contains gluten, milk, mustard.",
+   "fullTable": true,
+   "ingredients": "MAC & CHEESE (Cooked Macaroni Pasta (Water, Durum Wheat Semolina), Water, Vintage Cheddar Cheese (Milk), Whole Milk, Single Cream (Milk), Medium Fat Hard Cheese (Milk), Mozzarella Cheese (Milk), Butter (Milk), Salt, Modified Maize Starch, Yellow Mustard Powder, White Pepper, Ground Nutmeg) CHEDDAR CHEESE (Milk) PERi-CRUMB (Breadcrumbs (Rice Flour, Potato Starch, Tapioca Starch, Rapeseed Oil, Dextrose, Sugar, Yeast, Salt, Stabiliser (Hydroxypropyl Methylcellulose), Maize Starch, Psyllium Fibre), Garlic & Chilli Spread (Vegetable Shortening (Rapeseed Oil, Palm Oil, Water, Colour (Carotenes), Garlic Puree, Water, Green Chilli Puree, Garlic Powder, Salt, White Pepper, Parsley), Hot Baste (Water, Spirit Vinegar, Rapeseed Oil, Spice Mix (Birds Eye Chilli, Salt, Red Chilli Pepper, Paprika, Bay Leaf), Onion, Green Chilli, Lemon, Garlic Puree, Stabilisers (Xanthan Gum, Guar Gum) PULLED CHICKEN (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water), Medium Basting Sauce (Water, Rapeseed Oil, Spirit Vinegar, Green Chilli, Spice Mix (Salt, Spices (Red Chilli Pepper, African Birds Eye Chilli, Paprika) Herb (Bay Leaf)), Lemon, Stabilisers (Guar gum, Xanthan Gum), Onion, Preservative (Potassium Sorbate), Garlic Puree. PERi-TAMER BASTE (Water, Brown Sugar, Sugar, Tomato Paste, Spirit Vinegar, Cane Molasses, Lemon Juice, Rapeseed Oil, Smoked Paprika, Apple Juice from Concentrate, Salt, Garlic Puree, Stabilisers (Xanthan Gum, Guar Gum) BASTING SAUCE (View Spices) (click to view) (click to view) SPRING ONIONS"
+  },
+  {
+   "slug": "macho-peas",
+   "name": "Macho Peas",
+   "variant": "",
+   "category": "Sides",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/macho-peas",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Peas, Mint, Olive Oil, Bicarbonate of Soda, Parsley, Salt, Birds Eye Chilli"
+  },
+  {
+   "slug": "malt-vinegar",
+   "name": "Malt Vinegar",
+   "variant": "",
+   "category": "Spices & Sauces",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/malt-vinegar",
+   "contains": [
+    "gluten"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Contains gluten from barley"
+   },
+   "summary": "Contains gluten.",
+   "fullTable": true,
+   "ingredients": "Malt Vinegar (From Barley)"
+  },
+  {
+   "slug": "mango-gelado",
+   "name": "Mango Gelado",
+   "variant": "",
+   "category": "Desserts",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/mango-gelado",
+   "contains": [],
+   "mayContain": [
+    "eggs",
+    "milk",
+    "nuts"
+   ],
+   "notes": {
+    "eggs": "May contain egg.",
+    "milk": "May contain milk.",
+    "nuts": "May contain hazelnuts and pistachios."
+   },
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Water, Mango (35%), Sugar, Glucose, Oligofructose, Erythritol, Rice Starch, Pectin, Salt, Stabilisers (Tara gum), Acidity Regulator (Citric Acid)."
+  },
+  {
+   "slug": "mayonnaise-pot",
+   "name": "Mayonnaise Pot",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/mayonnaise-pot",
+   "contains": [
+    "mustard"
+   ],
+   "mayContain": [],
+   "notes": {
+    "mustard": "Contains Dijon mustard"
+   },
+   "summary": "Contains mustard.",
+   "fullTable": true,
+   "ingredients": "Water, Rapeseed Oil, Cornflour, Sugar, Spirit Vinegar, Salt, Dijon Mustard (Water, Mustard Seeds, Spirit Vinegar, Salt), Modified Starch, Tapioca Starch, Preservative (Potassium Sorbate), Turmeric"
+  },
+  {
+   "slug": "mediterranean-salad",
+   "name": "Mediterranean Salad",
+   "variant": "",
+   "category": "Salads & Bowls",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/mediterranean-salad",
+   "contains": [
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "milk": "Feta cheese contains pasteurised sheep’s and goat’s milk."
+   },
+   "summary": "Contains milk.",
+   "fullTable": true,
+   "ingredients": "SPICY MIXED OLIVES (Pitted Green and Purple Olives, Garlic Cloves, Red Peppers, Mushrooms, Salt, Grape Vinegar, Vegetable Oil, Dried Garlic, Herbes De Provence, Black Pepper, Chilli). MIXED SALAD LEAVES PERi SEMI-DRIED TOMATOES (Semi Dried Tomatoes, Rapeseed Oil, Sugar, Salt, Garlic, Chillies, Oregano) CUCUMBER BABY TOMATOES PINK PICKLED ONIONS (Red Onions, White Sugar, Spirit Vinegar) FETA CHEESE (Milk) SALAD DRESSING ((Extra Virgin Olive Oil, Fynbos Vinegar (Red Wine Vinegar, Concentrated Grape Must, Buchu, Honeybush, Rose Geranium, Wild Olives, Wild Rosemary), Salt, Black Pepper)."
+  },
+  {
+   "slug": "mimosa",
+   "name": "Only in Gatwick",
+   "variant": "Mimosa",
+   "category": "Drinks",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/mimosa",
+   "contains": [
+    "sulphites"
+   ],
+   "mayContain": [],
+   "notes": {},
+   "summary": "Contains sulphites.",
+   "fullTable": true,
+   "ingredients": "SPARKLING WINE (Grape Juice (Sulphites)) ORANGE JUICE (Oranges)"
+  },
+  {
+   "slug": "momo-elderflower-kombucha",
+   "name": "MOMO Elderflower Kombucha",
+   "variant": "",
+   "category": "Drinks",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/momo-elderflower-kombucha",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Filtered water, Kombucha culture, Organic raw cane sugar, Organic apple juice, Organic tea, Organic Elderflower"
+  },
+  {
+   "slug": "mushroom",
+   "name": "Mushroom",
+   "variant": "",
+   "category": "Sides, Extras & Garnish",
+   "updated": "09 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/mushroom",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Mushrooms - Grilled Mushroom, Rapeseed Oil, PERi-Salt"
+  },
+  {
+   "slug": "nandino-burger",
+   "name": "Nandino Burger",
+   "variant": "",
+   "category": "Nandinos",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandino-burger",
+   "contains": [
+    "celery",
+    "gluten"
+   ],
+   "mayContain": [
+    "soya"
+   ],
+   "notes": {
+    "celery": "Heinz Ketchup contains celery",
+    "gluten": "Roll contains gluten from wheat and oats",
+    "soya": "Roll may contain soya"
+   },
+   "summary": "Contains celery, gluten.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN FILLET (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) . ROLL (Fortified Wheat Flour, Calcium Carbonate, Niacin, Iron, Thiamin, Folic Acid), Water, Organic Oat Drink (Gluten) (Water, Oats, Sunflower Oil, Sea Salt), Potato Flakes (Potato Flakes, Mono- and diglycerides of fatty acids), Sugar, Yeast, Salt, Softener, (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Enzymes), Bread Improver (Gluten) (Mono- and diglycerides of fatty acids, Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Iron, Niacin, Thiamin, Folic Acid), Palm Oil, Ascorbic Acid, Enzymes) . RAPESEED OIL . LEMON & HERB MAYO (Water, Rapeseed Oil, Thickener (Modified Maize Starch), Spirit Vinegar, Sugar, Lemon Zest, Onion, Salt, Modified Starch, Tapioca Starch, Concentrated Lemon Juice, Turmeric Solution (Water, Colour (Curcumin)), Garlic Puree, Colour (Paprika Extract), Rosemary, Spice Mix (Sea Salt, Spices (Red Chilli Pepper, Paprika, Birds Eye Chilli)), Thyme, Preservative (Potassium Sorbate) . LETTUCE LEAF . HEINZ KETCHUP Tomatoes, Spirit Vinegar, Sugar, Salt, Spices, Spice & Herb Extract (Celery) . BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "nandino-chicken-wings",
+   "name": "Nandino Chicken Wings",
+   "variant": "",
+   "category": "Nandinos",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandino-chicken-wings",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN WINGS (Chicken Wings, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "nandino-chips",
+   "name": "Nandino Chips",
+   "variant": "",
+   "category": "Nandinos",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandino-chips",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Potatoes, Vegetable Oils (Rapeseed & Sunflower), Salt, Dextrose, Disodium Diphosphate"
+  },
+  {
+   "slug": "nandino-corn-on-the-cob",
+   "name": "Corn on the Cob",
+   "variant": "",
+   "category": "Nandinos",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandino-corn-on-the-cob",
+   "contains": [
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "milk": "Butter portion contains pasteurised milk."
+   },
+   "summary": "Contains milk.",
+   "fullTable": true,
+   "ingredients": "Sweetcorn. Served with a butter portion (milk)"
+  },
+  {
+   "slug": "nandino-spicy-rice",
+   "name": "Nandino Spicy Rice",
+   "variant": "",
+   "category": "Nandinos",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandino-spicy-rice",
+   "contains": [],
+   "mayContain": [
+    "nuts",
+    "peanuts",
+    "sesame"
+   ],
+   "notes": {
+    "nuts": "Spicy rice may contain almonds, pistachios and cashews.",
+    "peanuts": "Spicy rice may contain peanuts.",
+    "sesame": "Spicy rice may contain sesame."
+   },
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Water, Long Grain Rice, Green Pepper, Rapeseed Oil, Onion Puree, Red Pepper, Tomato, Salt, Lemon Juice, Coriander Leaf, Garlic Puree, Parsley, Green Chilli Puree, Turmeric, Chilli Powder, Smoked Paprika, Bay Leaf Powder"
+  },
+  {
+   "slug": "nandinos-buttermilk-pancakes",
+   "name": "Nandinos Buttermilk Pancakes",
+   "variant": "",
+   "category": "Nandinos",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandinos-buttermilk-pancakes",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "soya"
+   ],
+   "mayContain": [
+    "nuts",
+    "sulphites"
+   ],
+   "notes": {
+    "gluten": "Conatins Gluten from Wheat",
+    "eggs": "Contains pasteurised egg",
+    "milk": "Contains milk from buttermilk pancakes and unsalted butter portion",
+    "nuts": "May contain almond and walnut",
+    "soya": "Contains soya",
+    "sulphites": "May contain sulphites"
+   },
+   "summary": "Contains gluten, eggs, milk, soya.",
+   "fullTable": true,
+   "ingredients": "BUTTERMILK PANCAKES (Buttermilk, Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin), Sugar PASTEURISED Egg, Water, Non-Hydrogenated Vegetable Oil (Rapeseed), Partially Inverted Refiners Syrup, Raising Agents (Calcium Phosphates, Disodium Diphosphates, Sodium Carbonates Potassium Carbonates), Whey Solids (Milk), Salt, Soya Flour, Dextrose, Preservative (Calcium Propionate)) . UNSALTED BUTTER (PASTEURISED Cream (Milk)) . BANANAS . BLUEBERRIES . ICING SUGAR . Can be served with honey or maple syrup"
+  },
+  {
+   "slug": "nandinos-chicken-breast-fillet",
+   "name": "Nandinos Chicken Breast Fillet",
+   "variant": "",
+   "category": "Nandinos",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandinos-chicken-breast-fillet",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN Breast (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water)) BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "nandinos-egg-on-toast",
+   "name": "Nandinos Egg on Toast",
+   "variant": "",
+   "category": "Nandinos",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandinos-egg-on-toast",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "soya"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Bloomers contain gluten from wheat and Malted bloomer contains gluten from Barley.",
+    "eggs": "Contains Egg",
+    "milk": "Scrambled eggs contain milk,Butter portion contains pasteurised",
+    "soya": "Bloomer bread contains soya"
+   },
+   "summary": "Contains gluten, eggs, milk, soya.",
+   "fullTable": true,
+   "ingredients": "WHITE BLOOMER (Wheat Flour (with Calcium, Iron, Niacin, Thiamine, Folic Acid), Water, Vegetable Oils (Rapeseed, Palm), Yeast, Salt, Dextrose, Wheat Protein, Spirit Vinegar, Emulsifiers (E471, E472 (e)), Palm Fat, Flour Treatment Agent (E300), Wheat Flour, Soya . OR . MALTED BROWN BLOOMER (Wheat Flour (with Calcium Carbonate, Iron, Niacin, Thiamine, Folic Acid), Water, Malted Wheat Flakes, Wheat Bran, Yeast, Malted Barley Flour, Salt, Vegetable Oils (Rapeseed Oil, Palm Oil), Wheat Protein, Spirit Vinegar, Emulsifiers (E471, E472(e)), Malted Wheat Flour, Flour Treatment Agents (E300), Palm Fat, Wheat Flour, Soya . EGGS ((Eggs can be poached, fried or scrambled) (only Scrambled Eggs contain PASTEURISED SemiSkimmed Milk, Black Pepper)) . RAPESEED OIL"
+  },
+  {
+   "slug": "nandinos-mac-cheese",
+   "name": "Nandinos Mac & Cheese",
+   "variant": "",
+   "category": "Nandinos",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandinos-mac-cheese",
+   "contains": [
+    "gluten",
+    "milk",
+    "mustard"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Mac & Cheese contains gluten from wheat.",
+    "milk": "Cheese and Mac & Cheese contain pasteurised milk.",
+    "mustard": "Cheese sauce contains mustard powder."
+   },
+   "summary": "Contains gluten, milk, mustard.",
+   "fullTable": true,
+   "ingredients": "MAC & CHEESE (Cooked Macaroni Pasta (Water, Durum Wheat Semolina), Water, Vintage Cheddar Cheese (Milk), Whole Milk, Single Cream (Milk), Medium Fat Hard Cheese (Milk), Mozzarella Cheese (Milk), Butter (Milk), Salt, Modified Maize Starch, Yellow Mustard Powder, White Pepper, Ground Nutmeg) CHEDDAR CHEESE (Milk)"
+  },
+  {
+   "slug": "nandinos-soft-swirl",
+   "name": "Bottomless Soft Swirl",
+   "variant": "",
+   "category": "Nandinos",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandinos-soft-swirl",
+   "contains": [
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "milk": "Contains pasteurised milk."
+   },
+   "summary": "Contains milk.",
+   "fullTable": true,
+   "ingredients": "VANILLA SOFT SERVE ICE CREAM (Jersey Skimmed Milk, Milk Solids, Sugar, Coconut Oil, Glucose, Emulsifier (Mono- and Di-glycerides of Fatty Acids), Vanilla Flavouring, Stabilisers (Cellulose Gum, Guar Gum, Carrageenan, Sodium Alginate, Locust Bean Gum), Colour (Annatto)."
+  },
+  {
+   "slug": "nandos-chicken-butterfly",
+   "name": "Nando's Chicken Butterfly",
+   "variant": "",
+   "category": "Chicken",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandos-chicken-butterfly",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "MARINATED BUTTERFLY CHICKEN BREAST (Chicken Breast, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "nandos-chicken-livers-rustic-portuguese-roll",
+   "name": "Chicken Livers & Rustic Portuguese Roll",
+   "variant": "",
+   "category": "Chicken",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandos-chicken-livers-rustic-portuguese-roll",
+   "contains": [
+    "gluten",
+    "milk"
+   ],
+   "mayContain": [
+    "soya"
+   ],
+   "notes": {
+    "gluten": "Rustic Portuguese roll contains gluten from wheat and oats.",
+    "milk": "Butter contains milk.",
+    "soya": "Rustic Portuguese roll may contain soya."
+   },
+   "summary": "Contains gluten, milk.",
+   "fullTable": true,
+   "ingredients": "CHICKEN LIVERS (Chicken Liver, Liver Sauce (Rapeseed Oil, Onion, Water, Tomatoes, Garlic Puree, Spirit Vinegar, Spice Mix (Sea Salt, Spices (Red Chilli Pepper, Paprika, Birds Eye Chilli), VegetableShortening (Rapeseed Oil, Palm Oil, Water, Colour (Carotenes), Citric Acid), Salt, Green Chilli, Cornflour, Stabilisers (Xanthan Gum, Guar Gum)). RUSTIC PORTUGUESE ROLL (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Water, Bakery Improver (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Sugar, Salt, Emulsifiers (Mono- And Diglycerides Of Fatty Acids, Sodium Stearoyl-2-Lactylate), Vegetable Oils (Palm, Rapeseed), Inactive Dry Yeast, Flour Treatment Agent (Ascorbic Acid), Potato Flakes (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina. BUTTER PORTION (Butter (Milk)) BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "nandos-chicken-quarter-half",
+   "name": "Nando's Chicken – Quarter, Half",
+   "variant": "",
+   "category": "Chicken",
+   "updated": "27 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandos-chicken-quarter-half",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN QTR/ Half(Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "nandos-chicken-wings",
+   "name": "Chicken Wings",
+   "variant": "",
+   "category": "Chicken",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandos-chicken-wings",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN WINGS (Chicken Wings, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) BASTING SAUCE (View Spices (click to view) )"
+  },
+  {
+   "slug": "nandos-whole",
+   "name": "Chicken – Whole",
+   "variant": "",
+   "category": "Chicken",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/nandos-whole",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "orange-juice",
+   "name": "Only in Gatwick",
+   "variant": "Orange Juice",
+   "category": "Drinks",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/orange-juice",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Oranges"
+  },
+  {
+   "slug": "peri-honey",
+   "name": "PERi-Honey",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/peri-honey",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Blossom Honey, Birds Eye Chilli, Natural Capsicum Flavouring"
+  },
+  {
+   "slug": "peri-mac-cheese",
+   "name": "PERi-Mac & Cheese",
+   "variant": "",
+   "category": "Sides",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/peri-mac-cheese",
+   "contains": [
+    "gluten",
+    "milk",
+    "mustard"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Pasta contains gluten from wheat.",
+    "milk": "Cheese and Mac & Cheese sauce contains pasteurised milk.",
+    "mustard": "Mac & Cheese sauce contains mustard powder."
+   },
+   "summary": "Contains gluten, milk, mustard.",
+   "fullTable": true,
+   "ingredients": "MAC & CHEESE (Cooked Macaroni Pasta (Water, Durum Wheat Semolina), Water, Vintage Cheddar Cheese (Milk), Whole Milk, Single Cream (Milk), Medium Fat Hard Cheese (Milk), Mozzarella Cheese (Milk), Butter (Milk), Salt, Modified Maize Starch, Yellow Mustard Powder, White Pepper, Ground Nutmeg) CHEDDAR CHEESE (Milk) PERi-CRUMB (Breadcrumbs (Rice Flour, Potato Starch, Tapioca Starch, Rapeseed Oil, Dextrose, Sugar, Yeast, Salt, Stabiliser (Hydroxypropyl Methylcellulose), Maize Starch, Psyllium Fibre), Garlic & Chilli Spread (Vegetable Shortening (Rapeseed Oil, Palm Oil, Water, Colour (Carotenes), Garlic Puree, Water, Green Chilli Puree, Garlic Powder, Salt, White Pepper, Parsley), Hot Baste (Water, Spirit Vinegar, Rapeseed Oil, Spice Mix (Birds Eye Chilli, Salt, Red Chilli Pepper, Paprika, Bay Leaf), Onion, Green Chilli, Lemon, Garlic Puree, Stabilisers (Xanthan Gum, Guar Gum)"
+  },
+  {
+   "slug": "peri-peri-drizzle",
+   "name": "PERi-PERi Drizzle",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/peri-peri-drizzle",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Olive Oil, Lemon Juice, Chilli Infused Sunflower Oil (Sunflower Oil, Red Chilli, Salt), Garlic Puree, Red Chilli Puree, Red Wine Vinegar, Salt, Spices (Paprika, African Birds Eye Chilli)"
+  },
+  {
+   "slug": "peri-peri-gravy",
+   "name": "PERi-PERi Gravy",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/peri-peri-gravy",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Water, Savoury stock (9%) (Water, Yeast Extract, Salt, Sugar, Apple Juice Concentrate, Natural Flavourings, Sunflower Oil, Maize Starch, Leek Powder, Onion Powder), Cooked Chicken Thigh (4%), Modified Maize Starch, Yeast Extract, Lemon Juice Concentrate, Rapeseed Oil, Caramelised Sugar Powder, Demerara Sugar, Thyme, Spice Mix (Salt, Spices (Red Chilli Pepper, African Birds Eye Chilli), Ground Bay, Black Pepper, Sage, Ground Bay"
+  },
+  {
+   "slug": "peri-peri-nuts",
+   "name": "PERi-PERi Nuts",
+   "variant": "",
+   "category": "Starters",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/peri-peri-nuts",
+   "contains": [
+    "nuts"
+   ],
+   "mayContain": [
+    "gluten",
+    "milk",
+    "peanuts",
+    "soya"
+   ],
+   "notes": {
+    "gluten": "May contain wheat and barley",
+    "milk": "May contain milk due to manufacturing practices",
+    "nuts": "Contains almonds, cashews and macadamia nuts. May contain hazelnuts, walnuts, pistachios, Brazil nuts and pecans.",
+    "peanuts": "May contain peanuts due manufacturing practices",
+    "soya": "May contain soya due to manufacturing practices"
+   },
+   "summary": "Contains nuts.",
+   "fullTable": true,
+   "ingredients": "Almonds, Cashew Nuts, Macadamia Nuts, PERi-PERi Spice Mix (Paprika Powder, Salt, Red Chilli Powder, African Birds Eye Chilli Powder), Sunflower Oil."
+  },
+  {
+   "slug": "peri-peri-sauces",
+   "name": "PERi-PERi Sauces",
+   "variant": "For dietary suitability, please refer to the vegetarian or plant-based icons in the declarations.",
+   "category": "Spices & Sauces",
+   "updated": "29 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/peri-peri-sauces",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Some of our PERi-PERi sauces are made using lemons and other citrus fruits that contain shellac. . EXTRA HOT PERi-PERi SAUCE (Water, Spirit Vinegar, Spice Mix (Salt, Spices (African Birds Eye Chilli, Red Chilli Pepper, Paprika), Herb (Bay Leaf)), Lemon, Green Chilli, Onion, Rapeseed Oil, Garlic Puree, Stabilisers (Xanthan Gum, Guar Gum) -Vegetarian GARLIC PERi-PERi SAUCE (Water, Spirit Vinegar, Onion, Spice Mix (Salt, Spices (Red Chilli Pepper, African Birds Eye Chilli), Herb (Bay Leaf)), Garlic Puree, Lemon, Rapeseed Oil, Green Chilli, Stabilisers (Guar Gum, Xanthan Gum) HOT PERi-PERi SAUCE (Water, Spirit Vinegar, Spice Mix(Salt, Spices (Red Chilli Pepper, African Birds Eye Chilli, Paprika)),Lemon, Onion, Green Chilli, Rapeseed Oil, Garlic Puree, Stabilisers (Guar Gum, Xanthan Gum) -Vegetarian HOT PERi-PERi SAUCE (Water, Spirit Vinegar, Spice Mix(Salt, Spices (Red Chilli Pepper, African Birds Eye Chilli, Paprika)),Lemon, Onion, Green Chilli, Rapeseed Oil, Garlic Puree, Stabilisers (Guar Gum, Xanthan Gum) -Vegetarian LEMON AND HERB PERi-PERi SAUCE (Water, Lemon, Rapeseed Oil, Onion, Spirit Vinegar, Sugar, Salt, Garlic Puree, Red Chilli Puree, Rosemary, Thyme, Spice Mix (Sea Salt, Spices (Red Chilli Pepper, Paprika, African Bird’s Eye Chilli), Stabilisers (Guar Gum, Xanthan Gum), Preservative (Potassium Sorbate) -Vegetarian MEDIUM PERi-PERi SAUCE (Water, Spirit Vinegar, Onion, Spice Mix (Salt, Spices (Red Chilli Pepper, African Bird’s Eye Chilli), Herb (Bay Leaf)), Lemon, Rapeseed Oil, Green Chilli, Garlic Puree, Stabilisers (Guar Gum, Xanthan Gum) PERi-PERi VUSA (Olive Oil, Lemon Juice, Spice Mix (African Birds Eye Chilli, Salt), Garlic Puree, Red Chilli Puree, Chilli Infused Sunflower Oil (Sunflower Oil, Chilli, Salt), Red Wine Vinegar -Vegetarian WILD HERB PERi-PERi SAUCE (Water, Spirit Vinegar, Onion, Spice Mix (Salt, Spices (Red Chilli Pepper, African Birds Eye Chilli), Herb (Bay Leaf)), Lemon, Rapeseed Oil, Green Chilli, Parsley, Garlic Puree, Stabilisers (Xanthan Gum, Guar Gum) -Vegetarian XXX HOT PERi-PERi SAUCE (Water, Green Chilli, Spirit Vinegar, Spice Mix (Salt, Spices (African Birds Eye Chilli, Red Chilli Pepper, Paprika), Herb (Bay Leaf)), Lemon, Onion, Rapeseed Oil, Garlic Puree, Stabilisers (Xanthan Gum, Guar Gum) Creamy Salad Dressing (Water, Rapeseed Oil, Olive Oil, Cider Vinegar, Roast Shallots (Shallots, Rapeseed Oil), Sugar, Salt, Cornflour, Tapioca starch, Modiied Starch, Garlic Puree, Flavouring: Lactic Acid, Black pepper, Parsley, Oregano, Preservative: Potassium Sorbate, Fennel, Turmeric. -Vegetarian PERi-PERi VUSA (Olive Oil, Lemon Juice, Spice Mix (African Birds Eye Chilli, Salt), Garlic Puree, Red Chilli Puree, Chilli Infused Sunflower Oil (Sunflower Oil, Chilli, Salt),Red Wine Vinegar -Plant-Based Creamy Salad Dressing (Water, Rapeseed Oil, Olive Oil, Cider Vinegar, Roast Shallots (Shallots, Rapeseed Oil), Sugar, Salt, Cornflour, Tapioca starch, Modiied Starch,Garlic Puree, Flavouring: Lactic Acid, Black pepper, Parsley, Oregano, Preservative: Potassium Sorbate, Fennel, Turmeric. -Plant-Based PERi-Ketchup Hot (Water, Tomato Paste, Brown Sugar, Spirit Vinegar, Sugar, Cornflour, Spice Mix (Salt, Red Chilli Pepper, Birds Eye Chilli, Paprika), Lemon, Onion, Salt, Green Chilli, Garlic Puree, Preservative: Potassium Sorbate, Paprika, White Pepper, Ground Ginger, Garlic Powder) -Vegetarian"
+  },
+  {
+   "slug": "peri-plant-fillet",
+   "name": "PERi-Plant Fillet",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/peri-plant-fillet",
+   "contains": [
+    "gluten",
+    "soya"
+   ],
+   "mayContain": [
+    "celery",
+    "mustard"
+   ],
+   "notes": {
+    "celery": "May contain celery due to manufacturing practices.",
+    "gluten": "Contains Gluten from Wheat",
+    "mustard": "May contain mustard due to manufacturing practices.",
+    "soya": "PERi-plant contains soya"
+   },
+   "summary": "Contains gluten, soya.",
+   "fullTable": true,
+   "ingredients": "PERi-PLANT FILLET: (Plant Protein (Water, Soya protein, starch (corn, potato), Wheat gluten), vegetable oils (Sunflower and Rapeseed Oil), Citrus Fibre, Processed Eucheuma Seaweed, konjac gum, stabiliser (methylcellulose), Salt, Natural Flavouring, Yeast Extract, Garlic Powder, Onion Powder, Dextrose)"
+  },
+  {
+   "slug": "peri-powered-avo-toast",
+   "name": "PERi-Powered Avo Toast",
+   "variant": "",
+   "category": "The Classics",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/peri-powered-avo-toast",
+   "contains": [
+    "gluten",
+    "milk"
+   ],
+   "mayContain": [
+    "soya"
+   ],
+   "notes": {
+    "gluten": "Rustic Roll contains Gluten from Wheat and Oats",
+    "milk": "Feta contains pasteurised milk",
+    "soya": "Rustic roll may contain soya"
+   },
+   "summary": "Contains gluten, milk.",
+   "fullTable": true,
+   "ingredients": "RUSTIC ROLL (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate,Iron, Niacin,Thiamin, Folic Acid), Water, Bakery Improver (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Sugar, Salt, Emulsifiers, (Mono- And Diglycerides Of Fatty Acids, Sodium Stearoyl-2-Lactylate), Vegetable Oils (Palm, Rapeseed), Inactive Dry Yeast, Flour Treatment Agent (Ascorbic Acid), Potato Flakes (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Gluten Free Oats, Sunflower Oil, SeaSalt), Yeast, Wheat Semolina. (Potato Flakes, Emulsifier (Mono & DiGlycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Gluten Free Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina) AVOCADO (Avocado, Lime) WHOLE BLACK PEPPERCORN FETA (Milk) PERi PERi SEEDS (Sunflower Seeds, Pumpkin Seeds, Rapeseed Oil, White Sugar, Salt, Paprika, Garlic Powder, African Birds Eye Chilli Flakes, Oregano) , PERi SALT (Salt, Spices (Paprika, Red Chilli Pepper, White Pepper, African Birds Eye Chilli), Sugar,Cornflour, Yeast Extract, Citric Acid, Flavourings, Colour (Paprika Extract))"
+  },
+  {
+   "slug": "peri-salt",
+   "name": "PERi-Salt",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/peri-salt",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Salt, Spices (Paprika, Red Chilli Pepper, White Pepper, African Birds Eye Chilli), Sugar, Cornflour, Yeast Extract, Citric Acid, Flavourings, Colour (Paprika Extract)"
+  },
+  {
+   "slug": "peri-salted-chips",
+   "name": "PERi-Salted Chips",
+   "variant": "",
+   "category": "Sides",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/peri-salted-chips",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Potatoes, Vegetable Oils (Rapeseed & Sunflower), Salt, Dextrose, Disodium Disphosphate, PERi-Salt (Salt, Spices (Paprika, Red Chilli Pepper, White Pepper, African Birds Eye Chilli), Sugar, Cornflour, Yeast Extract, Citric Acid, Flavourings, Colour (Paprika Extract)"
+  },
+  {
+   "slug": "perinaise",
+   "name": "PERinaise",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/perinaise",
+   "contains": [
+    "celery",
+    "eggs"
+   ],
+   "mayContain": [],
+   "notes": {
+    "celery": "Contains celery salt",
+    "eggs": "Contains pasteurised egg"
+   },
+   "summary": "Contains celery, eggs.",
+   "fullTable": true,
+   "ingredients": "Water, Rapeseed Oil, Sugar, Vinegar Blend (Spirit Vinegar, Cider Vinegar), Thickener (Modified Maize Starch), Salted Egg Yolk (Egg Yolk, Salt), Medium PERi PERi Sauce (Water, Spirit Vinegar, Onion, Spice Mix (Salt, Spices (Red Chilli Pepper, Birds Eye Chilli), Herb (Bay Leaf), Spice Mix (Salt, Spices (Paprika, Red Chilli Pepper, White Pepper), Yeast Extract, Flavourings, Colour (Curcumin)), Salt, Stabiliser (Guar Gum), Celery Salt, Paprika, Colour (Paprika Extract)"
+  },
+  {
+   "slug": "phanton-wings",
+   "name": "Phantom Wings",
+   "variant": "",
+   "category": "Chicken",
+   "updated": "29 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/phanton-wings",
+   "contains": [
+    "gluten",
+    "sulphites"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Black Garlic sauce contains BARLEY. Dark Chicken Salt contains malt vinegar derived from barley. However, the ingredient is processed to remove gluten, and the finished product is tested and verified as gluten free.",
+    "sulphites": "Black Garlic Sauce contains sulphites"
+   },
+   "summary": "Contains gluten, sulphites.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN WINGS (Chicken Wings, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli),Garlic Puree, Lemon, Green Chilli, Water). BLACK GARLIC SAUCE Water, Brown Sugar, Garlic Puree, Balsamic Vinegar of Modena (Wine Vinegar (SULPHITES); Concentrated Grape Must), Tomato Paste, Black Garlic, Onion, Cornflour, Spirit Vinegar, Rapeseed Oil, Salt, BARLEY Malt Extract, Black Treacle, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, Birds Eye Chilli)). DARK PERi-CHICKEN SALT Salt , Mixed Spices, Sea Salt , Chilli Powder, Paprika, Red Chilli Pepper , Birds Eye Chilli, White Pepper, Yeast Extract, Flavourings, Colour (E100), Yeast Extract, Cocoa Powder, Sodium Carbonate (E500), Potassium Carbonate (E501), Sugar, Malt Vinegar Powder (from BARLEY), Smoked Salt, Dried Yeast, Citric Acid (E330), Spirit Vinegar Powder, Flavourings, Spice Extracts, Lemon Oil, Garlic Extract, Thyme Extract. . Dark Chicken Salt contains malt vinegar derived from barley. However, the ingredient is processed to remove gluten, and the finished product is tested and verified as gluten free."
+  },
+  {
+   "slug": "pineapple",
+   "name": "Grilled Pineapple",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/pineapple",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Pineapple"
+  },
+  {
+   "slug": "pitta",
+   "name": "Pitta",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/pitta",
+   "contains": [
+    "gluten",
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Contains gluten from wheat",
+    "milk": "Butter portion contains pasteurised milk"
+   },
+   "summary": "Contains gluten, milk.",
+   "fullTable": true,
+   "ingredients": "Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Water, Sourdough (Sourdough, Salt, Brandy Vinegar, Wheat Starch), Yeast, Salt Served with a butter portion (Milk)"
+  },
+  {
+   "slug": "portuguese-sparkling",
+   "name": "Only in Gatwick",
+   "variant": "Portuguese Sparkling",
+   "category": "Drinks",
+   "updated": "27 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/portuguese-sparkling",
+   "contains": [
+    "sulphites"
+   ],
+   "mayContain": [],
+   "notes": {
+    "sulphites": "Wine contains Sulphites"
+   },
+   "summary": "Contains sulphites.",
+   "fullTable": true,
+   "ingredients": "SPARKLING WINE (Grape Juice (Sulphites))"
+  },
+  {
+   "slug": "portuguese-tomato-salad",
+   "name": "Portuguese Tomato Salad",
+   "variant": "",
+   "category": "Sides",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/portuguese-tomato-salad",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "TOMATOES PERi SEMI-DRIED TOMATOES (Semi Dried Tomatoes, Rapeseed Oil, Sugar, Salt, Garlic, Chillies, Oregano) CUCUMBERS PINK PICKLED ONIONS (Red Onions, White Sugar, Spirit Vinegar)"
+  },
+  {
+   "slug": "pulled-chicken-chicken-fillet",
+   "name": "Pulled Chicken/Chicken Fillet",
+   "variant": "",
+   "category": "Chicken",
+   "updated": "09 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/pulled-chicken-chicken-fillet",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN FILLET/PULLED (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water). BASTING SAUCE (View Spices (click to view) )"
+  },
+  {
+   "slug": "rainbow-slaw",
+   "name": "Rainbow Slaw",
+   "variant": "",
+   "category": "Sides",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/rainbow-slaw",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "SLAW MIX (Pink Cabbage, White Cabbage, Savoy Cabbage, Spring Green, Carrot, Radish, Butternut Squash), DRESSING (Water, Rapeseed Oil, Olive Oil, Cider Vinegar, Sugar, Roast Shallots (Shallots, Sunflower Oil), Salt, Tapioca Starch, Modified Starch, Garlic Puree, Cornflour, Onion Powder, Spices (Paprika, Chilli (Capsicums, African Birds Eye Chillies)), Dried Red Pepper, Flavouring (Lactic Acid), Black Pepper, Parsley, Oregano, Preservative (Potassium Sorbate), Fennel. PERi-PERi Seeds (Sunflower Seeds, Pumpkin Seeds, Rapeseed Oil, White Sugar, Salt, Paprika, Garlic Powder, African Birds Eye Chilli Flakes, Oregano)"
+  },
+  {
+   "slug": "rubro-iced-tea",
+   "name": "Rubro Iced Tea",
+   "variant": "",
+   "category": "Drinks",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/rubro-iced-tea",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "PEACH RUBRO: (Water, Sugar, Acid (Ascorbic Acid), Rooibos Extract (0.2%), Natural Peach Flavouring with Other Natural Flavouring) BERRY RUBRO: (Water, Sugar, Acid (Ascorbic Acid), Rooibos Extract (0.2%), Natural Raspberry Flavour, Natural Strawberry Flavour) LEMON RUBRO: (Water, Sugar, Acid (Ascorbic Acid), Rooibos Extract (0.2%), Natural Lemon Flavouring with Other Natural Flavourings) BOTTOMLESS PEACH:"
+  },
+  {
+   "slug": "rustic-portuguese-roll",
+   "name": "Rustic Portuguese Roll",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/rustic-portuguese-roll",
+   "contains": [
+    "gluten",
+    "milk"
+   ],
+   "mayContain": [
+    "soya"
+   ],
+   "notes": {
+    "gluten": "Contains gluten from wheat and Oat",
+    "milk": "Butter portion contains pasteurised milk",
+    "soya": "Rustic Roll may contain Soya"
+   },
+   "summary": "Contains gluten, milk.",
+   "fullTable": true,
+   "ingredients": "RUSTIC PORTUGUESE ROLL (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Water, Bakery Improver (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Sugar, Salt, Emulsifiers (Mono- And Diglycerides Of Fatty Acids, Sodium Stearoyl-2-Lactylate), Vegetable Oils (Palm, Rapeseed), Inactive Dry Yeast, Flour Treatment Agent (Ascorbic Acid), Potato Flakes (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Drink (Spring Water, Organic Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina. . Served with a butter portion (Milk)"
+  },
+  {
+   "slug": "sausage-breakfast-roll",
+   "name": "Sausage Breakfast Roll",
+   "variant": "",
+   "category": "Breakfast Rolls",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/sausage-breakfast-roll",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "mustard"
+   ],
+   "mayContain": [
+    "soya"
+   ],
+   "notes": {
+    "gluten": "RUSTIC PORTUGUESE ROLL contains gluten from wheat and oats.",
+    "eggs": "LIGHTLY SPICED YOGURT MAYO contains PASTEURISED eggs.",
+    "milk": "LIGHTLY SPICED YOGURT MAYO contains milk.",
+    "mustard": "LIGHTLY SPICED YOGURT MAYO contains mustard.",
+    "soya": "RUSTIC PORTUGUESE ROLL may contain soya"
+   },
+   "summary": "Contains gluten, eggs, milk, mustard.",
+   "fullTable": true,
+   "ingredients": "CHICKEN SAUSAGE (see Chicken Sausage (click to view) ) RUSTIC PORTUGUESE ROLL (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Water, Bakery Improver (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Sugar, Salt, Emulsifiers, (Mono- And Diglycerides Of Fatty Acids, Sodium Stearoyl- 2-Lactylate), Vegetable Oils (Palm, Rapeseed), Inactive Dry Yeast, Flour Treatment Agent (Ascorbic Acid), Potato Flakes (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Gluten Free Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina. (Potato Flakes, Emulsifier (Mono & DiGlycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Gluten Free Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina). LIGHTLY SPICED YOGURT MAYO (Water, Yogurt (Milk), Rapeseed Oil, White Wine Vinegar, Cornflour, Sugar, Free Range Egg Yolk Powder, Coriander Leaves, Salt, Mustard Powder, Lemon Juice Concentrate, Red Chillies, Onion Powder, Stabilisers (Xanthan Gum, Guar Gum), Cracked Black Pepper, Preservative (Potassium Sorbate), Ground White Pepper, Ground Coriander, Birds Eye Chillies) RAPESEED OIL BASTING SAUCE (View Spices (click to view) )"
+  },
+  {
+   "slug": "sausage-fried-egg-roll",
+   "name": "Sausage & Fried Egg Roll",
+   "variant": "",
+   "category": "Breakfast Rolls",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/sausage-fried-egg-roll",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "mustard"
+   ],
+   "mayContain": [
+    "soya"
+   ],
+   "notes": {
+    "gluten": "Rustic Portuguese roll contains gluten from wheat and oats.",
+    "eggs": "Fried eggs, Lightly spiced yogurt mayo contains Egg.",
+    "milk": "Lightly spiced yogurt mayo contains milk.",
+    "mustard": "Lightly spiced yogurt mayo contains mustard.",
+    "soya": "Rustic Portuguese roll may contain soya."
+   },
+   "summary": "Contains gluten, eggs, milk, mustard.",
+   "fullTable": true,
+   "ingredients": "CHICKEN SAUSAGE (see Chicken Sausage (click to view) ) RUSTIC PORTUGUESE ROLL (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Water, Bakery Improver (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Sugar, Salt, Emulsifiers, (Mono- And Diglycerides Of Fatty Acids, Sodium Stearoyl- 2-Lactylate), Vegetable Oils (Palm, Rapeseed), Inactive Dry Yeast, Flour Treatment Agent (Ascorbic Acid), Potato Flakes (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Gluten Free Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina. (Potato Flakes, Emulsifier (Mono & DiGlycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Gluten Free Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina). FRIED EGGS (Whole eggs, Vegetable Oil) LIGHTLY SPICED YOGURT MAYO ( Water, Yogurt (Milk), Rapeseed Oil, White Wine Vinegar, Cornflour, Sugar, Free Range Egg Yolk Powder, Coriander Leaves, Salt, Mustard Powder, Lemon Juice Concentrate, Red Chillies, Onion Powder, Stabilisers (Xanthan Gum, Guar Gum), Cracked Black Pepper, Preservative (Potassium Sorbate), Ground White Pepper, Ground Coriander, Birds Eye Chillies) RAPESEED OIL BASTING SAUCE (View Spices (click to view) )"
+  },
+  {
+   "slug": "semi-skimmed-milk",
+   "name": "Semi-skimmed Milk",
+   "variant": "",
+   "category": "Nandinos",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/semi-skimmed-milk",
+   "contains": [
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {},
+   "summary": "Contains milk.",
+   "fullTable": true,
+   "ingredients": "Milk"
+  },
+  {
+   "slug": "soft-drinks",
+   "name": "Soft Drinks",
+   "variant": "",
+   "category": "Drinks",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/soft-drinks",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "COCA-COLA (Sugar, Water, Colour (Caramel E150d), Phosphoric Acid, Natural Flavourings Including Caffeine). DIET COKE (Water, Colour (Caramel E150d), Sweeteners (Aspartame, Acesulfame K), Natural Flavourings (Caffeine, Phosphoric Acid, Citric Acid), Preservative (Sodium Benzoate), Acidity Regulator (Sodium Citrate), Antifoaming Agent (Dimethylpolysiloxane). Contains a source of phenylalanine. FANTA ZERO (Carbonated Water, Orange Fruit from Concentrate (4%), Citric Acid, Sweeteners (Acesulfame K, Aspartame), Preservative (Potassium Sorbate), Malic Acid, Natural Orange Flavouring with Other Natural Flavourings, Vegetable Concentrates (Carrot, Pumpkin), Antioxidant (Ascorbic Acid), Stabiliser (Guar Gum)). Contains a source of phenylalanine. SPRITE ZERO - (Water, Citric Acid, Natural Lemon and Lime Flavourings, Sweeteners (Aspartame, Acesulfame K), Preservative (Sodium Benzoate), Acidity Regulator (Sodium Citrate)). Contains a source of phenylalanine. COKE ZERO (Water, Colour (Caramel E150d), Phosphoric Acid, Sweeteners (Aspartame, Acesulfame K), Natural Flavourings Including Caffeine, Acidity Regulator (Sodium Citrate), Preservative (Sodium Benzoate), Antifoaming Agent (Dimethylpolysiloxane)). Contains a source of phenylalanine. IRN BRU (SCOTLAND ONLY) (Carbonated Water, Sugar, Acid (Citric Acid), Flavourings (Including Caffeine, Ammonium Ferric Citrate & Quinine), Sweeteners (Aspartame, Acesulfame K), Preservative (E211), Colours (Sunset Yellow FCF, Ponceau 4R)). Contains a source of phenylalanine. DR PEPPER (Carbonated Water, Colour (Caramel E150d), Flavourings (Including Caffeine), Acid (Phosphoric Acid), Sweeteners (Aspartame, Acesulfame K), Preservative (Potassium Sorbate)."
+  },
+  {
+   "slug": "sol-bowl",
+   "name": "Select Restaurants",
+   "variant": "Sol Bowl",
+   "category": "Salads & Bowls",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/sol-bowl",
+   "contains": [
+    "eggs",
+    "mustard",
+    "sulphites"
+   ],
+   "mayContain": [
+    "nuts",
+    "peanuts",
+    "sesame"
+   ],
+   "notes": {
+    "eggs": "Coleslaw contains pasteurised egg.",
+    "mustard": "Coleslaw contains mustard flour.",
+    "nuts": "Spicy rice may contain almonds, pistachios and cashews.",
+    "peanuts": "Spicy rice may contain peanuts.",
+    "sesame": "Spicy rice may contain sesame.",
+    "sulphites": "Pickles contain sulphites at <6ppm"
+   },
+   "summary": "Contains eggs, mustard, sulphites.",
+   "fullTable": true,
+   "ingredients": "SPICY RICE (Water, Long Grain Rice, Green Pepper, Rapeseed Oil, Onion Puree, Red Pepper, Tomato, Salt, Lemon Juice, Coriander Leaf, Garlic Puree, Parsley, Green Chilli Puree, Turmeric, Chilli Powder, Smoked Paprika, Bay Leaf Powder) COLESLAW (Cabbage, Mayonnaise (Rapeseed Oil, Water, Sugar, Egg, White Wine Vinegar, Spirit Vinegar, Salt, Stabilisers (Guar Gum, Xanthan Gum), Mustard Flour), Carrots, Onions, Parsley, White Wine Vinegar, Lactic Acid) PICKLED CUCUMBER (Cucumber, Onion, Sugar , Sea Salt , Garlic Puree (Garlic Puree, Garlic, Citric Acid), Fennel Seeds, Coriander Seeds, Caraway Seeds, Black peppercorns, Turmeric, Dried Dill, Water, Spirit Vinegar) MIXED LEAF SALAD CHARRED CORN (Water, Rapeseed Oil, Sugar, White Wine Vinegar, Cornflour, Medium Sauce (Water, Spirit Vinegar, Onion, Spice Mix (Salt, Red chilli pepper, Birds eye chilli, Herbs), Rapeseed Oil, Lemon Juice, Green Chilli, Garlic Puree, Lemon Zest ), Salt, Modified starch, Colour: Paprika Extract (Rapeseed Oil, Colour: Paprika Extract (E160C Paprika Extract, Sunflower Oil)), Spice Mix (Flavouring, Salt, Paprika, Red chilli pepper, White Pepper, Yeast Extract, Colour: E100), Coriander , Flavouring: Lactic acid, Garlic Puree, Garlic Powder, Concentrated Lemon Juice, Onion Powder, Paprika, Birds eye chilli, Black Pepper, White Pepper, Ground Coriander)"
+  },
+  {
+   "slug": "spices",
+   "name": "Spices",
+   "variant": "For dietary suitability, please refer to the vegetarian or plant-based statements.",
+   "category": "Spices & Sauces",
+   "updated": "29 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/spices",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Some of our PERi-ometer spices are made using lemons and other citrus fruit that contain shellac. . PERi-TAMER BASTING SAUCE (Water, Brown Sugar, Sugar, Tomato Paste, Spirit Vinegar, Cane Molasses, Lemon Juice, Rapeseed Oil, Smoked Paprika, Apple Juice from Concentrate, Salt, Garlic Puree, Stabilisers (Xanthan Gum, Guar Gum)) - Plant Based LEMON & HERB BASTING SAUCE (Water, Lemon, Spirit Vinegar, Rapeseed Oil, Spice Mix (Sea Salt, Red Chilli Pepper, Paprika, African Birds Eye Chilli)), Garlic Puree, Stabilisers (Xanthan Gum, Guar Gum), Green Chilli, Preservative (Potassium Sorbate)) - Vegetarian MEDIUM BASTING SAUCE (Water, Rapeseed Oil, Spirit Vinegar, Green Chilli, Spice Mix (Salt, Red Chilli Pepper, African Birds Eye Chilli, Paprika, Herb (Bay Leaf)), Lemon, Stabilisers (Guar Gum, Xanthan Gum), Onion, Preservative (Potassium Sorbate), Garlic Puree) - Vegetarian HOT BASTING SAUCE (Water, Spirit Vinegar, Rapeseed Oil, Spice Mix (African Birds Eye Chilli, Red Chilli Pepper, Paprika), Salt, Herb, (Bay Leaf)), Onion, Lemon, Green Chilli, Garlic Puree, Stabilisers (Xanthan Gum, Guar Gum)) - Vegetarian EXTRA HOT BASTING SAUCE (Water, Spirit Vinegar, Rapeseed Oil, Spice Mix (African Birds Eye Chilli, Red Chilli Pepper, Paprika), Salt, Herb, (Bay Leaf)), Onion, Lemon, Green Chilli, Garlic Puree, Stabilisers (Xanthan Gum, Guar Gum)) - Vegetarian VUSA BASTING SAUCE ( Water, Spirit Vinegar, Rapeseed Oil, Spice Mix (Spices (Birds Eye Chilli, Red Chilli Pepper, Paprika); Salt, Herb (Bay Leaf)), Naga Jolokia Mash (Naga Jolokia Peppers, Salt, Acetic Acid), Onion, Green Chilli, Lemon, Colour: Paprika Extract, Garlic Puree, Stabiliser: Xantham Gum, Stabiliser: Guar Gum)"
+  },
+  {
+   "slug": "spicy-mixed-olives",
+   "name": "Spicy Mixed Olives",
+   "variant": "",
+   "category": "Starters",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/spicy-mixed-olives",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Pitted Green and Purple Olives, Garlic Cloves, Red Peppers, Mushrooms, Salt, Grape Vinegar, Rapeseed Oil, Dried Garlic, Herbes De Provence, Black Pepper, Chilli"
+  },
+  {
+   "slug": "spicy-rice",
+   "name": "Spicy Rice",
+   "variant": "",
+   "category": "Sides",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/spicy-rice",
+   "contains": [],
+   "mayContain": [
+    "nuts",
+    "peanuts",
+    "sesame"
+   ],
+   "notes": {
+    "nuts": "Spicy rice may contain almonds, pistachios and cashews.",
+    "peanuts": "Spicy rice may contain peanuts.",
+    "sesame": "Spicy rice may contain sesame."
+   },
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Water, Long Grain Rice, Green Pepper, Rapeseed Oil, Onion Puree, Red Pepper, Tomato, Salt, Lemon Juice, Coriander Leaf, Garlic Puree, Parsley, Green Chilli Puree, Turmeric, Chilli Powder, Smoked Paprika, Bay Leaf Powder"
+  },
+  {
+   "slug": "spicy-rice-bowl",
+   "name": "Spicy Rice Bowl",
+   "variant": "",
+   "category": "Salads & Bowls",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/spicy-rice-bowl",
+   "contains": [
+    "sesame"
+   ],
+   "mayContain": [
+    "nuts",
+    "peanuts"
+   ],
+   "notes": {
+    "nuts": "Spicy rice may contain almonds, pistachios and cashews.",
+    "peanuts": "Spicy rice may contain peanuts.",
+    "sesame": "Houmous contains sesame paste. Spicy rice may contain sesame."
+   },
+   "summary": "Contains sesame.",
+   "fullTable": true,
+   "ingredients": "SPICY RICE (Water, Long Grain Rice, Green Pepper, Rapeseed Oil, Onion Puree, Red Pepper, Tomato, Salt, Lemon Juice, Coriander Leaf, Garlic Puree, Parsley, Green Chilli Puree, Turmeric, Chilli Powder, Smoked Paprika, Bay Leaf Powder). Peri-RAINBOW SLAW (Pink Cabbage, White Cabbage, Savoy Cabbage, Spring Green, Carrot, Radish, Butternut Squash), Dressing (Water, Rapeseed Oil, Olive Oil, Cider Vinegar, Sugar, Roast Shallots (Shallots, Sunflower Oil), Salt, Tapioca Starch, Modified Starch, Garlic Puree, Cornflour, Onion Powder, Spices (Paprika, Chilli (Capsicums, African Birds Eye Chillies)), Dried Red Pepper, Flavouring (Lactic Acid), Black Pepper, Parsley, Oregano, Preservative (Potassium Sorbate), Fennel). HOUMOUS (Chickpeas (Chickpeas, Water, Sodium Bicarbonate), Lemon Juice, Rapeseed Oil, Water, Sesame Paste, Salt, Garlic Puree, Preservative (Potassium Sorbate)) PICKLED CAULIFLOWER (Cauliflower, Sushi Vinegar (White Sugar, Spirit Vinegar, Rice vinegar, Salt), Spirit Vinegar, Water, Red Chillies, White Sugar, Turmeric, Salt, Sumac (Sumac, Salt), Oregano) TENDERSTEM BROCCOLI (Tenderstem Broccoli, Garlic, Lemon Infused Rapeseed Oil (Rapeseed Oil, Natural Lemon Flavouring), Salt, Black Pepper) PERI PERI SEEDS (Sunflower Seeds, Pumpkin Seeds, Rapeseed Oil, White Sugar, Salt, Paprika, Garlic Powder, African Birds Eye Chilli Flakes, Oregano)"
+  },
+  {
+   "slug": "sunrise-egg-wrap",
+   "name": "Sunrise Egg Wrap",
+   "variant": "",
+   "category": "Eggs",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/sunrise-egg-wrap",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Wrap contains gluten from wheat.",
+    "eggs": "Contains pasteurised egg.",
+    "milk": "Cheddar cheese and Scrambled egg contain pasteurised milk."
+   },
+   "summary": "Contains gluten, eggs, milk.",
+   "fullTable": true,
+   "ingredients": "WRAP: (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamine, Folic Acid), Water, Vegetable Oils (Palm Oil, Rapeseed Oil), Raising Agents (Sodium Carbonates, Malic Acid, Diphosphates), Sugar, Stabiliser (Sodium Carboxymethyl Cellulose), Salt). EGGS: (Eggs, Pasteurised Semi-Skimmed Milk, Salt Black Pepper). BABY SPINACH PERi SEMI-DRIED TOMATOES: (Semi Dried Tomatoes, Sunflower Oil, Sugar, Salt, Garlic, Chillies, Oregano). CHILLI JAM: (Tomatoes, Brown Sugar, Red Wine Vinegar, Red Chilli, Red Onions, Cornflour, Tomato Paste, Garlic Puree, Salt, Gelling Agent (Pectin)). CHEDDAR CHEESE (Milk). Can be served with Hash brown (See hash brown (click to view) )"
+  },
+  {
+   "slug": "sunset-burger",
+   "name": "Sunset Burger",
+   "variant": "",
+   "category": "Burgers, Pittas, Wraps",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/sunset-burger",
+   "contains": [
+    "gluten",
+    "milk"
+   ],
+   "mayContain": [
+    "soya"
+   ],
+   "notes": {
+    "gluten": "Rustic Roll contains gluten from wheat and oats",
+    "milk": "Cheddar cheese contains pasteurised milk",
+    "soya": "Rustic Roll may contain soya"
+   },
+   "summary": "Contains gluten, milk.",
+   "fullTable": true,
+   "ingredients": "MARINATED CHICKEN THIGHS (Chicken, Marinade (Spirit Vinegar, Rapeseed Oil, Spice Mix (Salt, Spices (Red Chilli Pepper, Paprika, African Birds Eye Chilli), Garlic Puree, Lemon, Green Chilli, Water) RUSTIC PORTUGUESE ROLL (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Water, Bakery Improver (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Sugar, Salt, Emulsifiers (Mono- And Diglycerides Of Fatty Acids, Sodium Stearoyl-2-Lactylate), Vegetable Oils (Palm, Rapeseed), Inactive Dry Yeast, Flour Treatment Agent (Ascorbic Acid), Potato Flakes (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina. (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina. SMOKY RED PEPPER CHUTNEY (Roasted Red Pepper, Brown Sugar, Water, Spirit Vinegar, Lemon Juice, Red Pepper, Red Chilli Purée, Corn Flour, Salt, Chipotle Chilli, Chilli, Spices (Paprika, Cayenne, Birds Eye Chilli), Gelling Agent (Pectin), Ground Coriander, Bay Leaves, Ground Cumin)) CHEDDAR CHEESE (Milk) LETTUCE LEAF LEMON & HERB MAYO (Water, Rapeseed Oil, Thickener (Modified Maize Starch), Spirit Vinegar, Sugar, Lemon Zest, Onion, Salt, Modified Starch, Tapioca Starch, Concentrated Lemon Juice, Turmeric Solution (Water, Colour (Curcumin)), Garlic Puree, Colour (Paprika Extract), Rosemary, Spice Mix (Sea Salt, Spices (Red Chilli Pepper, Paprika, Birds Eye Chilli)), Thyme, Preservative (Potassium Sorbate) BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "sweet-potato-wedges-with-garlic-perinaise",
+   "name": "Sweet Potato Wedges",
+   "variant": "with Garlic PERinaise",
+   "category": "Starters",
+   "updated": "19 Oct 2026",
+   "url": "https://www.nandos.co.uk/allergens/sweet-potato-wedges-with-garlic-perinaise",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "SWEET POTATO WEDGES (Sweet Potato, Rapeseed Oil, Batter (Maize, Potato), Rice Flour, Potato Dextrin, Salt, Stabiliser (Xanthan Gum), Colour (Paprika Extract), Turmeric Extract. GARLIC PERINAISE (Water, Rapeseed Oil, Sugar, Vinegar Blend (Spirit Vinegar, Cider Vinegar), Thickener (Modified Maize Starch), Medium Sauce (Water, Spirit Vinegar, Onion, Spice Mix (Salt, Spices (Red Chilli Pepper, Birds Eye Chilli), Herb (Bay Leaf)), Rapeseed Oil, Lemon Juice, Green Chilli, Garlic Puree, Un-waxed Lemon Zest, Stabilisers (Guar Gum, Xanthan Gum), Spice Mix (Salt, Spices (Paprika, Red Chilli Pepper, White Pepper)), Yeast Extract, Flavourings, Colour (Curcumin, Paprika Extract), Salt, Modified Starch, Garlic Puree, Tapioca Starch, Garlic Powder, Paprika."
+  },
+  {
+   "slug": "sxollie-cider",
+   "name": "Sxollie Cider",
+   "variant": "",
+   "category": "Drinks",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/sxollie-cider",
+   "contains": [
+    "sulphites"
+   ],
+   "mayContain": [],
+   "notes": {},
+   "summary": "Contains sulphites.",
+   "fullTable": true,
+   "ingredients": "Apple Juice (100%) ( Sulphur Dioxide (Sulphites) ), Yeast, Potassium Metabisulphite"
+  },
+  {
+   "slug": "tea",
+   "name": "Tea",
+   "variant": "",
+   "category": "Drinks",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/tea",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "HONEYBUSH & ROOIBIOS PEPPERMINT"
+  },
+  {
+   "slug": "tenderstem-broccoli",
+   "name": "Tenderstem® Broccoli",
+   "variant": "",
+   "category": "Sides",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/tenderstem-broccoli",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Tenderstem Broccoli, Garlic, Lemon Infused Rapeseed Oil (Rapeseed Oil, Natural Lemon Flavouring), Salt, Black Pepper"
+  },
+  {
+   "slug": "the-big-breakfast",
+   "name": "The Big Breakfast",
+   "variant": "",
+   "category": "The Works",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/the-big-breakfast",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "soya"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Bloomers contains gluten from wheat and malted bloomer contains gluten from barley.",
+    "eggs": "Contains egg.",
+    "milk": "Served with a portion of butter. Scrambled egg contains milk.",
+    "soya": "Both bloomers contain soya."
+   },
+   "summary": "Contains gluten, eggs, milk, soya.",
+   "fullTable": true,
+   "ingredients": "CHICKEN SAUSAGE (See Chicken Sausage (click to view) ) EGGS: Eggs can be poached, fried or scrambled. Only Scrambled Eggs contain PASTEURISED Semi-Skimmed Milk, Black Pepper. BAKED BEANS (Beans, Tomatoes, Water, Sugar, Spirit Vinegar, Modified Cornflour, Salt, Spice Extracts, Herb Extract). HASH BROWN (see Hash Brown (click to view) ) GRILLED MUSHROOM (See Extras & Garnish (click to view) ) TOMATO, GARLIC AND CHILLI SPREAD (see Extras & Garnish (click to view) ) RAPESEED OIL PERi Salt BLACK PEPPER SALT CHIVES BASTING SAUCE (View Spices (click to view) ) WHITE BLOOMER (Wheat Flour (with Calcium, Iron, Niacin, Thiamine, Folic Acid), Water, Vegetable Oils (Rapeseed, Palm), Yeast, Salt, Dextrose, Wheat Protein, Spirit Vinegar, Emulsifiers (E471, E472 (e)), Palm Fat, Flour Treatment Agent (E300), Wheat Flour, Soya OR MALTED BROWN BLOOMER (Wheat Flour (with Calcium Carbonate, Iron, Niacin, Thiamine, Folic Acid), Water, Malted Wheat Flakes, Wheat Bran, Yeast, Malted Barley Flour, Salt, Vegetable Oils (Rapeseed Oil, Palm Oil), Wheat Protein, Spirit Vinegar, Emulsifiers (E471, E472(e)), Malted Wheat Flour, Flour Treatment Agents (E300), Palm Fat, Wheat Flour, Soya."
+  },
+  {
+   "slug": "the-big-cheese",
+   "name": "The Big Cheese",
+   "variant": "",
+   "category": "Burgers, Pittas, Wraps",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/the-big-cheese",
+   "contains": [
+    "gluten",
+    "milk",
+    "sulphites"
+   ],
+   "mayContain": [
+    "soya"
+   ],
+   "notes": {
+    "gluten": "Rustic Portuguese roll contains gluten from wheat and oats",
+    "milk": "Halloumi cheese contains pasteurised cow’s, sheep’s and goat’s milk",
+    "soya": "Rustic Portuguese roll may contain soya",
+    "sulphites": "Lime Juice contains sulphites at <10ppm"
+   },
+   "summary": "Contains gluten, milk, sulphites.",
+   "fullTable": true,
+   "ingredients": "HALLOUMI CHEESE (Milk, Salt, Mint) RUSTIC PORTUGUESE ROLL (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Water, Bakery Improver (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Sugar, Salt, Emulsifiers (Mono- And Diglycerides Of Fatty Acids, Sodium Stearoyl-2-Lactylate), Vegetable Oils (Palm, Rapeseed), Inactive Dry Yeast, Flour Treatment Agent (Ascorbic Acid), Potato Flakes (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat drink (Spring Water, Organic Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina. PINEAPPLE AND RED PEPPER SALSA (Red Pepper, Pineapple Slices, Chilli, Garlic, Cider Vinegar, Olive Oil, Brown Sugar, Lemon Juice Concentrate, Cornflour, Salt, Smoked Paprika) AVOCADO (Avocado, Lime juice, Essential Lime Oil, Preservative (Potassium Metabisulphite (Sulphites))) CHURRASCO PERINAISE (Water, Rapeseed Oil, Sugar, Vinegar Blend (Spirit Vinegar, Cider Vinegar), Thickener: Modified Maize Starch, Medium Bulk (Water, Spirit Vinegar, Onion, Spice Mix (Salt, Spices (Red Chilli Pepper, Birds Eye Chilli), Herb (Bay Leaf)), Rapeseed Oil, Lemon Juice, Green Chilli, Garlic Puree, Lemon Zest, Stabiliser: Guar Gum, Stabiliser: Xanthan Gum), Spice Mix (Salt, Spices (Paprika, Red Chilli Pepper, White Pepper), Yeast Extract, Flavourings, Colour (Curcumin), Salt, Modified Starch, Garlic Puree, Tapioca Starch, Garlic Powder, Smoked Maltodextrin, Paprika, Colour (Paprika Extract)) LETTUCE RAPESEED OIL BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "the-big-veggie-breakfast",
+   "name": "The Big Veggie Breakfast",
+   "variant": "",
+   "category": "The Works",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/the-big-veggie-breakfast",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "soya"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Bloomers contains gluten from wheat and malted bloomer contains gluten from barley.",
+    "eggs": "Contains egg.",
+    "milk": "Served with a portion of butter. Scrambled egg contains milk.",
+    "soya": "Both bloomers contain soya."
+   },
+   "summary": "Contains gluten, eggs, milk, soya.",
+   "fullTable": true,
+   "ingredients": "HALLOUMI CHEESE (See Extra & Garnish (click to view) ) EGGS: Eggs can be poached, fried or scrambled. Only Scrambled Eggs contain PASTEURISED Semi-Skimmed Milk, Black Pepper. BAKED BEANS (Beans, Tomatoes, Water, Sugar, Spirit Vinegar, Modified Cornflour, Salt, Spice Extracts, Herb Extract). HASH BROWN (see Hash Brown (click to view) ) AVOCADO GRILLED MUSHROOM (See Extras & Garnish (click to view) ) TOMATO GARLIC AND CHILLI SPREAD (see Extras & Garnish (click to view) ) RAPESEED OIL PERi Salt BLACK PEPPER SALT CHIVES BASTING SAUCE (View Spices (click to view) ) WHITE BLOOMER (Wheat Flour (with Calcium, Iron, Niacin, Thiamine, Folic Acid), Water, Vegetable Oils (Rapeseed, Palm), Yeast, Salt, Dextrose, Wheat Protein, Spirit Vinegar, Emulsifiers (E471, E472 (e)), Palm Fat, Flour Treatment Agent (E300), Wheat Flour, Soya OR MALTED BROWN BLOOMER (Wheat Flour (with Calcium Carbonate, Iron, Niacin, Thiamine, Folic Acid), Water, Malted Wheat Flakes, Wheat Bran, Yeast, Malted Barley Flour, Salt, Vegetable Oils (Rapeseed Oil, Palm Oil), Wheat Protein, Spirit Vinegar, Emulsifiers (E471, E472(e)), Malted Wheat Flour, Flour Treatment Agents (E300), Palm Fat, Wheat Flour, Soya."
+  },
+  {
+   "slug": "the-daybreaker",
+   "name": "The Daybreaker",
+   "variant": "",
+   "category": "Breakfast Rolls",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/the-daybreaker",
+   "contains": [
+    "eggs",
+    "gluten"
+   ],
+   "mayContain": [
+    "soya"
+   ],
+   "notes": {
+    "gluten": "RUSTIC ROLL contains gluten from wheat and oats.",
+    "eggs": "Contain Eggs.",
+    "soya": "Rustic roll may contain soya."
+   },
+   "summary": "Contains gluten, eggs.",
+   "fullTable": true,
+   "ingredients": "CHICKEN SAUSAGE ( see Chicken Sausage (click to view) ) RUSTIC PORTUGUESE ROLL (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin,Thiamin, Folic Acid), Water, Bakery Improver (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Sugar, Salt, Emulsifiers, (Mono- And Diglycerides Of Fatty Acids, Sodium Stearoyl-2-Lactylate), Vegetable Oils (Palm, Rapeseed), Inactive Dry Yeast, Flour Treatment Agent (Ascorbic Acid), Potato Flakes (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Gluten Free Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina. (Potato Flakes, Emulsifier (Mono & DiGlycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Gluten Free Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina) FRIED EGGS (Whole eggs, Vegetable Oil) HASH BROWN (see Extras & Garnish) CHURRASCO PERinaise (Water, Rapeseed Oil, Sugar, Vinegar Blend (Spirit Vinegar, Cider Vinegar), Thickener: Modified Maize Starch, Medium Bulk (Water, Spirit Vinegar, Onion, Spice Mix (Salt, Spices (Red Chilli Pepper, Birds Eye Chilli), Herb (Bay Leaf)), Rapeseed Oil, Lemon Juice, Green Chilli, Garlic Puree, Lemon Zest, Stabiliser: Guar Gum, Stabiliser: Xanthan Gum), Spice Mix (Salt, Spices (Paprika, Red Chilli, Pepper, White Pepper), Yeast Extract, Flavourings, Colour: E100), Salt, Modified Starch, Garlic Puree, Tapioca Starch, Garlic Powder, Smoked Maltodextrin, Paprika, Colour: Paprika Extract) PERi TOMATO RELISH PERI KETCHUP (Tomatoes, Brown Sugar, Water, Onion, Red Wine Vinegar, Roasted Red Pepper, Tomato Paste, Cornflour, Cane Molasses,Salt, Worcester Sauce (Water, Black Treacle, Spirit Vinegar,Tamarind, Salt, Onion Powder, Garlic Powder, White Pepper, Pimento, Ginger, Paprika, Clove), Lemon Juice, Garlic Puree, Ginger Puree, Gelling Agent (Pectin), Spices (Paprika, Chilli (Capsicums, African Birds Eye Chillies)), Curry Powder (Ground Spices (Coriander, Turmeric, Cumin, Black Pepper, Paprika, Caraway Seed, Cayenne, Fenugreek), Salt, Garlic Powder, Rapeseed Oil, Ground Oregano), Bay Leaf, Colour (Paprika Extract), Ground Coriander, Ground Cumin) RAPESEED OIL BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "the-great-imitator-wrap",
+   "name": "'The Great Imitator' Wrap",
+   "variant": "",
+   "category": "Burgers, Pittas, Wraps",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/the-great-imitator-wrap",
+   "contains": [
+    "gluten",
+    "soya"
+   ],
+   "mayContain": [
+    "celery",
+    "mustard"
+   ],
+   "notes": {
+    "celery": "PERi-Plant Fillet may contain celery",
+    "gluten": "PERi-plant and wrap contains gluten from wheat",
+    "mustard": "PERi-Plant Fillet may contain mustard",
+    "soya": "PERi-plant contains soya"
+   },
+   "summary": "Contains gluten, soya.",
+   "fullTable": true,
+   "ingredients": "PERi-PLANT: (Plant Protein (Water, Soya protein, starch (corn, potato), Wheat gluten), vegetable oils (Sunflower and Rapeseed Oil), Citrus Fibre, Processed Eucheuma Seaweed, konjac gum, stabiliser (methylcellulose), Salt, Natural Flavouring, Yeast Extract, Garlic Powder, Onion Powder, Dextrose) WRAP (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamine, Folic Acid), Water, Vegetable Oils (Palm Oil, Rapeseed Oil), Raising Agents (Sodium Carbonates, Malic Acid, Diphosphates), Sugar, Stabiliser (Sodium Carboxymethyl Cellulose), Salt) LETTUCE LEAF CHILLI JAM (Tomatoes, Brown Sugar, Red Wine Vinegar, Red Chilli, Red Onions, Cornflour, Tomato Paste, Garlic Puree, Salt, Gelling Agent (Pectin)) GARLIC PERINAISE (Water, Rapeseed Oil, Sugar, Vinegar Blend (Spirit Vinegar, Cider Vinegar), Thickener (Modified Maize Starch), Medium Sauce (Water, Spirit Vinegar, Onion, Spice Mix (Salt, Spices (Red Chilli Pepper, Birds Eye Chilli), Herb (Bay Leaf)), Rapeseed Oil, Lemon Juice, Green Chilli, Garlic Puree, Un-waxed Lemon Zest, Stabilisers (Guar Gum, Xanthan Gum), Spice Mix (Salt, Spices (Paprika, Red Chilli Pepper, White Pepper)), Yeast Extract, Flavourings, Colour (Curcumin, Paprika Extract), Salt, Modified Starch, Garlic Puree, Tapioca Starch, Garlic Powder, Paprika) BASTING SAUCE (View in spices (click to view) )"
+  },
+  {
+   "slug": "the-pickle-house-bloody-mary",
+   "name": "Only in Gatwick",
+   "variant": "Pickle House Bloody",
+   "category": "Drinks",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/the-pickle-house-bloody-mary",
+   "contains": [
+    "celery"
+   ],
+   "mayContain": [],
+   "notes": {},
+   "summary": "Contains celery.",
+   "fullTable": true,
+   "ingredients": "Tomato juice (Tomato paste, water), pickle juice (apple cider vinegar, water, cucumber, salt, sugar, turmeric and fennel), vodka, vegan Worcester sauce (water, treacle, tamarind, garlic, salt, balsamic vinegar, cayenne pepper, caramel and cloves), horseradish, black pepper, cayenne pepper and celery salt."
+  },
+  {
+   "slug": "toast",
+   "name": "Toast",
+   "variant": "",
+   "category": "The Classics",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/toast",
+   "contains": [
+    "celery",
+    "gluten",
+    "milk",
+    "soya"
+   ],
+   "mayContain": [],
+   "notes": {
+    "celery": "Marmite contains celery",
+    "gluten": "Malted Bloomer contains gluten from wheat & barley. White bloomer contains gluten from wheat",
+    "milk": "Butter portions contain pasteurised milk",
+    "soya": "Contains soya"
+   },
+   "summary": "Contains celery, gluten, milk, soya.",
+   "fullTable": true,
+   "ingredients": "WHITE BLOOMER (Wheat Flour (with Calcium, Iron, Niacin, Thiamine, Folic Acid), Water, Vegetable Oils (Rapeseed, Palm), Yeast, Salt, Dextrose, Wheat Protein, Spirit Vinegar, Emulsifiers (E471, E472 (e)), Palm Fat, Flour Treatment Agent (E300), Wheat Flour, Soya . OR . MALTED BROWN BLOOMER (Wheat Flour (with Calcium Carbonate, Iron, Niacin, Thiamine, Folic Acid), Water, Malted Wheat Flakes, Wheat Bran, Yeast, Malted Barley Flour, Salt, Vegetable Oils (Rapeseed Oil, Palm Oil), Wheat Protein, Spirit Vinegar, Emulsifiers (E471, E472(e)), Malted Wheat Flour, Flour Treatment Agents (E300), Palm Fat, Wheat Flour, Soya . Served with a portion of butter. Can be served with strawberry jam, blackcurrant jam, honey or marmite."
+  },
+  {
+   "slug": "toffee-apple-pastel-de-nata",
+   "name": "Toffee Apple Pastel de Nata",
+   "variant": "",
+   "category": "Desserts",
+   "updated": "29 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/toffee-apple-pastel-de-nata",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk"
+   ],
+   "mayContain": [
+    "nuts",
+    "soya"
+   ],
+   "notes": {
+    "gluten": "Contains gluten from wheat.",
+    "eggs": "Contains pasteurised egg.",
+    "milk": "Contains pasteurised milk.",
+    "nuts": "May contain hazelnuts.",
+    "soya": "May contain soya."
+   },
+   "summary": "Contains gluten, eggs, milk.",
+   "fullTable": true,
+   "ingredients": "Filling: Milk, Sugar, Free Range Egg yolk, Wheat flour, corn starch, flavourings. Dough: Wheat flour, butter (Milk), water, salt, cinnamon. Apple and caramel filling: 4% apple, sugar, water, 1% caramel (sugar, water), butter (pasteurised cream (Milk), salt, lactic cultures (Milk)), modified maize starch, whole Milk powder, salt, emulsifier (mono- and diglycerides of fatty acids), natural flavourings, acidity regulators (lactic acid, sodium citrate), thickener (gellan gum), colouring foods (apple, carrot and hibiscus concentrate, radish, blackcurrant, safflower, lemon)."
+  },
+  {
+   "slug": "tombstone-chips",
+   "name": "Tombstone Chips",
+   "variant": "",
+   "category": "Sides",
+   "updated": "29 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/tombstone-chips",
+   "contains": [],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Dark Chicken Salt contains malt vinegar derived from barley. However, the ingredient is processed to remove gluten, and the finished product is tested and verified as gluten free."
+   },
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "CHIPS: Potatoes, Vegetable Oils (Rapeseed & Sunflower), Salt, Dextrose, Disodium Disphosphate DARK CHICKEN SALT: Salt, Mixed Spices (Salt, Sea Salt, Chilli Powder, Paprika, Red Chilli Pepper, Birds Eye Chilli, White Pepper, Yeast Extract, Flavourings, Colour (E100)), Yeast Extract (Yeast Extract ), Cocoa Powder (Cocoa Powder, Sodium Carbonate (E500), Potassium Carbonate (E501), Sugar, Malt Vinegar Powder (Gluten (Barley) ) (Malt Vinegar (Gluten (Barley) ), Maltodextrin), Smoked Salt, Dried Yeast, Citric Acid (E330), Spirit Vinegar Powder (Maltodextrin, Vinegar ), Lime Oil, Black Pepper Extract, Rapeseed Oil, Flavouring, Anti-caking Agent (E551), Lemon Oil, Garlic Extract, Capsicum Extract (Sunflower Oil), NATURAL FLAVOURING PREPARATION), Flavouring, Thyme Extract (Thyme Extract, Sunflower Oil), Sunflower Oil . Dark Chicken Salt contains malt vinegar derived from barley. However, the ingredient is processed to remove gluten, and the finished product is tested and verified as gluten free."
+  },
+  {
+   "slug": "tortilla-wrap",
+   "name": "Tortilla Wrap",
+   "variant": "",
+   "category": "Extras & Garnish",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/tortilla-wrap",
+   "contains": [
+    "gluten"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "Contains gluten from wheat"
+   },
+   "summary": "Contains gluten.",
+   "fullTable": true,
+   "ingredients": "Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamine, Folic Acid), Water, Vegetable Oils (Palm Oil, Rapeseed Oil), Raising Agents (Sodium Carbonates, Malic Acid, Diphosphates), Sugar, Stabiliser (Sodium Carboxymethyl Cellulose), Salt"
+  },
+  {
+   "slug": "ultimate-chocolate-brownie",
+   "name": "Ultimate Chocolate Brownie",
+   "variant": "",
+   "category": "Desserts",
+   "updated": "09 Sept 2026",
+   "url": "https://www.nandos.co.uk/allergens/ultimate-chocolate-brownie",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "soya"
+   ],
+   "mayContain": [
+    "nuts"
+   ],
+   "notes": {
+    "gluten": "Brownie contains gluten from wheat.",
+    "eggs": "Brownie contains pasteurised egg. Gelado may contain egg.",
+    "milk": "Brownie and Gelado contain pasteurised milk.",
+    "nuts": "Gelado may contain hazelnuts and pistachios.",
+    "soya": "Brownie contains soya."
+   },
+   "summary": "Contains gluten, eggs, milk, soya.",
+   "fullTable": true,
+   "ingredients": "ULTIMATE CHOCOLATE BROWNIE: Dark Brown Sugar, White Chocolate (11%) (Sugar, Whole Milk Powder, Cocoa Butter, Emulsifier ( Soya Lecithin), Natural Vanilla Flavouring), Chocolate (10%) (Sugar, Cocoa Mass, Cocoa Butter, Emulsifier ( Soya Lecithin), Natural Vanilla Flavouring), White Sugar, Belgian Dark Chocolate (8%) (Cocoa Mass, Sugar, Emulsifier ( Soya Lecithin), Natural Vanilla Flavouring), Water, Self Raising Flour (Fortified Wheat Flour ( Wheat Flour, Calcium Carbonate, Iron, Niacin, Folic Acid, Thiamine), Raising Agents (Sodium Bicarbonate, Calcium Phosphate)), Milk Chocolate (6%) (Sugar, Whole Milk Powder, Cocoa Butter, Cocoa Mass, Emulsifier ( Soya Lecithin), Natural Vanilla Flavouring), Free Range Egg , Margarine (Palm Oil, Rapeseed Oil, Water, Emulsifier (Mono- And Diglycerides Of Fatty Acids)), Fortified Wheat Flour ( Wheat Flour, Calcium Carbonate, Niacin, Iron, Folic Acid, Thiamine) Double Cream ( Milk ), Fat Reduced Cocoa Powder, Glucose Syrup, Single Cream ( Milk ), Unsalted Butter ( Milk ).VANILLA SCOOP GELADO: Milk ( Milk ), Sugar, Cream, Refined coconut oil, rehydrated skimmed milk ( Milk ), glucose, Madagascar vanilla, salt, flavours. Emulsifiers: mono and diglycerides of fatty acids. Stabilizer: tara gum, guar gum. The ultimate Chocolate Brownie will be served with a scoop of vanilla ice cream for eat-in orders, and served on its own for takeaway."
+  },
+  {
+   "slug": "veggie-breakfast-roll",
+   "name": "Veggie Breakfast Roll",
+   "variant": "",
+   "category": "Breakfast Rolls",
+   "updated": "12 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/veggie-breakfast-roll",
+   "contains": [
+    "eggs",
+    "gluten",
+    "milk",
+    "mustard"
+   ],
+   "mayContain": [],
+   "notes": {
+    "gluten": "RUSTIC PORTUGUESE ROLL contains gluten from wheat and oat",
+    "eggs": "LIGHTLY SPICED YOGURT MAYO contains PASTEURISED eggs",
+    "milk": "LIGHTLY SPICED YOGURT MAYO and HALLOUMI CHEESE contain milk",
+    "mustard": "LIGHTLY SPICED YOGURT MAYO contains mustard"
+   },
+   "summary": "Contains gluten, eggs, milk, mustard.",
+   "fullTable": true,
+   "ingredients": "RUSTIC PORTUGUESE ROLL (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate,Iron, Niacin,Thiamin, Folic Acid), Water, Bakery Improver (Fortified Wheat Flour (Wheat Flour, Calcium Carbonate, Iron, Niacin, Thiamin, Folic Acid), Sugar, Salt, Emulsifiers, (Mono- And Diglycerides Of Fatty Acids, Sodium Stearoyl-2- Lactylate), Vegetable Oils (Palm, Rapeseed), Inactive Dry Yeast, Flour Treatment Agent (Ascorbic Acid), Potato Flakes (Potato Flakes, Emulsifier (Mono & Di Glycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Gluten Free Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina (Potato Flakes, Emulsifier (Mono & DiGlycerides Of Fatty Acids), Organic Oat Milk (Spring Water, Organic Gluten Free Oats, Sunflower Oil, Sea Salt), Yeast, Wheat Semolina) . CHILLI JAM (see Extras & Garnish) (click to view) . HALLOUMI CHEESE (Milk) (see Extras & Garnish (click to view) ) . AVOCADO (see Extras & Garnish (click to view) ) . RAPESEED OIL . TOMATO SLICE . LIGHTLY SPICED YOGURT MAYO ((Water, Greek Style Yogurt (Milk), Rapeseed Oil, White Wine Vinegar, Cornflour, Sugar, Egg Yolk Powder, Coriander, Salt, Mustard Powder, Lemon Juice Concentrate, Milled Red Chillies, Onion Powder, Cracked Black Pepper, Preservative (Potassium Sorbate), Stabilisers (Guar Gum, Xanthan Gum), Ground White Pepper, Ground Coriander, African Birds Eye Chillies) . BASTING SAUCE ( View Spices (click to view) )"
+  },
+  {
+   "slug": "water",
+   "name": "Still & Sparkling",
+   "variant": "Water",
+   "category": "Drinks",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/water",
+   "contains": [],
+   "mayContain": [],
+   "notes": {},
+   "summary": "None of the top 14 allergens present, please see below for may contain information.",
+   "fullTable": true,
+   "ingredients": "Still Water: Water Sparkling Water: Water, CO 2"
+  },
+  {
+   "slug": "wines",
+   "name": "Wines",
+   "variant": "",
+   "category": "Drinks",
+   "updated": "18 May 2026",
+   "url": "https://www.nandos.co.uk/allergens/wines",
+   "contains": [
+    "sulphites"
+   ],
+   "mayContain": [],
+   "notes": {},
+   "summary": "Contains sulphites.",
+   "fullTable": true,
+   "ingredients": "SPIER SAUVIGNON BLANC CANS (Grapes (Sauvignon Blanc), Sulphur Dioxide (Sulphites)) SPIER MERLOT CANS (Grapes (Merlot and other Red Varietal Grapes), Sulphur Dioxide (Sulphites)) SPIER ROSE CANS (Contains Sulphur Dioxide (Sulphites)) SPIER CHARDONNAY (Grapes (Chardonnay), Sulphur Dioxide (Sulphites)) SPIER CABERNET SAUVIGNON (Grapes (Cabernet Sauvignon), Sulphur Dioxide (Sulphites)) CREATIVE BLOCK 2 (Grapes (Sauvignon Blanc, Sémillon), Sulphur Dioxide (Sulphites)) CREATIVE BLOCK 5 (Cabernet Sauvignon, Merlot, Cabernet Franc, Petit Verdot, Malbec, Sulphur Dioxide (Sulphites))"
+  }
+ ]
+}

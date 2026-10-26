@@ -1,0 +1,24 @@
+{
+  "name": "Greggs",
+  "type": "Bakery",
+  "covers": "Food and drinks in UK Greggs shops",
+  "area": "UK",
+  "language": "en",
+  "reader": "greggs_uk_pdf",
+  "optionLabel": "option",
+  "officialUrl": "https://www.greggs.com/nutrition",
+  "watch": {"page": "https://www.greggs.com/nutrition", "link": "allergen-guide"},
+  "recheckDays": 61,
+  "headline": "Cappuccino, hot chocolate and mocha may contain wheat.",
+  "tips": [
+    "Drinks: cappuccino, hot chocolate, mocha and some speciality drinks may contain wheat. Lattes, flat whites, teas and the syrups list no gluten cereal.",
+    "Almost all the bakery, sandwiches, bakes and sweet treats contain wheat. Look at drinks, fruit pots, dips and crisps.",
+    "Greggs marks a few items GF (its gluten free label), such as the Tomato Soup. Its porridge is marked GF but made with oats, so it's on the Avoid list here."
+  ],
+  "gaps": [
+    "Greggs calls a few products gluten free (marked GF). This app lists items with no gluten cereal marked, and quotes Greggs' claim on the items it labels.",
+    "A bullet in the guide means an item may contain that cereal; those items are on the Avoid list here, with the reason.",
+    "The guide says hot and iced drinks can't be guaranteed allergen-free because of shared equipment.",
+    "Branded products: the guide says their allergen details are on the packaging or the supplier's website."
+  ]
+}

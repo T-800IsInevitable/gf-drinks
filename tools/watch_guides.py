@@ -49,6 +49,7 @@ PAGE_LIMIT = 5_000_000
 PDF_LIMIT = 60_000_000
 RETRY_AFTER = 30
 HREF = re.compile(r"""href\s*=\s*["']([^"']+)["']""", re.I)
+BARE_PDF = re.compile(r"""https?://[^\s"'<>\\]+?\.pdf\b""", re.I)
 WORKFLOW = "_Opened automatically by `.github/workflows/guide-watch.yml` (`tools/watch_guides.py`)._"
 
 
@@ -79,14 +80,17 @@ def why(e):
 
 
 def guide_links(page_html, page_url, pattern):
-    """Every PDF the page links whose (decoded) address matches the pattern, in page order."""
-    out = []
-    for h in HREF.findall(page_html):
+    """Every PDF the page links whose (decoded) address matches the pattern, in page order. Also PDF addresses written
+    anywhere in the page, for sites that build their links in JavaScript (PizzaExpress)."""
+    out, seen = [], set()
+    for h in HREF.findall(page_html) + BARE_PDF.findall(page_html.replace("\\/", "/")):
         url = urllib.parse.urljoin(page_url, html.unescape(h).strip())
         parts = urllib.parse.urlsplit(url)
         decoded = urllib.parse.unquote(url)
+        bare = parts._replace(query="", fragment="").geturl()  # the same file, written with and without its query
         if parts.scheme in ("http", "https") and parts.path.lower().endswith(".pdf") and re.search(pattern, decoded, re.I):
-            if url not in out:
+            if bare not in seen:
+                seen.add(bare)
                 out.append(url)
     return out
 

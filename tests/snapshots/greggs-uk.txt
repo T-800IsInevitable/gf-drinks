@@ -1,0 +1,249 @@
+# source: greggs-allergen-guide-v15.pdf
+OK    | Breakfast | Heinz Tomato Ketchup | asis
+OK    | Breakfast | Spread | asis
+OK    | Hot Food | Hash Browns | asis
+OK    | Dip Pots | Garlic & Herb Dip | asis
+OK    | Dip Pots | Hot Sauce | asis
+OK    | Dip Pots | Smoky BBQ Dip | asis
+OK    | Extras | Extra Bacon | asis
+OK    | Extras | Extra Omelette with cheese | asis
+OK    | Yoghurt | Fat Free Greek Style Yoghurt with Strawberry Compote | asis
+OK    | Greggs Fruit Pots | Apple and Strawberry | asis
+OK    | Greggs Fruit Pots | Pineapple | asis
+OK    | Snacking Pot | Free Range Egg Pot | asis
+OK    | Dip Pots | Buffalo Sauce | asis
+OK    | Dip Pots | Hot Honey | asis
+OK    | Sweet Treats | Caramel Crispy | asis
+OK    | Dipping Sauces | Milk Chocolate Dipping Sauce | asis
+OK    | Dipping Sauces | Salted Caramel Dipping Sauce | asis
+OK    | Soup | Tomato Soup | asis
+OK    | Hot Drinks | Americano | asis
+OK    | Hot Drinks | Black Tea | asis
+OK    | Hot Drinks | Flat White | asis
+OK    | Hot Drinks | Decaf Black Coffee | asis
+OK    | Hot Drinks | Espresso Shot | asis
+OK    | Hot Drinks | Extra Espresso Shot | asis
+OK    | Hot Drinks | Green Tea | asis
+OK    | Hot Drinks | Latte | asis
+OK    | Hot Drinks | Milk | asis
+OK    | Hot Drinks | Peppermint Tea | asis
+OK    | Hot Drinks | White Tea | asis
+OK    | Hot Drinks | White Coffee | asis
+OK    | Speciality Drinks | Hazelnut Crunch Latte | asis
+OK    | Speciality Drinks | Pumpkin Spice Latte with Salted Caramel Drizzle | asis
+OK    | Speciality Drinks | Salted Caramel Latte | asis
+OK    | Iced Drinks | Iced Americano | asis
+OK    | Iced Drinks | Iced Latte | asis
+OK    | Iced Drinks | Iced Matcha Latte | asis
+OK    | Iced Drinks | Cherry & Mango Cooler | asis
+OK    | Iced Drinks | Cherry Lemonade | asis
+OK    | Iced Drinks | Cloudy Lemonade | asis
+OK    | Iced Drinks | Mango and Strawberry Cooler | asis
+OK    | Iced Drinks | Mango Lemonade | asis
+OK    | Iced Drinks | Strawberry Lemonade | asis
+OK    | Iced Speciality Drinks | Blueberry Iced Matcha Latte | asis
+OK    | Iced Speciality Drinks | Candy Cane Mint Iced Matcha Latte | asis
+OK    | Iced Speciality Drinks | Iced Caramel Latte | asis
+OK    | Iced Speciality Drinks | Iced Hazelnut Crunch Latte | asis
+OK    | Iced Speciality Drinks | Iced Pumpkin Spice Latte with Salted Caramel Drizzle | asis
+OK    | Iced Speciality Drinks | Iced Salted Caramel Latte | asis
+OK    | Iced Speciality Drinks | Iced Vanilla Latte | asis
+OK    | Iced Speciality Drinks | Pumpkin Spice Iced Matcha Latte with Salted Caramel Drizzle | asis
+OK    | Iced Speciality Drinks | Strawberry Iced Matcha Latte | asis
+OK    | Iced Speciality Drinks | Vanilla Iced Matcha Latte | asis
+OK    | Extras | Cream | asis
+OK    | Syrups | Caramel Syrup | asis
+OK    | Syrups | Carmelised Biscuit Syrup | asis
+OK    | Syrups | Cinnamon Syrup | asis
+OK    | Syrups | Hazelnut Syrup | asis
+OK    | Syrups | Gingerbread Syrup | asis
+OK    | Syrups | Mint Syrup | asis
+OK    | Syrups | Pumpkin Spice Syrup | asis
+OK    | Syrups | Salted Caramel Syrup | asis
+OK    | Syrups | Vanilla Syrup | asis
+OK    | Greggs Own Label Cold Drinks | Apple Juice | asis
+OK    | Greggs Own Label Cold Drinks | Natural Mineral Water | asis
+OK    | Greggs Own Label Cold Drinks | Orange Juice | asis
+OK    | Greggs Own Label Cold Drinks | Ready to Drink Caramel Latte | asis
+OK    | Greggs Own Label Cold Drinks | Ready to Drink Latte | asis
+OK    | Greggs Own Label Cold Drinks | Sparkling Raspberry Lemonade | asis
+OK    | Greggs Own Label Crisps | Mature Cheddar & Onion Hand Cooked Crisps | asis
+OK    | Greggs Own Label Crisps | Sea Salt & Cider Vinegar Hand Cooked Crisps | asis
+OK    | Greggs Own Label Crisps | Thai Sweet Chilli Hand Cooked Crisps | asis
+AVOID | Bread & Rolls | Baguettes | WHEAT
+AVOID | Bread & Rolls | Corn Topped Rolls | WHEAT
+AVOID | Bread & Rolls | Malted Brown Loaf | WHEAT;BARLEY
+AVOID | Bread & Rolls | Oval Bites | WHEAT
+AVOID | Bread & Rolls | Stotties | WHEAT
+AVOID | Bread & Rolls | White Bread made with Sourdough | WHEAT
+AVOID | Bread & Rolls | White & Wholemeal Loaf | WHEAT
+AVOID | Bread & Rolls | White & Wholemeal Rolls | WHEAT
+AVOID | Breakfast | HP Brown Sauce | RYE;BARLEY
+AVOID | Hot Food | Southern Fried Potato Wedges | WHEAT
+AVOID | Savouries & Bakes | Vegan Roll Pork-Free with Quorn™ | WHEAT;BARLEY
+AVOID | Sweet Treats | Glazed Ring Doughnut | WHEAT
+AVOID | Sweet Treats | Sweet Mince Pies | WHEAT
+AVOID | Breakfast Baguettes with Spread | Bacon & Lorne Breakfast Baguette | WHEAT
+AVOID | Breakfast Baguettes with Spread | Bacon & Omelette Breakfast Baguette with cheese | WHEAT
+AVOID | Breakfast Baguettes with Spread | Bacon & Sausage Breakfast Baguette | WHEAT
+AVOID | Breakfast Baguettes with Spread | Bacon Breakfast Baguette | WHEAT
+AVOID | Breakfast Baguettes with Spread | Lorne & Omelette Breakfast Baguette with cheese | WHEAT
+AVOID | Breakfast Baguettes with Spread | Lorne Breakfast Baguette | WHEAT
+AVOID | Breakfast Baguettes with Spread | Omelette Breakfast Baguette with cheese | WHEAT
+AVOID | Breakfast Baguettes with Spread | Sausage & Omelette Breakfast Baguette with cheese | WHEAT
+AVOID | Breakfast Baguettes with Spread | Sausage Breakfast Baguette | WHEAT
+AVOID | Breakfast Rolls with Spread | Bacon & Lorne Breakfast Roll | WHEAT
+AVOID | Breakfast Rolls with Spread | Bacon & Omelette Breakfast Roll with cheese | WHEAT
+AVOID | Breakfast Rolls with Spread | Bacon & Sausage Breakfast Roll | WHEAT
+AVOID | Breakfast Rolls with Spread | Bacon Breakfast Roll | WHEAT
+AVOID | Breakfast Rolls with Spread | Lorne & Omelette Breakfast Roll with cheese | WHEAT
+AVOID | Breakfast Rolls with Spread | Lorne Breakfast Roll | WHEAT
+AVOID | Breakfast Rolls with Spread | Omelette Breakfast Roll with cheese | WHEAT
+AVOID | Breakfast Rolls with Spread | Sausage & Omelette Breakfast Roll with cheese | WHEAT
+AVOID | Breakfast Rolls with Spread | Sausage Breakfast Roll | WHEAT
+AVOID | Breakfast Box | Breakfast Box | WHEAT
+AVOID | Extras | Extra Breakfast Sausage | WHEAT
+AVOID | Extras | Extra Lorne Sausage | WHEAT
+AVOID | Pastries | All Butter Croissant | WHEAT
+AVOID | Pastries | Pain au Chocolat | WHEAT
+AVOID | Porridge | Apple & Cinnamon Flavour Porridge | OATS
+AVOID | Porridge | Golden Syrup Flavour Porridge | OATS
+AVOID | Porridge | Simply Creamy Porridge | OATS
+AVOID | Baguettes | Free Range Egg Mayonnaise Baguette | WHEAT
+AVOID | Baguettes | Free Range Egg Mayonnaise Half Baguette | WHEAT
+AVOID | Baguettes | Ham & Cheese Baguette | WHEAT
+AVOID | Baguettes | Festive Feast Baguette | WHEAT
+AVOID | Baguettes | Mature Cheddar Cheese Salad Baguette | WHEAT
+AVOID | Baguettes | Mexican Chicken Baguette | WHEAT
+AVOID | Baguettes | Roast Chicken & Bacon Club Baguette | WHEAT
+AVOID | Baguettes | Roast Chicken & Bacon Club Half Baguette | WHEAT
+AVOID | Baguettes | Roast Chicken Mayonnaise Baguette | WHEAT
+AVOID | Baguettes | Southern Fried Chicken Baguette | WHEAT
+AVOID | Baguettes | Tandoori Chicken Baguette | WHEAT
+AVOID | Baguettes | Tandoori Chicken Half Baguette | WHEAT
+AVOID | Baguettes | Tuna Crunch Baguette | WHEAT
+AVOID | Bread Packs | BLT | WHEAT;BARLEY
+AVOID | Bread Packs | Cheese | WHEAT
+AVOID | Bread Packs | Cheese & Pickle | WHEAT;BARLEY
+AVOID | Bread Packs | Cheese & Tomato | WHEAT;BARLEY
+AVOID | Bread Packs | Egg Mayonnaise | WHEAT
+AVOID | Bread Packs | Egg Mayonnaise & Tomato | WHEAT;BARLEY
+AVOID | Bread Packs | Free Range Egg Mayonnaise | WHEAT;BARLEY
+AVOID | Bread Packs | Free Range Egg Salad | WHEAT;BARLEY
+AVOID | Bread Packs | Ham | WHEAT
+AVOID | Bread Packs | Honey Roast Ham | WHEAT;BARLEY
+AVOID | Bread Packs | Honey Roast Ham & Egg | WHEAT;BARLEY
+AVOID | Bread Packs | Honey Roast Ham & Egg Salad | WHEAT;BARLEY
+AVOID | Bread Packs | Mexican Chicken Sandwich | WHEAT;BARLEY
+AVOID | Bread Packs | Roast Chicken Salad | WHEAT;BARLEY
+AVOID | Bread Packs | Tandoori Chicken | WHEAT;BARLEY
+AVOID | Bread Packs | Tuna Crunch | WHEAT;BARLEY
+AVOID | Bread Packs | Tuna Mayonnaise & Cucumber | WHEAT;BARLEY
+AVOID | Flatbreads | Festive Flatbread | WHEAT
+AVOID | Flatbreads | Mexican Chicken Flatbread | WHEAT
+AVOID | Oval Bites | Mature Cheddar Cheese Ploughman’s Oval Bite | WHEAT;BARLEY
+AVOID | Oval Bites | Mexican Chicken Oval Bite | WHEAT
+AVOID | Oval Bites | Roast Chicken with Honey Mustard Mayonnaise Oval Bite | WHEAT
+AVOID | Stotties | Cheese & Onion Stottie | WHEAT
+AVOID | Stotties | Tuna Mayonnaise Stottie | WHEAT
+AVOID | Rolls | Egg & Tomato Roll | WHEAT
+AVOID | Rolls | Honey Roast Ham and Egg Salad Roll | WHEAT
+AVOID | Rolls | Roast Chicken Salad Roll | WHEAT
+AVOID | Rolls | Tandoori Chicken Roll | WHEAT
+AVOID | Rolls | Tuna Crunch Roll | WHEAT
+AVOID | Toasties | Cheese & Caramelised Onion Toastie | WHEAT;BARLEY
+AVOID | Toasties | Ham & Cheese Toastie | WHEAT
+AVOID | Toasties | Pigs Under Blankets Toastie | WHEAT;BARLEY
+AVOID | Pasta | BBQ Chicken & Bacon Pasta | WHEAT;BARLEY
+AVOID | Pasta | Prawn Layered Pasta Salad | WHEAT
+AVOID | Pasta | Tomato & Mozzarella Pasta | WHEAT
+AVOID | Salads | Chicken and Egg Salad | WHEAT;BARLEY tag=May contain gluten
+AVOID | Salads | Chicken Caesar Salad with Egg | WHEAT
+AVOID | Salads | Tuna Crunch Salad | WHEAT;BARLEY tag=May contain gluten
+AVOID | Salads | Side Salad | WHEAT;BARLEY tag=May contain gluten
+AVOID | Savouries & Bakes | Bacon & Cheese Wrap | WHEAT
+AVOID | Savouries & Bakes | Cheese & Onion Bake | WHEAT
+AVOID | Savouries & Bakes | Chicken Bake | WHEAT
+AVOID | Savouries & Bakes | Corned Beef Bake | WHEAT
+AVOID | Savouries & Bakes | Festive Bake | WHEAT;BARLEY
+AVOID | Savouries & Bakes | Haggis Pie | WHEAT;OATS
+AVOID | Savouries & Bakes | Salt & Chilli Chicken Roll | WHEAT
+AVOID | Savouries & Bakes | Sausage, Bean & Cheese Melt | WHEAT
+AVOID | Savouries & Bakes | Sausage Roll | WHEAT;BARLEY
+AVOID | Savouries & Bakes | Savoury Mince Pie | WHEAT;BARLEY
+AVOID | Savouries & Bakes | Scotch Pie | WHEAT;OATS
+AVOID | Savouries & Bakes | Steak & Stilton® Bake | WHEAT;BARLEY
+AVOID | Savouries & Bakes | Steak Bake | WHEAT;BARLEY
+AVOID | Savouries & Bakes | Vegetable Bake | WHEAT
+AVOID | Savouries & Bakes | 6 Mini Sausage Rolls | WHEAT;BARLEY
+AVOID | Pizzas | Margherita Pizza | WHEAT;BARLEY
+AVOID | Pizzas | Pepperoni Pizza | WHEAT;BARLEY
+AVOID | Pizzas | Pepperoni Pizza with Hot Honey | WHEAT;BARLEY
+AVOID | Pizzas | Spicy Chicken Pizza | WHEAT;BARLEY
+AVOID | Sweet Treats | Apple Danish | WHEAT
+AVOID | Sweet Treats | Bavarian Slice | WHEAT
+AVOID | Sweet Treats | Bbc Children in Need Novelty Bun | WHEAT;OATS
+AVOID | Sweet Treats | Belgian Bun | WHEAT
+AVOID | Sweet Treats | Bonfire Toffee Muffin | WHEAT
+AVOID | Sweet Treats | Caramel Custard Doughnut | WHEAT
+AVOID | Sweet Treats | Cheese Scones | WHEAT
+AVOID | Sweet Treats | Chocolate Brownie Bar | WHEAT
+AVOID | Sweet Treats | Chocolate Cake Bar | WHEAT;OATS
+AVOID | Sweet Treats | Christmas Buns | WHEAT;OATS
+AVOID | Sweet Treats | Christmas Cake Slice | WHEAT
+AVOID | Sweet Treats | Christmas Mini Caramel Shortbread/Offcuts | WHEAT
+AVOID | Sweet Treats | Cream Éclair | WHEAT
+AVOID | Sweet Treats | Cream Iced Finger | WHEAT
+AVOID | Sweet Treats | Double Chocolate Doughnut | WHEAT
+AVOID | Sweet Treats | Empire Biscuit | WHEAT
+AVOID | Sweet Treats | Fruit Scones | WHEAT
+AVOID | Sweet Treats | Fruity Flapjack | OATS
+AVOID | Sweet Treats | Gingerbread Man | WHEAT
+AVOID | Sweet Treats | Jam Doughnut | WHEAT
+AVOID | Sweet Treats | Jammy Heart Biscuit | WHEAT
+AVOID | Sweet Treats | Mango & Passion Fruit Doughnut | WHEAT
+AVOID | Sweet Treats | Milk Chocolate Caramel Shortbreads/Offcuts | WHEAT
+AVOID | Sweet Treats | Milk Chocolate Cookie | WHEAT
+AVOID | Sweet Treats | Millionaire’s Doughnut | WHEAT
+AVOID | Sweet Treats | Novelty Buns | WHEAT;OATS
+AVOID | Sweet Treats | Peach Melba | WHEAT
+AVOID | Sweet Treats | Pineapple Cake | WHEAT
+AVOID | Sweet Treats | Pink Jammie | WHEAT
+AVOID | Sweet Treats | Pudsey Biscuit | WHEAT
+AVOID | Sweet Treats | Pudsey Jammy Biscuit | WHEAT
+AVOID | Sweet Treats | Pumpkin Biscuit | WHEAT
+AVOID | Sweet Treats | Pumpkin Spice Doughnut | WHEAT
+AVOID | Sweet Treats | Spooky Buns | WHEAT;OATS
+AVOID | Sweet Treats | Star Biscuit | WHEAT
+AVOID | Sweet Treats | Strawberries & Cream Muffin | WHEAT
+AVOID | Sweet Treats | Sugar Strand Doughnut | WHEAT
+AVOID | Sweet Treats | Sweet Mince Pie Roll | WHEAT
+AVOID | Sweet Treats | Tottenham Cake | WHEAT
+AVOID | Sweet Treats | Triple Chocolate Cookie | WHEAT
+AVOID | Sweet Treats | Triple Chocolate Doughnut | WHEAT
+AVOID | Sweet Treats | Triple Chocolate Muffin | WHEAT
+AVOID | Sweet Treats | Vanilla Custard Cream Doughnut | WHEAT
+AVOID | Sweet Treats | Vanilla Custard Slice | WHEAT
+AVOID | Sweet Treats | White Chocolate Cookie | WHEAT
+AVOID | Sweet Treats | White Chocolate Gingerbread Cookie | WHEAT
+AVOID | Sweet Treats | Yum Yum | WHEAT
+AVOID | Hot Sweet | Hot Chocolate Brownies | WHEAT
+AVOID | Hot Sweet | Hot Milk Chocolate Cookies | WHEAT
+AVOID | Hot Sweet | Hot Yum Yums | WHEAT
+AVOID | Hot | BBQ Bites Meal Box | WHEAT
+AVOID | Hot | Pigs in Blankets | WHEAT
+AVOID | Hot | Spicy BBQ Chicken Bites | WHEAT
+AVOID | Hot | Southern Fried Chicken Goujons | WHEAT
+AVOID | Hot | Mozzarella & Cheddar Bites | WHEAT
+AVOID | Hot Pasta Boxes | Mac & Cheese | WHEAT
+AVOID | Hot Drinks | Cappuccino | WHEAT tag=May contain gluten
+AVOID | Hot Drinks | Hot Chocolate | WHEAT tag=May contain gluten
+AVOID | Hot Drinks | Mocha | WHEAT tag=May contain gluten
+AVOID | Speciality Drinks | Candy Cane Mint Hot Chocolate | WHEAT tag=May contain gluten
+AVOID | Speciality Drinks | Caramel Latte | WHEAT tag=May contain gluten
+AVOID | Speciality Drinks | Vanilla Latte | WHEAT tag=May contain gluten
+AVOID | Iced Drinks | Iced Chocolate | WHEAT tag=May contain gluten
+AVOID | Iced Drinks | Iced Mocha | WHEAT tag=May contain gluten
+AVOID | Iced Speciality Drinks | Iced Candy Cane Mint Chocolate | WHEAT tag=May contain gluten
+AVOID | Iced Speciality Drinks | Iced Caramel Chocolate | WHEAT tag=May contain gluten
+AVOID | Extras | Hot Chocolate Powder | WHEAT tag=May contain gluten

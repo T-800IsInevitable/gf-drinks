@@ -1,0 +1,459 @@
+# source: PizzaExpress_Allergen_Information_GB_Jersey_September_2026_V1.pdf
+OK    | Appetisers, Dough Balls & Starters | BBQ Chicken Wings | asis
+OK    | Appetisers, Dough Balls & Starters | Cajun Prawns | modify note=With GF dough balls, please
+OK    | Appetisers, Dough Balls & Starters | Caprese Salad | asis
+OK    | Appetisers, Dough Balls & Starters | Dough Balls Al Forno | modify note=With GF dough balls, please
+OK    | Appetisers, Dough Balls & Starters | Dough Balls ‘PizzaExpress’ | modify note=With GF dough balls, please
+OK    | Appetisers, Dough Balls & Starters | Dough Balls Sharer | modify note=With GF dough balls, please
+OK    | Appetisers, Dough Balls & Starters | Dynamite Dough Balls | modify note=With GF dough balls, please
+OK    | Appetisers, Dough Balls & Starters | Firecracker Chicken Wings | asis
+OK    | Appetisers, Dough Balls & Starters | Gluten-Free Dough Balls | asis
+OK    | Appetisers, Dough Balls & Starters | Lemon & Herb Chicken Wings (with House Dressing) | asis
+OK    | Appetisers, Dough Balls & Starters | Loaded Pesto Dough Balls | modify note=With GF dough balls, please
+OK    | Appetisers, Dough Balls & Starters | Marinated Green Olives | asis
+OK    | Appetisers, Dough Balls & Starters | Meatballs Al Forno | asis
+OK    | Appetisers, Dough Balls & Starters | Pepperoni Bites | asis
+OK    | Appetisers, Dough Balls & Starters | Slow-Roasted Tomatoes | asis
+OK    | Sides | Buttermilk Ranch Slaw | asis
+OK    | Sides | Halloumi Bites | asis
+OK    | Sides | Halloumi Bites Sharer | asis
+OK    | Sides | Large Mixed Salad | asis
+OK    | Sides | Mac & Cheese | modify note=With GF fusilli pasta, please
+OK    | Sides | Mac & Cheese with ‘Nduja | modify note=With GF fusilli pasta, please
+OK    | Sides | Mixed Salad | asis
+OK    | Salads | Niçoise (with Dough Sticks) | modify note=With GF dough balls, please
+OK    | Al Forno | Chicken, Pesto & Mushroom Pasta Bake | modify note=With GF fusilli pasta, please
+OK    | Al Forno | Mozzarella & Tomato Pasta Bake | modify note=With GF fusilli pasta, please
+OK    | Al Forno | Peperonata | modify note=With GF fusilli pasta, please
+OK    | Al Forno | Pollo Pesto | modify note=With GF fusilli pasta, please
+OK    | Al Forno | Vegan Tomato & Basil Pasta Bake | modify note=With GF fusilli pasta, please
+OK    | Pizza (Classic, Romana & Large Classic) | American | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | American Hot | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | BBQ Burnt Ends | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Calabrese | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Calabrian Feast | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Diavolo XX Hot | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Double American Cheese | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Double Margherita | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Fiorentina | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Funghi di Bosco | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Giardiniera | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | La Reine | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Margherita | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Meatball Italiano | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Moroccan Chicken | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Padana | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Pollo ad Astra | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Sloppy Giuseppe | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Smoky BBQ Chicken | modify note=On the GF base, please
+OK    | Pizza (Classic, Romana & Large Classic) | Triple Chilli Cheese | modify note=On the GF base, please
+OK    | Vegan Pizza (Classic, Romana & Large Classic) | Vegan Funghi di Bosco | modify note=On the GF base, please
+OK    | Vegan Pizza (Classic, Romana & Large Classic) | Vegan Giardiniera | modify note=On the GF base, please
+OK    | Vegan Pizza (Classic, Romana & Large Classic) | Vegan Harissa Melanzane | modify note=On the GF base, please
+OK    | Vegan Pizza (Classic, Romana & Large Classic) | Vegan Margherita | modify note=On the GF base, please
+OK    | Vegan Pizza (Classic, Romana & Large Classic) | Vegan Padana | modify note=On the GF base, please
+OK    | Heritage Pizza | Calabrese | modify note=On the GF base, please
+OK    | Heritage Pizza | Capricciosa | modify note=On the GF base, please
+OK    | Heritage Pizza | Caprina | modify note=On the GF base, please
+OK    | Heritage Pizza | Carbonara | modify note=On the GF base, please
+OK    | Heritage Pizza | Chicken & Pancetta | modify note=On the GF base, please
+OK    | Heritage Pizza | Formaggi | modify note=On the GF base, please
+OK    | Heritage Pizza | Hot Honey | modify note=On the GF base, please
+OK    | Heritage Pizza | Napoletana | modify note=On the GF base, please
+OK    | Heritage Pizza | Neptune | modify note=On the GF base, please
+OK    | Heritage Pizza | Niçoise | modify note=On the GF base, please
+OK    | Heritage Pizza | Pollo con Funghi | modify note=On the GF base, please
+OK    | Heritage Pizza | Pomodoro Pesto | modify note=On the GF base, please
+OK    | Heritage Pizza | Rustichella | modify note=On the GF base, please
+OK    | Heritage Pizza | Siciliana | modify note=On the GF base, please
+OK    | Heritage Pizza | Soho | modify note=On the GF base, please
+OK    | Desserts, Gelato & Sorbet | Double Belgian Chocolate Brownie (with Vanilla Gelato) | asis
+OK    | Desserts, Gelato & Sorbet | Double Chocolate Brownie Bites | asis
+OK    | Desserts, Gelato & Sorbet | Gelato - Salted Caramel | modify note=Without the wafer, please
+OK    | Desserts, Gelato & Sorbet | Gelato - Stracciatella | modify note=Without the wafer, please
+OK    | Desserts, Gelato & Sorbet | Gelato - Vanilla | modify note=Without the wafer, please
+OK    | Desserts, Gelato & Sorbet | Sicilian Lemon Delight | asis
+OK    | Desserts, Gelato & Sorbet | Soft Serve – Classic | asis
+OK    | Desserts, Gelato & Sorbet | Soft Serve – Chocolate | asis
+OK    | Desserts, Gelato & Sorbet | Soft Serve - Salted Caramel | modify note=Without the pretzel pieces, please
+OK    | Desserts, Gelato & Sorbet | Sorbet – Raspberry | asis
+OK    | Dolcetti (Not Including Drinks) | Caffè Reale | asis
+OK    | Dolcetti (Not Including Drinks) | Stem Ginger Cake | asis
+OK    | Piccolo Starters | GF Baked Dough Balls with Garlic Butter | asis
+OK    | Piccolo Starters | GF Baked Dough Balls with Houmous | asis
+OK    | Piccolo Starters | Piccolo Salad | asis
+OK    | Piccolo Pizza | American | modify note=On the GF base, please
+OK    | Piccolo Pizza | Ham & Mushroom | modify note=On the GF base, please
+OK    | Piccolo Pizza | Margherita / Margherita with Light Mozzarella | modify note=On the GF base, please
+OK    | Piccolo Pizza | Pollo | modify note=On the GF base, please
+OK    | Piccolo Pasta | Bolognese | modify note=With GF fusilli pasta, please
+OK    | Piccolo Pasta | Creamy Pesto | modify note=With GF fusilli pasta, please
+OK    | Piccolo Pasta | Napoletana | modify note=With GF fusilli pasta, please
+OK    | Piccolo Drinks | Arla Big Milk (New) | asis
+OK    | Piccolo Drinks | Bambinoccino | asis
+OK    | Piccolo Drinks | Innocent Kids’ Cartons | asis
+OK    | Piccolo Desserts | Chocolate Brownie | asis
+OK    | Piccolo Desserts | Mossy Bottom Meltdown | modify note=Without the baby cone, please
+OK    | Piccolo Desserts | Piccolo Sundae with Vanilla Gelato and Baby Cone | modify note=Without the baby cone, please
+OK    | Piccolo Desserts | Piccolo Sundae with Raspberry Sorbet and Baby Cone | modify note=Without the baby cone, please
+OK    | Piccolo Desserts | Pip Organic Fruity/ Rainbow Ice Lolly | asis
+OK    | Piccolo Desserts | Strawberries & Cream | asis
+OK    | Ingredients | Anchovies – Brown | asis role=ingredient
+OK    | Ingredients | Artichokes | asis role=ingredient
+OK    | Ingredients | Aubergines | asis role=ingredient
+OK    | Ingredients | Baby Figs | asis role=ingredient
+OK    | Ingredients | Balsamic Dressing | asis role=ingredient
+OK    | Ingredients | Balsamic Vinegar | asis role=ingredient
+OK    | Ingredients | Basil & Pine Kernel Pesto | asis role=ingredient
+OK    | Ingredients | BBQ Chicken | asis role=ingredient
+OK    | Ingredients | Béchamel | asis role=ingredient
+OK    | Ingredients | Beef Brisket / Pulled Beef | asis role=ingredient
+OK    | Ingredients | Beetroot – Roasted | asis role=ingredient
+OK    | Ingredients | Black Olives | asis role=ingredient
+OK    | Ingredients | Blue Cheese Dip | asis role=ingredient
+OK    | Ingredients | Blue Cheese Dip Pot | asis role=ingredient
+OK    | Ingredients | Bolognese Sauce Mix (Piccolo) | asis role=ingredient
+OK    | Ingredients | Breadcrumbs (Gluten-Free) | asis role=ingredient
+OK    | Ingredients | Bruschetta Mix | asis role=ingredient
+OK    | Ingredients | Buffalo Hot Sauce | asis role=ingredient
+OK    | Ingredients | Caesar Dressing | asis role=ingredient
+OK    | Ingredients | Cajun Spice | asis role=ingredient
+OK    | Ingredients | Calabrese Sausage | asis role=ingredient
+OK    | Ingredients | Calabrian Chilli Sauce | asis role=ingredient
+OK    | Ingredients | Capers | asis role=ingredient
+OK    | Ingredients | Caramelised Onion | asis role=ingredient
+OK    | Ingredients | Carlo / Starspray | asis role=ingredient
+OK    | Ingredients | Cheddar Cheese | asis role=ingredient
+OK    | Ingredients | Cheese Sauce | asis role=ingredient
+OK    | Ingredients | Chicken Breast | asis role=ingredient
+OK    | Ingredients | Chicken Wings – Lemon & Herbs (ingredient) | asis role=ingredient
+OK    | Ingredients | Chocolate Birthday Disc | asis role=ingredient
+OK    | Ingredients | Chocolate Icing (for Choc Fudge Cake) | asis role=ingredient
+OK    | Ingredients | Chocolate Sauce | asis role=ingredient
+OK    | Ingredients | Chocolate Twists | asis role=ingredient
+OK    | Ingredients | Cow’s Milk Mozzarella | asis role=ingredient
+OK    | Ingredients | Double Belgian Chocolate Brownie (ingredient) | asis role=ingredient
+OK    | Ingredients | Firecracker Sauce | asis role=ingredient
+OK    | Ingredients | Fruit Coulis | asis role=ingredient
+OK    | Ingredients | Garlic & Herb Dip Pot | asis role=ingredient
+OK    | Ingredients | Garlic Butter Dip Pot | asis role=ingredient
+OK    | Ingredients | Garlic Oil | asis role=ingredient
+OK    | Ingredients | Gelato – Salted Caramel (ingredient) | asis role=ingredient
+OK    | Ingredients | Gelato – Stracciatella (ingredient) | asis role=ingredient
+OK    | Ingredients | Gelato – Vanilla (ingredient) | asis role=ingredient
+OK    | Ingredients | Gluten-Free Bases | asis role=ingredient
+OK    | Ingredients | Gluten-Free Dough Balls (ingredient) | asis role=ingredient
+OK    | Ingredients | Gluten-Free Flour | asis role=ingredient
+OK    | Ingredients | Gluten-Free Fusilli Pasta | asis role=ingredient
+OK    | Ingredients | Goat’s Cheese | asis role=ingredient
+OK    | Ingredients | Golden Spray | asis role=ingredient
+OK    | Ingredients | Gran Milano | asis role=ingredient
+OK    | Ingredients | Ground Beef – Spiced | asis role=ingredient
+OK    | Ingredients | Halloumi Bites (ingredient) | asis role=ingredient
+OK    | Ingredients | Ham | asis role=ingredient
+OK    | Ingredients | Hot Green Peppers | asis role=ingredient
+OK    | Ingredients | Hot Honey (ingredient) | asis role=ingredient
+OK    | Ingredients | Hot & Sweet Chilli Peppers | asis role=ingredient
+OK    | Ingredients | Houmous | asis role=ingredient
+OK    | Ingredients | House Dressing | asis role=ingredient
+OK    | Ingredients | Icing Sugar | asis role=ingredient
+OK    | Ingredients | Italian Tomato Dip/Sauce | asis role=ingredient
+OK    | Ingredients | Jalapeño Peppers | asis role=ingredient
+OK    | Ingredients | Light Mozzarella | asis role=ingredient
+OK    | Ingredients | Marinated Green Olives (ingredient) | asis role=ingredient
+OK    | Ingredients | Mascarpone | asis role=ingredient
+OK    | Ingredients | Mozzarella | asis role=ingredient
+OK    | Ingredients | ‘Nduja Sausage | asis role=ingredient
+OK    | Ingredients | Oil – Blended | asis role=ingredient
+OK    | Ingredients | Oil – Extra Virgin Olive | asis role=ingredient
+OK    | Ingredients | Pancetta – Sliced | asis role=ingredient
+OK    | Ingredients | Pepperoni Sausage | asis role=ingredient
+OK    | Ingredients | Pizzanaise® | asis role=ingredient
+OK    | Ingredients | Pork Meatballs | asis role=ingredient
+OK    | Ingredients | Prawns | asis role=ingredient
+OK    | Ingredients | Ranch Dressing | asis role=ingredient
+OK    | Ingredients | Ras El Hanout | asis role=ingredient
+OK    | Ingredients | Roasted Peppers – Red & Yellow | asis role=ingredient
+OK    | Ingredients | Salted Caramel Sauce | asis role=ingredient
+OK    | Ingredients | Slow-Roasted Tomatoes (ingredient) | asis role=ingredient
+OK    | Ingredients | Smoked Chilli Powder | asis role=ingredient
+OK    | Ingredients | Smoky Tomato Harissa | asis role=ingredient
+OK    | Ingredients | Sorbet – Raspberry (ingredient) | asis role=ingredient
+OK    | Ingredients | Spiced Apricot Chutney | asis role=ingredient
+OK    | Ingredients | Spiced Toasted Seeds | asis role=ingredient
+OK    | Ingredients | Spicy Tomato & Chilli Dip Pot | asis role=ingredient
+OK    | Ingredients | Sprinkles | asis role=ingredient
+OK    | Ingredients | Stem Ginger Cake (ingredient) | asis role=ingredient
+OK    | Ingredients | Sweet & Smoky BBQ Dip Pot | asis role=ingredient
+OK    | Ingredients | Sweet & Smoky BBQ Sauce (Dine-In) | asis role=ingredient
+OK    | Ingredients | Tomato Sauce / Passata | asis role=ingredient
+OK    | Ingredients | Truffle Oil | asis role=ingredient
+OK    | Ingredients | Tuna | asis role=ingredient
+OK    | Ingredients | Vegan Garlic & Parsley Spread Dip | asis role=ingredient
+OK    | Ingredients | Vegan Mozzarella Alternative | asis role=ingredient
+OK    | Ingredients | Whipped Cream | asis role=ingredient
+OK    | Cocktails | Aperol Spritz | asis
+OK    | Cocktails | Espresso Martini | asis
+OK    | Cocktails | Passion Fruit Martini | asis
+OK    | Cocktails | Peachcello Spritz | asis
+OK    | Cocktails | Raspberry Cosmo Spritz | asis
+OK    | Cocktails | Raspberry Mimosa | asis
+OK    | Cocktails | Soho Spritz | asis
+OK    | Cocktails | Strawberry Daiquiri | asis
+OK    | Cocktails | Strawberry Mimosa | asis
+OK    | Gin | Classic G&T | asis
+OK    | Gin | Rhubarb & Raspberry G&T | asis
+OK    | Champagne & Prosecco | Prosecco D.O.C. | asis
+OK    | Champagne & Prosecco | Prosecco D.O.C. Rosé | asis
+OK    | Champagne & Prosecco | Taittinger St | asis
+OK    | Champagne & Prosecco | Taittinger Rosé | asis
+OK    | White Wine | Chablis | asis
+OK    | White Wine | Gavi di Gavi D.O.C.G | asis
+OK    | White Wine | Grecanico Chardonnay | asis
+OK    | White Wine | Pinot Grigio | asis
+OK    | White Wine | Sauvignon Blanc | asis
+OK    | White Wine | NZ Sauvignon Blanc | asis
+OK    | White Wine | Signature Bianco | asis
+OK    | White Wine | Soave D.O.C | asis
+OK    | Red Wine | Barolo D.O.C.G | asis
+OK    | Red Wine | Malbec | asis
+OK    | Red Wine | Marche Rosso | asis
+OK    | Red Wine | Merlot | asis
+OK    | Red Wine | Montepulciano d’Abruzzo D.O.C | asis
+OK    | Red Wine | Nero d’Avola Shiraz D.O.C | asis
+OK    | Red Wine | Pinot Noir | asis
+OK    | Red Wine | Primitivo | asis
+OK    | Red Wine | Signature Rosso | asis
+OK    | Rosé Wine | Pinot Grigio Blush | asis
+OK    | Rosé Wine | Provence Rosé | asis
+OK    | Sparkles & Juices | Apple Juice | asis
+OK    | Sparkles & Juices | Crodino Spritz | asis
+OK    | Sparkles & Juices | Elderflower & Mint Sparkle | asis
+OK    | Sparkles & Juices | Lime & Ginger Sparkle | asis
+OK    | Sparkles & Juices | Living Things Watermelon & Lime | asis
+OK    | Sparkles & Juices | One Living Ginger Kombucha | asis
+OK    | Sparkles & Juices | Orange Juice | asis
+OK    | Sparkles & Juices | Passion Fruit Still Lemonade | asis
+OK    | Sparkles & Juices | Peach Sparkle | asis
+OK    | Sparkles & Juices | Raspberry Sparkle | asis
+OK    | Sparkles & Juices | Sicilian Still Lemonade | asis
+OK    | Sparkles & Juices | Strawberry Sicilian Still Lemonade | asis
+OK    | Soft Drinks | Acqua Panna Still Mineral Water | asis
+OK    | Soft Drinks | Appletiser | asis
+OK    | Soft Drinks | Arla Big Milk | asis
+OK    | Soft Drinks | Bottlegreen Elderflower Pressé | asis
+OK    | Soft Drinks | Bottlegreen Raspberry Lemonade | asis
+OK    | Soft Drinks | Coca-Cola Classic | asis
+OK    | Soft Drinks | Coca-Cola Zero Sugar | asis
+OK    | Soft Drinks | Diet Coke | asis
+OK    | Soft Drinks | Dr Pepper | asis
+OK    | Soft Drinks | Fanta | asis
+OK    | Soft Drinks | Fever-Tree Refreshingly Light Rhubarb & Raspberry Tonic | asis
+OK    | Soft Drinks | Innocent Kid’s Cartons | asis
+OK    | Soft Drinks | Irn-Bru | asis
+OK    | Soft Drinks | Irn-Bru Diet | asis
+OK    | Soft Drinks | Lipton Peach Ice Tea | asis
+OK    | Soft Drinks | Oasis Summer Fruits | asis
+OK    | Soft Drinks | Robinsons Orange | asis
+OK    | Soft Drinks | Robinsons Apple & Blackcurrant | asis
+OK    | Soft Drinks | San Pellegrino Aranciata Rossa | asis
+OK    | Soft Drinks | San Pellegrino Limonata | asis
+OK    | Soft Drinks | San Pellegrino Sparkling Mineral Water | asis
+OK    | Soft Drinks | Schweppes Lime Cordial | asis
+OK    | Soft Drinks | Schweppes Mixer – Lemonade | asis
+OK    | Soft Drinks | Schweppes Mixer – Slimline Tonic | asis
+OK    | Soft Drinks | Schweppes Mixer – Soda Water | asis
+OK    | Soft Drinks | Sprite – Sugar-Free | asis
+OK    | Spirits & Liqueurs | Absolute Vodka & Sprite | asis
+OK    | Spirits & Liqueurs | Amalfi Limoncello | asis
+OK    | Spirits & Liqueurs | Amalfi Peachcello | asis
+OK    | Spirits & Liqueurs | Amaretto | asis
+OK    | Spirits & Liqueurs | Aperol | asis
+OK    | Spirits & Liqueurs | Bacardi | asis
+OK    | Spirits & Liqueurs | Baileys | asis
+OK    | Spirits & Liqueurs | Campari | asis
+OK    | Spirits & Liqueurs | Courvoisier | asis
+OK    | Spirits & Liqueurs | Jack Daniel’s | asis
+OK    | Spirits & Liqueurs | Jack Daniel’s & Coca-Cola Zero | asis
+OK    | Spirits & Liqueurs | Jameson | asis
+OK    | Spirits & Liqueurs | Ketel One Vodka | asis
+OK    | Spirits & Liqueurs | Patrón Silver Tequila | asis
+OK    | Spirits & Liqueurs | Pimm’s No.1 | asis
+OK    | Spirits & Liqueurs | Sipsmith Dry Gin | asis
+OK    | Beer & Cider | Cornish Orchards Cider (Gold) | asis
+OK    | Beer & Cider | Cornish Orchards Cider (Raspberry & Elderflower) | asis
+OK    | Beer & Cider | Gluten-Free Peroni Nastro Azzurro | asis
+OK    | Coffee & Tea | Americano | asis
+OK    | Coffee & Tea | Cappuccino | asis
+OK    | Coffee & Tea | Espresso | asis
+OK    | Coffee & Tea | Flat White | asis
+OK    | Coffee & Tea | Hot Chocolate | asis
+OK    | Coffee & Tea | Iced Latte | asis
+OK    | Coffee & Tea | Latte | asis
+OK    | Coffee & Tea | Macchiato | asis
+OK    | Coffee & Tea | Mocha | asis
+OK    | Coffee & Tea | Tea | asis
+OK    | Coffee & Tea | Salted Caramel Iced Latte | asis
+OK    | Ingredients - Drinks | Chocolate Dusting | asis role=ingredient
+OK    | Ingredients - Drinks | Hot Chocolate Powder | asis role=ingredient
+OK    | Ingredients - Drinks | Raspberry Syrup | asis role=ingredient
+OK    | Ingredients - Drinks | Salted Caramel Syrup | asis role=ingredient
+OK    | Ingredients - Drinks | Strawberry & Lime Blend | asis role=ingredient
+OK    | Ingredients - Drinks | Strawberry Syrup | asis role=ingredient
+OK    | Cooked Breakfast | Shakshuka Baked Eggs | modify note=With GF toast, please
+OK    | Cooked Breakfast | The Full Works | modify note=With GF toast, please
+OK    | Cooked Breakfast | Toast – Gluten Free | asis
+OK    | Breakfast pancakes & Pastries | Breakfast Dough Balls & Jam | modify note=With GF dough balls, please
+OK    | Breakfast pancakes & Pastries | Fresh Fruit & Yoghurt Bowl | asis
+OK    | Breakfast pizzas | Avo, Crushed Baby Potatoes & Egg | modify note=On the GF base, please
+OK    | Breakfast pizzas | Sausage, Bacon & Egg | modify note=On the GF base, please
+OK    | Breakfast pizzas | Italian Bacon & Egg (Piccolo) | modify note=On the GF base, please
+OK    | Breakfast piccolo Menu | Fresh Fruit & Yoghurt Bowl | asis
+OK    | Breakfast drinks | Apple Juice | asis
+OK    | Breakfast drinks | Berry Berry Nice Smoothie | asis
+OK    | Breakfast drinks | Bloody Mary | asis
+OK    | Breakfast drinks | Green Machine Smoothie | asis
+OK    | Breakfast drinks | Mango Tango Smoothie | asis
+OK    | Breakfast drinks | Mimosa | asis
+OK    | Breakfast drinks | Orange Juice | asis
+OK    | Breakfast ingredients | Avocado | asis role=ingredient
+OK    | Breakfast ingredients | Bacon – Smoked | asis role=ingredient
+OK    | Breakfast ingredients | Baked Beans | asis role=ingredient
+OK    | Breakfast ingredients | Baked Vine Tomatoes | asis role=ingredient
+OK    | Breakfast ingredients | Button Mushrooms | asis role=ingredient
+OK    | Breakfast ingredients | Egg- Poached & Fried | asis role=ingredient
+OK    | Breakfast ingredients | Egg – Scrambled | asis role=ingredient
+OK    | Breakfast ingredients | Gluten Free Bread | asis role=ingredient
+OK    | Breakfast ingredients | Greek Yoghurt | asis role=ingredient
+OK    | Breakfast ingredients | Hash Brown | asis role=ingredient
+OK    | Breakfast ingredients | Hollandaise | asis role=ingredient
+OK    | Breakfast ingredients | Honey | asis role=ingredient
+OK    | Breakfast ingredients | Jam – Raspberry | asis role=ingredient
+OK    | Breakfast ingredients | Jam – Strawberry | asis role=ingredient
+OK    | Breakfast ingredients | Jam – Marmalade | asis role=ingredient
+OK    | Breakfast ingredients | Limes juiced | asis role=ingredient
+OK    | Breakfast ingredients | Mascarpone | asis role=ingredient
+OK    | Breakfast ingredients | Maple syrup | asis role=ingredient
+OK    | Breakfast ingredients | Pumpkin Seeds | asis role=ingredient
+OK    | Breakfast ingredients | Salmon Smoked | asis role=ingredient
+OK    | Breakfast ingredients | Sausage | asis role=ingredient
+OK    | Breakfast ingredients | Smashed Avocado | asis role=ingredient
+OK    | Breakfast ingredients | Tobasco Sauce | asis role=ingredient
+OK    | Breakfast ingredients | Tomato Ketchup | asis role=ingredient
+AVOID | Appetisers, Dough Balls & Starters | Bruschetta Originale ‘PizzaExpress’ | WHEAT
+AVOID | Appetisers, Dough Balls & Starters | Buttermilk Chicken Goujons | WHEAT
+AVOID | Appetisers, Dough Balls & Starters | Calamari | WHEAT
+AVOID | Appetisers, Dough Balls & Starters | Garlic Bread with Mozzarella | WHEAT
+AVOID | Appetisers, Dough Balls & Starters | Garlic Bread with Mozzarella Sharer | WHEAT
+AVOID | Appetisers, Dough Balls & Starters | Garlic Bread with Vegan Mozzarella Alternative | WHEAT
+AVOID | Appetisers, Dough Balls & Starters | Garlic Bread with Vegan Mozzarella Alternative Sharer | WHEAT
+AVOID | Appetisers, Dough Balls & Starters | Mozzarella Sticks | WHEAT
+AVOID | Appetisers, Dough Balls & Starters | Sharing Trio | WHEAT
+AVOID | Appetisers, Dough Balls & Starters | Truffle Cacio e Pepe Bites | WHEAT;BARLEY
+AVOID | Appetisers, Dough Balls & Starters | Vegan Dough Balls ‘PizzaExpress’ | WHEAT
+AVOID | Appetisers, Dough Balls & Starters | Vegan Dough Ball Sharer | WHEAT
+AVOID | Sides | Dough Sticks | WHEAT
+AVOID | Sides | Polenta Chips | WHEAT
+AVOID | Salads | Goat’s Cheese & Beetroot Buddha Bowl (with Dough Sticks) | WHEAT;BARLEY;SPELT
+AVOID | Salads | Grand Chicken Caesar (with Dough Sticks) | WHEAT
+AVOID | Salads | Vegan Buddha Bowl (with Dough Sticks) | WHEAT;BARLEY;SPELT
+AVOID | Salads | Warm Roasted Veg & Chicken Bowl | GLUTEN tag=May contain gluten
+AVOID | Al Forno | Cannelloni | WHEAT
+AVOID | Al Forno | Large Lasagne | WHEAT
+AVOID | Al Forno | Lasagna Classica | WHEAT
+AVOID | Al Forno | Mushroom & Truffle Pappardelle | WHEAT
+AVOID | Pizza (Classic, Romana & Large Classic) | Create Your Own | GLUTEN tag=Not guaranteed
+AVOID | Pizza (Classic, Romana & Large Classic) | Duo Romana | GLUTEN tag=Not guaranteed
+AVOID | Vegan Pizza (Leggera) | Leggera Vegan Giardiniera | WHEAT
+AVOID | Leggera Pizza | Leggera American Hot | WHEAT
+AVOID | Leggera Pizza | Leggera Giardiniera | WHEAT
+AVOID | Leggera Pizza | Leggera Padana | WHEAT
+AVOID | Leggera Pizza | Leggera Pollo ad Astra | WHEAT
+AVOID | Leggera Pizza | Leggera Pomodoro | WHEAT
+AVOID | Desserts, Gelato & Sorbet | Baked Vanilla Cheesecake (with Vanilla Gelato) | WHEAT;OATS
+AVOID | Desserts, Gelato & Sorbet | Biscoff® Billionaire’s Sundae | WHEAT
+AVOID | Desserts, Gelato & Sorbet | Biscoff® Cheesecake | WHEAT
+AVOID | Desserts, Gelato & Sorbet | Chocolate Fudge Cake (with Vanilla Gelato) | WHEAT
+AVOID | Desserts, Gelato & Sorbet | Honeycomb & Caramel Cream Slice (with Vanilla Gelato) | WHEAT
+AVOID | Desserts, Gelato & Sorbet | Lemon & Raspberry Cheesecake (with Vanilla Gelato) | WHEAT
+AVOID | Desserts, Gelato & Sorbet | Tiramisu | WHEAT
+AVOID | Desserts, Gelato & Sorbet | White Chocolate Blondie | WHEAT
+AVOID | Desserts, Gelato & Sorbet | White Chocolate Blondie Bites | WHEAT
+AVOID | Dolcetti (Not Including Drinks) | Biscoff® Cheesecake | WHEAT
+AVOID | Dolcetti (Not Including Drinks) | Choc Ice Bites | WHEAT tag=May contain gluten
+AVOID | Piccolo Starters | Baked Dough Balls with Garlic Butter | WHEAT
+AVOID | Piccolo Starters | Baked Dough Balls with Houmous | WHEAT
+AVOID | Piccolo Salad | Buttermilk Chicken Goujons | WHEAT
+AVOID | Piccolo Drinks | Bambinoccino with Oat Drink | OATS tag=Oats
+AVOID | Ingredients | Baby Cones | WHEAT role=ingredient
+AVOID | Ingredients | Biscoff® Biscuits | WHEAT role=ingredient
+AVOID | Ingredients | Biscoff® Cheesecake (ingredient) | WHEAT role=ingredient
+AVOID | Ingredients | Biscoff® Sauce | WHEAT role=ingredient
+AVOID | Ingredients | Calamari (ingredient) | WHEAT role=ingredient
+AVOID | Ingredients | Cannelloni (ingredient) | WHEAT role=ingredient
+AVOID | Ingredients | Chicken Goujons | WHEAT role=ingredient
+AVOID | Ingredients | Chocolate Fudge Cake (ingredient) | WHEAT role=ingredient
+AVOID | Ingredients | Croutons | WHEAT role=ingredient
+AVOID | Ingredients | Dough & Dough Sticks | WHEAT role=ingredient
+AVOID | Ingredients | Garlic Butter | GLUTEN tag=May contain gluten role=ingredient
+AVOID | Ingredients | Honey & Mustard Dressing | GLUTEN tag=May contain gluten role=ingredient
+AVOID | Ingredients | Honeycomb Cream Slice (ingredient) | WHEAT role=ingredient
+AVOID | Ingredients | Lasagna (ingredient) | WHEAT role=ingredient
+AVOID | Ingredients | Lemon & Raspberry Cheesecake (ingredient) | WHEAT role=ingredient
+AVOID | Ingredients | Macaroni Pasta | WHEAT role=ingredient
+AVOID | Ingredients | Mixed Grains with Chickpeas | WHEAT;BARLEY;SPELT role=ingredient
+AVOID | Ingredients | Mozzarella Sticks (ingredient) | WHEAT role=ingredient
+AVOID | Ingredients | Mushroom Pappardelle (ingredient) | WHEAT role=ingredient
+AVOID | Ingredients | Penne Pasta | WHEAT role=ingredient
+AVOID | Ingredients | Polenta Chips (ingredient) | WHEAT role=ingredient
+AVOID | Ingredients | Potato Bites (ingredient) | WHEAT role=ingredient
+AVOID | Ingredients | Pretzel Pieces | WHEAT role=ingredient
+AVOID | Ingredients | Tiramisu (ingredient) | WHEAT role=ingredient
+AVOID | Ingredients | Truffle Cacio e Peppe Bites (ingredient) | WHEAT;BARLEY role=ingredient
+AVOID | Ingredients | Vanilla Cheesecake – Round (ingredient) | WHEAT;OATS role=ingredient
+AVOID | Ingredients | Wafer | WHEAT role=ingredient
+AVOID | Ingredients | White Chocolate Blondie (ingredient) | WHEAT role=ingredient
+AVOID | Beer & Cider | London Pride | BARLEY
+AVOID | Beer & Cider | Meantime Pizza Pale IPA | BARLEY
+AVOID | Beer & Cider | Peroni Nastro Azzurro | BARLEY
+AVOID | Beer & Cider | Peroni 0.0 Blood Orange | BARLEY
+AVOID | Beer & Cider | Peroni 0.0 Sicilian Lemon | BARLEY
+AVOID | Beer & Cider | Peroni Nastro Azzurro 0.0% | BARLEY
+AVOID | Coffee & Tea | Americano with Oat Drink | OATS tag=Oats
+AVOID | Coffee & Tea | Cappuccino with Oat Drink | OATS tag=Oats
+AVOID | Coffee & Tea | Flat White with Oat Drink | OATS tag=Oats
+AVOID | Coffee & Tea | Hot Chocolate with Oat Drink | OATS tag=Oats
+AVOID | Coffee & Tea | Iced Latte with Oat Drink | OATS tag=Oats
+AVOID | Coffee & Tea | Latte with Oat Drink | OATS tag=Oats
+AVOID | Coffee & Tea | Macchiato with Oat Drink | OATS tag=Oats
+AVOID | Coffee & Tea | Mocha with Oat Drink | OATS tag=Oats
+AVOID | Coffee & Tea | Salted Caramel Iced Latte with Oat Drink | OATS tag=Oats
+AVOID | Ingredients - Drinks | Oat Drink – Gluten-Free | OATS tag=Oats role=ingredient
+AVOID | Breakfast Eggs | Eggs Benedict | WHEAT
+AVOID | Breakfast Eggs | Eggs Florentine | WHEAT
+AVOID | Breakfast Eggs | Eggs on Bruschetta – Fried OR Poached egg | WHEAT
+AVOID | Breakfast Eggs | Eggs on Bruschetta - Scrambled Egg | WHEAT
+AVOID | Breakfast Eggs | Eggs Royale | WHEAT
+AVOID | Breakfast Eggs | Smashed Avocado and Poached eggs | WHEAT
+AVOID | Breakfast Eggs | Smashed Avocado and Scrambled eggs | WHEAT
+AVOID | Cooked Breakfast | Dough Sticks | WHEAT
+AVOID | Cooked Breakfast | The Full Veggie | WHEAT
+AVOID | Cooked Breakfast | The Light Works | WHEAT
+AVOID | Cooked Breakfast | The Light Veggie | WHEAT
+AVOID | Cooked Breakfast | Toast – Sourdough | WHEAT;RYE
+AVOID | Breakfast pancakes & Pastries | All-butter Croissant | WHEAT
+AVOID | Breakfast pancakes & Pastries | Blueberry & Mascarpone Pancakes | WHEAT
+AVOID | Breakfast pancakes & Pastries | Pain au Chocolat | WHEAT
+AVOID | Breakfast pancakes & Pastries | Pancetta and Maple Syrup Pancakes | WHEAT
+AVOID | Breakfast piccolo Menu | Blueberry & Mascarpone Pancakes | WHEAT
+AVOID | Breakfast piccolo Menu | Eggs and Soldiers | WHEAT
+AVOID | Breakfast piccolo Menu | Pancetta & Maple Syrup Pancakes | WHEAT
+AVOID | Breakfast piccolo Menu | Piccolo Works | WHEAT
+AVOID | Breakfast piccolo Menu | Piccolo Veggie | WHEAT
+AVOID | Breakfast ingredients | Brown Sauce (HP) | BARLEY;RYE role=ingredient
+AVOID | Breakfast ingredients | Bruschetta Bread | WHEAT role=ingredient
+AVOID | Breakfast ingredients | Croissant All Butter | WHEAT role=ingredient
+AVOID | Breakfast ingredients | Pain au Chocolat (ingredient) | WHEAT role=ingredient
+AVOID | Breakfast ingredients | Pancakes | WHEAT role=ingredient
+AVOID | Breakfast ingredients | Sour dough bread | WHEAT;RYE role=ingredient
+AVOID | Breakfast ingredients | Vegetarian Sausage | WHEAT tag=May contain gluten role=ingredient

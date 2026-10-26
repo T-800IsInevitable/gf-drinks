@@ -1,0 +1,29 @@
+{
+  "name": "PizzaExpress",
+  "type": "Pizza restaurant",
+  "covers": "Dishes, drinks and breakfast in PizzaExpress restaurants in England, Scotland, Wales and Jersey",
+  "area": "UK",
+  "language": "en",
+  "reader": "pizza_express_uk_pdf",
+  "optionLabel": "option",
+  "officialUrl": "https://www.pizzaexpress.com/allergens-and-nutritionals",
+  "watch": {"page": "https://www.pizzaexpress.com/allergens-and-nutritionals", "link": "content-cdn\\.pizzaexpress\\.com/files/"},
+  "recheckDays": 91,
+  "roles": {
+    "Ingredients": "ingredient",
+    "Ingredients - Drinks": "ingredient",
+    "Breakfast ingredients": "ingredient"
+  },
+  "headline": "Pizzas and pasta: ask for the GF base or pasta.",
+  "tips": [
+    "Pizzas and pasta: ask for the GF base or GF fusilli. PizzaExpress says those dishes then suit coeliacs; the GF base is served with a purple pizza slicer.",
+    "Dough balls: ask for GF dough balls. Gelato: without the wafer.",
+    "Coffee: any milk but oat drink. The guide ticks the oat drink for coeliacs, but this app counts oats as gluten."
+  ],
+  "gaps": [
+    "PizzaExpress says its gluten free dishes are accredited by Coeliac UK. Its own words are on the Warnings page; this app lists what it ticks for coeliacs, and quotes each change it asks for.",
+    "The guide says the accreditation doesn't apply to delivery orders, which are handled by a third party.",
+    "An asterisk in the guide means an ingredient is made where gluten is present; those items are on the Avoid list here.",
+    "Create Your Own and Duo Romana: the guide says it can't guarantee any allergen or dietary requirements for them."
+  ]
+}
