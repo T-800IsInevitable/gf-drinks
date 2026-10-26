@@ -1,6 +1,8 @@
 {
   "berlin": {
     "name": "Berlin",
+    "country": "Germany",
+    "flag": "🇩🇪",
     "language": "de",
     "timeZone": "Europe/Berlin",
     "checked": "2026-10-25",
@@ -519,6 +521,8 @@
   },
   "amsterdam": {
     "name": "Amsterdam",
+    "country": "Netherlands",
+    "flag": "🇳🇱",
     "language": "nl",
     "timeZone": "Europe/Amsterdam",
     "checked": "2026-10-26",

@@ -85,6 +85,24 @@ for r in index["restaurants"]:
     for n in d.get("notices", []):
         if not n.get("text"):
             err(f"{rid}: a warning has no text")
+    # the order builder's settings (restaurant.json "order"): its words, and the sections to show first
+    cfg = d.get("order")
+    if cfg is not None:
+        if not isinstance(cfg, dict):
+            err(f"{rid}: \"order\" in restaurant.json must be an object")
+        else:
+            for s in cfg.get("first", []):
+                if s not in d["sections"]:
+                    err(f"{rid}: order.first names {s!r}, which isn't a section in the guide")
+            for k in ("intro", "cardLine"):
+                if k in cfg and not (isinstance(cfg[k], str) and cfg[k].strip()):
+                    err(f"{rid}: order.{k} must be a sentence")
+            if len(cfg.get("intro") or "") > 320:
+                err(f"{rid}: order.intro is {len(cfg['intro'])} characters; keep it under 320")
+            if cfg.get("cardLine") and not cfg["cardLine"].rstrip().endswith("please."):
+                err(f"{rid}: order.cardLine is what the staff card asks for, so end it with 'please.'")
+    if d.get("logo") and not (DATA.parent / d["logo"]).exists():
+        err(f"{rid}: logo {d['logo']} wasn't written")
     print(f"{rid}: {len(d['items'])} with no gluten ingredients, {len(d['avoid'])} to avoid, guide valid until {d['guide'].get('validUntil')}")
 
 # cities.json: hand-checked places (not built from guides)
@@ -98,6 +116,8 @@ for cid, c in cities.items():
             err(f"city {cid}: missing {key}")
     if c.get("language") not in phrases:
         err(f"city {cid}: no coeliac card for language {c.get('language')!r}")
+    if not c.get("country"):
+        err(f"city {cid}: missing country (the chooser lists cities by country under International)")
     for p in c.get("places", []):
         where = f"city {cid}: {p.get('name')!r}"
         if p.get("section") not in c.get("sections", []):

@@ -131,6 +131,17 @@ def build_one(folder):
         parts.append(part)
     data = merge(parts)
     apply_config(data, config, folder.name)
+    # "order": the order builder's words and which sections come first (parts of dishes). A section it names that
+    # the guide no longer has stops the build, like a role that matches nothing.
+    order = config.get("order")
+    for s in (order or {}).get("first", []):
+        if s not in data["sections"]:
+            raise SystemExit(f"ERROR: {folder.name}/restaurant.json: order.first names {s!r}, which isn't a section in the guide. Check the guide, then update it.")
+    # the chain's own mark for the chooser (tools/fetch_logos.py), copied in with the data
+    logo = folder / "logo.png"
+    if logo.exists():
+        (ROOT / "site" / "data" / "logos").mkdir(parents=True, exist_ok=True)
+        (ROOT / "site" / "data" / "logos" / f"{folder.name}.png").write_bytes(logo.read_bytes())
     meta = {
         "id": folder.name,
         "name": config["name"],
@@ -145,6 +156,8 @@ def build_one(folder):
         "reviewed": config.get("reviewed"),
         "gaps": config.get("gaps", []),
         "latestGuide": config.get("latestGuide"),  # when we last looked for a newer guide, and what we found
+        "logo": f"data/logos/{folder.name}.png" if logo.exists() else "",
+        "order": order,
     }
     print(f"  {data['stats']['rows']} rows -> {data['stats']['items']} with no gluten ingredients, {data['stats']['avoid']} to avoid"
           + (f", {data['stats']['ingredients']} ingredients listed on their own" if data["stats"].get("ingredients") else ""))

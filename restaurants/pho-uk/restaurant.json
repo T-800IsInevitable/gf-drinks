@@ -7,8 +7,14 @@
   "reader": "pho_uk_pdf",
   "optionLabel": "option",
   "officialUrl": "https://phocafe.co.uk/gluten-free/",
-  "watch": {"page": "https://phocafe.co.uk/gluten-free/", "link": "Allergen-Guide"},
+  "watch": {
+    "page": "https://phocafe.co.uk/gluten-free/",
+    "link": "Allergen-Guide"
+  },
   "recheckDays": 183,
+  "order": {
+    "intro": "Pho's guide lists most dishes without their sauces, and the sauces on their own. Tick a dish and the sauce you'd like with it."
+  },
   "removeNotes": {
     "Vermicelli noodles": {
       "note": "Without the spring roll, please",

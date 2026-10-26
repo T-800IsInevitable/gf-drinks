@@ -7,7 +7,10 @@
   "reader": "five_guys_uk_pdf",
   "optionLabel": "option",
   "officialUrl": "https://www.fiveguys.co.uk",
-  "watch": {"page": "https://www.fiveguys.co.uk/nutritional-allergy-information/", "link": "FGUK_.*allergen"},
+  "watch": {
+    "page": "https://www.fiveguys.co.uk/nutritional-allergy-information/",
+    "link": "FGUK_.*allergen"
+  },
   "recheckDays": 91,
   "rename": {
     "Meat|Hot Dog": "Hot dog sausage"
@@ -17,6 +20,16 @@
     "Toppings": "part",
     "Fries Cooked in Peanut Oil|Cajun Seasoning": "part",
     "Other Items|Egg": "part"
+  },
+  "order": {
+    "intro": "Five Guys lists the parts of a burger or hot dog on their own. Its buns contain wheat and it marks the lettuce wrap not suitable, so an order here is parts with no bun: tick the meat, toppings and fries you'd like.",
+    "first": [
+      "Meat",
+      "Toppings",
+      "Fries Cooked in Peanut Oil",
+      "Other Items"
+    ],
+    "cardLine": "Only what's listed here, with no bun, please."
   },
   "headline": "Most toppings and sauces are marked not suitable.",
   "tips": [

@@ -1,0 +1,80 @@
+# source: FGUK_allergen_ingredient_nutrition_20261013.pdf
+# intro: Five Guys lists the parts of a burger or hot dog on their own. Its buns contain wheat and it marks the lettuce wrap not suitable, so an order here is parts with no bun: tick the meat, toppings and fries you'd like.
+# card: Only what's listed here, with no bun, please.
+TICK  | Meat | Bacon | asis
+TICK  | Meat | Hot dog sausage | asis
+TICK  | Meat | Beef Burger Patty | asis
+TICK  | Meat | Sausage Patty | asis
+TICK  | Toppings | Cheese | asis
+TICK  | Toppings | Tomato Ketchup | asis
+TICK  | Toppings | Mustard | asis
+TICK  | Toppings | Crispy Onions | asis
+BLOCK | Toppings | BBQ Sauce | Not suitable
+BLOCK | Toppings | Green Peppers | Not suitable
+BLOCK | Toppings | Grilled Mushrooms | Not suitable
+BLOCK | Toppings | Hot Sauce | Not suitable
+BLOCK | Toppings | HP Brown Sauce | BARLEY;RYE
+BLOCK | Toppings | Jalapeño Peppers | Not suitable
+BLOCK | Toppings | Lettuce | Not suitable
+BLOCK | Toppings | Mayonnaise | Not suitable
+BLOCK | Toppings | Fresh Onions | Not suitable
+BLOCK | Toppings | Grilled Onions | Not suitable
+BLOCK | Toppings | Pickles | Not suitable
+BLOCK | Toppings | Relish | Not suitable
+BLOCK | Toppings | Tomatoes | Not suitable
+BLOCK | Toppings | Grilled Toppings | Not suitable
+TICK  | Fries Cooked in Peanut Oil | Fries | asis
+TICK  | Fries Cooked in Peanut Oil | Cajun Seasoning | asis
+TICK  | Fries Cooked in Peanut Oil | Loaded Fries | asis
+TICK  | Fries Cooked in Peanut Oil | Loaded Cajun Fries | asis
+TICK  | Fries Cooked in Peanut Oil | Hash Browns | asis
+TICK  | Other Items | Bulk Peanuts Without Shell | asis
+TICK  | Other Items | Egg | asis
+TICK  | Breakfast | Latte | asis
+TICK  | Breakfast | Cappuccino | asis
+TICK  | Breakfast | Flat White | asis
+TICK  | Breakfast | Americano Black | asis
+TICK  | Breakfast | Americano White | asis
+TICK  | Breakfast | Double Espresso | asis
+TICK  | Breakfast | Breakfast Tea | asis
+BLOCK | Breakfast | Sausage, Egg & Cheese Sandwich | GLUTEN
+BLOCK | Breakfast | Bacon, Egg & Cheese Sandwich | GLUTEN
+BLOCK | Breakfast | Little Sausage, Egg and Cheese Sandwich | GLUTEN;WHEAT
+BLOCK | Breakfast | Little Bacon, Egg & Cheese Sandwich | GLUTEN
+BLOCK | Breakfast | Little Sausage Sandwich | GLUTEN;WHEAT
+BLOCK | Breakfast | Little Egg Sandwich | GLUTEN;WHEAT
+BLOCK | Bun | Burger Bun | GLUTEN;WHEAT
+BLOCK | Bun | Hot Dog Bun | GLUTEN;WHEAT
+BLOCK | Milkshakes + Mix-ins | Five Guys Milkshake Base | Not suitable
+BLOCK | Milkshakes + Mix-ins | Whipped Cream | Not suitable
+BLOCK | Milkshakes + Mix-ins | Flake | Not suitable
+BLOCK | Milkshakes + Mix-ins | Banana | Not suitable
+BLOCK | Milkshakes + Mix-ins | Chocolate | Not suitable
+BLOCK | Milkshakes + Mix-ins | Biscoff® Crumb | WHEAT
+BLOCK | Milkshakes + Mix-ins | Oreo® Cookie Pieces | WHEAT
+BLOCK | Milkshakes + Mix-ins | Jimmy’s Iced Coffee | Not suitable
+BLOCK | Milkshakes + Mix-ins | Pistachio | Not suitable
+BLOCK | Milkshakes + Mix-ins | Reese's Peanut Butter Cups | Not suitable
+BLOCK | Milkshakes + Mix-ins | Peanut Butter | Not suitable
+BLOCK | Milkshakes + Mix-ins | Salted Caramel | Not suitable
+BLOCK | Milkshakes + Mix-ins | Strawberry | Not suitable
+BLOCK | Milkshakes + Mix-ins | Watermelon | Not suitable
+BLOCK | Milkshakes + Mix-ins | Myprotein | Not suitable
+BLOCK | Milkshakes + Mix-ins | M&Ms® | Not suitable
+BLOCK | Burgers | Hamburger | GLUTEN;WHEAT
+BLOCK | Burgers | Little Hamburger | GLUTEN;WHEAT
+BLOCK | Burgers | Cheeseburger | GLUTEN;WHEAT
+BLOCK | Burgers | Little Cheeseburger | GLUTEN;WHEAT
+BLOCK | Burgers | Bacon Burger | GLUTEN;WHEAT
+BLOCK | Burgers | Little Bacon Burger | GLUTEN;WHEAT
+BLOCK | Burgers | Bacon Cheeseburger | GLUTEN;WHEAT
+BLOCK | Burgers | Little Bacon Cheeseburger | GLUTEN;WHEAT
+BLOCK | Hot Dogs | Hot Dog | GLUTEN;WHEAT
+BLOCK | Hot Dogs | Cheese Dog | GLUTEN;WHEAT
+BLOCK | Hot Dogs | Bacon Dog | GLUTEN;WHEAT
+BLOCK | Hot Dogs | Bacon Cheese Dog | GLUTEN;WHEAT
+BLOCK | Sandwiches | Veggie Sandwich | GLUTEN;WHEAT
+BLOCK | Sandwiches | Cheese Veggie Sandwich | GLUTEN;WHEAT
+BLOCK | Sandwiches | Grilled Cheese | GLUTEN;WHEAT
+BLOCK | Sandwiches | BLT | GLUTEN;WHEAT
+BLOCK | Sandwiches | Lettuce Wrap | Not suitable
