@@ -21,6 +21,7 @@ Usage:
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
@@ -81,6 +82,11 @@ def plan(previous=ROOT / ".previous", data=SITE / "data"):
     while msg["nowAvoid"] and len(json.dumps(msg, ensure_ascii=False).encode("utf-8")) > MAX_BYTES:
         msg["nowAvoid"].pop()  # a big change must still arrive; the phone's favourites check then covers fewer items
     return msg
+
+
+def scrub(error):
+    """An error's text without the long tokens in it (a connection error quotes the phone's address, which is secret)."""
+    return re.sub(r"[A-Za-z0-9_-]{20,}", "…", str(error))[:200]
 
 
 def contact(repository):
@@ -146,7 +152,7 @@ def send(msg, subs, private_key, claim):
             else:
                 lines.append(f"{who}: failed ({status or e})")
         except Exception as e:  # a malformed line or key: say so for this phone and carry on with the others
-            lines.append(f"{who}: failed ({type(e).__name__}: {e})")
+            lines.append(f"{who}: failed ({type(e).__name__}: {scrub(e)})")
     return lines
 
 

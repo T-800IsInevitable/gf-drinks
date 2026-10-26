@@ -111,12 +111,16 @@ class Send(unittest.TestCase):
                 raise Gone(500)
             if "/odd/" in subscription_info["endpoint"]:
                 raise ValueError("not a key")
+            if "/far/" in subscription_info["endpoint"]:
+                raise ConnectionError("Max retries exceeded with url: /far/Zz9madeUpTokenForTheTest-0123456789abcdef")
 
-        subs = [{"endpoint": f"https://push.example/{x}/secret-token", "keys": {}} for x in ("a", "old", "bad", "odd")]
+        subs = [{"endpoint": f"https://push.example/{x}/secret-token", "keys": {}} for x in ("a", "old", "bad", "odd", "far")]
         msg = {"title": push.TITLE, "body": "b", "tag": "gf-menus", "url": "", "nowAvoid": [], "badge": 1}
         with mock.patch.object(push, "webpush", fake), mock.patch.object(push, "WebPushException", Gone):
             lines = push.send(msg, subs, "PEM", "https://github.com/o/r")
-        self.assertEqual([l.split(": ", 1)[1].split(".")[0] for l in lines], ["sent", "gone", "failed (500)", "failed (ValueError: not a key)"])
+        self.assertEqual([l.split(": ", 1)[1].split(".")[0] for l in lines][:4], ["sent", "gone", "failed (500)", "failed (ValueError: not a key)"])
+        self.assertNotIn("madeUpToken", lines[4])  # an error quoting the address doesn't put its token in the log
+        self.assertIn("ConnectionError", lines[4])
         self.assertIn("Tell me about new menus", lines[1])
         self.assertTrue(all("secret-token" not in l and "push.example" in l for l in lines), lines)  # the host, never the token
         self.assertEqual(calls[0][1], msg)
