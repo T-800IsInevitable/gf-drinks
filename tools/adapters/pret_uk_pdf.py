@@ -173,8 +173,12 @@ def group(rows, warnings=None):
     for d in drinks.values():
         names = d.pop("names")
         d["name"] = max(dict.fromkeys(names), key=names.count)  # the wording most of its rows use
-        if len(set(names)) > 1 and warnings is not None:
-            warnings.append(f"{d['name']}: the guide also calls one version {', '.join(repr(n) for n in dict.fromkeys(names) if n != d['name'])}; grouped as one drink")
+        others = [n for n in dict.fromkeys(names) if n != d["name"]]
+        if others:
+            d["decided"] = ("The guide also calls one version " + " and ".join(f"“{n}”" for n in others) +
+                            ". The app lists them as one drink.")
+            if warnings is not None:
+                warnings.append(f"{d['name']}: the guide also calls one version {', '.join(repr(n) for n in others)}; grouped as one drink")
         vs = d.pop("versions")
         good = [v for v in vs if not v["gluten"]]
         bad = [v for v in vs if v["gluten"]]

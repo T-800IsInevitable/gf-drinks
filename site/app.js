@@ -129,6 +129,8 @@
     ingredient: "An ingredient, listed on its own in the guide. It isn't something to order as it is, so there's no staff card for it.",
   };
 
+  // How the app decided an item where the guide wasn't plain (the readers' notes, in plain English)
+  const decidedNote = (i) => '<div class="decided"><b>How the app decided:</b> ' + esc(i.decided) + "</div>";
   function detailFor(r, i) {
     const out = [];
     const c = changeOf(r, i);
@@ -139,6 +141,7 @@
         (i.sectionOriginal ? ' under <span lang="' + esc(r.language || "") + '">' + esc(i.sectionOriginal) + "</span>" : "") + "</div>");
     }
     if (i.info) out.push("<div>" + esc(i.info) + "</div>");
+    if (i.decided) out.push(decidedNote(i));
     if (i.order === "asis") out.push(i.role ? "<div>No gluten ingredients as listed.</div>" : "<div>No gluten ingredients as listed. No changes needed.</div>");
     if (i.order === "modify") out.push("<div><b>Ask for:</b> " + esc(i.note) + "</div>");
     if (i.order === "swap") {
@@ -238,11 +241,40 @@
     renderCertNote();
     renderCardLaunch();
     const r = byId(selected);
-    $("tips").hidden = !(r && r.tips && r.tips.length);
-    $("tips").innerHTML = r && r.tips ? r.tips.map((t) => {
-      const m = t.match(/^([^:.]+[:.])\s+(.+)$/);
-      return "<div>" + (m ? "<b>" + esc(m[1]) + "</b> " + esc(m[2]) : esc(t)) + "</div>";
-    }).join("") : "";
+    const tips = (r && r.tips) || [];
+    const full = introFull();
+    $("tips").hidden = !full || !tips.length;
+    $("tips").innerHTML = tipsHtml(tips);
+    $("certNote").hidden = !full;
+    $("openStrip").hidden = full;
+    $("stripText").innerHTML = (r && r.headline ? "<b>" + esc(r.headline) + "</b> " : "") + esc(certShort(scope()));
+    $("stripLabel").textContent = tips.length ? "Tips and warnings" : "Warnings";
+  }
+  const tipsHtml = (tips) => tips.map((t) => {
+    const m = t.match(/^([^:.]+[:.])\s+(.+)$/);
+    return "<div>" + (m ? "<b>" + esc(m[1]) + "</b> " + esc(m[2]) : esc(t)) + "</div>";
+  }).join("");
+
+  // The first time each page (a restaurant, or All) is opened, its tips and the certified-or-not card show in full.
+  // After that they fold into one line (#strip), with every word of them in the Tips and warnings sheet.
+  const INTRO_KEY = "gf-intro-seen";
+  const introNow = new Set(); // shown in full during this visit, so the card doesn't fold away while it's being read
+  function introFull() {
+    if (introNow.has(selected)) return true;
+    const seen = new Set(JSON.parse(store.get(INTRO_KEY) || "[]"));
+    if (seen.has(selected)) return false;
+    seen.add(selected);
+    store.set(INTRO_KEY, JSON.stringify([...seen]));
+    introNow.add(selected);
+    return true;
+  }
+  $("introDone").addEventListener("click", () => { introNow.delete(selected); renderBanners(); });
+  // The certified-or-not card in a few words, for the folded line
+  function certShort(rs) {
+    const claim = rs.filter((r) => (r.notices || []).some((n) => n.kind === "accreditation"));
+    if (!claim.length) return "Not certified gluten free.";
+    const names = listOr(claim.map((r) => r.name)).replace(/ or /, " and ");
+    return (rs.length === 1 ? "" : "Only ") + names + (claim.length === 1 ? " says it's" : " say they're") + " accredited by Coeliac UK.";
   }
 
   // Saved favourites that are now on the Avoid list, or missing from the latest guide. These stay until removed.
@@ -440,7 +472,8 @@
             (subs.length ? "<small>" + subs.join(" · ") + "</small>" : "") + '</span><span class="tag t-bad">' +
             esc(a.tag || a.gluten.map(cap).join(" & ")) + "</span>" + chev + '</summary><div class="detail">' + (c ? changeNote(r, c) : "") + "<div>" +
             (a.reason ? esc(a.reason) : "Every version contains " + esc(a.gluten.join(" and ").toLowerCase()) + ".") + "</div>" +
-            (a.info ? "<div>" + esc(a.info) + "</div>" : "") + "<div>" + esc(pageText(a.pages)) + "</div></div></details>";
+            (a.info ? "<div>" + esc(a.info) + "</div>" : "") + (a.decided && a.decided !== a.reason ? decidedNote(a) : "") +
+            "<div>" + esc(pageText(a.pages)) + "</div></div></details>";
         }).join("") + "</div>";
       }
     }
@@ -528,9 +561,6 @@
     $("sources").innerHTML = scope().map(lineShort).join("");
     $("infoSources").innerHTML = data.restaurants.map(lineFull).join("") + "<p>Rules: " + esc([...new Set(data.restaurants.map((r) => r.rule))].join(" ")) +
       " If the allergen column and ingredients disagree, the item is left out.</p><p>Last built " + esc(fmtDate(data.built)) + ".</p>";
-    const notes = data.restaurants.flatMap((r) => (r.warnings || []).map((w) => r.name + ": " + w));
-    $("notesWrap").hidden = !notes.length;
-    $("notes").innerHTML = notes.map((w) => "<li>" + esc(w) + "</li>").join("");
   }
 
   function renderPicker() {
@@ -615,21 +645,22 @@
     $("q").placeholder = "Search " + c.name;
     const chips = [["all", "All"], ["open", "Still open today"], ["fav", "★ Saved"]].concat(c.sections.filter((s) => c.places.some((p) => p.section === s)).map((s) => [s, s]));
     if (!chips.some(([v]) => v === cityFilter)) cityFilter = "all";
+    const card = phrases[c.language];
     $("chips").innerHTML = '<button type="button" data-near aria-pressed="' + nearSort + '">Near me</button>' + chips.map(([v, l]) =>
-      '<button type="button" data-f="' + esc(v) + '" aria-pressed="' + (v === cityFilter) + '">' + esc(l) + "</button>").join("");
+      '<button type="button" data-f="' + esc(v) + '" aria-pressed="' + (v === cityFilter) + '">' + esc(l) + "</button>").join("") +
+      (card ? '<button type="button" data-card>' + esc(card.language) + " card</button>" : "");
     const n = (claim) => c.places.filter((p) => p.claim === claim).length;
+    $("cityIntroLine").innerHTML = "<b>Tags say who calls a place gluten free</b>, not the app. Tell staff you're coeliac.";
     $("cityIntro").innerHTML = "<b>Each place's tag says who calls it gluten free.</b> " +
       [n("place-all") && n("place-all") + " say so themselves", n("list-all") && n("list-all") + " are listed as all gluten free by the support groups but don't say so on their own websites",
         n("place-part") && n("place-part") + " says only part of its range is", n("separate") && n("separate") + " says it makes gluten free food in a separate kitchen"]
         .filter(Boolean).join("; ") + ". That's their claim, not the app's. They come from the list kept by " + esc(c.list.by) +
       ", checked against each place's own website on " + esc(fmtDate(c.checked)) + ". Nobody from this app has seen their kitchens, so tell staff you have coeliac disease.";
-    $("cityCard").hidden = !phrases[c.language];
-    $("cityCard").textContent = phrases[c.language] ? "Show " + phrases[c.language].language + " coeliac card" : "";
-    $("cityTips").innerHTML = (cityStale(c) ? '<div class="stale"><p><b>This list may be out of date.</b> It was checked on ' + esc(fmtDate(c.checked)) +
-      ". Places open, close and change, so check before you go.</p></div>" : "") + c.tips.map((t) => {
-      const m = t.match(/^([^:.]+[:.])\s+(.+)$/);
-      return "<div>" + (m ? "<b>" + esc(m[1]) + "</b> " + esc(m[2]) : esc(t)) + "</div>";
-    }).join("");
+    $("cityStale").hidden = !cityStale(c);
+    $("cityStale").innerHTML = cityStale(c) ? "<p><b>This list may be out of date.</b> It was checked on " + esc(fmtDate(c.checked)) +
+      ". Places open, close and change, so check before you go.</p>" : "";
+    $("cityTipsLabel").textContent = "Before you go (" + c.tips.length + ")";
+    $("cityTips").innerHTML = tipsHtml(c.tips);
     $("cityFoot").innerHTML = '<p><b>Sources:</b> <a href="' + esc(c.list.url) + '" target="_blank" rel="noopener">' + esc(c.list.name) + "</a>, kept by " +
       esc(c.list.by) + ", and each place's own website. Checked " + esc(fmtDate(c.checked)) + ".</p>" +
       "<p>That list also has places it says have some gluten free dishes. They're left out here because their kitchens also use gluten, unless they say they make gluten free food separately.</p>" +
@@ -747,7 +778,6 @@
     $("cityList").innerHTML = (html || '<p class="empty">' + empty + "</p>") +
       (cityFilter === "open" && unknown ? '<p class="muted">' + unknown + " places with unknown hours aren't shown.</p>" : "");
   }
-  $("cityCard").addEventListener("click", () => { const c = city(); if (c) openCard(c.language); });
   function toggleNear() {
     if (nearSort) { nearSort = false; renderCity(); return; }
     if (!navigator.geolocation) { toast("This phone can't share its location here"); return; }
@@ -765,6 +795,8 @@
     (r.notices || []).forEach((n) => { (groups[n.label] = groups[n.label] || []).push(n); });
     let html = "";
     if (selected === ALL) html += '<h3 class="w-rest">' + esc(r.name) + "</h3>";
+    // a restaurant's own tips lead its page of the sheet, so they're one tap away once folded off the first screen
+    if (selected !== ALL && r.tips && r.tips.length) html += '<h4>How to order</h4><div class="rules w-tips">' + tipsHtml(r.tips) + "</div>";
     html += '<p class="muted">From ' + esc(plainGuideName(r)) +
       (r.changes ? '. <button type="button" class="link-btn" data-whatchanged="' + esc(r.id) + '">What changed, noticed ' +
         esc(fmtDate(r.changes.date)) + " &rsaquo;</button>" : ".") + "</p>";
@@ -783,8 +815,10 @@
     if (r.gaps && r.gaps.length) {
       html += "<h4>What the guide doesn't tell you</h4><ul class=\"w-gaps\">" + r.gaps.map((g) => "<li>" + esc(g) + "</li>").join("") + "</ul>";
     }
-    if (r.warnings && r.warnings.length) {
-      html += "<h4>Notes from reading the guide</h4><ul class=\"notes\">" + r.warnings.map((w) => "<li>" + esc(w) + "</li>").join("") + "</ul>";
+    const decided = r.items.concat(r.avoid).filter((i) => i.decided);
+    if (decided.length) {
+      html += "<h4>How the app decided some items</h4><ul class=\"notes\">" +
+        decided.map((i) => "<li><b>" + esc(i.name) + ":</b> " + esc(i.decided) + "</li>").join("") + "</ul>";
     }
     if (isStale(r)) html += '<p class="w-stale">This guide covered up to ' + esc(fmtDate(r.guide.validUntil)) + ". A newer one may be out.</p>";
     return html;
@@ -792,7 +826,7 @@
   function openWarnings() {
     if (!data) return;
     const r = byId(selected);
-    $("warnTitle").textContent = r ? r.name + ": warnings" : "Warnings";
+    $("warnTitle").textContent = r ? r.name + (r.tips && r.tips.length ? ": tips and warnings" : ": warnings") : "Warnings";
     const claim = scope().filter((x) => (x.notices || []).some((n) => n.kind === "accreditation")).map((x) => x.name);
     $("warnBody").innerHTML =
       '<div class="w-intro"><p><b>"No gluten ingredients" means the restaurant\'s guide lists no gluten cereal for that item.</b> ' +
@@ -809,8 +843,12 @@
   function renderWarnCount() {
     const n = scope().reduce((t, r) => t + (r.notices || []).length + (r.gaps || []).length, 0);
     $("warnCount").textContent = n ? "(" + n + ")" : "";
+    const r = byId(selected);
+    const all = n + (r && r.tips ? r.tips.length : 0);
+    $("stripCount").textContent = all ? "(" + all + ")" : "";
   }
   $("openWarnings").addEventListener("click", openWarnings);
+  $("openStrip").addEventListener("click", openWarnings);
   $("openWarnings2").addEventListener("click", openWarnings);
   // "What changed" link in Warnings and in Help: stays reopenable until the next guide, unlike the dismissable news banner
   document.addEventListener("click", (e) => {
@@ -1151,6 +1189,7 @@
     const f = b.dataset.f;
     if (region !== UK) {
       if (b.hasAttribute("data-near")) { toggleNear(); return; }
+      if (b.hasAttribute("data-card")) { openCard(city().language); return; }
       cityFilter = f;
       renderCity();
       window.scrollTo({ top: 0 });

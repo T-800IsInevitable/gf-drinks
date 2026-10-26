@@ -69,6 +69,13 @@ for r in index["restaurants"]:
     for i in d["items"] + d["avoid"]:
         if i.get("role") not in (None, "part", "ingredient"):
             err(f"{rid}: {i['name']!r} has an unknown role {i['role']!r}")
+        if "decided" in i and not (isinstance(i["decided"], str) and i["decided"].strip()):
+            err(f"{rid}: {i['name']!r} has an empty note on how it was decided")
+    # the folded first screen shows the headline instead of the tips, so a restaurant with tips needs one
+    if d.get("tips") and not d.get("headline"):
+        err(f"{rid}: has tips but no \"headline\" in restaurant.json (the one tip shown once the tips are folded)")
+    if len(d.get("headline") or "") > 60:
+        err(f"{rid}: headline is {len(d['headline'])} characters; keep it under 60 so it fits on one line")
     for n in d.get("notices", []):
         if not n.get("text"):
             err(f"{rid}: a warning has no text")

@@ -45,6 +45,18 @@ def short_milk(v):
     return re.sub(r"\s+(milk|drink)$", "", v)
 
 
+def decided(column, a, i):
+    """How the app decided a row when the guide didn't make it plain, in plain English for the item's detail
+    (None when the allergen column is filled in and agrees with the ingredients)."""
+    if not column:
+        return ("The guide's allergen column is blank for this, so the app went by its ingredient list, which names "
+                + (" and ".join(sorted(g.lower() for g in i)) if i else "no gluten cereal") + ".")
+    if bool(a) != bool(i):
+        return ("The guide's allergen column and its ingredient list disagree about gluten, "
+                "so the app treats it as containing gluten.")
+    return None
+
+
 def guide_info(pdf):
     """Season title, date range and version date from the cover pages."""
     text = "\n".join((pdf.pages[i].extract_text() or "") for i in range(min(3, len(pdf.pages))))
@@ -126,6 +138,7 @@ def parse_rows(pdf_path):
                             f"ingredients {sorted(i) or 'none'}; treated as containing gluten")
         if not r["allergens"]:
             warnings.append(f"p.{r['page']} {r['name']}: allergen column empty; classified from ingredients")
+        r["decided"] = decided(r["allergens"], a, i)
     return info, rows, warnings
 
 
@@ -142,8 +155,10 @@ def group(rows):
         # Shaken Espresso - skimmed milk" are the same drink, so ignore "Oat" in the key.
         key = (r["section"], r["sub"] or "", re.sub(r"\s+Oat\b", "", base).lower())
         d = drinks.setdefault(key, {"names": [], "section": r["section"], "sub": r["sub"],
-                                    "pages": [], "versions": []})
+                                    "pages": [], "versions": [], "decided": []})
         d["names"].append(base)
+        if r.get("decided") and r["decided"] not in d["decided"]:
+            d["decided"].append(r["decided"])
         if r["page"] not in d["pages"]:
             d["pages"].append(r["page"])
         d["versions"].append({"milk": milk, "standard": std, "gluten": r["gluten"]})
@@ -153,6 +168,8 @@ def group(rows):
         name = max(d["names"], key=len)  # prefer the full name, e.g. the one with "Oat"
         vs = d["versions"]
         item = {"name": name, "section": d["section"], "sub": d["sub"], "pages": d["pages"]}
+        if d["decided"]:
+            item["decided"] = " ".join(d["decided"])
         good = [v for v in vs if not v["gluten"]]
         bad = [v for v in vs if v["gluten"]]
         if not good:

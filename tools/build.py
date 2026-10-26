@@ -129,6 +129,7 @@ def build_one(folder):
         "optionLabel": config.get("optionLabel", "option"),
         "officialUrl": config.get("officialUrl", ""),
         "tips": config.get("tips", []),
+        "headline": config.get("headline", ""),  # the one tip that matters most, shown on the page once its full tips are folded
         "area": config.get("area", ""),
         "language": config.get("language", "en"),
         "reviewed": config.get("reviewed"),

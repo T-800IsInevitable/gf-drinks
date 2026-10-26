@@ -4,7 +4,8 @@ An iPhone home-screen web app (PWA) listing food and drinks with **no gluten ing
 
 ## How it fits together
 
-- `restaurants/<id>/restaurant.json` names a **reader** (`tools/adapters/<reader>.py`), or several as `"readers": [...]` merged into one menu (Starbucks drinks + food), plus display details, `tips`, `gaps` (what the guide doesn't tell a coeliac) and `recheckDays`.
+- `restaurants/<id>/restaurant.json` names a **reader** (`tools/adapters/<reader>.py`), or several as `"readers": [...]` merged into one menu (Starbucks drinks + food), plus display details, `tips`, `headline` (the one tip shown once the tips fold away after a page's first visit; required with tips, under 60 characters, and taken from the tips, never new advice), `gaps` (what the guide doesn't tell a coeliac) and `recheckDays`.
+- When a reader decides an item itself because the guide wasn't plain (blank allergen column, sources disagreeing, versions under different names), it also sets the item's `decided`: one plain-English sentence the app shows on the item ("How the app decided") and in the Warnings sheet. The raw `warnings` strings are for the build log only.
 - Readers: `starbucks_uk_pdf`, `starbucks_uk_food_pdf`, `pret_uk_pdf`, `five_guys_uk_pdf`, `pho_uk_pdf`, `blank_street_uk_pdf` (automatic, from PDFs in `guides/`; newest edition wins) and `manual_csv` (hand-kept `menu.csv`, see `restaurants/_template/`; used for Knoops).
 - `tools/adapters/notices.py` extracts each guide's own warnings word for word for the Warnings page, including an "accreditation" kind for a guide's own gluten free claim.
 - `tools/build.py` builds `site/data/restaurants.json` and `site/data/r/<id>.json`; `tools/check.py` validates. `site/data/` is generated, not committed.

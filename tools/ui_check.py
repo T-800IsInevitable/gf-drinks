@@ -82,6 +82,15 @@ ROWS_JS = """() => [...document.querySelectorAll('#list details.row')].map((d) =
              green: tag.classList.contains('t-asis') || tag.classList.contains('t-any'),
              staff: !!d.querySelector('.staff-btn'), detail: d.querySelector('.detail').textContent };
 })"""
+# where the menu starts on the first screen, how many items show there, and the height of any out-of-date banner
+# (plus the gap after it), which is kept in full and so may push the menu down
+FIRST_SCREEN_JS = """(sel) => {
+    const list = document.querySelector(sel), first = list.firstElementChild;
+    const stale = [...document.querySelectorAll('#stale, #cityStale')].find((e) => !e.hidden && e.offsetParent);
+    return { top: Math.round(first.getBoundingClientRect().top),
+             rows: [...list.querySelectorAll('.row')].filter((r) => r.getBoundingClientRect().top < innerHeight).length,
+             stale: stale ? Math.round(stale.getBoundingClientRect().height) + 18 : 0 };
+}"""
 # sentences in the app's own words that call something gluten free without saying whose claim it is. Skipped:
 # quotes, translations, other languages, the coeliac card, and item and place names (the restaurants' own words)
 WORDING_JS = r"""() => {
@@ -416,10 +425,10 @@ def main():
         page.locator("#q").fill(cities[cid]["places"][0]["name"])
         if page.locator("#cityList .row").count() < 1:
             problems.append(f"{cid}: searching for the first place found nothing")
-        if page.locator("#cityCard").is_visible():
-            problems.append(f"{cid}: the coeliac card button still shows while searching")
-        page.locator("#q").fill("")  # the card button comes back once the search is cleared
-        page.locator("#cityCard").click()
+        if page.locator(".city-intro").is_visible():
+            problems.append(f"{cid}: the introduction still shows while searching")
+        page.locator("#q").fill("")
+        page.locator("#chips [data-card]").click()  # the coeliac card is a chip, so it's on the first screen
         page.wait_for_selector("#gfcard[open]")
         page.locator("#gfcard .link-btn").click()
         page.reload()
@@ -752,6 +761,107 @@ def main():
             found |= set(page.evaluate(WORDING_JS))
         problems += [f"calls something gluten free in the app's own voice: {s!r}" for s in sorted(found)]
         print(f"wording: {len(found)} sentences say gluten free without saying whose claim it is")
+        ctx.close()
+
+        # U1, content first: a page's first visit shows its tips and the certified-or-not card in full; after that they
+        # fold into one line, the menu starts in the top half of the screen with at least four items showing (an
+        # out-of-date banner, kept in full, may push it down by its own height), and every folded word is in the sheet
+        half = IPHONE["viewport"]["height"] / 2
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+        page = ctx.new_page()
+        found = set()
+        norm_ws = lambda s: " ".join(s.split())
+        for url in [""] + [f"#{rid}" for rid in ids] + [f"#{c}" for c in cities]:
+            where = url[1:] or "all restaurants"
+            in_city = url[1:] in cities
+            page.goto(base + url)
+            page.wait_for_selector("#cityList .row" if in_city else "#list .row")
+            if not in_city:
+                if not page.locator("#certNote").is_visible() or page.locator("#openStrip").is_visible():
+                    problems.append(f"{where}: the first visit doesn't show the full certified-or-not card")
+                page.reload()  # the second visit: folded
+                page.wait_for_selector("#list .row")
+                if page.locator("#certNote").is_visible() or page.locator("#tips").is_visible() or not page.locator("#openStrip").is_visible():
+                    problems.append(f"{where}: on a second visit the tips and card don't fold into one line")
+            page.wait_for_timeout(300)
+            m = page.evaluate(FIRST_SCREEN_JS, "#cityList" if in_city else "#list")
+            # and again in a wide font: the iPhone's font isn't the test machine's, so the layout needs room to spare
+            wide = page.add_style_tag(content='* { font-family: Verdana, "DejaVu Sans", sans-serif !important; }')
+            page.wait_for_timeout(200)
+            mw = page.evaluate(FIRST_SCREEN_JS, "#cityList" if in_city else "#list")
+            wide.evaluate("el => el.remove()")
+            for label, mm in (("", m), (" in a wide font", mw)):
+                if mm["top"] > half + mm["stale"] or mm["rows"] < 4:
+                    problems.append(f"{where}{label}: the menu starts at {mm['top']}pt with {mm['rows']} items on the first screen "
+                                    f"(wanted the top half, {half:.0f}pt{' plus the out-of-date banner' if mm['stale'] else ''}, and 4 or more)")
+            found |= set(page.evaluate(WORDING_JS))
+            if in_city:
+                if not page.locator("#chips [data-card]").count():
+                    problems.append(f"{where}: no coeliac card chip")
+                page.locator(".more summary").last.click()
+                if not page.locator("#cityTips").is_visible() or not page.locator("#cityTips > div").count():
+                    problems.append(f"{where}: Before you go doesn't open to the tips")
+                continue
+            built = json.loads((SITE / "data" / "r" / f"{url[1:]}.json").read_text(encoding="utf-8")) if url else None
+            strip = page.locator("#openStrip").inner_text()
+            if built and built.get("headline") and built["headline"] not in strip:
+                problems.append(f"{where}: the folded line {strip!r} doesn't lead with its headline {built['headline']!r}")
+            page.locator("#openStrip").click()
+            page.wait_for_selector("#warnings[open]")
+            sheet = norm_ws(page.locator("#warnBody").inner_text())
+            missing = [t for t in (built or {}).get("tips", []) if norm_ws(t) not in sheet]
+            if missing or "No gluten ingredients" not in sheet:
+                problems.append(f"{where}: the Tips and warnings sheet is missing {missing or 'the certified-or-not wording'}")
+            page.keyboard.press("Escape")
+        problems += [f"calls something gluten free in the app's own voice (folded pages): {s!r}" for s in sorted(found)]
+        # "Got it" folds the card straight away on a first visit
+        page.goto(base + f"#{ids[0]}")
+        page.wait_for_selector("#list .row")
+        page.evaluate("localStorage.removeItem('gf-intro-seen')")  # forget every visit, so the reload is a first visit
+        page.reload()
+        page.wait_for_selector("#list .row")
+        page.locator("#introDone").click()
+        if page.locator("#certNote").is_visible() or not page.locator("#openStrip").is_visible():
+            problems.append(f"{ids[0]}: Got it doesn't fold the card")
+        print(f"content first: pages fold after their first visit, menus start in the top half ({half:.0f}pt), sheet has every tip")
+        ctx.close()
+
+        # U14: an item the app decided for itself (the guide wasn't plain) says how, on the item and in the sheet;
+        # Help has no separate list of notes
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        page = ctx.new_page()
+        shown = 0
+        for rid in ids:
+            built = json.loads((SITE / "data" / "r" / f"{rid}.json").read_text(encoding="utf-8"))
+            noted = [(i, "#list") for i in built["items"] if i.get("decided")] + [(a, "#avoid") for a in built["avoid"] if a.get("decided")]
+            if not noted:
+                continue
+            page.goto(base + f"#{rid}")
+            page.wait_for_selector("#list .row")
+            for i, where in noted:
+                page.locator("#q").fill(i["name"])
+                page.wait_for_timeout(200)
+                row = page.locator(f"{where} .row", has=page.locator(".nm", has_text=i["name"])).first
+                if not row.count():
+                    problems.append(f"{rid}: {i['name']!r} (noted) isn't listed")
+                    continue
+                row.locator("summary").click()
+                if norm_ws(i["decided"]) not in norm_ws(row.locator(".detail").inner_text()):
+                    problems.append(f"{rid}: {i['name']!r} doesn't say how the app decided it")
+                shown += 1
+            page.locator("#q").fill("")
+            page.evaluate("window.scrollTo(0, 0)")
+            page.locator("#openStrip:visible, #openWarnings:visible").first.click()  # folded or not
+            page.wait_for_selector("#warnings[open]")
+            if "How the app decided some items" not in page.locator("#warnBody").text_content():  # not inner_text: h4s are in capitals
+                problems.append(f"{rid}: the sheet doesn't list how the app decided some items")
+            page.keyboard.press("Escape")
+        page.locator("#infoBtn").click()
+        page.wait_for_selector("#info[open]")
+        if re.search(r"classified from ingredients|Notes from the last update", page.locator("#info").inner_text()):
+            problems.append("Help still has the separate list of reading notes")
+        print(f"how items were decided: {shown} items say so on the item and in the sheet; none left in Help")
         ctx.close()
 
         # X5: a restaurant's own name at the start of a search in All restaurants narrows to it

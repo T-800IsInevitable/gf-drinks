@@ -203,7 +203,8 @@ def build(folder, config):
         first = r["section"].split(" ")[0].upper()
         match = [t for sec, t in cands if sec == first] or ([cands[0][1]] if len(cands) == 1 else [])
         ingredients = match[0] if match else None
-        if len(cands) > 1 and not match:
+        grid_alone = len(cands) > 1 and not match
+        if grid_alone:
             warnings.append(f"{r['name']}: several ingredient entries and none in section {r['section']}; grid used alone")
         listed = sorted(set(GLUTEN_WORDS.findall(ingredients or "")))
         sec_full = r["section"]
@@ -223,9 +224,14 @@ def build(folder, config):
             info.append(stars_note.get(r["stars"], ""))
         if info:
             item["info"] = " ".join(i for i in info if i)
+        if grid_alone:
+            item["decided"] = ("The guide has several ingredient lists by this name and none for this section, "
+                               "so the app went by the allergen grid alone.")
         if "dot" in r["marks"] or (listed and "1" not in r["marks"]):
             if listed and "dot" not in r["marks"]:
                 warnings.append(f"{r['name']}: ingredients list {listed} but the grid has no gluten dot; treated as containing gluten")
+                item["reason"] = item["decided"] = ("Its ingredient list names " + " and ".join(g.lower() for g in listed) +
+                                                    " but the allergen grid has no gluten mark, so the app treats it as containing gluten.")
             item["gluten"] = [g.rstrip("S") if g == "OATS" else g for g in listed] or ["GLUTEN"]
             avoid.append(item)
         elif "1" in r["marks"]:
