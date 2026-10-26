@@ -249,8 +249,8 @@
     $("stale").hidden = !stale.length;
     // on All it's one line pointing to the restaurant; the full banner stays on that restaurant's own page
     if (selected === ALL) {
-      $("stale").innerHTML = stale.length ? '<p class="stale-line"><b>' + stale.length + (stale.length === 1 ? " guide may" : " guides may") + " be out of date:</b>" +
-        stale.map((r) => ' <button type="button" class="link-btn" data-gotorest="' + esc(r.id) + '">' + esc(r.name) + " &rsaquo;</button>").join("") + "</p>" : "";
+      $("stale").innerHTML = stale.map((r) => '<button type="button" class="stale-line" data-gotorest="' + esc(r.id) + '"><b>' + esc(r.name) +
+        ' guide may be out of date</b> <span class="go">&rsaquo;</span></button>').join("");
     } else $("stale").innerHTML = stale.map((r) =>
       "<p><b>" + esc(r.name) + " guide may be out of date.</b> It covered up to " + esc(fmtDate(r.guide.validUntil)) +
       ". Check in store before ordering" + (r.officialUrl ? ', or see <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">their allergen info</a>' : "") + "." +

@@ -384,8 +384,6 @@ body.searching .hide-searching { display: none !important; }
 .stale p, .search-note { position: relative; padding-left: 28px; }
 .stale p::before, .search-note::before { content: "i"; position: absolute; left: 0; top: 1px; width: 18px; height: 18px; border-radius: 50%;
   border: 1.5px solid var(--muted); color: var(--muted); font: italic 700 0.75rem/15px var(--display); text-align: center; }
-.stale-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; }
-.stale-line .link-btn { padding: 4px 6px; }
 .search-note::before { top: 10px; left: 14px; }
 .search-note { padding-left: 40px; }
 .pick-share { margin-top: 10px; display: flex; justify-content: center; }
@@ -418,6 +416,8 @@ body.searching .hide-searching { display: none !important; }
 /* the title shares its row with the UK / Berlin switch, so it may wrap rather than clip */
 .pick-name { white-space: normal; overflow: visible; font-size: clamp(1.125rem, 4.9vw, 1.5rem); line-height: 1.15; }
 .legend .t-asis { background: var(--ok); color: var(--on-ok); }
-.stale-line { min-height: 44px; }
-.stale-line::before { top: 50% !important; transform: translateY(-50%); }
-.stale-line b { margin-right: 2px; }
+/* on All, an out-of-date guide is one tap target: its name, then a pointer to its own page */
+.stale-line { position: relative; display: block; width: 100%; min-height: 44px; padding: 4px 0 4px 28px; border: 0; background: none; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.stale-line::before { content: "i"; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; border-radius: 50%;
+  border: 1.5px solid var(--muted); color: var(--muted); font: italic 700 0.75rem/15px var(--display); text-align: center; }
+.stale-line .go { color: var(--accent); font-weight: 600; }

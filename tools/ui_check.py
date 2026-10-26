@@ -918,8 +918,12 @@ def main():
         page.goto(base)
         page.wait_for_selector("#list .row")
         stale_text = page.locator("#stale").inner_text() if page.locator("#stale").is_visible() else ""
-        if not stale_text or page.locator("#stale").bounding_box()["height"] > 70 or "may be out of date" not in stale_text:
-            problems.append(f"all restaurants: the out-of-date guides aren't one short line ({stale_text!r})")
+        wide_style = page.add_style_tag(content='* { font-family: Verdana, "DejaVu Sans", sans-serif !important; }')  # the test machine's fonts differ from the phone's
+        page.wait_for_timeout(150)
+        wide_height = page.locator("#stale").bounding_box()["height"] if page.locator("#stale").is_visible() else 0
+        wide_style.evaluate("el => el.remove()")
+        if not stale_text or max(page.locator("#stale").bounding_box()["height"], wide_height) > 70 or "may be out of date" not in stale_text:
+            problems.append(f"all restaurants: the out-of-date guides aren't one short line ({stale_text!r}, {wide_height:.0f}pt in a wide font)")
         else:
             page.locator("#stale [data-gotorest]").first.click()
             page.wait_for_selector("#list .row")
