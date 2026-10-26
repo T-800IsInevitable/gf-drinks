@@ -39,5 +39,10 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Check the release number went up with any app code change
+        run: |
+          git fetch --depth=1 origin "${{ github.base_ref }}"
+          python tools/check_release.py FETCH_HEAD
+
       - name: Check the app at iPhone size, light and dark
         run: python tools/ui_check.py

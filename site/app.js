@@ -1,5 +1,9 @@
 (() => {
   "use strict";
+  // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
+  // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
+  const APP_VERSION = 19;
+  document.documentElement.dataset.version = APP_VERSION;
   const DATA_KEY = "gf-data-v2";
   const SEL_KEY = "gf-selected";
   const FAV_KEY = "gf-favourites";
@@ -550,7 +554,7 @@
     else if (q) empty = 'No items with no gluten ingredients match "' + esc(q) + '".' +
       (glutenHits ? " " + glutenHits + (glutenHits === 1 ? " match is" : " matches are") + " on the Avoid list" + (visible("gluten") ? " below." : ". Tap Avoid above to see " + (glutenHits === 1 ? "it." : "them.")) : "");
     if (!visible("straight") || !visible("change")) empty += " Some items are hidden by the buttons above.";
-    $("list").innerHTML = html ? usuals + html : '<p class="empty">' + empty + "</p>" + emptyExtras($("q").value);
+    $("list").innerHTML = (filter === "fav" ? favShareBar() : "") + (html ? usuals + html : '<p class="empty">' + empty + "</p>" + emptyExtras($("q").value));
 
     let avoidHtml = "";
     if (filter !== "fav" && visible("gluten")) {
@@ -938,7 +942,7 @@
     const empty = cityFilter === "fav" ? "No saved places yet. Open a place and tap ☆ Save."
       : cityFilter === "open" ? "None of the places with known hours are open for the rest of today."
       : 'No places match "' + esc($("q").value.trim()) + '".';
-    $("cityList").innerHTML = (html || '<p class="empty">' + empty + "</p>" + (cityFilter === "all" ? emptyExtras($("q").value) : "")) +
+    $("cityList").innerHTML = (cityFilter === "fav" ? favShareBar() : "") + (html || '<p class="empty">' + empty + "</p>" + (cityFilter === "all" ? emptyExtras($("q").value) : "")) +
       (cityFilter === "open" && unknown ? '<p class="muted">' + unknown + " places with unknown hours aren't shown.</p>" : "");
   }
   // "Open near me": still open today, nearest first, in one tap; a second tap turns both off
@@ -1066,6 +1070,8 @@
     }
     render();
     if (data && $("picker").open) renderPicker(); // the first-visit chooser may have opened before the cities arrived
+    importReady.cities = true;
+    maybeImport();
   }
   function renderCardLaunch() {
     const r = byId(selected);
@@ -1440,6 +1446,101 @@
     window.scrollTo({ top: Math.max(0, row.getBoundingClientRect().top + window.scrollY - topEl.offsetHeight - 12) });
   }
 
+  // ---------- favourites in a link: back them up, or move them to another phone ----------
+  // The link holds the saved keys (restaurant|section|name, or city:<id>|place) as base64url JSON after #favs=
+  const toB64url = (str) => btoa(unescape(encodeURIComponent(str))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const fromB64url = (code) => decodeURIComponent(escape(atob(code.replace(/-/g, "+").replace(/_/g, "/"))));
+  const favsLink = () => appUrl() + "#favs=" + toB64url(JSON.stringify({ v: 1, f: [...favs].sort() }));
+  function readFavsCode(code) {
+    try {
+      const d = JSON.parse(fromB64url(code));
+      const keys = Array.isArray(d && d.f) ? d.f : [];
+      return keys.filter((k) => typeof k === "string" && k.length > 2 && k.length <= 300 && k.includes("|")).slice(0, 500);
+    } catch (e) { return null; }
+  }
+  // Sort a link's favourites against this phone and the menus as they are now. A dish whose section was renamed
+  // follows its name (as saved favourites do); one now on the Avoid list, or gone, isn't added.
+  function sortFavs(keys) {
+    const add = new Map(), have = [], skip = [];
+    for (const k of keys) {
+      const [head, ...restParts] = k.split("|");
+      if (head.startsWith("city:")) {
+        const name = restParts.join("|"), c = cities[head.slice(5)];
+        const label = name + (c ? " (" + c.name + ")" : "");
+        if (favs.has(k)) have.push(label);
+        else if (!c) skip.push({ label, why: "isn't in this app" });
+        else if (!c.places.some((pl) => pl.name === name)) skip.push({ label, why: "is no longer on the list" });
+        else add.set(k, label);
+        continue;
+      }
+      const [section, ...nameParts] = restParts;
+      const name = nameParts.join("|"), r = byId(head);
+      if (!r) { skip.push({ label: name, why: "is from a restaurant not in this app" }); continue; }
+      let i = r.items.find((x) => x.section === section && x.name === name);
+      if (!i) { const same = r.items.filter((x) => norm(x.name) === norm(name)); if (same.length === 1) i = same[0]; }
+      const label = (i ? i.name : name) + " at " + r.name;
+      if (i) { if (favs.has(favKey(r, i))) have.push(label); else add.set(favKey(r, i), label); continue; }
+      const a = r.avoid.find((x) => x.section === section && x.name === name) || r.avoid.find((x) => norm(x.name) === norm(name));
+      skip.push({ label, why: a ? "is now on the Avoid list" : "is no longer in the guide" });
+    }
+    return { add, have, skip };
+  }
+  let importCode = "";
+  let importReady = { data: false, cities: false };
+  let importing = null;
+  function maybeImport() {
+    if (!importCode || !importReady.data || !importReady.cities || !data) return;
+    const keys = readFavsCode(importCode);
+    importCode = "";
+    if (!keys) { toast("That favourites link is damaged. Ask for it to be sent again."); return; }
+    importing = sortFavs(keys);
+    const { add, have, skip } = importing;
+    const li = (t) => "<li>" + esc(t) + "</li>";
+    $("favImportBody").innerHTML =
+      (add.size ? "<h3>To add (" + add.size + ")</h3><ul class=\"chg-list\">" + [...add.values()].map(li).join("") + "</ul>" : '<p class="muted">Nothing new to add.</p>') +
+      (have.length ? '<p class="muted">' + have.length + (have.length === 1 ? " is" : " are") + " already saved on this phone.</p>" : "") +
+      (skip.length ? "<h3>Not added (" + skip.length + ")</h3><ul class=\"chg-list\">" + skip.map((x) => li(x.label + " " + x.why + ".")).join("") + "</ul>" : "");
+    $("favImportAdd").hidden = !add.size;
+    $("favImportAdd").textContent = add.size === 1 ? "Add this to this phone" : "Add these " + add.size + " to this phone";
+    ["picker", "info"].forEach((id) => { if ($(id).open) $(id).close(); });
+    openDialog($("favImport"));
+  }
+  $("favImportAdd").addEventListener("click", () => {
+    if (!importing) return;
+    const n = importing.add.size;
+    importing.add.forEach((_, k) => favs.add(k));
+    store.set(FAV_KEY, JSON.stringify([...favs]));
+    importing = null;
+    $("favImport").close();
+    if (region === UK) filter = "fav"; else cityFilter = "fav";
+    render();
+    toast(n === 1 ? "Added 1 favourite" : "Added " + n + " favourites");
+  });
+  $("favImport").addEventListener("close", () => { importing = null; });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("[data-sharefavs]")) return;
+    if (!favs.size) { toast("No favourites to share yet. Open an item and tap ☆ Save."); return; }
+    shareLink("My favourites in Twoo's Treat Temple", "My " + favs.size + (favs.size === 1 ? " favourite" : " favourites") + " in Twoo's Treat Temple. Open the link to add them.", favsLink());
+  });
+  const favShareBar = () => favs.size ? '<p class="fav-share"><button type="button" class="link-btn" data-sharefavs>Share my favourites (' + favs.size + ") &rsaquo;</button></p>" : "";
+
+  // ---------- new app code without a restart ----------
+  // When the app comes back to the screen it asks for a new service worker. A new release takes over at once (sw.js skips
+  // waiting), and then the page reloads by itself if nothing is open, or offers to.
+  const idle = () => !document.querySelector("dialog[open]") && !document.querySelector("details.row[open]") && !$("q").value.trim();
+  function reloadNow() {
+    try { sessionStorage.setItem("gf-scroll", String(window.scrollY)); } catch (e) { /* not kept */ }
+    location.reload();
+  }
+  function updateReady() {
+    if (idle()) reloadNow(); else $("updateBar").hidden = false;
+  }
+  function checkForUpdate() {
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.getRegistration().then((reg) => reg && reg.update()).catch(() => { /* offline */ });
+  }
+  $("updateBar").addEventListener("click", reloadNow);
+
   // ---------- toast ----------
   let toastTimer;
   function toast(msg) {
@@ -1458,6 +1559,7 @@
   }
 
   async function load(manual) {
+    if (manual) checkForUpdate();
     const btn = $("refreshBtn");
     btn.disabled = true;
     btn.textContent = "Checking…";
@@ -1585,8 +1687,9 @@
     else select(b.dataset.r);
   });
   $("picker").addEventListener("close", () => { welcomeNow = false; });
+  $("appVersion").textContent = "App version " + APP_VERSION + ".";
   $("infoBtn").addEventListener("click", () => { renderLastChecked(); openDialog($("info")); });
-  ["picker", "info", "gfcard", "warnings", "staff", "changes", "report"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
+  ["picker", "info", "gfcard", "warnings", "staff", "changes", "report", "favImport"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
   ["staff", "gfcard"].forEach((id) => $(id).addEventListener("close", () => { if (!$("staff").open && !$("gfcard").open) letGo(); }));
   $("refreshBtn").addEventListener("click", () => load(true));
   $("shareBtn").addEventListener("click", async () => {
@@ -1602,7 +1705,9 @@
     try { await navigator.clipboard.writeText(url); toast("Link copied"); } catch (e) { toast(url); }
   });
   window.addEventListener("hashchange", () => {
-    const [id, item] = decodeURIComponent(location.hash.slice(1)).split("/");
+    const raw = (() => { try { return decodeURIComponent(location.hash.slice(1)); } catch (e) { return ""; } })();
+    if (raw.startsWith("favs=")) { importCode = raw.slice(5); history.replaceState(null, "", location.pathname); maybeImport(); return; }
+    const [id, item] = raw.split("/");
     if (cities[id]) { if (id !== region) setRegion(id); }
     else if (data && id && byId(id)) { if (item) showItem(id, item); else if (id !== selected || region !== UK) select(id); }
   });
@@ -1649,7 +1754,10 @@
   setUpStorage();
 
   // ---------- start ----------
-  const hashId = decodeURIComponent(location.hash.slice(1));
+  const rawHash = (() => { try { return decodeURIComponent(location.hash.slice(1)); } catch (e) { return ""; } })();
+  importCode = rawHash.startsWith("favs=") ? rawHash.slice(5) : "";
+  if (importCode) history.replaceState(null, "", location.pathname); // added or not, a reload shouldn't ask again
+  const hashId = importCode ? "" : rawHash;
   const [hashRid, hashItem] = hashId.split("/");
   const saved = store.get(DATA_KEY);
   if (saved) {
@@ -1661,13 +1769,20 @@
   render();
   let itemPending = hashItem || "";
   if (itemPending && data && byId(hashRid)) { showItem(hashRid, itemPending); itemPending = ""; }
+  try { // back where you were after the app reloaded itself for new code
+    const y = sessionStorage.getItem("gf-scroll");
+    if (y !== null) { sessionStorage.removeItem("gf-scroll"); window.scrollTo(0, +y); }
+  } catch (e) { /* not kept */ }
+  const fromFavLink = !!importCode;
   loadPhrases();
   loadCities();
   load(false).then(() => {
     // first visit: one restaurant opens directly; several, the picker opens so you start somewhere specific
     if (data && region === UK && hashRid && byId(hashRid)) { store.set(SEL_KEY, hashRid); store.set(LAST_KEY, hashRid); }
     if (data && itemPending && byId(hashRid)) { showItem(hashRid, itemPending); itemPending = ""; }
-    if (data && region === UK && !hashId && !store.get(SEL_KEY)) {
+    importReady.data = true;
+    maybeImport();
+    if (data && region === UK && !hashId && !fromFavLink && !store.get(SEL_KEY)) {
       if (data.restaurants.length === 1) select(data.restaurants[0].id);
       else { renderPicker(); openDialog($("picker")); }
     }
@@ -1675,6 +1790,7 @@
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible") return;
     if ($("staff").open || $("gfcard").open) keepAwake();
+    checkForUpdate();
     load(false);
     renderTzOffer();
     if (city()) renderCityList(); // open or closed may have changed while the app was in the background
@@ -1692,6 +1808,12 @@
     });
   }, 60000);
   if ("serviceWorker" in navigator) {
+    // The first service worker taking charge isn't an update; any later change of worker is a new release
+    let hadWorker = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!hadWorker) { hadWorker = true; return; }
+      updateReady();
+    });
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
   }
 })();

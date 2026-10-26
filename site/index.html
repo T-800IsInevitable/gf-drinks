@@ -156,6 +156,8 @@
     <details class="more">
       <summary>Favourites</summary>
       <p>Open any item and tap <b>☆ Save</b>. Favourites stay on this phone. If a new guide puts a favourite on the Avoid list, or drops it, you'll see a warning at the top until you remove it.</p>
+      <p><b>Share my favourites</b> makes a link holding them all: keep it as a backup, or open it on another phone to add them there. Anything that has since gone, or is now on the Avoid list, isn't added.</p>
+      <p><button type="button" class="pill-btn" data-sharefavs>Share my favourites</button></p>
     </details>
     <details class="more">
       <summary>Show staff</summary>
@@ -192,6 +194,7 @@
       <div id="infoSources"></div>
     </details>
     <p id="storageState" class="muted" hidden></p>
+    <p id="appVersion" class="muted"></p>
   </form>
 </dialog>
 
@@ -295,6 +298,20 @@
   </form>
 </dialog>
 
+<dialog id="favImport" aria-labelledby="favImportTitle">
+  <form method="dialog" class="sheet">
+    <div class="sheet-head">
+      <h2 id="favImportTitle">Favourites from a link</h2>
+      <button class="link-btn" value="close">Not now</button>
+    </div>
+    <p>Someone shared their saved items. Checked against the menus as they are now.</p>
+    <div id="favImportBody"></div>
+    <p class="report-btns"><button type="button" id="favImportAdd" class="pill-btn">Add these to this phone</button></p>
+  </form>
+</dialog>
+
+<!-- A new release has arrived but something is open, so the app waits to be asked before reloading -->
+<button type="button" id="updateBar" class="update-bar" hidden>Updated. Tap to reload</button>
 <div id="toast" class="toast" role="status" hidden></div>
 <script src="app.js"></script>
 </body>
