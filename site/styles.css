@@ -439,3 +439,7 @@ body.searching .hide-searching { display: none !important; }
 .update-bar { position: fixed; left: 16px; right: 16px; margin: 0 auto; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 21;
   width: fit-content; max-width: calc(100% - 32px); min-height: 44px; padding: 10px 18px; border: 0; border-radius: 16px;
   background: var(--accent); color: var(--on-accent); font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,0.2); cursor: pointer; }
+
+/* ---- what changed: since you last looked, and the guide's own list ---- */
+.sheet h4.chg-part { margin-top: 20px; }
+.sheet h4.chg-part:first-child { margin-top: 12px; }
