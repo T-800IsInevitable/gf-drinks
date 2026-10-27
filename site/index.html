@@ -33,6 +33,9 @@
       <span id="guideLine" class="guide">Loading…</span>
     </button>
     <div class="actions">
+      <button type="button" id="mapBtn" class="icon-btn" aria-label="Map of where you are and the places near you">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h18M12 3c2.5 2.4 3.8 5.4 3.8 9s-1.3 6.6-3.8 9c-2.5-2.4-3.8-5.4-3.8-9s1.3-6.6 3.8-9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </button>
       <div id="region" class="region" role="group" aria-label="Where"></div>
       <button type="button" id="infoBtn" class="icon-btn" aria-label="About and help">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v6M12 7.5v.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
@@ -169,6 +172,11 @@
       <p><b>Keep checking:</b> with this on, each time the app opens, and at most every ten minutes while you move about, your rounded position goes to OpenStreetMap's query service to find the chains within a kilometre, and the nearest shows on that chip ("Pret A Manger 300 m · open until 19:00") with no tap. Nothing is kept there or by the app beyond the last answer on this phone, and it never asks for your location on its own: switch it on here, or when Near me first answers. On an iPhone the permission can lapse after a day unless Location Services for Safari is set to Allow; the chip then reads Near me again until you tap it. Abroad, the chip names the nearest listed place still open today, from the list on this phone.</p>
       <p><button type="button" id="nearAutoBtn" class="pill-btn" aria-pressed="false">Keep checking when the app opens</button> <span id="nearAutoState" class="muted"></span></p>
     </details>
+    <details class="more">
+      <summary>Map</summary>
+      <p>The <b>globe</b> by the title opens a map with your position, which moves as you do, the branches of the app's chains around you, and every place on the Abroad lists, coloured as on their lists. Tap a pin for the distance, whether it's open today and directions, then <b>Menu</b> for a chain's menu or <b>Open</b> for a place's own words in its list. Drag the map away to look somewhere else, then tap <b>Search this area</b> for the branches there; the round button brings it back to you.</p>
+      <p>Your position is followed only while the map is open and the app is in front, and stays on this phone. To find branches it goes to OpenStreetMap's query service, rounded to about 100 metres: when the map opens, and again after you've moved half a kilometre (at most once a minute). Search this area sends the area on screen instead. The branches come from OpenStreetMap, which doesn't list every one; the last ones found are kept for when there's no signal. The map's background comes from OpenStreetMap too, so it can tell roughly which area you're looking at.</p>
+    </details>
     <details class="more" id="pushHelp" hidden>
       <summary>Tell me about new menus</summary>
       <p>A notification when a restaurant's guide changes, a badge on the app's icon, and a warning if a favourite now contains gluten. There's no server behind this app: your phone's notification address is saved by the app's owner, by hand, in the project's settings on GitHub, and nothing else leaves the phone.</p>
@@ -299,6 +307,26 @@
       <button class="link-btn" value="close">Done</button>
     </div>
     <div id="nearBody"></div>
+  </form>
+</dialog>
+
+<!-- The map page (the globe by the title): where you are as you move, the chains' branches near you, the Abroad places -->
+<dialog id="mapPage" class="full map-page" aria-labelledby="mapTitle">
+  <form method="dialog" class="sheet">
+    <div class="sheet-head">
+      <h2 id="mapTitle">Map</h2>
+      <button class="link-btn" value="close">Done</button>
+    </div>
+    <p class="map-key"><span><i class="sw sw-you"></i>You</span><span><i class="sw sw-chain"></i>A chain with its menu here</span><span><i class="sw sw-ok"></i>Says all gluten free</span><span><i class="sw sw-swap"></i>Something to ask</span><span><i class="sw sw-other"></i>Other listed places</span></p>
+    <p id="mapStatus" class="muted" role="status"></p>
+    <p id="mapOffline" class="muted" hidden>The map needs signal for its background; the pins still show.</p>
+    <div class="live-wrap">
+      <div id="liveMap" class="city-map live-map" role="region" aria-label="Map"></div>
+      <button type="button" id="mapSearch" class="map-fab map-search" hidden>Search this area</button>
+      <button type="button" id="mapFollow" class="map-fab map-follow" hidden aria-label="Back to where you are">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5" fill="currentColor"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
   </form>
 </dialog>
 

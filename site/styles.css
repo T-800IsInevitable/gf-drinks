@@ -426,6 +426,26 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 .city-map .leaflet-popup-content .link-btn { color: #5b3a29; padding: 4px 0; }
 .city-map .leaflet-container a { color: #5b3a29; }
 .map-note { margin: 0 0 10px; }
+/* ---- the map page (the globe by the title): the map takes what the sheet has left ---- */
+.map-page .sheet { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; }
+.sheet .map-key { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 0.8125rem; }
+.map-key span { display: inline-flex; align-items: center; gap: 5px; }
+.sw { display: inline-block; width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid #ffffff; box-shadow: 0 0 0 1px var(--line); }
+.sw-you { background: #1e6fd9; } .sw-chain { background: var(--accent); } .sw-ok { background: var(--ok); } .sw-swap { background: var(--swap); } .sw-other { background: var(--muted); }
+.live-wrap { position: relative; flex: 1; min-height: 240px; isolation: isolate; }
+.city-map.live-map { position: absolute; inset: 0; height: auto; min-height: 0; margin: 0; z-index: 0; }
+.map-fab { position: absolute; z-index: 1; border: 0; border-radius: 999px; min-height: 44px; min-width: 44px; cursor: pointer;
+  background: var(--surface); color: var(--accent); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); font-weight: 600; }
+.map-search { top: 10px; left: 50%; transform: translateX(-50%); padding: 8px 16px; white-space: nowrap; }
+.map-search:disabled { color: var(--muted); cursor: default; }
+.map-follow { right: 10px; bottom: 28px; width: 48px; height: 48px; display: grid; place-items: center; }
+.map-follow svg { width: 22px; height: 22px; }
+.pop-btns { display: flex; gap: 14px; }
+.pop-btns a { text-decoration: none; }
+/* full-size tap targets: the zoom buttons and a popup's close button */
+.live-map.leaflet-touch .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; }
+.live-map.leaflet-container a.leaflet-popup-close-button { width: 44px; height: 44px; font: 1.5rem/44px var(--body); }
+.live-map .leaflet-popup-content { margin-right: 40px; }
 /* ---- Near me on the UK menus: the chains within a kilometre ---- */
 .near-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; }
 .near-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
