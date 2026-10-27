@@ -5,7 +5,7 @@
 // Nothing waits for them: the app shows the menus saved on the phone meanwhile. They're checked, not downloaded afresh,
 // so a file that hasn't changed comes back as "not modified". The guides (PDFs) and map tiles are never saved here:
 // a guide is fetched when it's opened, and the tile provider's rules forbid keeping tiles.
-const CACHE = "gf-menus-v28";
+const CACHE = "gf-menus-v29";
 const SHELL = ["./", "index.html", "styles.css", "theme.js", "compare.js", "app.js", "manifest.webmanifest",
   "vendor/leaflet/leaflet.js", "vendor/leaflet/leaflet.css",
   "data/restaurants.json", "phrases.json", "cities.json", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/favicon.png"];

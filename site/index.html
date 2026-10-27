@@ -27,7 +27,7 @@
 <header class="top">
   <div class="titlebar">
     <button type="button" id="pickBtn" class="picker" aria-haspopup="dialog" aria-label="Choose restaurant">
-      <span class="app-name">Twoo's Treat Temple</span>
+      <span class="app-name">Treat Temple</span>
       <span id="pickName" class="pick-name">Treat Temple</span>
       <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span id="guideLine" class="guide">Loading…</span>
@@ -89,7 +89,12 @@
   <div id="cityView" class="view" hidden>
     <div id="cityStale" class="stale hide-searching" hidden></div>
     <!-- One line on the first screen; how the tags work and the tips fold out, so the places start near the top -->
-    <div class="certnote city-intro hide-searching">
+    <!-- after the city's first visit it folds into this one line, like a restaurant's tips -->
+    <button type="button" id="cityStrip" class="strip hide-searching" hidden>
+      <span><b>Tags say who calls a place gluten free</b>, not the app.</span>
+      <span class="strip-more">About the tags and Before you go&nbsp;<span id="cityStripCount"></span>&nbsp;&rsaquo;</span>
+    </button>
+    <div class="certnote city-intro hide-searching" id="cityIntroBox">
       <p id="cityIntroLine"></p>
       <div class="more-row">
         <details class="more"><summary>About the tags</summary><p id="cityIntro"></p></details>
@@ -143,7 +148,7 @@
     </ul>
     <details class="more">
       <summary>Staying up to date</summary>
-      <p>The app checks for new menus each time you open it with signal. When a restaurant's guide changes, a note shows what's new, what's gone and anything that now contains gluten, and changed items are marked in the list. If a guide has passed its end date, you'll see a warning.</p>
+      <p>The app checks for new menus each time you open it with signal. When a restaurant's guide changes, a note shows what's new, what's gone and anything that now contains gluten, whether your favourites there are unchanged, and changed items are marked in the list. A restaurant new to the app gets a note too, and a New tag in the chooser until you open it. If a guide has passed its end date, you'll see a warning. The Home Screen app can also tell you about new menus with a notification (Tell me about new menus, below).</p>
       <p><button type="button" id="refreshBtn" class="pill-btn">Check for new menus</button></p>
       <p id="lastChecked" class="muted"></p>
     </details>
@@ -160,7 +165,9 @@
     </details>
     <details class="more">
       <summary>Near me</summary>
-      <p>On <b>All restaurants</b>, the <b>Near me</b> chip under the search box lists which of the app's chains have a branch within a kilometre, nearest first, with its menu and directions one tap away. The branches come from OpenStreetMap, which doesn't list every one; each chain's allergen guide covers all its branches. Your position is sent to OpenStreetMap once per tap, rounded to about 100 metres, and never kept; the last answer is kept for when there's no signal.</p>
+      <p>The <b>Near me</b> chip under the search box lists which of the app's chains have a branch within a kilometre, nearest first, with its menu, directions and, where OpenStreetMap has them, its opening hours one tap away. The branches come from OpenStreetMap, which doesn't list every one; each chain's allergen guide covers its UK branches. Your position is sent to OpenStreetMap once per tap, rounded to about 100 metres, and never kept; the last answer is kept for when there's no signal.</p>
+      <p><b>Keep checking:</b> with this on, each time the app opens, and at most every ten minutes while you move about, your rounded position goes to OpenStreetMap's query service to find the chains within a kilometre, and the nearest shows on that chip ("Pret A Manger 300 m · open until 19:00") with no tap. Nothing is kept there or by the app beyond the last answer on this phone, and it never asks for your location on its own: switch it on here, or when Near me first answers. On an iPhone the permission can lapse after a day unless Location Services for Safari is set to Allow; the chip then reads Near me again until you tap it. Abroad, the chip names the nearest listed place still open today, from the list on this phone.</p>
+      <p><button type="button" id="nearAutoBtn" class="pill-btn" aria-pressed="false">Keep checking when the app opens</button> <span id="nearAutoState" class="muted"></span></p>
     </details>
     <details class="more" id="pushHelp" hidden>
       <summary>Tell me about new menus</summary>
@@ -204,7 +211,7 @@
         <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
         <li>Keep <b>Open as Web App</b> switched on, then tap <b>Add</b>. If it's off, you get a plain bookmark instead.</li>
       </ol>
-      <p>It opens full screen and works without signal using the last menus it downloaded.</p>
+      <p>It opens full screen and works without signal using the last menus it downloaded. Notifications about new menus are only offered in the Home Screen app (Tell me about new menus, in this Help).</p>
     </details>
     <details class="more">
       <summary>Menus in this app</summary>
@@ -302,9 +309,9 @@
       <button type="button" class="link-btn" id="uploadClose">Close</button>
     </div>
     <h3 class="first">Ask for a place by name</h3>
-    <p>Know somewhere that should be here? Its own allergen information is looked up and added for the app's owner to approve.</p>
+    <p id="reqHow">Know somewhere that should be here? Its own allergen information is looked up and added for the app's owner to approve.</p>
     <label class="field">Place<input id="reqName" placeholder="e.g. Wagamama" autocomplete="off"></label>
-    <label class="field">City or country<input id="reqArea" placeholder="e.g. London" autocomplete="off"></label>
+    <label class="field">City or country<input id="reqArea" placeholder="e.g. London, or UK for a chain" autocomplete="off"></label>
     <label class="field">Its website (optional)<input id="reqUrl" inputmode="url" placeholder="e.g. wagamama.com" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
     <p><button type="button" id="reqSend" class="pill-btn">Ask for it</button></p>
     <p id="reqStatus" class="muted" role="status"></p>

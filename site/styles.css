@@ -172,6 +172,8 @@ body.searching .hide-searching { display: none !important; }
 .news-row.bad { border-color: var(--bad); }
 .news-btns { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px !important; }
 .tz-btns { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.stale p.tz-btns::before { content: none; } /* the buttons' row carries no second "i" */
+.stale p.tz-btns { padding-left: 28px; }
 .empty { color: var(--muted); text-align: center; padding: 24px 8px; }
 .empty-links { display: flex; flex-direction: column; align-items: center; gap: 0; }
 .foot { font-size: 0.8125rem; color: var(--muted); display: flex; flex-direction: column; gap: 8px; }
@@ -188,9 +190,11 @@ body.searching .hide-searching { display: none !important; }
 }
 .pill-btn:disabled { opacity: 0.5; }
 .pill-warn { align-self: flex-start; background: var(--chip); color: var(--fg); }
+.pill-warn span { margin-left: 0.3em; } /* a flex button drops the space before its count */
 .fav-btn { border: 1px solid var(--line); background: var(--bg); border-radius: 999px; padding: 8px 14px; min-height: 44px; font-size: 0.8438rem; font-weight: 600; color: var(--accent); cursor: pointer; }
 .fav-btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
 .staff-btn, .order-btn { border: 1px solid var(--line); background: var(--bg); border-radius: 999px; padding: 8px 14px; min-height: 44px; font-size: 0.8438rem; font-weight: 600; color: var(--accent); cursor: pointer; }
+.staff-btn { background: var(--accent); color: var(--on-accent); border-color: transparent; } /* the one that matters at a counter */
 .order-btn[aria-pressed="true"] { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
 
 /* ---- the list: grouped rows that open for detail ---- */
@@ -228,9 +232,13 @@ body.searching .hide-searching { display: none !important; }
 .detail { padding: 0 14px 12px; font-size: 0.875rem; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
 .detail b { color: var(--fg); font-weight: 600; }
 .detail .w-quote { margin: 0; }
-.detail-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.foot-btns { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; flex: 1 1 auto; min-width: 0; }
-.detail-more { display: flex; flex-wrap: wrap; gap: 0 12px; }
+.detail-foot { display: flex; align-items: center; gap: 10px; }
+/* Show staff, the one that matters at a counter, has a full-width row of its own; Add to order and Save share the one under it */
+.foot-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1 1 auto; min-width: 0; }
+.foot-btns > * { min-width: 0; white-space: nowrap; }
+.foot-btns > .staff-btn { grid-column: 1 / -1; order: -1; font-size: 0.9375rem; }
+.detail-more { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; }
+.detail-more > span:empty { display: none; }
 .detail-more .link-btn { font-size: 0.8438rem; font-weight: 600; }
 .milks { display: flex; flex-wrap: wrap; gap: 5px; }
 .milk { font-size: 0.8125rem; padding: 2px 9px; border-radius: 999px; background: var(--ok-bg); color: var(--ok); }

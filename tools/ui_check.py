@@ -1144,6 +1144,8 @@ def check_u1_content_first(env):
         if in_city:
             if not page.locator("#chips [data-card]").count():
                 problems.append(f"{where}: no coeliac card chip")
+            if page.locator("#cityStrip").is_visible():  # after the first visit the introduction is folded (E11): open it
+                page.locator("#cityStrip").click()
             page.locator(".city-intro .more summary").last.click()
             if not page.locator("#cityTips").is_visible() or not page.locator("#cityTips > div").count():
                 problems.append(f"{where}: Before you go doesn't open to the tips")
@@ -1286,8 +1288,8 @@ def check_u4_and_u5(env):
         problems.append("the header still has share or refresh buttons")
     if not page.locator(".titlebar #region").count():
         problems.append("the UK / International switch isn't in the title row")
-    if [b.strip() for b in page.locator("#region button").all_inner_texts()] != ["UK", "International"]:
-        problems.append(f"the header switch reads {page.locator('#region button').all_inner_texts()}, expected UK and International")
+    if [b.strip() for b in page.locator("#region button").all_inner_texts()] != ["UK", "Abroad"]:  # the short word, so the title fits
+        problems.append(f"the header switch reads {page.locator('#region button').all_inner_texts()}, expected UK and Abroad")
     search = page.locator(".search").bounding_box()
     if search["width"] < IPHONE["viewport"]["width"] - 40:
         problems.append(f"the search box is {search['width']:.0f}pt wide, not the full width")
@@ -2610,8 +2612,8 @@ def check_f8_near_me(env):
     page.wait_for_timeout(300)
     if page.locator("#near[open]").count() or pret["name"] not in page.locator("#pickName").inner_text():
         problems.append("near me: Menu didn't open the restaurant's page")
-    if page.locator("#chips [data-near-uk]").count():
-        problems.append("near me: the chip shows on a restaurant's page (it belongs to All)")
+    if norm_ws(page.locator("#chips [data-near-uk]").inner_text()) != "Near me":  # on every page now, plain until the look-around is on
+        problems.append("near me: the chip isn't on the restaurant's page, or isn't plain without the look-around")
     saved = page.evaluate("localStorage.getItem('gf-near')")
     ctx.close()
     # no signal: the last answer, with a note saying so
@@ -2628,7 +2630,194 @@ def check_f8_near_me(env):
         problems.append(f"near me offline: {body[:160]!r}")
     ctx.close()
     problems += [f"near me: {e}" for e in errors]
-    print(f"near me: {rows}; offline shows the last answer")
+    # E1: the look around when the app opens. Switched on, permission granted: one query on opening, the chip reads off
+    # the nearest chain with its hours, the chooser gets a Near you group, a reopen at the same spot asks nothing more,
+    # and the chain's own page says Here
+    elements[0]["tags"]["opening_hours"] = "24/7"
+    asked.clear()
+    chip = lambda: norm_ws(page.locator("#chips [data-near-uk]").inner_text())  # noqa: E731
+
+    def settled():  # the look-around runs after the menus load: give it up to ten seconds to write the chip
+        for _ in range(40):
+            if "›" in chip():
+                break
+            page.wait_for_timeout(250)
+        return chip()
+    ctx = browser.new_context(color_scheme="light", geolocation=at, permissions=["geolocation"], **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-near-auto', 'on')")
+    page = ctx.new_page()
+    page.route("https://overpass-api.de/**", overpass)
+    page.goto(base)
+    page.wait_for_selector("#list .row")
+    settled()
+    want_chip = f"{pret['name']} 300 m · open now ›"
+    if chip() != want_chip:
+        problems.append(f"look around: the chip reads {chip()!r}, expected {want_chip!r}")
+    if len(asked) != 1:
+        problems.append(f"look around: {len(asked)} queries on opening, expected 1")
+    page.locator("#pickBtn").click()
+    page.wait_for_selector("#picker[open]")
+    heads = [norm_ws(t).lower() for t in page.locator("#pickList .sub-h").all_inner_texts()]  # the headings are set in capitals
+    first = norm_ws(page.locator("#pickList .pick-opt").first.inner_text())
+    if heads[:1] != ["near you"] or pret["name"] not in first or "300 m" not in first or "open now" not in first:
+        problems.append(f"look around: the chooser's Near you group is {heads[:1]}, first {first[:80]!r}")
+    page.locator("#picker .link-btn[value=close]").click()
+    page.reload()
+    page.wait_for_selector("#list .row")
+    settled()
+    page.wait_for_timeout(300)
+    if len(asked) != 1:
+        problems.append(f"look around: reopening at the same spot asked again ({len(asked)} queries)")
+    if chip() != want_chip:
+        problems.append(f"look around: after a reload the chip reads {chip()!r}")
+    page.goto(base + f"#{pret['id']}")
+    page.wait_for_selector("#list .row")
+    page.wait_for_timeout(300)
+    if chip() != "Here: 300 m · open now ›":  # the chain's own page: no name, so the section chips stay within reach
+        problems.append(f"look around: on {pret['name']}'s page the chip reads {chip()!r}")
+    ctx.close()
+    # abroad (Alexanderplatz): the position is taken, but the UK query isn't sent
+    asked.clear()
+    ctx = browser.new_context(color_scheme="light", geolocation=ALEX, permissions=["geolocation"], **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-near-auto', 'on')")
+    page = ctx.new_page()
+    page.route("https://overpass-api.de/**", overpass)
+    page.goto(base)
+    page.wait_for_selector("#list .row")
+    page.wait_for_timeout(1200)
+    if asked or chip() != "Near me":
+        problems.append(f"look around: in Berlin it sent {len(asked)} queries, chip {chip()!r}")
+    ctx.close()
+    # not switched on: nothing on opening; the first answer to a tap offers the choice, and Keep checking switches it on
+    asked.clear()
+    ctx = browser.new_context(color_scheme="light", geolocation=at, permissions=["geolocation"], **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+    page = ctx.new_page()
+    page.route("https://overpass-api.de/**", overpass)
+    page.goto(base)
+    page.wait_for_selector("#list .row")
+    page.wait_for_timeout(1200)
+    if asked:
+        problems.append("look around: it queried on opening without being switched on")
+    page.locator("#chips [data-near-uk]").click()
+    page.wait_for_selector("#near[open] .near-list li", timeout=15000)
+    if not page.locator("#near [data-near-ask]").count():
+        problems.append("look around: the first answer doesn't offer Keep checking")
+    page.locator('#near [data-near-auto="on"]').click()
+    page.wait_for_timeout(300)
+    if page.evaluate("localStorage.getItem('gf-near-auto')") != "on" or page.locator("#near [data-near-ask]").count():
+        problems.append("look around: Keep checking didn't switch it on")
+    ctx.close()
+    print(f"near me: {rows}; offline shows the last answer; the look around on opening: one query, the chip, Near you, nothing abroad, the opt-in")
+    return problems
+
+
+def check_e_review(env):
+    base, cid, cities, browser, index = env.base, env.cid, env.cities, env.browser, env.index
+    problems = []
+    # E3: the new-guide note says whether the favourites there survived; E4: a restaurant this phone hasn't seen gets a
+    # note and a New tag until it's opened; E5: the switch reads Abroad; E6: on All after the first visit an out-of-date
+    # guide is a few words in the folded line; E8: Show staff is the filled button, on one row with its neighbours; E12:
+    # the warnings count keeps its space; E9: a request's state; E7 and E11: one icon on the time-zone offer, and the
+    # city introduction folds after the first visit
+    changed = next((r for r in index["restaurants"] if (menu_of(r["id"]).get("changes") or {}).get("added")), None)
+    newcomer = next(r["id"] for r in index["restaurants"] if not changed or r["id"] != changed["id"])
+    name = next(r["name"] for r in index["restaurants"] if r["id"] == newcomer)
+    known = {r["id"]: {"seen": "2026-10-01T00:00:00Z", "new": False} for r in index["restaurants"] if r["id"] != newcomer}
+    stale_id = next((r["id"] for r in index["restaurants"] if (r.get("guide") or {}).get("validUntil", "9") < time.strftime("%Y-%m-%d")), None)
+    seeds = ["localStorage.setItem('gf-selected', 'all')", "localStorage.setItem('gf-intro-seen', JSON.stringify(['all']))",
+             "localStorage.setItem('gf-changes-seen', '[]')", f"localStorage.setItem('gf-known-restaurants', {json.dumps(json.dumps(known))})"]
+    if changed:
+        c = menu_of(changed["id"])["changes"]
+        touched = {(x["section"], x["name"]) for k in ("added", "changed", "nowAvoid", "removed") for x in c.get(k) or []}
+        steady = next(i for i in menu_of(changed["id"])["items"] if not i.get("role") and (i["section"], i["name"]) not in touched)
+        seeds.append(f"localStorage.setItem('gf-favourites', {json.dumps(json.dumps([changed['id'] + '|' + steady['section'] + '|' + steady['name']]))})")
+    ctx = browser.new_context(color_scheme="light", **IPHONE)
+    ctx.add_init_script("; ".join(seeds))
+    page = ctx.new_page()
+    page.goto(base)
+    page.wait_for_selector("#list .row")
+    news = norm_ws(page.locator("#news").inner_text())
+    if not changed:
+        print("new-guide note: no guide has changed today, so the favourites line can't be checked")
+    elif "Your favourite here is unchanged." not in news:
+        problems.append(f"new-guide note: no word on the favourite ({news[:160]!r})")
+    if not stale_id:
+        print("out-of-date line: no guide is out of date today, so its fold can't be checked")
+    if f"{name} is new here." not in news:
+        problems.append(f"new restaurant: no note on All ({news[:160]!r})")
+    if [b.strip() for b in page.locator("#region button").all_inner_texts()] != ["UK", "Abroad"]:
+        problems.append(f"the header switch reads {page.locator('#region button').all_inner_texts()}, expected UK and Abroad")
+    if stale_id:
+        strip = norm_ws(page.locator("#stripText").inner_text())
+        if page.locator("#stale").is_visible() or "may be out of date" not in strip:
+            problems.append(f"all restaurants after the first visit: the out-of-date line isn't folded into the strip ({strip!r})")
+    page.locator("#pickBtn").click()
+    page.wait_for_selector("#picker[open]")
+    tag = page.locator(f'#pickList .pick-opt[data-r="{newcomer}"] .tag')
+    if not tag.count() or norm_ws(tag.inner_text()) != "New":
+        problems.append("new restaurant: no New tag in the chooser")
+    page.locator("#picker .link-btn[value=close]").click()
+    page.locator(f'#news [data-gotorest="{newcomer}"]').click()
+    page.wait_for_selector("#list .row")
+    page.wait_for_timeout(200)
+    if page.locator("#news").is_visible() and f"{name} is new here" in norm_ws(page.locator("#news").inner_text()):
+        problems.append("new restaurant: opening it didn't clear the note")
+    page.locator("#pickBtn").click()
+    page.wait_for_selector("#picker[open]")
+    if page.locator(f'#pickList .pick-opt[data-r="{newcomer}"] .tag').count():
+        problems.append("new restaurant: the New tag stays after opening it")
+    page.locator("#picker .link-btn[value=close]").click()
+    row = page.locator("#list .row", has=page.locator(".staff-btn")).first
+    row.locator("summary").click()
+    page.wait_for_timeout(200)
+    accent = page.evaluate("() => { const b = document.createElement('button'); b.className = 'pill-btn'; document.body.appendChild(b); const c = getComputedStyle(b).backgroundColor; b.remove(); return c; }")
+    if page.evaluate("(el) => getComputedStyle(el).backgroundColor", row.locator(".staff-btn").element_handle()) != accent:
+        problems.append("opened item: Show staff isn't the filled button")
+    # Show staff has a full-width row of its own; the others share the row under it
+    boxes = {h.get_attribute("class"): h.bounding_box() for h in row.locator(".foot-btns > *").all()}
+    staff_box, rest = boxes.get("staff-btn"), [b for c, b in boxes.items() if c != "staff-btn" and b]
+    if not staff_box or staff_box["width"] < row.locator(".foot-btns").bounding_box()["width"] - 2:
+        problems.append("opened item: Show staff doesn't have the full width")
+    if rest and (len({round(b["y"]) for b in rest}) > 1 or min(b["y"] for b in rest) < staff_box["y"] + staff_box["height"]):
+        problems.append("opened item: Add to order and Save aren't on one row under Show staff")
+    ctx.close()
+    ctx, page, errors = visit(browser, base + f"#{index['restaurants'][0]['id']}")
+    if page.evaluate("parseFloat(getComputedStyle(document.querySelector('#warnCount')).marginLeft)") <= 0:
+        problems.append("Read the warnings: the count has no space before it")
+    ctx.close()
+    old = json.dumps([{"name": "Testarossa Kitchen", "area": "London", "url": "", "at": "2026-10-01T10:00:00Z", "how": "shared"}])  # a made-up place
+    ctx = browser.new_context(color_scheme="light", **IPHONE)
+    ctx.add_init_script(f"localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-requests', {json.dumps(old)})")
+    page = ctx.new_page()
+    page.goto(base)
+    page.wait_for_selector("#list .row")
+    page.locator("#infoBtn").click()
+    page.locator("#openUpload").click()
+    page.wait_for_selector("#upload[open]")
+    text = norm_ws(page.locator("#reqList").inner_text())
+    if "not in the app yet" not in text or "ask the owner" not in text:
+        problems.append(f"requests: the state line reads {text[:120]!r}")
+    if "goes to the app's owner as a link" not in page.locator("#reqHow").inner_text():
+        problems.append("requests: without the key the sheet doesn't say the request goes as a link")
+    ctx.close()
+    ctx = browser.new_context(color_scheme="light", timezone_id=cities[cid].get("timeZone", "Europe/Berlin"), **IPHONE)
+    ctx.add_init_script(f"localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-intro-seen', JSON.stringify(['all', {json.dumps(cid)}]))")
+    page = ctx.new_page()
+    page.goto(base)
+    page.wait_for_selector("#tzOffer:not([hidden])")
+    if page.evaluate("getComputedStyle(document.querySelector('#tzOffer .tz-btns'), '::before').content") != "none":
+        problems.append("time-zone offer: a second icon beside the buttons")
+    page.goto(base + f"#{cid}")
+    page.wait_for_selector("#cityList .row")
+    if not page.locator("#cityStrip").is_visible() or page.locator("#cityIntroBox").is_visible():
+        problems.append("city: the introduction doesn't fold after the first visit")
+    page.locator("#cityStrip").click()
+    page.wait_for_timeout(200)
+    if not page.locator("#cityIntroBox").is_visible():
+        problems.append("city: tapping the folded line doesn't show the introduction")
+    ctx.close()
+    print("experience review: the favourites line, a New tag and note, Abroad, the folded out-of-date line, filled Show staff, the count's space, request state, one icon, the city fold")
     return problems
 
 
@@ -2810,7 +2999,7 @@ def check_f15_requests(env):
         if (meta.get("name"), meta.get("area"), meta.get("url")) != ("Wagamama", "London", "https://wagamama.com"):
             problems.append(f"requests: the file says {meta}")
     listed = norm_ws(page.locator("#reqList").inner_text())
-    if "Wagamama (London)" not in listed or "sent for adding" not in listed:
+    if "Wagamama (London)" not in listed or "asked" not in listed or "not in the app yet" not in listed:  # E9's honest state line
         problems.append(f"requests: the phone's own list says {listed!r}")
     # a place that's already here
     have = index["restaurants"][0]
@@ -2915,6 +3104,7 @@ def check_f5_push(env):
 
 CHECKS = [
     ("every_page", check_every_page),
+    ("e_review", check_e_review),
     ("the_berlin_page_in_light", check_the_berlin_page_in_light),
     ("berlin_on_a_sunday_evening", check_berlin_on_a_sunday_evening),
     ("final_review", check_final_review),
