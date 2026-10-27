@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 32;
+  const APP_VERSION = 33;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -1200,7 +1200,7 @@
     // an amber tag says why it's amber: the claim, then that there's something to ask (the row's bold flag says what)
     const label = (p.claimLabel || CLAIM_TAGS[p.claim]) + (p.caution ? " · ask" : "");
     const star = favs.has(placeFav(p)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
-    return '<details class="row" data-place="' + esc(p.name) + '"><summary><span class="nm">' + star + noteMark(placeFav(p)) + esc(p.name) + "<small>" + subs.join(" · ") + '</small><span class="tag ' + cls + '">' +
+    return '<details class="row" data-place="' + esc(p.name) + '"><summary><span class="nm">' + star + noteMark(placeFav(p)) + esc(p.name) + "<small>" + subs.join(" · ") + '</small><span class="tag ' + cls + '">' +
       esc(label) + "</span></span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
   }
   // search what a place is and where it is, not street names or notes ("Sonntag" shouldn't find Sonntagstraße)
@@ -1427,8 +1427,8 @@
   function renderNear(rows, fetched, note) {
     const hoursNote = rows.some((x) => openText(x.hours)) ? " Hours from OpenStreetMap too, which may be out of date." : "";
     $("nearBody").innerHTML = (note ? '<p class="muted">' + esc(note) + "</p>" : "") + (rows.length
-      ? '<ul class="near-list">' + rows.map((x) => '<li><span class="nm"><b>' + esc(x.name) + "</b><small>" + esc([metres(x.km), openText(x.hours), x.where].filter(Boolean).join(" · ")) +
-        (x.n > 1 ? " · " + x.n + " within 1 km" : "") + '</small></span><span class="near-btns"><button type="button" class="fav-btn" data-gonear="' + esc(x.rid) + '">Menu</button>' +
+      ? '<ul class="near-list">' + rows.map((x) => '<li><span class="nm"><b>' + esc(x.name) + "</b><small>" + esc([metres(x.km), openText(x.hours), x.where].filter(Boolean).join(" · ")) +
+        (x.n > 1 ? " · " + x.n + " within 1 km" : "") + '</small></span><span class="near-btns"><button type="button" class="fav-btn" data-gonear="' + esc(x.rid) + '">Menu</button>' +
         '<a class="fav-btn" href="https://maps.apple.com/?ll=' + esc(x.lat + "," + x.lon) + "&q=" + encodeURIComponent(x.name) + '" target="_blank" rel="noopener">Directions</a></span></li>').join("") + "</ul>"
       : '<p class="empty">None of the app\'s restaurants is listed within 1 km of here.</p>') +
       '<p class="muted">Branches from OpenStreetMap, which doesn\'t list every one' + (fetched ? " (its list from " + esc(listDate(fetched)) + ")" : "") + ". Each chain's allergen guide covers all its branches." + hoursNote + "</p>" +
@@ -1981,9 +1981,9 @@
     const first = (cfg.first || []).filter((s) => r.sections.includes(s));
     const secs = first.concat(r.sections.filter((s) => !first.includes(s)));
     const notes = orderNotes[r.id] || [];
-    let html = "<p>" + esc(cfg.intro || ORDER_INTRO) + "</p>" +
-      '<p class="muted">Only items with no gluten ingredients can be ticked. Anything on the Avoid list is shown but can\'t be added. The card ends with ' +
-      esc(possessive(r.name)) + " own cross-contact warning.</p>";
+    // one short paragraph: only items with no gluten ingredients have a box to tick, and each section's Avoid items
+    // fold under it saying they can't be added
+    let html = "<p>" + esc(cfg.intro || ORDER_INTRO) + " The card ends with " + esc(possessive(r.name)) + " own cross-contact warning.</p>";
     if (notes.length) html += '<div class="chg-note bad"><b>Taken out of your order:</b> ' + notes.map(esc).join("; ") + ".</div>";
     for (const s of secs) {
       const ok = r.items.filter((i) => i.section === s && canOrder(i));
@@ -1994,10 +1994,11 @@
       for (const i of ok) {
         if ((i.sub || "") !== sub) { sub = i.sub || ""; if (sub) html += '<div class="sub-h">' + esc(cap(sub)) + "</div>"; }
         const k = favKey(r, i);
+        // only a tag that adds something ("Any milk except oat", "Ask"): every tickable item has no gluten ingredients
         const [cls, label] = tagFor(r, i);
         html += '<label class="o-row"><input type="checkbox" data-key="' + esc(k) + '"' + (keys.has(k) ? " checked" : "") + '><span class="nm">' + esc(i.name) +
           (i.order === "modify" ? "<small>" + esc(i.note) + "</small>" : i.original ? '<small lang="' + esc(r.language || "") + '">' + esc(i.original) + "</small>" : "") +
-          '</span><span class="tag ' + cls + '">' + esc(label) + "</span></label>";
+          "</span>" + (cls === "t-asis" ? "" : '<span class="tag ' + cls + '">' + esc(label) + "</span>") + "</label>";
       }
       if (av.length) {
         html += '<details class="o-avoid"><summary>' + av.length + (av.length === 1 ? " item" : " items") + " on the Avoid list: can't be added</summary>" +
@@ -2005,7 +2006,7 @@
           "</details>";
       }
     }
-    $("orderTitle").textContent = "Build an order at " + r.name;
+    $("orderTitle").textContent = "Build an order"; // the restaurant is in the header and on the card
     $("orderBody").innerHTML = html;
     renderOrderFoot(r);
   }

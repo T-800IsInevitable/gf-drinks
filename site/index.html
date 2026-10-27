@@ -62,7 +62,7 @@
   <div id="stale" class="stale hide-searching" hidden></div>
   <div id="favAlert" class="fav-alert" role="alert" hidden></div>
   <div id="news" class="news hide-searching" hidden></div>
-  <!-- After the first visit to a page, its tips and the certified-or-not card fold into this one line; all of
+  <!-- Except on the first menu page ever opened, the tips and the certified-or-not card are this one line; all of
        their wording is in the Tips and warnings sheet it opens -->
   <button type="button" id="openStrip" class="strip hide-searching" hidden>
     <span id="stripText"></span>
@@ -118,10 +118,8 @@
     </div>
     <!-- First run only: what the app lists, what the colours mean, and that nothing in it is certified -->
     <div id="pickWelcome" class="w-intro" hidden>
-      <p><b>Food and drinks with no gluten ingredients</b>, from each restaurant's own allergen guide, and how to order them.</p>
-      <p>Green: no gluten ingredients as listed. Amber: ask for a change when you order. Red: avoid it, because it contains gluten or isn't suitable.</p>
-      <p>Nothing here is certified gluten free. If you have coeliac disease, tell staff when you order.</p>
-      <p>The switch at the top also has <b>UK cities</b> and <b>Abroad</b>: places in a city that are all gluten free, by their own word or a listing.</p>
+      <p><b>Food and drinks with no gluten ingredients</b>, from each restaurant's own allergen guide. Nothing here is certified gluten free, so if you have coeliac disease, tell staff when you order.</p>
+      <p>For places in a city that are all gluten free, by their own word or a listing, use <b>UK cities</b> or <b>Abroad</b> at the top.</p>
     </div>
     <div id="pickList" class="pick-list"></div>
     <p class="pick-share"><button type="button" id="shareBtn" class="link-btn">Share this app</button></p>
@@ -204,7 +202,7 @@
     <details class="more">
       <summary>Chains, UK cities and Abroad</summary>
       <p>The switch at the top has three sections. <b>Chains</b> has the chains' menus, from their own allergen guides: the title under the switch chooses a restaurant, or All restaurants. <b>UK cities</b> (London, York, Sheffield, Poole and Worksop) and <b>Abroad</b> (Berlin and Amsterdam) list places that are all gluten free, by their own word or a listing, or that say part of what they serve is, or that they make gluten free food in a separate kitchen: the title chooses the city, and each section goes back to the city you last looked at. The app also offers a city abroad when your phone is on its time.</p>
-      <p>A UK city's places were found through coeliac guides and Coeliac Sanctuary's listings; a city abroad's come from the coeliac society's list there. A UK city also lists the app's chains with branches in and around it, each with its menu one tap away. On a city's page, each tag says who makes that claim. Each row says whether it's open now (local time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Open near me</b> shows what's still open today, nearest first; <b>Still open today</b>, <b>Near me</b> and <b>★ Saved</b> narrow the list on their own. <b>Map</b> shows the places as pins in the row's colours (OpenStreetMap, while you have signal); tap a pin, then Open. The <b>German card</b> or <b>Dutch card</b> chip opens the coeliac card, and <b>About the tags</b> and <b>Before you go</b> open under the introduction. Tap <b>Chains</b> to go back to the menus.</p>
+      <p>A UK city's places were found through coeliac guides and Coeliac Sanctuary's listings; a city abroad's come from the coeliac society's list there. A UK city also lists the app's chains with branches in and around it, each with its menu one tap away. On a city's page, each tag says who makes that claim. Each row says whether it's open now (local time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Open near me</b> shows what's still open today, nearest first (without your location, just what's open); <b>★ Favourites</b> shows the places you saved. <b>Map</b> shows the places as pins in the row's colours (OpenStreetMap, while you have signal); tap a pin, then Open. The <b>German card</b> or <b>Dutch card</b> chip opens the coeliac card, and <b>About the tags</b> and <b>Before you go</b> open under the introduction. Tap <b>Chains</b> to go back to the menus.</p>
     </details>
     <details class="more">
       <summary>Travelling</summary>

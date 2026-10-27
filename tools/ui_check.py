@@ -993,9 +993,10 @@ def check_first_visit(env):
     page.locator(f"#pickList [data-r=\"{ids[0]}\"]").click()
     page.wait_for_selector("#list .row")
     # wording: the guides do call some (avoided) items gluten free, so don't say they never use the words
-    if "don't claim their food is gluten free" in page.locator("#certText").inner_text():
+    if "don't claim their food is gluten free" in (page.locator("#certText").text_content() or ""):
         problems.append("certified note says the restaurants don't claim their food is gluten free")
-    page.locator("#openWarnings").click()
+    # the card is in full only on the first menu page opened; this restaurant has it folded into one line
+    page.locator("#openWarnings" if page.locator("#openWarnings").is_visible() else "#openStrip").click()
     page.wait_for_selector("#warnings[open]")
     if "none of these guides use" in page.locator("#warnBody").inner_text():
         problems.append("warnings intro says none of the guides use the words gluten free")
@@ -1585,15 +1586,19 @@ def check_u11(env):
 def check_u12(env):
     base, ids, cid, browser = env.base, env.ids, env.cid, env.browser
     problems = []
-    # U12: the first run's chooser says what the app is, what the colours mean and that nothing is certified, with
-    # its pointer to the sections switch (the way to the cities) still on the first screen; once left, it doesn't come back
+    # U12: the first run's chooser says what the app is and that nothing is certified, in two short paragraphs (the
+    # colours are on the count buttons and in Help), with its pointer to the sections switch (the way to the cities)
+    # and All restaurants on the first screen; once left, it doesn't come back
     ctx = browser.new_context(color_scheme="light", **IPHONE)
     page = ctx.new_page()
     page.goto(base)
     page.wait_for_selector("#picker[open]")
     welcome = norm_ws(page.locator("#pickWelcome").inner_text()) if page.locator("#pickWelcome").is_visible() else ""
-    if not all(w in welcome for w in ("Green", "Amber", "Red", "Nothing here is certified gluten free")):
+    if "Nothing here is certified gluten free" not in welcome or page.locator("#pickWelcome p").count() > 2:
         problems.append(f"first run: the welcome is {welcome!r}")
+    all_opt = page.locator('#pickList [data-r="all"]').bounding_box()
+    if all_opt["y"] + all_opt["height"] > IPHONE["viewport"]["height"]:
+        problems.append(f"first run: All restaurants ends at {all_opt['y'] + all_opt['height']:.0f}pt, below the first screen")
     for s in page.evaluate(WORDING_JS):
         problems.append(f"first run welcome calls something gluten free in the app's own voice: {s!r}")
     berlin = page.locator("#pickWelcome p").last.bounding_box()  # the line about UK cities and International
@@ -1606,7 +1611,7 @@ def check_u12(env):
     page.wait_for_selector("#picker[open]")
     if page.locator("#pickWelcome").is_visible():
         problems.append("the welcome shows again once a restaurant has been chosen")
-    print(f"first run: welcome says what green, amber and red mean; its line about the cities ends at {berlin['y'] + berlin['height']:.0f}pt")
+    print(f"first run: a two-paragraph welcome, its line about the cities ending at {berlin['y'] + berlin['height']:.0f}pt, All restaurants on the first screen")
     ctx.close()
     return problems
 

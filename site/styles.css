@@ -48,6 +48,8 @@ body {
 button { font: inherit; color: inherit; }
 [hidden] { display: none !important; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* the title and text buttons get a rounded ring, in keeping with the rest, if the keyboard ever focuses them */
+.picker:focus-visible, .link-btn:focus-visible { border-radius: 8px; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 .muted { color: var(--muted); font-size: 0.8438rem; }
 /* VoiceOver-only words */
@@ -273,7 +275,8 @@ body.searching .hide-searching { display: none !important; }
 .place-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
 .place-links a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; }
 .place-links .fav-btn { margin-left: auto; }
-.city-intro { gap: 2px; }
+/* the links' 44pt tap rows leave room under their words, so the card's own bottom padding is less: even above and below */
+.city-intro { gap: 2px; padding-bottom: 2px; }
 .city-intro > p { margin-bottom: 6px; }
 .more summary { min-height: 44px; display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600; color: var(--accent); list-style: none; }
 .more summary::-webkit-details-marker { display: none; }
@@ -306,8 +309,9 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 .sheet details.more > :not(summary) { margin-bottom: 10px; }
 .sheet details.more summary { border-top: 1px solid var(--line); }
 .notes { padding-left: 18px; font-size: 0.8125rem; }
-.legend { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 0.875rem; }
-.legend .tag { margin-right: 6px; }
+.legend { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 0.875rem; }
+/* each tag on its own line with its meaning under it, so the left edge stays straight */
+.legend li { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .chg-list { padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 .chg-list li { color: var(--fg); }
 /* the chooser */
@@ -319,12 +323,12 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
   border: 1px solid var(--line); background: var(--bg); border-radius: 12px; padding: 12px 14px; cursor: pointer;
 }
 .pick-opt[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-.po-main { display: flex; flex-direction: column; min-width: 0; }
+/* the name takes the room between logo and count, so every row's text starts at the same edge */
+.po-main { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .po-main span { font-size: 0.8125rem; color: var(--muted); }
 .po-meta { font-size: 0.8125rem; color: var(--muted); white-space: nowrap; }
 .pick-note { font-size: 0.8125rem; color: var(--muted); margin: 4px 2px 0; }
-/* a UK city's chains, as rows like the chooser's: the name takes the room, so it lines up whatever the logo */
-.chains-here .po-main { flex: 1; }
+/* a UK city's chains, as compact rows like the chooser's */
 .chains-here { gap: 6px; }
 .chains-here .pick-opt { background: var(--surface); padding: 8px 12px; min-height: 44px; }
 .chains-here .logo-wrap { width: 30px; height: 30px; border-radius: 8px; }
@@ -459,8 +463,9 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 .live-map .leaflet-popup-content { margin-right: 40px; }
 /* ---- Near me on the UK menus: the chains within a kilometre ---- */
 .near-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; }
-.near-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
-.near-list .nm { flex: 1; min-width: 0; color: var(--fg); }
+/* the name and its line take the full width, the buttons under them, so the line doesn't wrap into three */
+.near-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.near-list .nm { flex: 1 1 100%; min-width: 0; color: var(--fg); }
 .near-list .nm small { display: block; font-size: 0.8125rem; color: var(--muted); }
 .near-btns { display: flex; gap: 6px; flex: none; }
 .near-btns a { text-decoration: none; display: inline-flex; align-items: center; }
