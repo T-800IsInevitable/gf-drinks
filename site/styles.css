@@ -325,7 +325,9 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 .pick-note { font-size: 0.8125rem; color: var(--muted); margin: 4px 2px 0; }
 /* a UK city's chains, as rows like the chooser's: the name takes the room, so it lines up whatever the logo */
 .chains-here .po-main { flex: 1; }
-.chains-here .pick-opt { background: var(--surface); }
+.chains-here { gap: 6px; }
+.chains-here .pick-opt { background: var(--surface); padding: 8px 12px; min-height: 44px; }
+.chains-here .logo-wrap { width: 30px; height: 30px; border-radius: 8px; }
 .pick-share { margin-top: 10px; display: flex; justify-content: center; }
 /* each restaurant's own mark (its site icon) on a light tile, so dark marks show in dark mode too; a lettered badge without one */
 .logo-wrap { position: relative; display: inline-grid; place-items: center; width: 38px; height: 38px; flex: none; border-radius: 10px; background: #fff; border: 1px solid var(--line); overflow: hidden; }

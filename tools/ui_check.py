@@ -716,17 +716,20 @@ def check_berlin_on_a_sunday_evening(env):
             problems.append(f"{cid} Sunday 19:00: {pl['name']} ({hrs}) doesn't say Open now")
         if hrs and max(closes(h) for h in hrs) <= 19 * 60 and "Closed now" not in row:
             problems.append(f"{cid} Sunday 19:00: {pl['name']} ({hrs}) doesn't say Closed now")
-    page.locator('#chips [data-kind="open"]').click()
+    # Open near me: what's still open today, nearest first, in one chip
+    page.locator("#chips [data-nearopen]").click()
+    page.wait_for_selector('#chips [data-nearopen][aria-pressed="true"]')
     want = sorted(pl["name"] for pl in cities[cid]["places"] if any(closes(h) > 19 * 60 for h in sunday(pl)))
     if sorted(shown()) != want:
         problems.append(f"{cid} still open today (Sunday 19:00): shows {sorted(shown())}, expected {want}")
-    page.locator('#chips [data-kind="all"]').click()
-    page.locator("#chips [data-near]").click()
-    page.wait_for_timeout(500)
-    nearest = nearest_places(cities[cid], alex)
+    nearest = [pl for pl in nearest_places(cities[cid], alex) if pl["name"] in want]
     if shown()[:3] != [pl["name"] for pl in nearest[:3]]:
-        problems.append(f"{cid} near me: starts {shown()[:3]}, expected {[pl['name'] for pl in nearest[:3]]}")
-    page.locator("#chips [data-near]").click()
+        problems.append(f"{cid} open near me: starts {shown()[:3]}, expected {[pl['name'] for pl in nearest[:3]]}")
+    page.locator("#chips [data-nearopen]").click()
+    # the row: the language card first, then All, Open near me, Favourites; no separate Near me or Still open today
+    order = page.evaluate("[...document.querySelectorAll('#chips button')].map((b) => b.dataset.card !== undefined ? 'card' : b.dataset.nearopen !== undefined ? 'nearopen' : b.dataset.map !== undefined ? 'map' : b.dataset.kind || '?')")
+    if order[:4] != ["card", "all", "nearopen", "fav"] or order[-1] != "map" or "open" in order or page.locator("#chips [data-near]").count():
+        problems.append(f"{cid}: the chips run {order}, expected the card, All, Open near me, Favourites, then sections, Map last")
     # a street name isn't a day: searching a weekday finds only places whose own words hold it, never one by its address
     for day in ("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag", "maandag", "zondag"):
         page.locator("#q").fill(day)
@@ -810,25 +813,25 @@ def check_final_review(env):
     lines_now = lambda: {r["name"]: r["today"] for r in page.evaluate(  # noqa: E731
         "[...document.querySelectorAll('#cityList .row')].map((r) => ({ name: r.dataset.place, today: (r.querySelector('.today') || {}).textContent || '' }))")}
 
-    def expect(label, day, minute, at=None):
+    def expect(label, day, minute, at=None, shown_only=False):
         got = lines_now()
         for pl in c["places"]:
+            if shown_only and pl["name"] not in got:  # Open near me shows only what's still open
+                continue
             want = expected_today(pl, day, minute, at)
             if not got.get(pl["name"], "").startswith(want):
                 problems.append(f"{cid} {label}: {pl['name']} says {got.get(pl['name'])!r}, expected {want!r} from its hours")
     page.clock.set_fixed_time("2026-11-03T15:00:00+01:00")  # Tuesday 15:00
     page.goto(base + f"#{cid}")
     page.wait_for_selector("#cityList .row")
-    page.locator("#chips [data-near]").click()
+    page.locator("#chips [data-nearopen]").click()
     page.wait_for_timeout(500)
-    expect("Tuesday 15:00 with Near me", 1, 15 * 60, geo)
-    page.locator("#chips [data-near]").click()
-    page.locator('#chips [data-kind="open"]').click()
+    expect("Tuesday 15:00 with Open near me", 1, 15 * 60, geo, shown_only=True)
     page.evaluate("window.scrollTo(0, 0)")
     top = page.locator("#cityList .row").first.bounding_box()["y"] if page.locator("#cityList .row").count() else 0
     if top > 450:
         problems.append(f"{cid}: after choosing a filter the first result is at y={top:.0f}, below the fold")
-    page.locator('#chips [data-kind="all"]').click()
+    page.locator("#chips [data-nearopen]").click()
     page.clock.set_fixed_time("2026-11-02T13:00:00+01:00")
     page.reload()
     page.wait_for_selector("#cityList .row")
@@ -1915,11 +1918,11 @@ def check_s3(env):
     page.locator("#chips [data-nearopen]").click()
     page.wait_for_selector('#chips [data-nearopen][aria-pressed="true"]')
     open_nearest = [pl["name"] for pl in nearest if any(closes(h) > 19 * 60 for h in sunday(pl))]
-    states = {"near": pressed("[data-near]"), "open": pressed("[data-kind='open']"), "all": pressed("[data-kind='all']")}
-    if listed() != open_nearest or states != {"near": "true", "open": "true", "all": "false"}:
+    states = {"all": pressed("[data-kind='all']")}
+    if listed() != open_nearest or states != {"all": "false"}:
         problems.append(f"Open near me: shows {listed()}, expected {open_nearest}; chips pressed: {states}")
     page.locator("#chips [data-nearopen]").click()
-    if pressed("[data-nearopen]") != "false" or pressed("[data-near]") != "false" or pressed('[data-kind="all"]') != "true":
+    if pressed("[data-nearopen]") != "false" or pressed('[data-kind="all"]') != "true":
         problems.append("Open near me: a second tap doesn't turn it off")
     print(f"open near me: {len(open_nearest)} places open on Sunday evening, nearest first, one tap on, one tap off")
     ctx.close()

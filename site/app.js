@@ -439,6 +439,7 @@
     const nearChip = osmChains().length ? '<button type="button" data-near-uk>' + esc(nearChipText(r)) + "</button>" : "";
     $("chips").innerHTML = chips.map((c) => chipHtml(c.kind, c.value, c.label, sameFilter(c, filter)) +
       (c.kind === "fav" ? (r ? '<button type="button" data-order-open>' + orderChipText(r) + "</button>" : "") + nearChip : "")).join("");
+    $("chips").hidden = false; // a city with a few places hides the row
   }
   const orderChipText = (r) => { const n = orderItems(r).length; return n ? "Your order (" + n + ") &rsaquo;" : "Build an order"; };
 
@@ -1058,19 +1059,23 @@
     $("pickBtn").setAttribute("aria-label", c.name + ". Choose a city");
     $("guideLine").textContent = c.places.length + (c.places.length === 1 ? " place" : " places") + " · checked " + fmtDate(c.checked) + offlineTag();
     $("q").placeholder = "Search " + c.name;
-    const chips = [["all", "All"], ["open", "Still open today"], ["fav", "★ Saved"]].concat(c.sections.filter((s) => c.places.some((p) => p.section === s)).map((s) => [s, s]));
-    if (!chips.some(([v]) => v === cityFilter)) cityFilter = "all";
+    // The row, in the order it's wanted: abroad, the language card first; then All, Open near me (still open today,
+    // nearest first: one chip, where three overlapped), Favourites (the name the menus use), the sections when there's
+    // more than one, and the city's own map last. A city with a few places needs no filters, so only its card shows.
+    const few = c.places.length < 4;
+    const secs = c.sections.filter((s) => c.places.some((p) => p.section === s));
+    const chips = few ? [] : [["all", "All"], ["fav", "★ Favourites"]].concat(secs.length > 1 ? secs.map((s) => [s, s]) : []);
+    if (cityFilter !== "open" && !chips.some(([v]) => v === cityFilter)) cityFilter = "all";
     const card = phrases[c.language];
     // with the look-around on and the phone inside the city, the chip names the nearest place still open today (no network needed)
     const now0 = cityNow(c);
     const nearest = nearAuto && here && inBounds(c, here) ? c.places.filter((p) => stillOpen(p, now0)).sort((a, b) => placeKm(a) - placeKm(b))[0] : null;
-    $("chips").innerHTML = '<button type="button" data-nearopen aria-pressed="' + (nearSort && cityFilter === "open") + '">' +
-      (nearest ? "Open near: " + esc(nearest.name) + " " + placeKm(nearest).toFixed(1) + " km ›" : "Open near me") + "</button>" +
-      '<button type="button" data-near aria-pressed="' + nearSort + '">Near me</button>' +
-      '<button type="button" data-map aria-pressed="' + mapOn + '">Map</button>' +
-      chips.map(([v, l]) => chipHtml(["all", "open", "fav"].includes(v) ? v : "section", ["all", "open", "fav"].includes(v) ? "" : v, l,
-        v === cityFilter && !(v === "all" && nearSort))).join("") +
-      (card ? '<button type="button" data-card>' + esc(card.language) + " card</button>" : "");
+    const chip = ([v, l]) => chipHtml(["all", "fav"].includes(v) ? v : "section", ["all", "fav"].includes(v) ? "" : v, l, v === cityFilter && !(v === "all" && nearSort));
+    $("chips").innerHTML = (card ? '<button type="button" data-card>' + esc(card.language) + " card</button>" : "") +
+      (few ? "" : chip(chips[0]) + '<button type="button" data-nearopen aria-pressed="' + (nearSort && cityFilter === "open") + '">' +
+        (nearest ? "Open near: " + esc(nearest.name) + " " + placeKm(nearest).toFixed(1) + " km ›" : "Open near me") + "</button>" +
+        chips.slice(1).map(chip).join("") + '<button type="button" data-map aria-pressed="' + mapOn + '">Map</button>');
+    $("chips").hidden = !$("chips").innerHTML;
     const n = (claim) => c.places.filter((p) => p.claim === claim).length;
     // a UK city's places were found through guides and listings rather than a coeliac society's list
     const uk = isUKCity(c);
@@ -1178,12 +1183,12 @@
     if (p.caution) out.push('<div class="chg-note"><b>Note from this app:</b> ' + esc(p.caution) + "</div>");
     if (p.status !== "confirmed") out.push('<div class="chg-note bad"><b>Not confirmed open.</b> ' + esc(p.statusNote || "") + "</div>");
     (p.notes || []).forEach((n) => out.push("<div>" + esc(n) + "</div>"));
-    out.push(noteBox(placeFav(p)));
     out.push('<ul class="locs">' + p.locations.map((l) => '<li><a href="' + esc(mapLink(p, l)) + '" target="_blank" rel="noopener">' + esc(l.address) + "</a>" +
       "<span>" + esc([l.area, l.note].filter(Boolean).join(" · ")) + "</span>" +
       "<span>" + (l.hours ? "<b>Hours:</b> " + esc(weekText(l.hours)) + (l.kitchenCloses ? ". Kitchen closes at " + esc(l.kitchenCloses) : "") +
         (l.hoursNote ? ". " + esc(l.hoursNote) : "") + " (from its website, " + esc(fmtDate(p.checked || c.checked)) + ")"
         : "<b>Hours not known.</b> Check its website before going.") + "</span></li>").join("") + "</ul>");
+    out.push(noteBox(placeFav(p))); // after where and when, the things needed to go there
     out.push('<div class="detail-more"><button type="button" class="link-btn" data-wrong-place="' + esc(p.name) + '">Something wrong?</button></div>');
     const social = /instagram\.com/.test(p.url) ? "Instagram" : /facebook\.com/.test(p.url) ? "Facebook" : "Website";
     out.push('<div class="place-links">' + (safeUrl(p.url) ? '<a href="' + esc(safeUrl(p.url)) + '" target="_blank" rel="noopener">' + social + "</a>" : "") +
@@ -1192,7 +1197,8 @@
     // green only when the place itself says everything is gluten free and the app has nothing to add
     // amber is for items that need a change; here it marks a place the app has a caution about, and the rest are plain
     const cls = p.claim === "place-all" && !p.caution ? "t-asis" : p.caution ? "t-swap" : "t-info";
-    const label = p.claimLabel || CLAIM_TAGS[p.claim];
+    // an amber tag says why it's amber: the claim, then that there's something to ask (the row's bold flag says what)
+    const label = (p.claimLabel || CLAIM_TAGS[p.claim]) + (p.caution ? " · ask" : "");
     const star = favs.has(placeFav(p)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
     return '<details class="row" data-place="' + esc(p.name) + '"><summary><span class="nm">' + star + noteMark(placeFav(p)) + esc(p.name) + "<small>" + subs.join(" · ") + '</small><span class="tag ' + cls + '">' +
       esc(label) + "</span></span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
@@ -1218,7 +1224,7 @@
     }
     html += chainsHere(c, ts);
     const unknown = c.places.filter((p) => !p.locations.some((l) => l.hours)).length;
-    const empty = cityFilter === "fav" ? "No saved places yet. Open a place and tap ☆ Save."
+    const empty = cityFilter === "fav" ? "No favourites here yet. Open a place and tap ☆ Save."
       : cityFilter === "open" ? "None of the places with known hours are open for the rest of today."
       : 'No places match "' + esc($("q").value.trim()) + '".';
     const mapHtml = mapOn ? '<div id="cityMap" class="city-map" role="region" aria-label="Map of the places"></div><p class="muted map-note">' +
