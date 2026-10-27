@@ -8,7 +8,7 @@ For every restaurant page and the "All restaurants" page it checks:
   * nothing wider than the screen (no sideways scrolling)
   * the list shows items
 the same for each city page in cities.json (every place shown and opened), then
-the three sections above the title (UK franchises, UK cities, International):
+the three sections above the title (Chains, UK cities, Abroad):
 UK -> International (search, coeliac card, reload) -> UK, each section's
 chooser listing its own cities, each section remembering its city; each UK city
 listing the chains with branches there, a row opening the menu; the order builder (parts
@@ -535,7 +535,7 @@ def check_every_page(env):
 def want_sections(cities):
     """The header's sections (site/app.js SECTIONS): UK franchises always, then each city group that has a city."""
     groups = {c.get("group") for c in cities.values()}
-    return ["UK franchises"] + ["UK cities"] * ("uk" in groups) + ["International"] * (any(g != "uk" for g in groups))
+    return ["Chains"] + ["UK cities"] * ("uk" in groups) + ["Abroad"] * (any(g != "uk" for g in groups))
 
 
 def served_branches():
@@ -633,7 +633,7 @@ def check_the_berlin_page_in_light(env):
     ukc = [c for c, city in cities.items() if city.get("group") == "uk"]
     # the sections sit on their own row above the title (the chooser) and the search box, in this order
     labels = [b.strip() for b in page.locator("#region button").all_inner_texts()]
-    if labels != ["UK franchises"] + ["UK cities"] * bool(ukc) + ["International"] * bool(intl):
+    if labels != want_sections(cities):
         problems.append(f"the sections read {labels}")
     order = page.evaluate("[...document.querySelector('.top').children].map((el) => el.id || el.className)")
     if order[:3] != ["region", "titlebar", "search"]:
@@ -1217,9 +1217,10 @@ def check_wording(env):
 def check_u1_content_first(env):
     base, ids, cities, browser = env.base, env.ids, env.cities, env.browser
     problems = []
-    # U1, content first: a page's first visit shows its tips and the certified-or-not card in full; after that they
-    # fold into one line, the menu starts in the top half of the screen with at least four items showing (an
-    # out-of-date banner, kept in full, may push it down by its own height), and every folded word is in the sheet
+    # U1, content first: the first menu page ever opened shows the certified-or-not card (and the first tip) in full;
+    # after that, and on every other restaurant's first visit, it's one line, the menu starts in the top half of the
+    # screen with at least four items showing (an out-of-date banner, kept in full on its own restaurant's page, may
+    # push it down by its own height), and every folded word is in the sheet
     half = IPHONE["viewport"]["height"] / 2
     ctx = browser.new_context(color_scheme="light", **IPHONE)
     ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
@@ -1234,12 +1235,15 @@ def check_u1_content_first(env):
             page.reload()  # a hash change keeps the last city's folds open
         page.wait_for_selector("#cityList .row" if in_city else "#list .row")
         if not in_city:
-            if not page.locator("#certNote").is_visible() or page.locator("#openStrip").is_visible():
-                problems.append(f"{where}: the first visit doesn't show the full certified-or-not card")
-            page.reload()  # the second visit: folded
-            page.wait_for_selector("#list .row")
+            if not url:  # the first menu page ever: the card in full, with at most one tip above it
+                if not page.locator("#certNote").is_visible() or page.locator("#openStrip").is_visible() or page.locator("#tips > div").count() > 1:
+                    problems.append(f"{where}: the first menu page doesn't show the full card with at most one tip")
+                page.reload()  # the second visit: folded
+                page.wait_for_selector("#list .row")
             if page.locator("#certNote").is_visible() or page.locator("#tips").is_visible() or not page.locator("#openStrip").is_visible():
-                problems.append(f"{where}: on a second visit the tips and card don't fold into one line")
+                problems.append(f"{where}: the card and tips don't fold into one line (on a restaurant's first visit too)")
+            if not url and page.locator("#stale").is_visible():
+                problems.append("all restaurants: an out-of-date guide shows as a banner, not in the folded line")
         page.wait_for_timeout(300)
         m = page.evaluate(FIRST_SCREEN_JS, "#cityList" if in_city else "#list")
         # and again in a wide font: the iPhone's font isn't the test machine's, so the layout needs room to spare
@@ -1362,7 +1366,8 @@ def check_u2_and_u3(env):
                 problems.append(f"{where}{label}: {len(bad)} tags wrap or aren't under the name, such as {bad[0]['text']!r}")
             buttons = page.evaluate(status_js)
             hs, dots, cnts = [b["h"] for b in buttons], {b["dot"] for b in buttons}, {b["cnt"] for b in buttons}
-            if len(buttons) != 3 or max(hs) - min(hs) > 1 or max(hs) > 64 or len(dots) > 1 or len(cnts) > 1:
+            # two when "Needs a change" has nothing in it (it isn't shown); the dot sits beside the count, each in a line
+            if len(buttons) not in (2, 3) or max(hs) - min(hs) > 1 or max(hs) > 64 or len(dots) > 1 or len(cnts) > 1:
                 problems.append(f"{where}{label}: the status buttons aren't one even row (heights {hs}, dots at {sorted(dots)}, counts at {sorted(cnts)})")
             if style:
                 style.remove()
@@ -1374,7 +1379,7 @@ def check_u2_and_u3(env):
 def check_u4_and_u5(env):
     base, browser = env.base, env.browser
     problems = []
-    # U4 and U5: on All an out-of-date guide is one line pointing to its page (the full banner stays there), and the
+    # U4 and U5: on All an out-of-date guide is the chooser's tag and a few words in the folded line (the full banner stays on its page), and the
     # header is lighter: the UK / Berlin switch is in the title row, the search box has the full width, share is in
     # the chooser and refresh in Help beside when it last worked
     ctx = browser.new_context(color_scheme="light", **IPHONE)
@@ -1382,18 +1387,24 @@ def check_u4_and_u5(env):
     page = ctx.new_page()
     page.goto(base)
     page.wait_for_selector("#list .row")
-    stale_text = page.locator("#stale").inner_text() if page.locator("#stale").is_visible() else ""
-    wide_style = add_css(page, '* { font-family: Verdana, "DejaVu Sans", sans-serif !important; }')  # the test machine's fonts differ from the phone's
-    page.wait_for_timeout(150)
-    wide_height = page.locator("#stale").bounding_box()["height"] if page.locator("#stale").is_visible() else 0
-    wide_style.remove()
-    if not stale_text or max(page.locator("#stale").bounding_box()["height"], wide_height) > 70 or "may be out of date" not in stale_text:
-        problems.append(f"all restaurants: the out-of-date guides aren't one short line ({stale_text!r}, {wide_height:.0f}pt in a wide font)")
-    else:
-        page.locator("#stale [data-gotorest]").first.click()
+    # an out-of-date guide isn't a banner on All: it's the chooser's Out of date tag, a few words in the folded line,
+    # and the full banner on its own page
+    page.reload()  # the second visit: the card folded into its line
+    page.wait_for_selector("#list .row")
+    page.locator("#pickBtn").click()
+    page.wait_for_selector("#picker[open]")
+    stale_ids = page.evaluate("[...document.querySelectorAll('#pickList .pick-opt[data-r]')].filter((b) => /Out of date/.test(b.textContent)).map((b) => b.dataset.r)")
+    page.keyboard.press("Escape")
+    if stale_ids:
+        if page.locator("#stale").is_visible():
+            problems.append("all restaurants: an out-of-date guide shows as a banner")
+        if "may be out of date" not in page.locator("#stripText").inner_text():
+            problems.append("all restaurants: the folded line doesn't say a guide may be out of date")
+        page.goto(base + "#" + stale_ids[0])
         page.wait_for_selector("#list .row")
         if "It covered up to" not in page.locator("#stale").inner_text():
-            problems.append("the out-of-date line on All doesn't lead to the restaurant's full banner")
+            problems.append(f"{stale_ids[0]}: its own page doesn't have the full out-of-date banner")
+    stale_text = ", ".join(stale_ids)
     page.goto(base)
     page.wait_for_selector("#list .row")
     if page.locator("#shareBtn").is_visible() or page.locator("#refreshBtn").is_visible():
@@ -1420,7 +1431,7 @@ def check_u4_and_u5(env):
     page.wait_for_selector("#refreshBtn:not([disabled])")
     if not page.locator("#lastChecked").inner_text().startswith("Last checked today at"):
         problems.append(f"Help: after Check for new menus it says {page.locator('#lastChecked').inner_text()!r}")
-    print(f"header: the sections on a row above the title, search {search['width']:.0f}pt wide; All's stale line one line; share in the chooser; refresh in Help")
+    print(f"header: the sections on a row above the title, search {search['width']:.0f}pt wide; out-of-date guides tagged in the chooser and named in All's folded line; share in the chooser; refresh in Help")
     ctx.close()
     return problems
 

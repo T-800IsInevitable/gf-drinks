@@ -20,7 +20,7 @@
   const REGION_KEY = "gf-region";
   const ALL = "all";
   const UK = "uk"; // the restaurant menus; any other region is a city in cities.json
-  // the header's sections: UK franchises (the chains' menus, region UK), UK cities and International (cities.json, by
+  // the header's sections: Chains (the chains' menus, region UK), UK cities and Abroad (cities.json, by
   // "group"). Each city section goes back to the city last looked at in it.
   const UKC = "ukcity", INTL = "intl";
   const $ = (id) => document.getElementById(id);
@@ -459,16 +459,18 @@
     renderCardLaunch();
     const r = byId(selected);
     const tips = (r && r.tips) || [];
-    const full = introFull();
-    // on All after the first visit, an out-of-date guide is a few words in the folded line (the Warnings sheet it
-    // opens says which guide); the full banner stays on that restaurant's own page
-    if (selected === ALL && !full) $("stale").hidden = true;
+    const full = introFull(MENUS);
+    // on All, an out-of-date guide is a few words in the folded line and the chooser's Out of date tag (the Warnings
+    // sheet says which guide); the full banner stays on that restaurant's own page
+    if (selected === ALL) $("stale").hidden = true;
+    // with the card in full, only the first tip shows above the menu; folded, the restaurant's headline tip leads the
+    // line ("Never oat milk."); every tip is in the Tips and warnings sheet
     $("tips").hidden = !full || !tips.length;
-    $("tips").innerHTML = tipsHtml(tips);
+    $("tips").innerHTML = tipsHtml(tips.slice(0, 1));
     $("certNote").hidden = !full;
     $("openStrip").hidden = full;
     $("stripText").innerHTML = (r && r.headline ? "<b>" + esc(r.headline) + "</b> " : "") + esc(certShort(scope())) +
-      (selected === ALL && !full && stale.length ? " " + stale.length + (stale.length === 1 ? " guide" : " guides") + " may be out of date." : "");
+      (selected === ALL && stale.length ? " " + stale.length + (stale.length === 1 ? " guide" : " guides") + " may be out of date." : "");
     $("stripLabel").textContent = tips.length ? "Tips and warnings" : "Warnings";
   }
   const tipsHtml = (tips) => tips.map((t) => {
@@ -476,20 +478,23 @@
     return "<div>" + (m ? "<b>" + esc(m[1]) + "</b> " + esc(m[2]) : esc(t)) + "</div>";
   }).join("");
 
-  // The first time each page (a restaurant, or All) is opened, its tips and the certified-or-not card show in full.
-  // After that they fold into one line (#strip), with every word of them in the Tips and warnings sheet.
+  // The first menu page ever opened (a restaurant, or All) shows the certified-or-not card in full, once; every
+  // other time it's one line (#strip) above the menu, with every word of it and the tips in the Tips and warnings
+  // sheet. A city's introduction folds the same way, per city.
   const INTRO_KEY = "gf-intro-seen";
+  const MENUS = "menus"; // the menus' card is read once, not once per restaurant: the food comes first
   const introNow = new Set(); // shown in full during this visit, so the card doesn't fold away while it's being read
-  function introFull(key = selected) { // a restaurant, All, or a city (its introduction folds the same way)
+  function introFull(key) { // MENUS, or a city (its introduction folds the same way)
     if (introNow.has(key)) return true;
     const seen = new Set(JSON.parse(store.get(INTRO_KEY) || "[]"));
-    if (seen.has(key)) return false;
+    // a phone from before release 33 marked each restaurant (and All) it had seen: any of those means the card was read
+    if (seen.has(key) || (key === MENUS && [...seen].some((k) => !cities[k]))) return false;
     seen.add(key);
     store.set(INTRO_KEY, JSON.stringify([...seen]));
     introNow.add(key);
     return true;
   }
-  $("introDone").addEventListener("click", () => { introNow.delete(selected); renderBanners(); });
+  $("introDone").addEventListener("click", () => { introNow.delete(MENUS); renderBanners(); });
   $("cityStrip").addEventListener("click", () => { introNow.add(region); renderCity(); }); // the folded city introduction, in full for this visit
   // The certified-or-not card in a few words, for the folded line
   function certShort(rs) {
@@ -823,11 +828,14 @@
     for (const r of rs) {
       for (const i of items.get(r).concat(avoid.get(r))) n[kindOf(i)]++;
     }
-    // dot and count on one line, the label under them, so the three buttons are one even row
-    const b = (k, cls, label) => '<button type="button" data-k="' + k + '" aria-pressed="' + pick[k] + '"><span class="dot ' + cls + '"></span>' +
-      '<span class="lbl">' + label + '</span> <span class="cnt">' + n[k] + "</span></button>";
+    // dot and count together on one line, the label under them, so the buttons are one even row. "Needs a change"
+    // with nothing in it (Pret) isn't shown, unless it's the one chosen
+    const shown = (k) => n[k] > 0 || pick[k] || k !== "change";
+    const b = (k, cls, label) => (shown(k) ? '<button type="button" data-k="' + k + '" aria-pressed="' + pick[k] + '"><span class="num"><span class="dot ' + cls + '"></span>' +
+      '<span class="cnt">' + n[k] + '</span></span> <span class="lbl">' + label + "</span></button>" : "");
     $("status").classList.toggle("picking", picking());
-    $("status").innerHTML =b("straight", "d-ok", "No gluten ingredients") + b("change", "d-swap", "Needs a change") + b("gluten", "d-bad", "Avoid");
+    $("status").classList.toggle("two", !shown("change"));
+    $("status").innerHTML = b("straight", "d-ok", "No gluten ingredients") + b("change", "d-swap", "Needs a change") + b("gluten", "d-bad", "Avoid");
   }
 
   // each theme's swatch is a class in styles.css (.sw-auto and so on), so no inline styles are needed anywhere
@@ -897,10 +905,10 @@
     const rank = (r) => (r.id === last ? 0 : hasFavs(r) ? 1 : 2);
     return rs.slice().sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
   }
-  // A city section's chooser lists that section's cities; UK franchises' lists the restaurants.
+  // A city section's chooser lists that section's cities; Chains' lists the restaurants.
   function renderPicker() {
     const s = sectionOf(region);
-    $("pickerTitle").textContent = s === UK ? "Where to eat" : s === UKC ? "UK cities" : "International cities";
+    $("pickerTitle").textContent = s === UK ? "Where to eat" : s === UKC ? "UK cities" : "Abroad";
     if (s !== UK) {
       $("pickWelcome").hidden = true;
       $("pickList").innerHTML = citiesIn(s).map((cid) => {
@@ -938,7 +946,7 @@
     }).join("") : "";
     // the cities are in their own sections (the switch above), so this lists the restaurants only
     const all = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false, logoHtml("All restaurants", "icons/icon-192.png"));
-    $("pickList").innerHTML = nearGroup + '<div class="sub-h">' + (welcomeNow ? "Choose where" : "UK franchises") + "</div>" + all +
+    $("pickList").innerHTML = nearGroup + '<div class="sub-h">' + (welcomeNow ? "Choose where" : "Chains") + "</div>" + all +
       (welcomeNow ? '<div class="sub-h">Or one restaurant</div>' : "") + grouped +
       '<p class="pick-note">More restaurants can be added by the app\'s owner from each restaurant\'s allergen guide.</p><p class="pick-share">' + addMenuLink + "</p>";
   }
@@ -990,6 +998,7 @@
   }
 
   function select(id) {
+    if (id !== selected) introNow.delete(MENUS); // the card in full is for the page it was first shown on; the next page leads with food
     selected = id;
     filter = { kind: "all" };
     region = UK;
@@ -1003,14 +1012,14 @@
     window.scrollTo({ top: 0 });
   }
 
-  // ---------- the sections: UK franchises, UK cities, International. A city is a hand-checked list of places (cities.json), not menus ----------
-  // A city section goes to the city last looked at in it (the chooser picks another); UK franchises goes back to the menus.
+  // ---------- the sections: Chains, UK cities, Abroad. A city is a hand-checked list of places (cities.json), not menus ----------
+  // A city section goes to the city last looked at in it (the chooser picks another); Chains goes back to the menus.
   const LAST_CITY_KEY = "gf-last-city", LAST_UK_CITY_KEY = "gf-last-uk-city";
   const isUKCity = (c) => !!c && c.group === "uk";
   const sectionOf = (id) => (id === UK ? UK : isUKCity(cities[id]) ? UKC : INTL);
   const citiesIn = (s) => Object.keys(cities).filter((id) => sectionOf(id) === s);
   const lastKeyOf = (s) => (s === UKC ? LAST_UK_CITY_KEY : LAST_CITY_KEY);
-  const SECTIONS = [[UK, "UK franchises"], [UKC, "UK cities"], [INTL, "International"]];
+  const SECTIONS = [[UK, "Chains"], [UKC, "UK cities"], [INTL, "Abroad"]]; // short, so each fits one line with Larger Text
   function renderRegion() {
     const inCity = region !== UK, on = sectionOf(region);
     $("region").hidden = !Object.keys(cities).length;
@@ -1141,7 +1150,8 @@
     for (let i = 0; i < 7;) {
       let j = i;
       while (j < 6 && hours[j + 1] === hours[i]) j++;
-      out.push((i === j ? DAYS[i] : DAYS[i] + "–" + DAYS[j]) + " " + (hours[i] == null ? "not known" : hours[i] || "closed"));
+      // a day with a break reads "12:00–14:30 and 17:00–21:30", so the commas are only between days
+      out.push((i === j ? DAYS[i] : DAYS[i] + "–" + DAYS[j]) + " " + (hours[i] == null ? "not known" : (hours[i] || "closed").replace(/(\d:\d\d),\s*(?=\d{1,2}:\d\d)/g, "$1 and ")));
       i = j + 1;
     }
     return out.join(", ");
@@ -1238,7 +1248,7 @@
     return '<h2 class="group-h">The app\'s chains here<small>' + rows.length + '</small></h2><div class="pick-list chains-here">' +
       rows.map(({ r, n }) => '<button type="button" class="pick-opt" data-chain="' + esc(r.id) + '">' + logoHtml(r.name, r.logo) + '<span class="po-main"><b>' + esc(r.name) +
         "</b><span>" + n + (n === 1 ? " branch" : " branches") + " in and around " + esc(c.name) + '</span></span><span class="po-meta">Menu &rsaquo;</span></button>').join("") +
-      '</div><p class="muted">Branches from OpenStreetMap, which doesn\'t list every one. Each chain\'s menu, from its allergen guide, is under UK franchises.</p>';
+      '</div><p class="muted">Branches from OpenStreetMap, which doesn\'t list every one. Each chain\'s menu, from its allergen guide, is under Chains.</p>';
   }
   // ---------- a map of the city's places: Leaflet with OpenStreetMap's tiles, loaded only while the map is open ----------
   // The tiles are fetched while looking and never saved (the tile provider's rules forbid keeping them), so the list
@@ -1453,7 +1463,7 @@
     if (!inUK(at)) {
       const there = Object.keys(cities).find((id) => inBounds(cities[id], at));
       $("nearBody").innerHTML = '<p class="empty">Near me covers the chains\' UK branches, and you\'re outside the UK.' +
-        (there ? " For " + esc(cities[there].name) + ", International has the places and Open near me." : "") + "</p>";
+        (there ? " For " + esc(cities[there].name) + ", Abroad has the places and Open near me." : "") + "</p>";
       return;
     }
     const rows = await lookNear(at);
@@ -1527,7 +1537,7 @@
 
   // ---------- the map page (the globe by the title): where you are, as you move, and every place the app knows ----------
   // The UK chains' branches come from the branch list (data/branches.json, as Near me), drawn for the part of the map
-  // on screen once it's zoomed in to a town; the city lists' places (UK and International) come from cities.json. Your position is followed
+  // on screen once it's zoomed in to a town; the city lists' places (UK and abroad) come from cities.json. Your position is followed
   // only while this page is open and the app is in front, and it never leaves the phone.
   const MAP_KM = 1.5, MAP_ZOOM = 13, MAP_PINS = 300; // zoom 13: about 3.5 km across a phone, legible even in London
   // pins: the chains' pins on the map now, by branch, so a redraw adds and removes only the difference; openPin: the
@@ -1610,7 +1620,7 @@
   function renderMapStatus() {
     const at = live.at;
     if (!at || !branchList) return;
-    if (!inUK(at)) { setMapStatus("Outside the UK, the map shows the places from the International lists. The chains' branches are in the UK only."); return; }
+    if (!inUK(at)) { setMapStatus("Outside the UK, the map shows the places from the lists abroad. The chains' branches are in the UK only."); return; }
     let n = 0;
     for (const x of branchList.b) {
       if (!inBox(x, at.lat - 0.015, at.lon - 0.03, at.lat + 0.015, at.lon + 0.03)) continue;
@@ -2681,7 +2691,7 @@
     nearUk: () => nearMe(),
     nearAuto: (v) => setNearAuto(v === "on", false),
     gonear: (rid) => { $("near").close(); select(rid); },
-    chain: (rid) => select(rid), // a UK city's chain row: its menu, under UK franchises
+    chain: (rid) => select(rid), // a UK city's chain row: its menu, under Chains
     mapMenu: (rid) => leaveMap(() => select(rid)),
     mapPlace: (name, b) => leaveMap(() => { setRegion(b.dataset.city); openPlaceRow(name); }), // the whole list, so the row is there
     say: (n) => { const p = phrases[cardLang]; if (p && p.card[n]) say(p.card[n].text, cardLang); },
