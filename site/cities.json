@@ -680,5 +680,781 @@
         "status": "confirmed"
       }
     ]
+  },
+  "london": {
+    "name": "London",
+    "country": "United Kingdom",
+    "flag": "🇬🇧",
+    "group": "uk",
+    "language": "en",
+    "timeZone": "Europe/London",
+    "checked": "2026-10-27",
+    "recheckDays": 90,
+    "bounds": {
+      "lat": [
+        51.28,
+        51.7
+      ],
+      "lon": [
+        -0.52,
+        0.34
+      ]
+    },
+    "list": {
+      "name": "100% Gluten Free London Restaurants, Cafes and Bakeries",
+      "by": "My Gluten Free Guide",
+      "url": "https://www.mygfguide.com/fully-gluten-free-london-restaurants-cafes-bakeries/"
+    },
+    "also": [
+      {
+        "name": "Gluten Free London: A Complete Guide",
+        "by": "Wheatless Wanderlust",
+        "url": "https://wheatlesswanderlust.com/gluten-free-london-restaurants/"
+      },
+      {
+        "name": "Gluten free places to eat in London",
+        "by": "Coeliac Sanctuary",
+        "url": "https://www.coeliacsanctuary.co.uk/wheretoeat/london"
+      }
+    ],
+    "tips": [
+      "Oats: food labelled gluten free in the UK can contain oats, and many cafés offer oat milk. This app counts oats as gluten, so ask whether anything has oats in it.",
+      "Beer: ordinary beer and lager contain gluten. Some of these places also sell a beer labelled gluten free, so ask which one it is.",
+      "Before you go: small places change their hours, and some open only a few days a week. Check the website or social media first."
+    ],
+    "sections": [
+      "Restaurants",
+      "Bakeries and cafés"
+    ],
+    "footNotes": [
+      "Guides also name Holy Carrot, Station 26, Apres Food Co, Romeo's, Lu-Ma, Cookies & Scream and Pearl & Groove, but their websites no longer say everything is gluten free, or they appear to have closed, so they're left out.",
+      "Market stalls such as Khanom Krok, Arepazo Bros and Floris' Bakery are left out because only guides say everything is gluten free, or the guides disagree.",
+      "Unofficial guide. Not affiliated with any of these places or the guides named here."
+    ],
+    "places": [
+      {
+        "name": "Niche",
+        "section": "Restaurants",
+        "claim": "place-all",
+        "type": "Restaurant: British and European classics",
+        "locations": [
+          {
+            "area": "Angel",
+            "address": "197-199 Rosebery Avenue, London EC1R 4TJ",
+            "lat": 51.5298,
+            "lon": -0.10567,
+            "hours": [
+              "17:00–21:30",
+              "17:00–21:30",
+              "17:00–21:30",
+              "17:00–21:30",
+              "17:00–21:30",
+              "12:00–14:30, 17:00–21:30",
+              "12:00–16:00"
+            ],
+            "hoursNote": "The times are last orders"
+          }
+        ],
+        "url": "https://www.nichefoodanddrink.com/",
+        "says": {
+          "text": "Our 'niche' is a 100% gluten, nut and sesame-free menu where everything is prepared and cooked on site",
+          "lang": "en"
+        },
+        "notes": [
+          "Its website calls it London's first 100% gluten-free restaurant."
+        ],
+        "status": "confirmed"
+      },
+      {
+        "name": "Indigo at One Aldwych",
+        "section": "Restaurants",
+        "claim": "place-part",
+        "claimLabel": "Says lunch and dinner are gluten free",
+        "type": "Restaurant in the One Aldwych hotel",
+        "locations": [
+          {
+            "area": "Covent Garden",
+            "address": "One Aldwych, 1 Aldwych, London WC2B 4BZ",
+            "lat": 51.51192,
+            "lon": -0.11939,
+            "hours": [
+              "17:00–21:30",
+              "17:00–21:30",
+              "12:00–14:30, 17:00–21:30",
+              "12:00–14:30, 17:00–21:30",
+              "12:00–14:30, 17:00–21:30",
+              "12:30–14:30, 17:00–21:30",
+              "12:30–16:00"
+            ],
+            "hoursNote": "Lunch and dinner only; the times are final orders"
+          }
+        ],
+        "url": "https://www.onealdwych.com/food-drink/indigo/",
+        "says": {
+          "text": "When dining for lunch or dinner, every dish is entirely gluten-free.",
+          "lang": "en"
+        },
+        "caution": "Its claim covers lunch and dinner, not breakfast, which it also serves.",
+        "flag": "Lunch and dinner only",
+        "status": "confirmed"
+      },
+      {
+        "name": "Paladar",
+        "section": "Restaurants",
+        "claim": "place-all",
+        "type": "Restaurant: Latin American",
+        "locations": [
+          {
+            "area": "Elephant & Castle",
+            "address": "4-5 London Road, London SE1 6JZ",
+            "lat": 51.49791,
+            "lon": -0.10416,
+            "hours": [
+              "",
+              "16:45–20:30",
+              "12:00–14:45, 16:45–21:00",
+              "12:00–14:45, 16:45–21:00",
+              "12:00–14:45, 16:45–21:00",
+              "12:00–21:30",
+              "12:00–19:30"
+            ]
+          }
+        ],
+        "url": "https://paladarlondon.com/",
+        "says": {
+          "text": "Yes, our kitchen is dedicated gluten-free. The flours we use are mainly made from corn (maize) or cassava. We do not use wheat, barley, rye or other grains that contain gluten in our kitchen. We also do not use oats.",
+          "lang": "en"
+        },
+        "caution": "Its website says most drinks from the bar are gluten free, not all, and that it normally has at least one gluten free beer. Ask about drinks.",
+        "flag": "Drinks: ask",
+        "status": "confirmed"
+      },
+      {
+        "name": "Los Mochis",
+        "section": "Restaurants",
+        "claim": "place-all",
+        "type": "Restaurant: Mexican and Japanese",
+        "locations": [
+          {
+            "area": "Notting Hill",
+            "address": "2-4 Farmer Street, London W8 7SN",
+            "lat": 51.50838,
+            "lon": -0.19672,
+            "hours": [
+              "12:00–15:30, 17:00–24:00",
+              "12:00–15:30, 17:00–24:00",
+              "12:00–15:30, 17:00–24:00",
+              "12:00–15:30, 17:00–24:00",
+              "12:00–15:30, 17:00–24:00",
+              "09:30–24:00",
+              "09:30–23:00"
+            ]
+          },
+          {
+            "area": "Liverpool Street",
+            "address": "9th Floor, 100 Liverpool Street, London EC2M 2AT",
+            "lat": 51.51789,
+            "lon": -0.08341,
+            "hours": [
+              "07:30–24:00",
+              "07:30–24:00",
+              "07:30–24:00",
+              "07:30–24:00",
+              "07:30–24:00",
+              "11:00–24:00",
+              "11:00–24:00"
+            ],
+            "hoursNote": "Its website gives later closing times: 01:00 Monday to Wednesday, 03:00 Thursday to Saturday. The app shows midnight"
+          }
+        ],
+        "url": "https://www.losmochis.co.uk/",
+        "says": {
+          "text": "The menu is entirely gluten, nut, and celery-free",
+          "lang": "en"
+        },
+        "status": "confirmed"
+      },
+      {
+        "name": "Utter Waffle",
+        "section": "Restaurants",
+        "claim": "place-all",
+        "type": "Restaurant: savoury and sweet waffles",
+        "locations": [
+          {
+            "area": "Herne Hill",
+            "address": "119 Dulwich Road, London SE24 0NG",
+            "lat": 51.45278,
+            "lon": -0.10299,
+            "hours": [
+              "09:00–16:00",
+              "09:00–16:00",
+              "09:00–16:00",
+              "09:00–16:00",
+              "09:00–16:00",
+              "08:30–16:00",
+              "08:30–16:00"
+            ]
+          },
+          {
+            "area": "Balham",
+            "address": "2 Hildreth Street, London SW12 9RQ",
+            "lat": 51.44439,
+            "lon": -0.15124,
+            "hours": [
+              "08:00–16:00",
+              "08:00–16:00",
+              "08:00–16:00",
+              "08:00–16:00",
+              "08:00–16:00",
+              "08:00–16:00",
+              "08:00–16:00"
+            ]
+          }
+        ],
+        "url": "https://utterwaffle.co.uk/menu",
+        "says": {
+          "text": "So instead, we are proud to say that our menu is entirely gluten-free.",
+          "lang": "en"
+        },
+        "caution": "Its drinks menu marks one beer as gluten free but not its lager. Ordinary lager contains gluten, so ask.",
+        "flag": "Beer: ask",
+        "notes": [
+          "Its menu page says the company is co-owned by a coeliac."
+        ],
+        "status": "confirmed"
+      },
+      {
+        "name": "Wicked Fish, Spitalfields",
+        "section": "Restaurants",
+        "claim": "place-all",
+        "type": "Fish and chips, from a takeaway counter",
+        "locations": [
+          {
+            "area": "Spitalfields",
+            "address": "2b Lamb Street, London E1 6ED",
+            "lat": 51.52045,
+            "lon": -0.07579,
+            "hours": [
+              "11:00–21:00",
+              "11:00–21:00",
+              "11:00–21:00",
+              "11:00–21:00",
+              "11:00–22:00",
+              "11:00–22:00",
+              "11:00–21:00"
+            ]
+          }
+        ],
+        "url": "https://thewickedfish.co.uk/spitalfields-market/",
+        "says": {
+          "text": "This is our second location opened in August 2023 and this time it is 100% dedicated gluten free",
+          "lang": "en"
+        },
+        "notes": [
+          "Only this branch: Wicked Fish's other branch, at Hackney Wick, isn't on this list."
+        ],
+        "status": "confirmed"
+      },
+      {
+        "name": "Libby's",
+        "section": "Bakeries and cafés",
+        "claim": "place-all",
+        "type": "Bakery and café",
+        "locations": [
+          {
+            "area": "Notting Hill",
+            "address": "61 Ledbury Road, London W11 2AA",
+            "lat": 51.514,
+            "lon": -0.19925,
+            "hours": [
+              "08:00–16:00",
+              "08:00–16:00",
+              "08:00–16:00",
+              "08:00–16:00",
+              "08:00–16:00",
+              "09:00–16:00",
+              "09:00–16:00"
+            ]
+          }
+        ],
+        "url": "https://libbys.co/",
+        "says": {
+          "text": "Libby's Bakery is an award-winning 100% gluten-free bakery.",
+          "lang": "en"
+        },
+        "caution": "Its website says its bakes use gluten free wheat starch. Ask if you avoid it or have a wheat allergy.",
+        "flag": "Wheat starch",
+        "status": "confirmed"
+      },
+      {
+        "name": "Ma Ma Boutique Bakery",
+        "section": "Bakeries and cafés",
+        "claim": "place-all",
+        "type": "Bakery and coffee shop",
+        "locations": [
+          {
+            "area": "Chiswick",
+            "address": "30 Chiswick High Road, London W4 1TE",
+            "lat": 51.49352,
+            "lon": -0.24696,
+            "hours": [
+              "",
+              "",
+              "10:00–17:00",
+              "10:00–17:00",
+              "10:00–17:00",
+              "10:00–17:00",
+              "10:00–16:00"
+            ]
+          },
+          {
+            "area": "Borough Market",
+            "address": "Green Market, Borough Market, 8 Southwark Street, London SE1 1TL",
+            "lat": 51.50537,
+            "lon": -0.0905,
+            "hours": [
+              "",
+              "",
+              "10:00–17:00",
+              "10:00–17:00",
+              "10:00–17:00",
+              "09:00–17:00",
+              "10:00–16:00"
+            ],
+            "note": "Market stall"
+          }
+        ],
+        "url": "https://mamaboutiquebakery.co.uk/",
+        "says": {
+          "text": "Everything is 100% Gluten-Free",
+          "lang": "en"
+        },
+        "notes": [
+          "Its website says its kitchen also handles nuts and sesame."
+        ],
+        "status": "confirmed"
+      },
+      {
+        "name": "Dendara",
+        "section": "Bakeries and cafés",
+        "claim": "place-all",
+        "type": "Bakery and deli: tarts, pies and cakes",
+        "locations": [
+          {
+            "area": "Kensington",
+            "address": "43 Kensington Church Street, London W8 4BA",
+            "lat": 51.50403,
+            "lon": -0.19313,
+            "hours": [
+              "",
+              "",
+              "09:30–16:00",
+              "09:30–16:00",
+              "09:30–16:00",
+              "10:00–16:30",
+              "11:00–16:30"
+            ]
+          }
+        ],
+        "url": "https://www.dendara.co.uk/",
+        "says": {
+          "text": "100% GLUTEN-FREE, DAIRY-FREE, REFINED SUGAR-FREE & LOW SUGAR",
+          "lang": "en"
+        },
+        "status": "confirmed"
+      },
+      {
+        "name": "Vida Bakery",
+        "section": "Bakeries and cafés",
+        "claim": "place-all",
+        "type": "Bakery: cakes and cupcakes",
+        "locations": [
+          {
+            "area": "Haggerston",
+            "address": "18 Waterson Street, London E2 8HL",
+            "lat": 51.52846,
+            "lon": -0.07649,
+            "hours": [
+              "",
+              "",
+              "",
+              "",
+              "",
+              "11:00–16:00",
+              ""
+            ],
+            "hoursNote": "Its website says it opens on Saturdays"
+          }
+        ],
+        "url": "https://www.vidabakery.co.uk/pages/visit-us",
+        "says": {
+          "text": "100% Free-from Gluten, Dairy & Egg",
+          "lang": "en"
+        },
+        "caution": "Its website offers an oat milk, which it calls gluten free. This app counts oats as gluten, so ask for another milk.",
+        "flag": "Oat milk",
+        "status": "confirmed"
+      },
+      {
+        "name": "Manna Dew",
+        "section": "Bakeries and cafés",
+        "claim": "place-all",
+        "type": "Bakery: croissants and pastries",
+        "locations": [
+          {
+            "area": "Battersea",
+            "address": "171 Battersea High Street, London SW11 3JS",
+            "lat": 51.47062,
+            "lon": -0.17206
+          }
+        ],
+        "url": "https://mannadew.co.uk/",
+        "says": {
+          "text": "Award Winning Gluten Free Bakery",
+          "lang": "en"
+        },
+        "notes": [
+          "Its website says it lab-tests its pastry, with its latest results below 5 parts per million of gluten.",
+          "Its website doesn't give the shop's hours. It lists collections Monday to Friday and a bake sale on Fridays, 13:00 to 16:00, at its bakery at 169 Battersea High Street."
+        ],
+        "status": "confirmed"
+      },
+      {
+        "name": "Borough 22",
+        "section": "Bakeries and cafés",
+        "claim": "place-all",
+        "type": "Doughnuts, from a food hall counter",
+        "locations": [
+          {
+            "area": "Oxford Street",
+            "address": "Selfridges Food Hall, 400 Oxford Street, London W1A 1AB",
+            "lat": 51.51459,
+            "lon": -0.15281,
+            "note": "Selfridges' opening hours"
+          }
+        ],
+        "url": "https://borough22.com/pages/stockist",
+        "says": {
+          "text": "Award-winning gluten-free doughnuts and vegan treats",
+          "lang": "en"
+        },
+        "caution": "Its website sells oat-free boxes separately, so some of its doughnuts have oats. This app counts oats as gluten, so ask for oat-free ones.",
+        "flag": "Has oats: ask",
+        "status": "confirmed"
+      },
+      {
+        "name": "Polka Dot Bakery",
+        "section": "Bakeries and cafés",
+        "claim": "list-all",
+        "type": "Market stall: brownies, blondies and cookies",
+        "locations": [
+          {
+            "area": "Spitalfields",
+            "address": "Old Spitalfields Market, 16 Horner Square, London E1 6EW",
+            "lat": 51.5198,
+            "lon": -0.07563,
+            "note": "Market stall"
+          }
+        ],
+        "listed": "Founded in 2016 by Celia, Polka Dot Bakery is a completely vegan and gluten free bakery. Celia bakes all of her brownies, blondies and cookies from her seaside Essex kitchen. All of her bakes are suitable for all dairy and gluten intolerances and celiacs.",
+        "listedBy": "Old Spitalfields Market",
+        "listPage": "https://oldspitalfieldsmarket.com/food-and-drink/polka-dot-bakery",
+        "notes": [
+          "The market's page says it's there every Saturday and Sunday, 10:30 to 17:00."
+        ],
+        "status": "unconfirmed",
+        "statusNote": "It has no website of its own, so its own words and hours weren't checked."
+      },
+      {
+        "name": "DIJöN",
+        "section": "Bakeries and cafés",
+        "claim": "list-all",
+        "type": "Café and pizzeria",
+        "locations": [
+          {
+            "area": "Hampstead",
+            "address": "78 Hampstead High Street, London NW3 1RE",
+            "lat": 51.55552,
+            "lon": -0.17639
+          }
+        ],
+        "url": "https://www.instagram.com/dijon_hampstead/",
+        "listed": "100% gluten free hub in Hampstead, mainly a cafe and pizzeria. They sell a range of all completely gluten free and coeliac safe pizzas, bakes, sandwiches, bread, donuts and hot drinks.",
+        "listedBy": "Coeliac Sanctuary",
+        "listPage": "https://www.coeliacsanctuary.co.uk/wheretoeat/london/camden/hampstead/dijon",
+        "caution": "Borough 22 lists it as a stockist, and some Borough 22 doughnuts have oats. Ask for oat-free ones.",
+        "flag": "Has oats: ask",
+        "status": "unconfirmed",
+        "statusNote": "It has only an Instagram page, so its own words and hours weren't checked."
+      }
+    ]
+  },
+  "york": {
+    "name": "York",
+    "country": "United Kingdom",
+    "flag": "🇬🇧",
+    "group": "uk",
+    "language": "en",
+    "timeZone": "Europe/London",
+    "checked": "2026-10-27",
+    "recheckDays": 90,
+    "bounds": {
+      "lat": [
+        53.9,
+        54.02
+      ],
+      "lon": [
+        -1.2,
+        -0.98
+      ]
+    },
+    "list": {
+      "name": "Gluten free places to eat in York",
+      "by": "Coeliac Sanctuary",
+      "url": "https://www.coeliacsanctuary.co.uk/wheretoeat/north-yorkshire/york"
+    },
+    "tips": [
+      "Oats: food labelled gluten free in the UK can contain oats, and many cafés offer oat milk. This app counts oats as gluten, so ask whether anything has oats in it.",
+      "Beer: ordinary beer and lager contain gluten. Some of these places also sell a beer labelled gluten free, so ask which one it is.",
+      "Before you go: small places change their hours, and some open only a few days a week. Check the website or social media first."
+    ],
+    "sections": [
+      "Restaurants"
+    ],
+    "footNotes": [
+      "Coeliac Sanctuary lists other York places with gluten free menus. They're left out here because their kitchens also use gluten.",
+      "Unofficial guide. Not affiliated with any of these places or the guides named here."
+    ],
+    "places": [
+      {
+        "name": "Pig & Potato",
+        "section": "Restaurants",
+        "claim": "place-all",
+        "type": "Restaurant and bar: sausage and mash",
+        "locations": [
+          {
+            "area": "City centre",
+            "address": "First Floor, 13 Grape Lane, York YO1 7HU",
+            "lat": 53.9608,
+            "lon": -1.08217,
+            "hours": [
+              "",
+              "",
+              "12:00–23:00",
+              "12:00–23:00",
+              "12:00–23:00",
+              "12:00–23:00",
+              "12:00–17:00"
+            ]
+          }
+        ],
+        "url": "https://www.pigandpotato.co.uk/",
+        "says": {
+          "text": "Our entire menu is 100% gluten-free",
+          "lang": "en"
+        },
+        "caution": "It has a bar, and its website doesn't say whether the beer is gluten free. Its menu also has a crumble, so ask whether the topping has oats.",
+        "flag": "Beer and crumble: ask",
+        "listPage": "https://www.coeliacsanctuary.co.uk/wheretoeat/north-yorkshire/york/pig-and-potato",
+        "notes": [
+          "Coeliac Sanctuary also lists it as 100% gluten free.",
+          "The allergen chart linked from its menu page was a blank form when checked."
+        ],
+        "status": "confirmed"
+      }
+    ]
+  },
+  "sheffield": {
+    "name": "Sheffield",
+    "country": "United Kingdom",
+    "flag": "🇬🇧",
+    "group": "uk",
+    "language": "en",
+    "timeZone": "Europe/London",
+    "checked": "2026-10-27",
+    "recheckDays": 90,
+    "bounds": {
+      "lat": [
+        53.3,
+        53.47
+      ],
+      "lon": [
+        -1.6,
+        -1.32
+      ]
+    },
+    "list": {
+      "name": "Gluten free places to eat in Sheffield",
+      "by": "Coeliac Sanctuary",
+      "url": "https://www.coeliacsanctuary.co.uk/wheretoeat/south-yorkshire/sheffield"
+    },
+    "tips": [
+      "Oats: food labelled gluten free in the UK can contain oats, and many cafés offer oat milk. This app counts oats as gluten, so ask whether anything has oats in it.",
+      "Beer: ordinary beer and lager contain gluten. Some of these places also sell a beer labelled gluten free, so ask which one it is.",
+      "Before you go: small places change their hours, and some open only a few days a week. Check the website or social media first."
+    ],
+    "sections": [
+      "Cafés"
+    ],
+    "footNotes": [
+      "Akentannos, a Sardinian restaurant on the same road, is called all gluten free by review sites, but it has no website to check, so it's left out.",
+      "Coeliac Sanctuary lists other Sheffield places with gluten free menus. They're left out here because their kitchens also use gluten.",
+      "Unofficial guide. Not affiliated with any of these places or the guides named here."
+    ],
+    "places": [
+      {
+        "name": "Nue Café & Deli",
+        "section": "Cafés",
+        "claim": "list-all",
+        "type": "Café and deli: pasta, pizza, bagels and toasties",
+        "locations": [
+          {
+            "area": "Sharrow Vale",
+            "address": "Sharrow Vale Road, Sheffield S11 8ZH",
+            "lat": 53.36776,
+            "lon": -1.49652
+          }
+        ],
+        "url": "https://www.facebook.com/p/Nue-100090071303604/",
+        "listed": "100% gluten free. Offers pasta, pizza, bagels and toasties and more.",
+        "listedBy": "Coeliac Sanctuary",
+        "listPage": "https://www.coeliacsanctuary.co.uk/wheretoeat/south-yorkshire/sheffield/nue-cafe-deli",
+        "notes": [
+          "Welcome to Sheffield, the city's guide, calls it \"a gluten free Café & Deli\"."
+        ],
+        "status": "unconfirmed",
+        "statusNote": "It has only a Facebook page, so its own words and hours weren't checked."
+      }
+    ]
+  },
+  "poole": {
+    "name": "Poole",
+    "country": "United Kingdom",
+    "flag": "🇬🇧",
+    "group": "uk",
+    "language": "en",
+    "timeZone": "Europe/London",
+    "checked": "2026-10-27",
+    "recheckDays": 90,
+    "bounds": {
+      "lat": [
+        50.68,
+        50.78
+      ],
+      "lon": [
+        -2.08,
+        -1.87
+      ]
+    },
+    "list": {
+      "name": "Gluten free places to eat in Poole",
+      "by": "Coeliac Sanctuary",
+      "url": "https://www.coeliacsanctuary.co.uk/wheretoeat/dorset/poole"
+    },
+    "tips": [
+      "Oats: food labelled gluten free in the UK can contain oats, and many cafés offer oat milk. This app counts oats as gluten, so ask whether anything has oats in it.",
+      "Beer: ordinary beer and lager contain gluten. Some of these places also sell a beer labelled gluten free, so ask which one it is.",
+      "Before you go: small places change their hours, and some open only a few days a week. Check the website or social media first."
+    ],
+    "sections": [
+      "Cafés"
+    ],
+    "footNotes": [
+      "Dane & Port, in Westbourne in Bournemouth, is called all gluten free by review sites, but it has no website to check, so it's left out.",
+      "Coeliac Sanctuary lists other Poole places with gluten free menus. They're left out here because their kitchens also use gluten.",
+      "Unofficial guide. Not affiliated with any of these places or the guides named here."
+    ],
+    "places": [
+      {
+        "name": "MIIKO Everyday Nourishment",
+        "section": "Cafés",
+        "claim": "place-all",
+        "type": "Café: vegan food, juices and coffee",
+        "locations": [
+          {
+            "area": "Lower Parkstone",
+            "address": "33 Salterns Road, Poole BH14 8BL",
+            "lat": 50.72006,
+            "lon": -1.95307,
+            "hours": [
+              "09:00–15:00",
+              "09:00–15:00",
+              "09:00–15:00",
+              "09:00–15:00",
+              "09:00–15:00",
+              "09:00–15:00",
+              "09:00–15:00"
+            ]
+          }
+        ],
+        "url": "https://www.wearemiiko.com/menu",
+        "says": {
+          "text": "We are proud to offer a completely Gluten Free, Dairy Free and Vegan menu.",
+          "lang": "en"
+        },
+        "listPage": "https://www.coeliacsanctuary.co.uk/wheretoeat/dorset/poole/miiko-everyday-nourishment",
+        "status": "unconfirmed",
+        "statusNote": "Its website's newest news is from 2020, so it may have changed since."
+      }
+    ]
+  },
+  "worksop": {
+    "name": "Worksop",
+    "country": "United Kingdom",
+    "flag": "🇬🇧",
+    "group": "uk",
+    "language": "en",
+    "timeZone": "Europe/London",
+    "checked": "2026-10-27",
+    "recheckDays": 90,
+    "bounds": {
+      "lat": [
+        53.27,
+        53.35
+      ],
+      "lon": [
+        -1.18,
+        -0.9
+      ]
+    },
+    "list": {
+      "name": "Gluten free places to eat in Retford",
+      "by": "Coeliac Sanctuary",
+      "url": "https://www.coeliacsanctuary.co.uk/wheretoeat/nottinghamshire/retford"
+    },
+    "tips": [
+      "Oats: food labelled gluten free in the UK can contain oats, and many cafés offer oat milk. This app counts oats as gluten, so ask whether anything has oats in it.",
+      "Beer: ordinary beer and lager contain gluten. Some of these places also sell a beer labelled gluten free, so ask which one it is.",
+      "Before you go: small places change their hours, and some open only a few days a week. Check the website or social media first."
+    ],
+    "sections": [
+      "Near Worksop"
+    ],
+    "footNotes": [
+      "Coeliac Sanctuary lists no place in Worksop itself that's all gluten free, and the Worksop places it lists with gluten free menus are left out because their kitchens also use gluten.",
+      "Unofficial guide. Not affiliated with any of these places or the guides named here."
+    ],
+    "places": [
+      {
+        "name": "Leaky Teacup",
+        "section": "Near Worksop",
+        "claim": "list-all",
+        "type": "Café and board game café",
+        "locations": [
+          {
+            "area": "Retford, about 8 miles from Worksop",
+            "address": "Bridgegate, Retford DN22 7UX",
+            "lat": 53.3242,
+            "lon": -0.94652
+          }
+        ],
+        "url": "https://www.facebook.com/leakyteacupltd/",
+        "listed": "100% gluten free, only handle and sell gluten free goods on the site, including handmade pizzas, chicken strips, nachos and also host burger nights etc",
+        "listedBy": "Coeliac Sanctuary",
+        "listPage": "https://www.coeliacsanctuary.co.uk/wheretoeat/nottinghamshire/retford/leaky-teacup-ltd",
+        "status": "unconfirmed",
+        "statusNote": "It has only a Facebook page, so its own words and hours weren't checked. Listings give its address as 25 Bridgegate or as Unit 3, Bridgegate Centre."
+      }
+    ]
   }
 }

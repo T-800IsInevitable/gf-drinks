@@ -175,8 +175,13 @@ def check_city(cid, c, phrases, err):
     for key in ("name", "language", "checked", "list", "tips", "sections", "places", "country", "bounds"):
         if not c.get(key):
             err(f"city {cid}: missing {key}")
-    if c.get("language") not in phrases:
+    # "uk": listed under UK cities, and needs no coeliac card in another language; any other city is International
+    if c.get("group") not in (None, "uk"):
+        err(f"city {cid}: group {c.get('group')!r} must be 'uk' or left out")
+    if c.get("group") != "uk" and c.get("language") not in phrases:
         err(f"city {cid}: no coeliac card for language {c.get('language')!r}")
+    if c.get("group") == "uk" and c.get("timeZone") != "Europe/London":
+        err(f"city {cid}: a UK city's timeZone must be Europe/London")
     box = c.get("bounds") or {"lat": [0, 0], "lon": [0, 0]}
     for p in c.get("places", []):
         where = f"city {cid}: {p.get('name')!r}"
@@ -192,6 +197,10 @@ def check_city(cid, c, phrases, err):
             err(f"{where}: a caution needs a short flag to show on the row")
         if not p.get("says") and not p.get("listed"):
             err(f"{where}: no words from the place or the list")
+        if p.get("listedBy") and not p.get("listed"):
+            err(f"{where}: listedBy names who listed it, so it needs their words in listed")
+        if c.get("group") == "uk" and p.get("listed") and not p.get("listedBy"):  # else the app credits a support group
+            err(f"{where}: a UK city's listed words need listedBy, saying whose they are")
         if p.get("says") and p["says"].get("lang") != "en" and not p["says"].get("en"):
             err(f"{where}: quote isn't in English and has no translation")
         if p.get("status") not in ("confirmed", "unconfirmed") or (p.get("status") == "unconfirmed" and not p.get("statusNote")):
@@ -212,11 +221,22 @@ def check_city(cid, c, phrases, err):
                 err(f"{where}: {l.get('address')} kitchenCloses {l['kitchenCloses']!r} isn't HH:MM")
             for day, x in zip("Mon Tue Wed Thu Fri Sat Sun".split(), h or []):
                 x = x or ""
-                m = HOURS.match(x)  # a time the app can't read would show the place as closed
-                if x and not m:
+                if x and not HOURS.match(x):  # a time the app can't read would show the place as closed
                     err(f"{where}: {l.get('address')} {day} hours {x!r} aren't HH:MM–HH:MM")
-                elif m and int(m[3]) * 60 + int(m[4]) <= int(m[1]) * 60 + int(m[2]):
-                    err(f"{where}: {l.get('address')} {day} closes before it opens ({x!r}); past midnight isn't supported")
+                    continue
+                # a day with a break lists its ranges in order ("12:00–14:30, 17:00–21:30"); the app reads each one,
+                # so a time after them that isn't a whole range ("12:00–14:30, 17:00") would be dropped without a word
+                lead = re.match(rf"{HOURS.pattern}(?:,\s*{HOURS.pattern})*", x)
+                if lead and re.search(r"\d{1,2}:\d{2}", x[lead.end():]):
+                    err(f"{where}: {l.get('address')} {day} hours {x!r} have a time the app can't read after the ranges")
+                last = -1
+                for m in HOURS.finditer(x):
+                    a, b = int(m[1]) * 60 + int(m[2]), int(m[3]) * 60 + int(m[4])
+                    if b <= a:
+                        err(f"{where}: {l.get('address')} {day} closes before it opens ({x!r}); past midnight isn't supported")
+                    elif a <= last:
+                        err(f"{where}: {l.get('address')} {day} ranges overlap or are out of order ({x!r})")
+                    last = b
     check_urls(c, f"city {cid}", err)  # the list's own address, each place's website and list entry
     print(f"city {cid}: {len(c.get('places', []))} places, checked {c.get('checked')}")
 

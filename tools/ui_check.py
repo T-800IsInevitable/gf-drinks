@@ -8,8 +8,10 @@ For every restaurant page and the "All restaurants" page it checks:
   * nothing wider than the screen (no sideways scrolling)
   * the list shows items
 the same for each city page in cities.json (every place shown and opened), then
-it switches UK -> International (search, coeliac card, reload) -> UK, with the
-countries listed under International in the chooser; the order builder (parts
+the three sections above the title (UK franchises, UK cities, International):
+UK -> International (search, coeliac card, reload) -> UK, each section's
+chooser listing its own cities, each section remembering its city; each UK city
+listing the chains with branches there, a row opening the menu; the order builder (parts
 tickable, Avoid items blocked, dropped items named, one card with the chain's
 cross-contact warning); each chain's logo in the chooser; Berlin on a
 Sunday evening (open today, near me, saving); the staff card, German card and
@@ -211,13 +213,20 @@ def span(h):
     return (int(m[1]) * 60 + int(m[2]), int(m[3]) * 60 + int(m[4])) if m else None
 
 
-def branch_today(l, day):
+def spans(h):
+    """Every range in a day's hours ("12:00–14:30, 17:00–21:30" has a break), as site/app.js spans() reads them."""
+    return [(int(m[1]) * 60 + int(m[2]), int(m[3]) * 60 + int(m[4])) for m in re.finditer(r"(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})", h or "")]
+
+
+def branch_today(l, day, minute):
+    """The range that matters at that minute (site/app.js branchToday): open now, else the next today, else the last."""
     hours = l.get("hours")
     if not hours or hours[day] is None:
         return {"unknown": True}
-    s = span(hours[day])
-    if not s:
+    ss = spans(hours[day])
+    if not ss:
         return {"closed": True}
+    s = next((x for x in ss if x[0] <= minute < x[1]), None) or next((x for x in ss if x[0] > minute), None) or ss[-1]
     kitchen = span("00:00–" + (l.get("kitchenCloses") or "24:00"))
     return {"open": s[0], "close": min(s[1], kitchen[1]), "kitchen": bool(l.get("kitchenCloses")) and kitchen[1] < s[1], "door": s[1]}
 
@@ -226,7 +235,7 @@ def expected_today(pl, day, minute, geo=None):
     """How a place's row should start at that moment (site/app.js todayLine): "Open now", "Opens at", "Kitchen closed",
     "Closed now", "Closed today", or nothing when its hours aren't known. With geo, only its nearest branch counts."""
     ls = [min(pl["locations"], key=lambda l: km_to(l, here(geo)))] if geo else pl["locations"]
-    bs = [branch_today(l, day) for l in ls]
+    bs = [branch_today(l, day, minute) for l in ls]
     if all(b.get("unknown") for b in bs):
         return ""
     if any("open" in b and b["open"] <= minute < b["close"] for b in bs):
@@ -523,6 +532,61 @@ def check_every_page(env):
     return problems
 
 
+def want_sections(cities):
+    """The header's sections (site/app.js SECTIONS): UK franchises always, then each city group that has a city."""
+    groups = {c.get("group") for c in cities.values()}
+    return ["UK franchises"] + ["UK cities"] * ("uk" in groups) + ["International"] * (any(g != "uk" for g in groups))
+
+
+def served_branches():
+    """The branch list the test server answers: the site's own when the publish wrote one, else the stand-in."""
+    f = SITE / "data" / "branches.json"
+    return json.loads(f.read_text(encoding="utf-8")) if f.exists() else stand_in_branches(SITE)
+
+
+def check_uk_cities(env):
+    """A UK city lists, under its places, the app's chains with branches inside its bounds (the branch list), one row
+    per chain with its count; a row opens that chain's menu under UK franchises. A UK city has no coeliac card chip."""
+    base, cities, browser, index = env.base, env.cities, env.browser, env.index
+    problems = []
+    names = {r["id"]: r["name"] for r in index["restaurants"]}
+    branches = served_branches()
+    done = 0
+    for cid, c in cities.items():
+        if c.get("group") != "uk":
+            continue
+        (s, n), (w, e) = c["bounds"]["lat"], c["bounds"]["lon"]
+        want = {}
+        for x in branches["b"]:
+            rid = branches["chains"][x[0]]
+            if rid in names and s < x[1] < n and w < x[2] < e:
+                want[rid] = want.get(rid, 0) + 1
+        ctx, page, errors = visit(browser, base + f"#{cid}", wait="#cityList .row")
+        if want:
+            page.wait_for_selector(".chains-here [data-chain]")
+        else:
+            page.wait_for_timeout(500)
+        got = page.evaluate("[...document.querySelectorAll('.chains-here [data-chain]')].map((b) => [b.dataset.chain, b.querySelector('.po-main span').textContent])")
+        if sorted(g[0] for g in got) != sorted(want):
+            problems.append(f"{cid}: chains listed {sorted(g[0] for g in got)}, expected {sorted(want)}")
+        for rid, text in got:
+            if rid in want and not text.startswith(f"{want[rid]} branch"):
+                problems.append(f"{cid}: {rid} reads {text!r}, expected {want[rid]} branches")
+        if page.locator("#chips [data-card]").count():
+            problems.append(f"{cid}: a UK city shows a coeliac card chip")
+        problems += [f"{cid}: {x}" for x in errors]
+        if got:  # a chain's row opens its menu, under UK franchises
+            page.locator(f'.chains-here [data-chain="{got[0][0]}"]').click()
+            page.wait_for_selector("#list .row")
+            pressed = page.evaluate("[...document.querySelectorAll('#region [aria-pressed=\"true\"]')].map((b) => b.dataset.region)")
+            if pressed != ["uk"] or page.evaluate("location.hash") != "#" + got[0][0]:
+                problems.append(f"{cid}: the {got[0][0]} row went to {page.evaluate('location.hash')!r} with {pressed} pressed")
+        done += 1
+        ctx.close()
+    print(f"uk cities: {done} cities, each listing its chains with their counts, a row opening the chain's menu")
+    return problems
+
+
 def check_the_berlin_page_in_light(env):
     base, cid, cities, index, browser, args = env.base, env.cid, env.cities, env.index, env.browser, env.args
     problems = []
@@ -565,7 +629,16 @@ def check_the_berlin_page_in_light(env):
     page = ctx.new_page()
     page.goto(base)
     page.wait_for_selector("#list .row")
-    cid = next(iter(cities))
+    intl = [c for c, city in cities.items() if city.get("group") != "uk"]
+    ukc = [c for c, city in cities.items() if city.get("group") == "uk"]
+    # the sections sit on their own row above the title (the chooser) and the search box, in this order
+    labels = [b.strip() for b in page.locator("#region button").all_inner_texts()]
+    if labels != ["UK franchises"] + ["UK cities"] * bool(ukc) + ["International"] * bool(intl):
+        problems.append(f"the sections read {labels}")
+    order = page.evaluate("[...document.querySelector('.top').children].map((el) => el.id || el.className)")
+    if order[:3] != ["region", "titlebar", "search"]:
+        problems.append(f"the header's rows are {order[:3]}, expected the sections, then the title, then the search box")
+    cid = intl[0]
     page.locator('#region [data-region="intl"]').click()  # International: the first city, nothing having been looked at yet
     page.wait_for_selector("#cityList .row")
     if page.locator("#pickName").inner_text().strip() != cities[cid]["name"]:
@@ -585,27 +658,41 @@ def check_the_berlin_page_in_light(env):
     page.wait_for_selector("#list .row")
     if not page.locator("#cityView").is_hidden():
         problems.append(f"switching back to UK left {cid} showing")
-    # the chooser lists the other countries under International, like the restaurants; International then remembers the city
-    other = [c for c in cities if c != cid]
+    # UK franchises' chooser lists the restaurants only; each city section's chooser lists its own cities
     page.locator("#pickBtn").click()
     page.wait_for_selector("#picker[open]")
-    heads = [h.strip().title() for h in page.locator("#pickList .sub-h").all_inner_texts()]  # shown in capitals
-    if "International" not in heads or heads.index("International") < 1:
-        problems.append(f"the chooser's groups are {heads}, expected UK then International")
-    for c, city in cities.items():
-        opt = page.locator(f'#pickList [data-region="{c}"]')
-        if not opt.count() or city["country"] not in opt.locator("b").inner_text() or city["name"] not in opt.inner_text():
-            problems.append(f"the chooser doesn't list {city['name']} as {city['country']} under International")
-    if other:
-        page.locator(f'#pickList [data-region="{other[0]}"]').click()
+    if page.locator("#pickList [data-region]").count():
+        problems.append("UK franchises' chooser lists cities too")
+    page.locator("#picker .sheet-head .link-btn").click()
+    for section, ids in (("intl", intl), ("ukcity", ukc)):
+        if not ids:
+            continue
+        page.locator(f'#region [data-region="{section}"]').click()
         page.wait_for_selector("#cityList .row")
+        page.locator("#pickBtn").click()
+        page.wait_for_selector("#picker[open]")
+        listed = page.evaluate("[...document.querySelectorAll('#pickList [data-region]')].map((b) => b.dataset.region)")
+        if listed != ids:
+            problems.append(f"the {section} chooser lists {listed}, expected {ids}")
+        for c in ids:  # International by its country, a UK city by its name
+            want = cities[c]["name"] if section == "ukcity" else cities[c]["country"]
+            if want not in page.locator(f'#pickList [data-region="{c}"] b').inner_text():
+                problems.append(f"the {section} chooser doesn't name {c} as {want}")
+        page.locator(f'#pickList [data-region="{ids[-1]}"]').click()  # each section then remembers its own city
+        page.wait_for_selector("#cityList .row")
+    for section, ids in (("intl", intl), ("ukcity", ukc)):
+        if not ids:
+            continue
         page.locator('#region [data-region="uk"]').click()
         page.wait_for_selector("#list .row")
-        page.locator('#region [data-region="intl"]').click()
+        page.locator(f'#region [data-region="{section}"]').click()
         page.wait_for_selector("#cityList .row")
-        if page.locator("#pickName").inner_text().strip() != cities[other[0]]["name"]:
-            problems.append(f"International went to {page.locator('#pickName').inner_text()!r}, not the city last looked at ({cities[other[0]]['name']})")
-    print(f"switch: UK -> {cid} (search, card, reload) -> UK; countries under International in the chooser; International remembers the city")
+        if page.locator("#pickName").inner_text().strip() != cities[ids[-1]]["name"]:
+            problems.append(f"{section} went to {page.locator('#pickName').inner_text()!r}, not the city last looked at there ({cities[ids[-1]]['name']})")
+        pressed = page.evaluate("[...document.querySelectorAll('#region [aria-pressed=\"true\"]')].map((b) => b.dataset.region)")
+        if pressed != [section]:
+            problems.append(f"on {ids[-1]} the pressed section is {pressed}, expected {section}")
+    print(f"switch: three sections above the title; UK -> {cid} (search, card, reload) -> UK; each chooser lists its own section; each section remembers its city")
     ctx.close()
     return problems
 
@@ -877,21 +964,29 @@ def check_accessibility(env):
 def check_first_visit(env):
     base, ids, cid, browser = env.base, env.ids, env.cid, env.browser
     problems = []
-    # first visit: no "what changed" banner (nothing has changed for a new user), and the chooser offers Berlin
+    # first visit: no "what changed" banner (nothing has changed for a new user); the chooser lists the restaurants and
+    # its welcome points to the sections switch, which reaches the cities
     ctx = browser.new_context(color_scheme="light", **IPHONE)
     page = ctx.new_page()
     page.goto(base)
     page.wait_for_selector("#picker[open]")
     if page.locator("#news").is_visible():
         problems.append("first visit: the 'what changed' banner shows for a new user")
-    page.locator(f'#pickList [data-region="{cid}"]').click()
+    if page.locator("#pickList [data-region]").count() or "UK cities" not in page.locator("#pickWelcome").inner_text():
+        problems.append("first visit: the chooser lists cities, or its welcome doesn't point to UK cities")
+    page.locator("#picker .sheet-head .link-btn").click()
+    page.locator('#region [data-region="intl"]').click()
     page.wait_for_selector("#cityList .row")
     if page.locator("#picker[open]").count():
-        problems.append("first visit: choosing Berlin left the chooser open")
+        problems.append("first visit: International left the chooser open")
     page.locator("#pickBtn").click()
     page.wait_for_selector("#picker[open]")
     if page.locator(f'#pickList [data-region="{cid}"]').get_attribute("aria-pressed") != "true":
         problems.append("from Berlin, the chooser doesn't show Berlin as chosen")
+    page.locator("#picker .sheet-head .link-btn").click()
+    page.locator('#region [data-region="uk"]').click()
+    page.wait_for_selector("#list .row")
+    page.locator("#pickBtn").click()
     page.locator(f"#pickList [data-r=\"{ids[0]}\"]").click()
     page.wait_for_selector("#list .row")
     # wording: the guides do call some (avoided) items gluten free, so don't say they never use the words
@@ -901,7 +996,7 @@ def check_first_visit(env):
     page.wait_for_selector("#warnings[open]")
     if "none of these guides use" in page.locator("#warnBody").inner_text():
         problems.append("warnings intro says none of the guides use the words gluten free")
-    print("first visit: chooser with Berlin, no changes banner; wording checked")
+    print("first visit: the chooser's welcome points to the sections, International then Berlin, no changes banner; wording checked")
     ctx.close()
     return problems
 
@@ -1159,7 +1254,7 @@ def check_u1_content_first(env):
                                 f"(wanted the top half, {half:.0f}pt{' plus the out-of-date banner' if mm['stale'] else ''}, and 4 or more)")
         found |= set(page.evaluate(WORDING_JS))
         if in_city:
-            if not page.locator("#chips [data-card]").count():
+            if cities[url[1:]].get("group") != "uk" and not page.locator("#chips [data-card]").count():  # a UK city needs no card
                 problems.append(f"{where}: no coeliac card chip")
             if page.locator("#cityStrip").is_visible():  # after the first visit the introduction is folded (E11): open it
                 page.locator("#cityStrip").click()
@@ -1303,10 +1398,10 @@ def check_u4_and_u5(env):
     page.wait_for_selector("#list .row")
     if page.locator("#shareBtn").is_visible() or page.locator("#refreshBtn").is_visible():
         problems.append("the header still has share or refresh buttons")
-    if not page.locator(".titlebar #region").count():
-        problems.append("the UK / International switch isn't in the title row")
-    if [b.strip() for b in page.locator("#region button").all_inner_texts()] != ["UK", "Abroad"]:  # the short word, so the title fits
-        problems.append(f"the header switch reads {page.locator('#region button').all_inner_texts()}, expected UK and Abroad")
+    if page.locator(".titlebar #region").count() or not page.locator(".top > #region").count():
+        problems.append("the sections aren't a row of their own above the title")
+    if [b.strip() for b in page.locator("#region button").all_inner_texts()] != want_sections(env.cities):
+        problems.append(f"the sections read {page.locator('#region button').all_inner_texts()}, expected {want_sections(env.cities)}")
     search = page.locator(".search").bounding_box()
     if search["width"] < IPHONE["viewport"]["width"] - 40:
         problems.append(f"the search box is {search['width']:.0f}pt wide, not the full width")
@@ -1325,7 +1420,7 @@ def check_u4_and_u5(env):
     page.wait_for_selector("#refreshBtn:not([disabled])")
     if not page.locator("#lastChecked").inner_text().startswith("Last checked today at"):
         problems.append(f"Help: after Check for new menus it says {page.locator('#lastChecked').inner_text()!r}")
-    print(f"header: switch in the title row, search {search['width']:.0f}pt wide; All's stale line one line; share in the chooser; refresh in Help")
+    print(f"header: the sections on a row above the title, search {search['width']:.0f}pt wide; All's stale line one line; share in the chooser; refresh in Help")
     ctx.close()
     return problems
 
@@ -1476,8 +1571,8 @@ def check_u11(env):
 def check_u12(env):
     base, ids, cid, browser = env.base, env.ids, env.cid, env.browser
     problems = []
-    # U12: the first run's chooser says what the app is, what the colours mean and that nothing is certified,
-    # with Berlin still on the first screen; once left, it doesn't come back
+    # U12: the first run's chooser says what the app is, what the colours mean and that nothing is certified, with
+    # its pointer to the sections switch (the way to the cities) still on the first screen; once left, it doesn't come back
     ctx = browser.new_context(color_scheme="light", **IPHONE)
     page = ctx.new_page()
     page.goto(base)
@@ -1487,17 +1582,17 @@ def check_u12(env):
         problems.append(f"first run: the welcome is {welcome!r}")
     for s in page.evaluate(WORDING_JS):
         problems.append(f"first run welcome calls something gluten free in the app's own voice: {s!r}")
-    berlin = page.locator(f'#pickList [data-region="{cid}"]').bounding_box()
+    berlin = page.locator("#pickWelcome p").last.bounding_box()  # the line about UK cities and International
     sheet_box = page.locator("#picker").bounding_box()
     if berlin["y"] + berlin["height"] > min(sheet_box["y"] + sheet_box["height"], IPHONE["viewport"]["height"]):
-        problems.append(f"first run: Berlin sits at {berlin['y'] + berlin['height']:.0f}pt, below the first screen of the chooser")
+        problems.append(f"first run: the line about the cities sits at {berlin['y'] + berlin['height']:.0f}pt, below the first screen of the chooser")
     page.locator(f"#pickList [data-r=\"{ids[0]}\"]").click()
     page.wait_for_selector("#list .row")
     page.locator("#pickBtn").click()
     page.wait_for_selector("#picker[open]")
     if page.locator("#pickWelcome").is_visible():
         problems.append("the welcome shows again once a restaurant has been chosen")
-    print(f"first run: welcome says what green, amber and red mean; Berlin ends at {berlin['y'] + berlin['height']:.0f}pt")
+    print(f"first run: welcome says what green, amber and red mean; its line about the cities ends at {berlin['y'] + berlin['height']:.0f}pt")
     ctx.close()
     return problems
 
@@ -1621,6 +1716,8 @@ def check_f1(env):
     page.wait_for_timeout(100)
     if wl()["released"] != 2:
         problems.append(f"Show staff: the screen lock isn't let go of when the card closes ({wl()})")
+    page.evaluate("window.scrollTo(0, 0)")  # opening the item scrolled the page, which folds the sections away
+    page.wait_for_selector(".top:not(.collapsed)")
     page.locator('#region [data-region="intl"]').click()
     page.wait_for_selector("#cityList .row")
     page.locator("#chips [data-card]").click()
@@ -2718,7 +2815,7 @@ def check_f16_live_map(env):
     base, browser, index, cities = env.base, env.browser, env.index, env.cities
     problems = []
     # F16: the globe by the title opens the map page. It follows the phone, draws the chains' branches from the branch
-    # list for the part of the map on screen (none when zoomed out past a town), pins every Abroad place, and a pin's
+    # list for the part of the map on screen (none when zoomed out past a town), pins every city list's place, and a pin's
     # Menu or Open goes to the page or the row. Nothing but the map's tiles leaves the phone. Closing it takes the map down.
     chains = [r for r in index["restaurants"] if r.get("osm")]
     pret = next((r for r in chains if r["id"] == "pret-uk"), chains[0])
@@ -2761,7 +2858,7 @@ def check_f16_live_map(env):
     places = page.locator("#liveMap path.pin-place").count()
     want_places = sum(1 for c in cities.values() for p in c["places"] for l in p["locations"] if l.get("lat") is not None)
     if places != want_places:
-        problems.append(f"live map: {places} pins for the Abroad places, expected {want_places}")
+        problems.append(f"live map: {places} pins for the city lists' places, expected {want_places}")
     if "OpenStreetMap" not in page.locator("#liveMap .leaflet-control-attribution").inner_text():
         problems.append("live map: no OpenStreetMap attribution")
     # moving: the map follows (the pins move under a dot that stays put)
@@ -2843,17 +2940,17 @@ def check_f16_live_map(env):
     if "Location is off" not in status(page) or page.locator("#liveMap path.you-dot").count():
         problems.append(f"live map without location: status {status(page)!r}")
     if page.locator("#liveMap path.pin-place").count() != want_places:
-        problems.append("live map without location: the Abroad places aren't all pinned")
+        problems.append("live map without location: the city lists' places aren't all pinned")
     problems += [f"live map without location: {e}" for e in errors]
     ctx.close()
-    # no branch list on this phone yet: the map still opens, with the Abroad places, and says so
+    # no branch list on this phone yet: the map still opens, with the city lists' places, and says so
     ctx, _ = with_branches(browser, at, None)
     page, errors = opened(ctx)
     until(page, lambda: "isn't on this phone yet" in status(page), 4000)
     page.wait_for_timeout(1000)  # and a position arriving doesn't overwrite it
     if page.locator("#liveMap path.pin-branch").count() or page.locator("#liveMap path.pin-place").count() != want_places:
         problems.append("live map without the list: wrong pins")
-    want = "The list of the chains' branches isn't on this phone yet: it downloads when the app has signal. Only the Abroad places show for now."
+    want = "The list of the chains' branches isn't on this phone yet: it downloads when the app has signal. Only the city lists' places show for now."
     if status(page) != want:
         problems.append(f"live map without the list: status {status(page)!r}")
     problems += [f"live map without the list: {e}" for e in errors if "404" not in e]
@@ -2905,7 +3002,7 @@ def check_e_review(env):
     base, cid, cities, browser, index = env.base, env.cid, env.cities, env.browser, env.index
     problems = []
     # E3: the new-guide note says whether the favourites there survived; E4: a restaurant this phone hasn't seen gets a
-    # note and a New tag until it's opened; E5: the switch reads Abroad; E6: on All after the first visit an out-of-date
+    # note and a New tag until it's opened; E5: the sections' labels; E6: on All after the first visit an out-of-date
     # guide is a few words in the folded line; E8: Show staff is the filled button, on one row with its neighbours; E12:
     # the warnings count keeps its space; E9: a request's state; E7 and E11: one icon on the time-zone offer, and the
     # city introduction folds after the first visit
@@ -2935,8 +3032,8 @@ def check_e_review(env):
         print("out-of-date line: no guide is out of date today, so its fold can't be checked")
     if f"{name} is new here." not in news:
         problems.append(f"new restaurant: no note on All ({news[:160]!r})")
-    if [b.strip() for b in page.locator("#region button").all_inner_texts()] != ["UK", "Abroad"]:
-        problems.append(f"the header switch reads {page.locator('#region button').all_inner_texts()}, expected UK and Abroad")
+    if [b.strip() for b in page.locator("#region button").all_inner_texts()] != want_sections(env.cities):
+        problems.append(f"the sections read {page.locator('#region button').all_inner_texts()}, expected {want_sections(env.cities)}")
     if stale_id:
         strip = norm_ws(page.locator("#stripText").inner_text())
         if page.locator("#stale").is_visible() or "may be out of date" not in strip:
@@ -3006,7 +3103,7 @@ def check_e_review(env):
     if not page.locator("#cityIntroBox").is_visible():
         problems.append("city: tapping the folded line doesn't show the introduction")
     ctx.close()
-    print("experience review: the favourites line, a New tag and note, Abroad, the folded out-of-date line, filled Show staff, the count's space, request state, one icon, the city fold")
+    print("experience review: the favourites line, a New tag and note, the sections, the folded out-of-date line, filled Show staff, the count's space, request state, one icon, the city fold")
     return problems
 
 
@@ -3295,6 +3392,7 @@ CHECKS = [
     ("every_page", check_every_page),
     ("e_review", check_e_review),
     ("the_berlin_page_in_light", check_the_berlin_page_in_light),
+    ("uk_cities", check_uk_cities),
     ("berlin_on_a_sunday_evening", check_berlin_on_a_sunday_evening),
     ("final_review", check_final_review),
     ("add_a_menu_without_a", check_add_a_menu_without_a),
