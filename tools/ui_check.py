@@ -2712,6 +2712,182 @@ def check_f8_near_me(env):
     return problems
 
 
+def check_f16_live_map(env):
+    base, browser, index, cities = env.base, env.browser, env.index, env.cities
+    problems = []
+    # F16: the globe by the title opens the map page. It follows the phone, looks for the chains' branches around it once
+    # (the position rounded to three decimal places), again only after half a kilometre and a minute, pins every Abroad
+    # place, sends the box on screen for Search this area, and a pin's Menu or Open goes to the page or the row. Closing it
+    # takes the map down. The tiles and OpenStreetMap's answers are faked, and the page's clock is moved on, not waited for.
+    chains = [r for r in index["restaurants"] if r.get("osm")]
+    pret = next((r for r in chains if r["id"] == "pret-uk"), chains[0])
+    at = {"latitude": 51.5308, "longitude": -0.1238}  # King's Cross
+    dlat = 1 / 111.2  # about a kilometre, due north
+    elements = [{"type": "node", "id": 1, "lat": at["latitude"] + 0.3 * dlat, "lon": at["longitude"],
+                 "tags": {"name": pret["osm"][0], "addr:street": "Euston Road", "opening_hours": "24/7"}},
+                {"type": "way", "id": 2, "center": {"lat": at["latitude"] - 0.6 * dlat, "lon": at["longitude"]}, "tags": {"brand": pret["osm"][0], "name": "Somewhere"}},
+                {"type": "node", "id": 3, "lat": at["latitude"], "lon": at["longitude"] + 0.001, "tags": {"name": "Not a chain"}}]
+    asked = []
+
+    def overpass(route):
+        asked.append(urllib.parse.unquote((route.request.post_data or "").removeprefix("data=")))
+        route.fulfill(status=200, content_type="application/json", body=json.dumps({"elements": elements}))
+
+    def opened(ctx):
+        page = ctx.new_page()
+        errors = []
+        page.on("pageerror", lambda e: errors.append(f"page error: {e}"))
+        page.on("console", lambda m: errors.append(f"console {m.type}: {m.text}") if m.type == "error" else None)
+        page.clock.install()
+        page.route("https://overpass-api.de/**", overpass)
+        page.route("https://tile.openstreetmap.org/**", lambda route: route.fulfill(status=200, content_type="image/png", body=PNG))
+        page.goto(base)
+        page.wait_for_selector("#list .row")
+        page.locator("#mapBtn").click()
+        page.wait_for_selector("#mapPage[open] #liveMap .leaflet-pane", state="attached", timeout=15000)
+        return page, errors
+
+    def until(page, test, ms=8000):
+        for _ in range(ms // 100):
+            if test():
+                return True
+            page.wait_for_timeout(100)
+        return False
+
+    status = lambda page: norm_ws(page.locator("#mapStatus").inner_text())  # noqa: E731
+    dot = lambda page: page.locator("#liveMap path.you-dot").bounding_box()  # noqa: E731
+    pin = lambda page: page.locator("#liveMap path.pin-branch").first.bounding_box()  # noqa: E731
+    ctx = browser.new_context(color_scheme="light", geolocation=at, permissions=["geolocation"], **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+    page, errors = opened(ctx)
+    settled = lambda: "branches" in status(page) and "Looking" not in status(page)  # noqa: E731
+    until(page, settled)
+    want = "2 branches of the app's chains within 1.5 km of you. From OpenStreetMap, which misses some; its hours may be out of date."
+    if status(page) != want:
+        problems.append(f"live map: the status reads {status(page)!r}, expected {want!r}")
+    if not page.locator("#liveMap path.you-dot").count():
+        problems.append("live map: no dot for where you are")
+    branches = page.locator("#liveMap path.pin-branch").count()
+    if branches != 2:
+        problems.append(f"live map: {branches} branch pins, expected 2 (the place that isn't a chain left out)")
+    places = page.locator("#liveMap path.pin-place").count()
+    want_places = sum(1 for c in cities.values() for p in c["places"] for l in p["locations"] if l.get("lat") is not None)
+    if places != want_places:
+        problems.append(f"live map: {places} pins for the Abroad places, expected {want_places}")
+    if len(asked) != 1 or "around:1500,51.531,-0.124)" not in asked[0]:
+        problems.append(f"live map: {len(asked)} queries on opening, the first {asked[0][:160] if asked else None!r}")
+    if "OpenStreetMap" not in page.locator("#liveMap .leaflet-control-attribution").inner_text():
+        problems.append("live map: no OpenStreetMap attribution")
+    saved = json.loads(page.evaluate("localStorage.getItem('gf-map-branches')") or "{}")
+    if len(saved.get("items", [])) != 2:
+        problems.append(f"live map: {len(saved.get('items', []))} branches kept for when there's no signal, expected 2")
+    # moving: the map follows (the pins move under a dot that stays put); 0.6 km on asks nothing within the minute,
+    # and asks again once the minute is up and the phone reports in
+    before_dot, before_pin = dot(page), pin(page)
+    ctx.set_geolocation({"latitude": at["latitude"] + 0.6 * dlat, "longitude": at["longitude"]})
+    until(page, lambda: abs(pin(page)["y"] - before_pin["y"]) > 20, 4000)
+    page.wait_for_timeout(500)
+    if abs(pin(page)["y"] - before_pin["y"]) < 20 or abs(dot(page)["y"] - before_dot["y"]) > 20:
+        problems.append(f"live map: after moving the dot went {before_dot['y']:.0f} -> {dot(page)['y']:.0f} and a pin {before_pin['y']:.0f} -> {pin(page)['y']:.0f}; the map didn't follow")
+    if len(asked) != 1:
+        problems.append(f"live map: asked again within the minute ({len(asked)} queries)")
+    page.clock.fast_forward(61000)
+    ctx.set_geolocation({"latitude": at["latitude"] + 0.62 * dlat, "longitude": at["longitude"]})
+    until(page, lambda: len(asked) > 1, 4000)
+    if len(asked) != 2 or "around:1500,51.536,-0.124)" not in asked[-1]:
+        problems.append(f"live map: after half a kilometre and a minute, {len(asked)} queries, the last {asked[-1][:160]!r}")
+    until(page, settled, 4000)
+    # a minute on but under half a kilometre from the last look: nothing asked
+    page.clock.fast_forward(61000)
+    ctx.set_geolocation({"latitude": at["latitude"] + 0.9 * dlat, "longitude": at["longitude"]})
+    page.wait_for_timeout(1000)
+    if len(asked) != 2:
+        problems.append(f"live map: asked again after only 0.3 km ({len(asked)} queries)")
+    # dragging the map away stops the following and offers Search this area, which sends the box on screen
+    box = page.locator("#liveMap").bounding_box()
+    x, y = box["x"] + box["width"] / 2, box["y"] + box["height"] * 0.1
+    page.mouse.move(x, y)
+    page.mouse.down()
+    for step in range(1, 21):  # most of the map's height: well over the 750 m before Search this area is offered
+        page.mouse.move(x, y + box["height"] * 0.04 * step)
+    page.mouse.up()
+    page.wait_for_timeout(800)
+    if not page.locator("#mapSearch").is_visible() or not page.locator("#mapFollow").is_visible():
+        problems.append(f"live map: after dragging the map away, Search this area showing {page.locator('#mapSearch').is_visible()}, "
+                        f"the button back to you {page.locator('#mapFollow').is_visible()} (status {status(page)!r})")
+    else:
+        page.locator("#mapSearch").click()
+        until(page, lambda: len(asked) > 2, 4000)
+        if len(asked) != 3 or not re.search(r"\(\d+\.\d{3},-?\d+\.\d{3},\d+\.\d{3},-?\d+\.\d{3}\)", asked[-1]):
+            problems.append(f"live map: Search this area sent {asked[-1][:160] if len(asked) > 2 else 'nothing'!r}")
+        page.locator("#mapFollow").click()
+        page.wait_for_timeout(600)
+        if page.locator("#mapFollow").is_visible() or page.locator("#mapSearch").is_visible():
+            problems.append("live map: back to you, the two buttons are still showing")
+    # a branch's Menu opens the chain's page and closes the map
+    page.locator("#liveMap path.pin-branch").first.click(force=True)
+    page.wait_for_selector("#liveMap .leaflet-popup [data-map-menu]", timeout=5000)
+    popup = norm_ws(page.locator("#liveMap .leaflet-popup-content").inner_text())
+    if pret["name"] not in popup or " away" not in popup:
+        problems.append(f"live map: a branch's popup reads {popup!r}")
+    page.locator("#liveMap .leaflet-popup [data-map-menu]").click()
+    page.wait_for_timeout(400)
+    if page.locator("#mapPage[open]").count() or pret["name"] not in page.locator("#pickName").inner_text():
+        problems.append("live map: Menu didn't open the chain's page")
+    if page.locator("#liveMap .leaflet-pane").count():
+        problems.append("live map: the map is still up after the page closed")
+    # closed, the position isn't followed: moving far and a minute on asks nothing
+    n = len(asked)
+    page.clock.fast_forward(61000)
+    ctx.set_geolocation({"latitude": at["latitude"] + 3 * dlat, "longitude": at["longitude"]})
+    page.wait_for_timeout(1000)
+    if len(asked) != n:
+        problems.append("live map: still looking for branches after the map was closed")
+    problems += [f"live map: {e}" for e in errors]
+    ctx.close()
+    # abroad: no query to OpenStreetMap, a word on why, and a place's Open opens its row on its city's page
+    asked.clear()
+    ctx = browser.new_context(color_scheme="light", geolocation=ALEX, permissions=["geolocation"], **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+    page, errors = opened(ctx)
+    until(page, lambda: "Outside the UK" in status(page))
+    if asked or "Outside the UK" not in status(page):
+        problems.append(f"live map abroad: {len(asked)} queries, status {status(page)!r}")
+    for _ in range(2):  # out to the city, so some of its places are on screen
+        page.locator("#liveMap .leaflet-control-zoom-out").click()
+        page.wait_for_timeout(400)
+    box = page.locator("#liveMap").bounding_box()
+    inside = [b for b in (p.bounding_box() for p in page.locator("#liveMap path.pin-place").all())
+              if b and box["x"] + 20 < b["x"] < box["x"] + box["width"] - 40 and box["y"] + 60 < b["y"] < box["y"] + box["height"] - 40]
+    if not inside:
+        problems.append("live map abroad: no place pins on screen around Alexanderplatz")
+    else:
+        page.mouse.click(inside[0]["x"] + inside[0]["width"] / 2, inside[0]["y"] + inside[0]["height"] / 2)
+        page.wait_for_selector("#liveMap .leaflet-popup [data-map-place]", timeout=5000)
+        b = page.locator("#liveMap .leaflet-popup [data-map-place]")
+        name, cid = b.get_attribute("data-map-place"), b.get_attribute("data-city")
+        b.click()
+        page.wait_for_timeout(400)
+        if page.locator("#mapPage[open]").count() or not page.locator(f'#cityList details.row[open][data-place="{name}"]').count():
+            problems.append(f"live map abroad: Open on {name!r} didn't open its row on {cid}'s page")
+    problems += [f"live map abroad: {e}" for e in errors]
+    ctx.close()
+    # location refused: the map still opens with every pin it can show, and says why there's no dot
+    ctx = browser.new_context(color_scheme="light", **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+    page, errors = opened(ctx)
+    until(page, lambda: "Location is off" in status(page))
+    if "Location is off" not in status(page) or page.locator("#liveMap path.you-dot").count():
+        problems.append(f"live map without location: status {status(page)!r}")
+    if page.locator("#liveMap path.pin-place").count() != want_places:
+        problems.append("live map without location: the Abroad places aren't all pinned")
+    problems += [f"live map without location: {e}" for e in errors]
+    ctx.close()
+    print(f"live map: {branches} branches and {places} places pinned, one query on opening, the dot followed, a second query after 0.5 km and a minute, "
+          "Search this area, Menu and Open, abroad and without location")
+    return problems
+
+
 def check_e_review(env):
     base, cid, cities, browser, index = env.base, env.cid, env.cities, env.browser, env.index
     problems = []
@@ -3152,6 +3328,7 @@ CHECKS = [
     ("tap_through_one_restaurant", check_tap_through_one_restaurant),
     ("f7_map", check_f7_map),
     ("f8_near_me", check_f8_near_me),
+    ("f16_live_map", check_f16_live_map),
     ("f10_read_aloud", check_f10_read_aloud),
     ("f11_notes", check_f11_notes),
     ("f14_guide_link", check_f14_guide_link),

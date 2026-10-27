@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 29;
+  const APP_VERSION = 30;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -1276,21 +1276,25 @@
   const OVERPASS = "https://overpass-api.de/api/interpreter";
   const osmChains = () => data.restaurants.filter((r) => Array.isArray(r.osm) && r.osm.length);
   const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  function overpassQuery(at) {
+  // the app's chains inside an Overpass area: "(around:metres,lat,lon)" or a box "(south,west,north,east)"
+  function chainQuery(area) {
     const names = osmChains().flatMap((r) => r.osm).map(reEsc).join("|");
-    // the position goes out rounded to about 100 metres: a search within a kilometre needs no more than that
-    const around = "(around:1000," + at.lat.toFixed(3) + "," + at.lon.toFixed(3) + ")";
-    return '[out:json][timeout:10];(nwr["name"~"^(' + names + ')$",i]' + around + ';nwr["brand"~"^(' + names + ')$",i]' + around + ";);out center tags;";
+    return '[out:json][timeout:10];(nwr["name"~"^(' + names + ')$",i]' + area + ';nwr["brand"~"^(' + names + ')$",i]' + area + ";);out center tags;";
   }
+  // the position goes out rounded to about 100 metres: a search within a kilometre needs no more than that
+  const overpassQuery = (at) => chainQuery("(around:1000," + at.lat.toFixed(3) + "," + at.lon.toFixed(3) + ")");
   const chainOf = (tags) => { const n = [tags.brand, tags.name].filter(Boolean).map((x) => x.toLowerCase()); return osmChains().find((r) => r.osm.some((o) => n.includes(o.toLowerCase()))) || null; };
+  // a node's own point, or the middle of a way or relation
+  const elPos = (el) => { const lat = el.lat != null ? el.lat : el.center && el.center.lat, lon = el.lon != null ? el.lon : el.center && el.center.lon; return lat == null || lon == null ? null : { lat, lon }; };
   // one row per chain: its nearest branch (with OpenStreetMap's opening hours, if tagged), and how many are within the kilometre
   function nearRows(elements, at) {
     const best = new Map();
     for (const el of elements) {
-      const lat = el.lat != null ? el.lat : el.center && el.center.lat, lon = el.lon != null ? el.lon : el.center && el.center.lon;
+      const pos = elPos(el);
       const r = el.tags && chainOf(el.tags);
-      if (!r || lat == null || lon == null) continue;
-      const km = kmTo({ lat, lon }, at);
+      if (!r || !pos) continue;
+      const { lat, lon } = pos;
+      const km = kmTo(pos, at);
       const where = el.tags["addr:street"] || "";
       const hours = String(el.tags.opening_hours || "").slice(0, 200);
       const cur = best.get(r.id);
@@ -1366,13 +1370,16 @@
   const inBounds = (c, at) => !!c.bounds && c.bounds.lat[0] < at.lat && at.lat < c.bounds.lat[1] && c.bounds.lon[0] < at.lon && at.lon < c.bounds.lon[1];
   const rounded = (at) => ({ lat: +at.lat.toFixed(3), lon: +at.lon.toFixed(3) });
   const savedNear = () => { try { const s = JSON.parse(store.get(NEAR_KEY) || "null"); return s && Array.isArray(s.rows) ? s : null; } catch (e) { return null; } };
-  async function askOverpass(at) {
+  async function overpassElements(query) {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), 15000);
     let res;
-    try { res = await fetch(OVERPASS, { method: "POST", body: "data=" + encodeURIComponent(overpassQuery(at)), signal: ctl.signal }); } finally { clearTimeout(timer); }
+    try { res = await fetch(OVERPASS, { method: "POST", body: "data=" + encodeURIComponent(query), signal: ctl.signal }); } finally { clearTimeout(timer); }
     if (!res.ok) throw new Error("HTTP " + res.status);
-    const rows = nearRows((await res.json()).elements || [], at);
+    return (await res.json()).elements || [];
+  }
+  async function askOverpass(at) {
+    const rows = nearRows(await overpassElements(overpassQuery(at)), at);
     store.set(NEAR_KEY, JSON.stringify({ when: new Date().toISOString(), rows, at: rounded(at) }));
     return rows;
   }
@@ -1473,6 +1480,192 @@
   }
   $("nearAutoBtn").addEventListener("click", () => setNearAuto(!nearAuto, true));
   renderNearToggle();
+
+  // ---------- the map page (the globe by the title): where you are, as you move, and every place the app knows ----------
+  // The UK chains' branches come from the same OpenStreetMap lookup as Near me (the menus carry no addresses); the
+  // Abroad lists' places come from cities.json. Your position is followed only while this page is open and the app is
+  // in front. It goes out, rounded to about 100 metres, only to look for branches: when the page opens, after you've
+  // moved half a kilometre (at most once a minute), and when you tap Search this area (which sends the box on screen).
+  const MAP_KEY = "gf-map-branches"; // the branches last found, for when there's no signal
+  const MAP_KM = 1.5, MAP_MOVED_KM = 0.5, MAP_EVERY_MS = 60000, MAP_MAX = 300, MAP_AREA_KM = 0.75;
+  const live = { map: null, watch: null, me: null, ring: null, places: null, branches: null, at: null, follow: true,
+    found: new Map(), mineAt: null, areaAt: null, lookedWhen: 0, busy: false };
+  const savedBranches = () => {
+    try {
+      const s = JSON.parse(store.get(MAP_KEY) || "null");
+      return s && Array.isArray(s.items) ? { when: s.when, items: s.items.filter((b) => b && Number.isFinite(b.lat) && Number.isFinite(b.lon)) } : null;
+    } catch (e) { return null; }
+  };
+  const setMapStatus = (t) => { $("mapStatus").textContent = t; };
+  const awayText = (l) => (live.at ? metres(kmTo(l, live.at)) + " away" : "");
+  // narrow enough for a small phone's map, and clear of Search this area at the top
+  const POPUP = { maxWidth: 230, autoPanPaddingTopLeft: [12, 64], autoPanPaddingBottomRight: [12, 12] };
+  function openLiveMap() {
+    if (!data) return;
+    openDialog($("mapPage"));
+    live.follow = true;
+    live.found = new Map();
+    const s = savedBranches();
+    if (s) s.items.forEach((b) => live.found.set(b.key, b));
+    setMapStatus(navigator.geolocation ? "Finding where you are…" : "This phone can't share its location here.");
+    $("mapOffline").hidden = !offlineNow;
+    drawLiveMap();
+  }
+  async function drawLiveMap() {
+    try { await loadLeaflet(); } catch (e) { setMapStatus("The map couldn't load. Check your signal and try again."); return; }
+    if (!$("mapPage").open || live.map) return;
+    // the zoom buttons go bottom left, out of the way of the popups and Search this area at the top
+    const map = L.map($("liveMap"), { zoomControl: false });
+    L.control.zoom({ position: "bottomleft" }).addTo(map);
+    live.map = map;
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors' }).addTo(map);
+    live.places = L.layerGroup().addTo(map);
+    live.branches = L.layerGroup().addTo(map);
+    drawPlacePins();
+    drawBranchPins();
+    // until the phone answers: where you were last seen, else the city on screen, else the whole UK
+    const c = city(), last = here || (savedNear() || {}).at;
+    if (last) map.setView([last.lat, last.lon], 15);
+    else if (c) map.fitBounds([[c.bounds.lat[0], c.bounds.lon[0]], [c.bounds.lat[1], c.bounds.lon[1]]]);
+    else map.setView([54.4, -2.5], 5);
+    map.on("dragstart", () => { live.follow = false; renderMapButtons(); });
+    map.on("moveend", renderMapButtons);
+    renderMapButtons();
+    watchMe();
+  }
+  function watchMe() {
+    if (live.watch != null || !navigator.geolocation || !live.map || document.hidden) return;
+    live.watch = navigator.geolocation.watchPosition(onPosition, (e) => {
+      if (e.code !== 1) return; // slow to find, or lost for a moment: the watch carries on
+      stopWatch();
+      setMapStatus("Location is off for this app, so the map can't show where you are. Check Location Services for Safari in Settings. Search this area still finds branches.");
+      renderMapButtons();
+    }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
+  }
+  function stopWatch() { if (live.watch != null) { navigator.geolocation.clearWatch(live.watch); live.watch = null; } }
+  function onPosition(pos) {
+    if (!live.map) return;
+    const at = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+    const ll = [at.lat, at.lon], acc = Math.min(pos.coords.accuracy || 0, 2000);
+    const first = !live.at;
+    here = live.at = at;
+    store.set(NEAR_GRANTED, "1");
+    if (!live.me) {
+      live.ring = L.circle(ll, { radius: acc, color: "#1e6fd9", weight: 1, fillColor: "#1e6fd9", fillOpacity: 0.12, interactive: false, className: "you-ring" }).addTo(live.map);
+      live.me = L.circleMarker(ll, { radius: 8, color: "#ffffff", weight: 3, fillColor: "#1e6fd9", fillOpacity: 1, className: "you-dot" }).bindPopup("You are here").addTo(live.map);
+    } else { live.me.setLatLng(ll); live.ring.setLatLng(ll).setRadius(acc); }
+    if (live.follow) { if (first) live.map.setView(ll, Math.max(live.map.getZoom(), 15)); else live.map.panTo(ll); }
+    // a look around you: once a minute at most (across closing and reopening too), and only when there's none yet,
+    // you've moved half a kilometre, or the last one is over an hour old
+    const since = Date.now() - live.lookedWhen;
+    const wanted = !live.mineAt || kmTo(live.mineAt, at) > MAP_MOVED_KM || since > NEAR_FRESH_MS;
+    if (!inUK(at)) { if (first) setMapStatus("Outside the UK, the map shows the places from the Abroad lists. The chains' branches are looked up in the UK only."); }
+    else if (wanted && (!live.lookedWhen || since >= MAP_EVERY_MS)) {
+      lookFor("(around:" + MAP_KM * 1000 + "," + at.lat.toFixed(3) + "," + at.lon.toFixed(3) + ")", rounded(at), "within " + MAP_KM + " km of you", true);
+    } else if (first) {
+      const s = savedBranches();
+      setMapStatus(s && s.items.length ? "Branches from the last look, " + fmtWhen(s.when) + ", from OpenStreetMap." : "");
+    }
+    renderMapButtons();
+  }
+  function searchHere() {
+    if (!live.map) return;
+    const b = live.map.getBounds(), mid = b.getCenter();
+    lookFor("(" + [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map((n) => n.toFixed(3)).join(",") + ")", rounded({ lat: mid.lat, lon: mid.lng }), "in this area", false);
+  }
+  async function lookFor(area, centre, where, mine) {
+    if (live.busy) return;
+    live.busy = true;
+    live.lookedWhen = Date.now();
+    const before = { mineAt: live.mineAt, areaAt: live.areaAt }; // put back if the look fails, so it can be tried again
+    live.areaAt = centre;
+    if (mine) live.mineAt = centre;
+    renderMapButtons();
+    setMapStatus("Looking for branches " + where + "…");
+    try {
+      const els = await overpassElements(chainQuery(area));
+      if (!live.map) return; // closed while asking
+      let n = 0;
+      for (const el of els) {
+        const r = el.tags && chainOf(el.tags), pos = elPos(el);
+        if (!r || !pos) continue;
+        n++;
+        const b = { key: el.type + el.id, rid: r.id, lat: pos.lat, lon: pos.lon, where: String(el.tags["addr:street"] || "").slice(0, 80), hours: String(el.tags.opening_hours || "").slice(0, 200) };
+        live.found.delete(b.key); // the newest go last, so the oldest go first once there are too many
+        live.found.set(b.key, b);
+      }
+      while (live.found.size > MAP_MAX) live.found.delete(live.found.keys().next().value);
+      store.set(MAP_KEY, JSON.stringify({ when: new Date().toISOString(), items: [...live.found.values()] }));
+      drawBranchPins();
+      setMapStatus((n ? n + (n === 1 ? " branch" : " branches") + " of the app's chains " + where : "None of the app's chains is listed " + where) +
+        ". From OpenStreetMap, which misses some" + (n ? "; its hours may be out of date." : "."));
+    } catch (e) {
+      Object.assign(live, before); // the next position after the minute tries again, and Search this area comes back
+      if (live.map) setMapStatus("Couldn't reach the map service (no signal, or it's busy)." + (live.found.size ? " The chains' pins are from the last look." : ""));
+    } finally {
+      live.busy = false;
+      renderMapButtons();
+    }
+  }
+  // a pin: the dot you see, inside a clear circle the size of a fingertip (44 px) that takes the tap
+  function addPin(layer, ll, colour, cls, popup) {
+    L.circleMarker(ll, { radius: 8, color: "#ffffff", weight: 2, fillColor: colour, fillOpacity: 0.95, interactive: false }).addTo(layer);
+    L.circleMarker(ll, { radius: 22, stroke: false, fillColor: "#000000", fillOpacity: 0, className: cls }).bindPopup(popup, POPUP).addTo(layer);
+  }
+  // the chains' pins take the app's own colour; the Abroad places take their list row's colours (pinColour)
+  function drawBranchPins() {
+    if (!live.branches) return;
+    live.branches.clearLayers();
+    const colour = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+    for (const b of live.found.values()) {
+      const r = byId(b.rid);
+      if (!r) continue; // a chain no longer in the app
+      addPin(live.branches, [b.lat, b.lon], colour, "pin-branch", () => "<b>" + esc(r.name) + "</b><br>" + esc([awayText(b), openText(b.hours), b.where].filter(Boolean).join(" · ")) +
+        '<br><span class="pop-btns"><button type="button" class="link-btn" data-map-menu="' + esc(r.id) + '">Menu &rsaquo;</button>' +
+        '<a class="link-btn" href="https://maps.apple.com/?ll=' + esc(b.lat + "," + b.lon) + "&q=" + encodeURIComponent(r.name) + '" target="_blank" rel="noopener">Directions</a></span>');
+    }
+  }
+  function drawPlacePins() {
+    if (!live.places) return;
+    live.places.clearLayers();
+    for (const [cid, c] of Object.entries(cities)) {
+      for (const p of c.places) {
+        for (const l of p.locations) {
+          if (l.lat == null || l.lon == null) continue;
+          addPin(live.places, [l.lat, l.lon], pinColour(p), "pin-place", () => "<b>" + esc(p.name) + "</b><br>" + esc([awayText(l), l.area, todayLine(p, cityNow(c), [l])].filter(Boolean).join(" · ")) +
+            "<br>" + esc(p.claimLabel || CLAIM_TAGS[p.claim]) +
+            '<br><span class="pop-btns"><button type="button" class="link-btn" data-map-place="' + esc(p.name) + '" data-city="' + esc(cid) + '">Open &rsaquo;</button>' +
+            '<a class="link-btn" href="' + esc(mapLink(p, l)) + '" target="_blank" rel="noopener">Directions</a></span>');
+        }
+      }
+    }
+  }
+  function renderMapButtons() {
+    const follow = $("mapFollow"), search = $("mapSearch");
+    follow.hidden = !live.map || !live.at || live.follow;
+    if (!live.map) { search.hidden = true; return; }
+    const mid = live.map.getCenter(), at = { lat: mid.lat, lon: mid.lng }, near = live.map.getZoom() >= 13;
+    search.hidden = live.busy || !!(live.follow && live.at) || !inUK(at) || (!!live.areaAt && kmTo(live.areaAt, at) < MAP_AREA_KM);
+    search.disabled = !near;
+    search.textContent = near ? "Search this area" : "Zoom in to look for branches";
+  }
+  function leaveMap(then) { $("mapPage").close(); then(); }
+  $("mapBtn").addEventListener("click", openLiveMap);
+  $("mapSearch").addEventListener("click", searchHere);
+  $("mapFollow").addEventListener("click", () => {
+    live.follow = true;
+    if (live.at && live.map) live.map.setView([live.at.lat, live.at.lon], Math.max(live.map.getZoom(), 15));
+    renderMapButtons();
+  });
+  $("mapPage").addEventListener("close", () => {
+    stopWatch();
+    if (live.map) live.map.remove();
+    // where and when it last looked stay, so opening and closing the map can't send a query each time
+    Object.assign(live, { map: null, me: null, ring: null, places: null, branches: null, at: null });
+  });
+  // the phone's position is watched only while the map is in front of you
+  document.addEventListener("visibilitychange", () => { if (document.hidden) stopWatch(); else if ($("mapPage").open) watchMe(); });
 
   // ---------- warnings page ----------
   // The guide's own warnings in the order that matters to a coeliac: cross-contact, then its gluten free claim, then updates
@@ -1575,6 +1768,7 @@
     }
     render();
     if (data && $("picker").open) renderPicker(); // the first-visit chooser may have opened before the cities arrived
+    drawPlacePins(); // the map page may have opened before them too
     importReady.cities = true;
     maybeImport();
   }
@@ -2459,6 +2653,8 @@
     nearUk: () => nearMe(),
     nearAuto: (v) => setNearAuto(v === "on", false),
     gonear: (rid) => { $("near").close(); select(rid); },
+    mapMenu: (rid) => leaveMap(() => select(rid)),
+    mapPlace: (name, b) => leaveMap(() => { setRegion(b.dataset.city); openPlaceRow(name); }), // the whole list, so the row is there
     say: (n) => { const p = phrases[cardLang]; if (p && p.card[n]) say(p.card[n].text, cardLang); },
     gotorestReq: (rid) => { $("upload").close(); select(rid); },
     elsewhere: (to) => goElsewhere(to),
@@ -2528,7 +2724,7 @@
     }
   });
   $("infoBtn").addEventListener("click", () => { renderLastChecked(); openDialog($("info")); });
-  ["picker", "info", "gfcard", "warnings", "staff", "changes", "report", "favImport", "order", "near"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
+  ["picker", "info", "gfcard", "warnings", "staff", "changes", "report", "favImport", "order", "near", "mapPage"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
   ["staff", "gfcard"].forEach((id) => $(id).addEventListener("close", () => { if (!$("staff").open && !$("gfcard").open) letGo(); }));
   $("refreshBtn").addEventListener("click", () => load(true));
   $("shareBtn").addEventListener("click", () => {
