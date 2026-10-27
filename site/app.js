@@ -566,7 +566,8 @@
     const mine = [...favs].filter((k) => k.startsWith(r.id + "|")).map((k) => k.split("|").slice(1).join("|"));
     if (!mine.length) return "";
     const inList = (kind) => mine.filter((m) => (c[kind] || []).some((x) => x.section + "|" + x.name === m)).length;
-    const changed = inList("changed"), bad = inList("nowAvoid") + inList("removed");
+    // not on the list any more, whenever it went (favourites are kept until removed): now to avoid, gone, or long gone
+    const changed = inList("changed"), bad = mine.filter((m) => !r.items.some((i) => i.section + "|" + i.name === m)).length;
     if (!changed && !bad) return " Your " + (mine.length === 1 ? "favourite here is" : mine.length + " favourites here are") + " unchanged.";
     const parts = [];
     if (changed) parts.push(changed + " of your favourites " + (changed === 1 ? "is" : "are") + " ordered differently: see Your usuals");
@@ -1310,7 +1311,7 @@
     let spans = null;
     for (const rule of tag.split(";")) {
       const part = rule.trim();
-      if (!part || /^PH\b/.test(part)) continue;
+      if (!part || /^PH\s+(off|closed)$/.test(part)) continue; // the plain holiday rule; "PH,Su …" is another shape, left unread
       const m = part.match(/^([A-Za-z,-]+)\s+(off|closed|[\d:,-]+)$/);
       if (!m) return null;
       const days = new Set();
@@ -1326,7 +1327,8 @@
           const tm = sp.match(/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/);
           if (!tm) return null;
           const open = +tm[1] * 60 + +tm[2], close = +tm[3] * 60 + +tm[4];
-          got.push([open, close <= open ? 1440 : close]); // past midnight counts as until midnight
+          if (close <= open) return null; // runs past midnight: not a plain shape, so no guess
+          got.push([open, close]);
         }
       }
       if (days.has(day)) spans = got;
@@ -1399,7 +1401,7 @@
     $("nearBody").innerHTML = '<p class="empty">Looking for branches within 1 km…</p>';
     try {
       renderNear(await askOverpass(at), "just now", "");
-      if (data) renderChips();
+      if (data && region === UK) renderChips();
     } catch (e) { fallback("Couldn't reach the map service (no signal, or it's busy)."); }
   }
 
@@ -1420,7 +1422,9 @@
     const s = nearAnswer();
     if (!s) return "Near me";
     const row = (r && s.rows.find((x) => x.rid === r.id)) || s.rows[0];
-    return (r && row.rid === r.id ? "Here: " : "") + [row.name + " " + metres(row.km), openText(row.hours)].filter(Boolean).join(" · ") + " ›";
+    // on the chain's own page the name goes without saying, and a shorter chip keeps the section chips within reach
+    const lead = r && row.rid === r.id ? "Here: " + metres(row.km) : row.name + " " + metres(row.km);
+    return [lead, openText(row.hours)].filter(Boolean).join(" · ") + " ›";
   }
   function locationGranted() {
     const before = store.get(NEAR_GRANTED) === "1";
@@ -1442,12 +1446,13 @@
     here = at;
     if (region !== UK) { nearBusy = false; renderCity(); return; } // the city's chip reads from the list itself
     const saved = savedNear();
-    const standing = saved && saved.at && kmTo(saved.at, at) <= NEAR_MOVED_KM && Date.now() - new Date(saved.when).getTime() < NEAR_FRESH_MS;
-    if (inUK(at) && !standing) {
+    const age = saved ? Date.now() - new Date(saved.when).getTime() : Infinity;
+    const standing = saved && saved.at && kmTo(saved.at, at) <= NEAR_MOVED_KM && age < NEAR_FRESH_MS;
+    if (inUK(at) && !standing && age >= NEAR_EVERY_MS) { // the ten minutes hold across launches too
       try { await askOverpass(at); } catch (e) { /* no signal, or the service is busy: the chip keeps the last answer */ }
     }
     nearBusy = false;
-    renderChips();
+    if (region === UK) renderChips(); else renderCity(); // the page may have changed hands during the query
     if ($("picker").open) renderPicker();
   }
   function renderNearToggle() {

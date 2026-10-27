@@ -2636,16 +2636,20 @@ def check_f8_near_me(env):
     elements[0]["tags"]["opening_hours"] = "24/7"
     asked.clear()
     chip = lambda: norm_ws(page.locator("#chips [data-near-uk]").inner_text())  # noqa: E731
+
+    def settled():  # the look-around runs after the menus load: give it up to ten seconds to write the chip
+        for _ in range(40):
+            if "›" in chip():
+                break
+            page.wait_for_timeout(250)
+        return chip()
     ctx = browser.new_context(color_scheme="light", geolocation=at, permissions=["geolocation"], **IPHONE)
     ctx.add_init_script("localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-near-auto', 'on')")
     page = ctx.new_page()
     page.route("https://overpass-api.de/**", overpass)
     page.goto(base)
     page.wait_for_selector("#list .row")
-    for _ in range(40):
-        if "›" in chip():
-            break
-        page.wait_for_timeout(250)
+    settled()
     want_chip = f"{pret['name']} 300 m · open now ›"
     if chip() != want_chip:
         problems.append(f"look around: the chip reads {chip()!r}, expected {want_chip!r}")
@@ -2660,7 +2664,8 @@ def check_f8_near_me(env):
     page.locator("#picker .link-btn[value=close]").click()
     page.reload()
     page.wait_for_selector("#list .row")
-    page.wait_for_timeout(800)
+    settled()
+    page.wait_for_timeout(300)
     if len(asked) != 1:
         problems.append(f"look around: reopening at the same spot asked again ({len(asked)} queries)")
     if chip() != want_chip:
@@ -2668,7 +2673,7 @@ def check_f8_near_me(env):
     page.goto(base + f"#{pret['id']}")
     page.wait_for_selector("#list .row")
     page.wait_for_timeout(300)
-    if not chip().startswith("Here: " + pret["name"]):
+    if chip() != "Here: 300 m · open now ›":  # the chain's own page: no name, so the section chips stay within reach
         problems.append(f"look around: on {pret['name']}'s page the chip reads {chip()!r}")
     ctx.close()
     # abroad (Alexanderplatz): the position is taken, but the UK query isn't sent
@@ -2733,8 +2738,12 @@ def check_e_review(env):
     page.goto(base)
     page.wait_for_selector("#list .row")
     news = norm_ws(page.locator("#news").inner_text())
-    if changed and "Your favourite here is unchanged." not in news:
+    if not changed:
+        print("new-guide note: no guide has changed today, so the favourites line can't be checked")
+    elif "Your favourite here is unchanged." not in news:
         problems.append(f"new-guide note: no word on the favourite ({news[:160]!r})")
+    if not stale_id:
+        print("out-of-date line: no guide is out of date today, so its fold can't be checked")
     if f"{name} is new here." not in news:
         problems.append(f"new restaurant: no note on All ({news[:160]!r})")
     if [b.strip() for b in page.locator("#region button").all_inner_texts()] != ["UK", "Abroad"]:
@@ -2777,7 +2786,7 @@ def check_e_review(env):
     if page.evaluate("parseFloat(getComputedStyle(document.querySelector('#warnCount')).marginLeft)") <= 0:
         problems.append("Read the warnings: the count has no space before it")
     ctx.close()
-    old = json.dumps([{"name": "Wagamama", "area": "London", "url": "", "at": "2026-10-01T10:00:00Z", "how": "shared"}])
+    old = json.dumps([{"name": "Testarossa Kitchen", "area": "London", "url": "", "at": "2026-10-01T10:00:00Z", "how": "shared"}])  # a made-up place
     ctx = browser.new_context(color_scheme="light", **IPHONE)
     ctx.add_init_script(f"localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-requests', {json.dumps(old)})")
     page = ctx.new_page()
