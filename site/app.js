@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 28;
+  const APP_VERSION = 29;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -270,8 +270,9 @@
 
   // How the app decided an item where the guide wasn't plain (the readers' notes, in plain English)
   const decidedNote = (i) => '<div class="decided"><b>How the app decided:</b> ' + esc(i.decided) + "</div>";
-  // "Share this item" (a link that opens straight to it) and "Something wrong?" (a ready message to send)
-  const moreLinks = (r, i) => '<div class="detail-more"><button type="button" class="link-btn" data-share-item="' + esc(itemRef(r, i)) +
+  // the guide page, "Share this item" (a link that opens straight to it) and "Something wrong?" (a ready message to send),
+  // on one line under the buttons, so Show staff and its neighbours have the full width
+  const moreLinks = (r, i) => '<div class="detail-more">' + guideLinkHtml(r, i) + '<button type="button" class="link-btn" data-share-item="' + esc(itemRef(r, i)) +
     '">Share this item</button><button type="button" class="link-btn" data-wrong="' + esc(itemRef(r, i)) + '">Something wrong?</button></div>';
   function detailFor(r, i) {
     const out = [];
@@ -300,7 +301,8 @@
     const on = favs.has(k);
     const inOrder = canOrder(i) && (orders[r.id] || []).includes(k);
     out.push(noteBox(k));
-    out.push('<div class="detail-foot">' + guideLinkHtml(r, i) + '<span class="foot-btns">' +
+    // Show staff is the one that matters at a counter, so it's the filled button and the row has the full width
+    out.push('<div class="detail-foot"><span class="foot-btns">' +
       (canOrder(i) ? '<button type="button" class="order-btn" data-order="' + esc(k) + '" aria-pressed="' + inOrder + '">' + (inOrder ? "✓ In order" : "Add to order") + "</button>" : "") +
       (i.role ? "" : '<button type="button" class="staff-btn" data-staff="' + esc(k) + '">Show staff</button>') + '<button type="button" class="fav-btn" data-fav="' + esc(k) +
       '" aria-pressed="' + on + '">' + (on ? "★ Saved" : "☆ Save") + "</button></span></div>");
@@ -408,7 +410,7 @@
       $("pickName").textContent = "All restaurants";
       $("pickBtn").setAttribute("aria-label", "All restaurants. Choose where to eat");
       const n = data.restaurants.length;
-      $("guideLine").textContent = n + (n === 1 ? " restaurant" : " restaurants") + (offlineNow ? "" : " · tap to choose") + offlineTag();
+      $("guideLine").textContent = n + (n === 1 ? " restaurant" : " restaurants") + offlineTag();
       $("q").placeholder = "Search all restaurants";
     }
   }
@@ -430,10 +432,11 @@
     if (!chips.some((c) => sameFilter(c, filter))) filter = { kind: "all" };
     // on a restaurant's page the order builder is a chip after Favourites: it costs no height above the menu
     const r = byId(selected);
-    // on All, "Near me" (which chains are within a kilometre) sits after Favourites, as the order builder does on a restaurant
-    const nearChip = !r && data.restaurants.some((x) => Array.isArray(x.osm) && x.osm.length) ? '<button type="button" data-near-uk>Near me</button>' : "";
+    // "Near me" (which chains are within a kilometre) sits after Favourites on every page; with the look-around switched
+    // on it reads off the nearest chain, where it costs no height above the menu
+    const nearChip = osmChains().length ? '<button type="button" data-near-uk>' + esc(nearChipText(r)) + "</button>" : "";
     $("chips").innerHTML = chips.map((c) => chipHtml(c.kind, c.value, c.label, sameFilter(c, filter)) +
-      (c.kind === "fav" ? (r ? '<button type="button" data-order-open>' + orderChipText(r) + "</button>" : nearChip) : "")).join("");
+      (c.kind === "fav" ? (r ? '<button type="button" data-order-open>' + orderChipText(r) + "</button>" : "") + nearChip : "")).join("");
   }
   const orderChipText = (r) => { const n = orderItems(r).length; return n ? "Your order (" + n + ") &rsaquo;" : "Build an order"; };
 
@@ -455,11 +458,15 @@
     const r = byId(selected);
     const tips = (r && r.tips) || [];
     const full = introFull();
+    // on All after the first visit, an out-of-date guide is a few words in the folded line (the Warnings sheet it
+    // opens says which guide); the full banner stays on that restaurant's own page
+    if (selected === ALL && !full) $("stale").hidden = true;
     $("tips").hidden = !full || !tips.length;
     $("tips").innerHTML = tipsHtml(tips);
     $("certNote").hidden = !full;
     $("openStrip").hidden = full;
-    $("stripText").innerHTML = (r && r.headline ? "<b>" + esc(r.headline) + "</b> " : "") + esc(certShort(scope()));
+    $("stripText").innerHTML = (r && r.headline ? "<b>" + esc(r.headline) + "</b> " : "") + esc(certShort(scope())) +
+      (selected === ALL && !full && stale.length ? " " + stale.length + (stale.length === 1 ? " guide" : " guides") + " may be out of date." : "");
     $("stripLabel").textContent = tips.length ? "Tips and warnings" : "Warnings";
   }
   const tipsHtml = (tips) => tips.map((t) => {
@@ -471,16 +478,17 @@
   // After that they fold into one line (#strip), with every word of them in the Tips and warnings sheet.
   const INTRO_KEY = "gf-intro-seen";
   const introNow = new Set(); // shown in full during this visit, so the card doesn't fold away while it's being read
-  function introFull() {
-    if (introNow.has(selected)) return true;
+  function introFull(key = selected) { // a restaurant, All, or a city (its introduction folds the same way)
+    if (introNow.has(key)) return true;
     const seen = new Set(JSON.parse(store.get(INTRO_KEY) || "[]"));
-    if (seen.has(selected)) return false;
-    seen.add(selected);
+    if (seen.has(key)) return false;
+    seen.add(key);
     store.set(INTRO_KEY, JSON.stringify([...seen]));
-    introNow.add(selected);
+    introNow.add(key);
     return true;
   }
   $("introDone").addEventListener("click", () => { introNow.delete(selected); renderBanners(); });
+  $("cityStrip").addEventListener("click", () => { introNow.add(region); renderCity(); }); // the folded city introduction, in full for this visit
   // The certified-or-not card in a few words, for the folded line
   function certShort(rs) {
     const claim = rs.filter((r) => (r.notices || []).some((n) => n.kind === "accreditation"));
@@ -552,19 +560,54 @@
   }
   // more than one guide since you last looked: the guide's own list starts later than your copy
   const skipped = (r, c) => c === sinceLooked(r) && !!r.changes && r.changes.sinceSource !== c.sinceSource;
+  // The question at the counter: did my favourites here survive the new guide? Said from the same comparison the note
+  // comes from, so "unchanged" means not in its changed, now-avoid or gone lists.
+  function favLine(r, c) {
+    const mine = [...favs].filter((k) => k.startsWith(r.id + "|")).map((k) => k.split("|").slice(1).join("|"));
+    if (!mine.length) return "";
+    const inList = (kind) => mine.filter((m) => (c[kind] || []).some((x) => x.section + "|" + x.name === m)).length;
+    const changed = inList("changed"), bad = inList("nowAvoid") + inList("removed");
+    if (!changed && !bad) return " Your " + (mine.length === 1 ? "favourite here is" : mine.length + " favourites here are") + " unchanged.";
+    const parts = [];
+    if (changed) parts.push(changed + " of your favourites " + (changed === 1 ? "is" : "are") + " ordered differently: see Your usuals");
+    if (bad) parts.push(bad + " of your favourites " + (bad === 1 ? "is" : "are") + " now on the Avoid list or gone: see the warning above");
+    return " " + parts.join("; ") + ".";
+  }
+  // A restaurant this phone hasn't seen before gets a note until it's opened or dismissed, and a New tag in the chooser;
+  // the first time the app ever loads, nothing is new.
+  const KNOWN_KEY = "gf-known-restaurants"; // { <id>: { seen: ISO date, new: true until opened or dismissed } }
+  const known = (() => { try { const o = JSON.parse(store.get(KNOWN_KEY) || "{}"); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } })();
+  function noteNewRestaurants(rs) {
+    const first = !Object.keys(known).length;
+    let any = false;
+    for (const r of rs) if (!known[r.id]) { known[r.id] = { seen: new Date().toISOString(), new: !first }; any = true; }
+    if (any) store.set(KNOWN_KEY, JSON.stringify(known));
+  }
+  const isNew = (r) => !!(known[r.id] && known[r.id].new);
+  function sawRestaurant(id) { if (known[id] && known[id].new) { known[id].new = false; store.set(KNOWN_KEY, JSON.stringify(known)); } }
+  const askedFor = (r) => requests.some((q) => sameName(q.name, r.name) || (Array.isArray(r.osm) && r.osm.some((o) => sameName(o, q.name))));
   function renderNews() {
     const s = seen();
     const news = scope().map((r) => [r, newsFor(r, s)]).filter(([, c]) => c);
-    $("news").hidden = !news.length;
-    $("news").innerHTML = news.map(([r, c]) => '<div class="news-row' + (c.nowAvoid.length ? " bad" : "") + '"><p><b>' + esc(r.name) +
+    const fresh = scope().filter(isNew);
+    $("news").hidden = !news.length && !fresh.length;
+    $("news").innerHTML = fresh.map((r) => '<div class="news-row"><p><b>' + esc(r.name) + " is new here" + (askedFor(r) ? ", and you asked for it" : "") + ".</b> " +
+      esc(r.stats.items) + ' items with no gluten ingredients.</p><p class="news-btns">' +
+      (selected === ALL ? '<button type="button" class="pill-btn" data-gotorest="' + esc(r.id) + '">Open</button>' : "") +
+      '<button type="button" class="link-btn" data-seen-new="' + esc(r.id) + '">Dismiss</button></p></div>').join("") +
+      news.map(([r, c]) => '<div class="news-row' + (c.nowAvoid.length ? " bad" : "") + '"><p><b>' + esc(r.name) +
       (skipped(r, c) ? " has new guides.</b> Since the " + esc(c.since) + " guide you last looked at: " : " has a new guide.</b> Since " + esc(c.since) + ": ") +
-      esc(counts(c).join(", ")) + '.</p><p class="news-btns">' +
+      esc(counts(c).join(", ")) + "." + esc(favLine(r, c)) + '</p><p class="news-btns">' +
       '<button type="button" class="pill-btn" data-news="' + esc(r.id) + '">See what changed</button>' +
       '<button type="button" class="link-btn" data-seen="' + esc(r.id) + '">Dismiss</button></p></div>').join("");
   }
   $("news").addEventListener("click", (e) => {
     const open = e.target.closest("[data-news]");
     if (open) { openChanges(byId(open.dataset.news)); return; }
+    const go = e.target.closest("[data-gotorest]");
+    if (go) { select(go.dataset.gotorest); return; }
+    const done = e.target.closest("[data-seen-new]");
+    if (done) { sawRestaurant(done.dataset.seenNew); renderNews(); return; }
     const b = e.target.closest("[data-seen]");
     if (!b) return;
     const r = byId(b.dataset.seen);
@@ -667,7 +710,7 @@
       }
     } else if (data) {
       const n = data.restaurants.reduce((t, r) => t + r.items.filter((i) => matches(i, ts)).length, 0);
-      out += btn(UK, n, n === 1 ? "match on the UK menus" : "matches on the UK menus");
+      out += btn(UK, n, (n === 1 ? "match" : "matches") + " on the UK menus (UK branches only)");
     }
     return out;
   }
@@ -759,7 +802,7 @@
             esc(a.tag || a.gluten.map(cap).join(" & ")) + "</span></span>" + chev + '</summary><div class="detail">' + (c ? changeNote(r, c) : "") + "<div>" +
             (a.reason ? esc(a.reason) : "Every version contains " + esc(a.gluten.join(" and ").toLowerCase()) + ".") + "</div>" +
             (a.info ? "<div>" + esc(a.info) + "</div>" : "") + (a.decided && a.decided !== a.reason ? decidedNote(a) : "") +
-            "<div>" + guideLinkHtml(r, a) + "</div>" + moreLinks(r, a) + "</div></details>";
+            moreLinks(r, a) + "</div></details>";
         }).join("") + "</div>";
       }
     }
@@ -856,17 +899,24 @@
     // first run: say what the app is, and put the other countries next to All restaurants so they're on the first screen without scrolling
     if (!welcomeNow && !store.get(SEL_KEY) && !store.get(WELCOME_KEY)) { welcomeNow = true; store.set(WELCOME_KEY, "1"); }
     $("pickWelcome").hidden = !welcomeNow;
-    const opt = (id, name, line, meta, stale, logo) =>
+    // a restaurant this phone hasn't opened since it arrived is tagged New (an out-of-date guide outranks it)
+    const opt = (id, name, line, meta, stale, logo, fresh) =>
       '<button type="button" class="pick-opt" data-r="' + esc(id) + '" aria-pressed="' + (region === UK && selected === id) + '">' + logo + '<span class="po-main"><b>' +
-      esc(name) + "</b><span>" + esc(line) + "</span></span>" + (stale ? '<span class="tag t-swap">Out of date</span>' : '<span class="po-meta">' + esc(meta) + "</span>") + "</button>";
+      esc(name) + "</b><span>" + esc(line) + "</span></span>" + (stale ? '<span class="tag t-swap">Out of date</span>' : fresh ? '<span class="tag t-any">New</span>' : '<span class="po-meta">' + esc(meta) + "</span>") + "</button>";
     const total = data.restaurants.reduce((n, r) => n + r.stats.items, 0);
     const as = areas();
     const lineOf = (r, withArea) => [r.id === last ? "Last used" : "", r.type, withArea ? r.area : "", guideLine(r)].filter(Boolean).join(" · ");
-    const one = (r, withArea) => opt(r.id, r.name, lineOf(r, withArea), r.stats.items + " items", isStale(r), logoHtml(r.name, r.logo));
+    const one = (r, withArea) => opt(r.id, r.name, lineOf(r, withArea), r.stats.items + " items", isStale(r), logoHtml(r.name, r.logo), isNew(r));
     const grouped = as.length > 1
       ? as.map((a) => '<div class="sub-h">' + esc(a) + "</div>" + chooserOrder(data.restaurants.filter((r) => r.area === a)).map((r) => one(r, false)).join("")).join("") +
-        chooserOrder(data.restaurants.filter((r) => !r.area)).map((r) => opt(r.id, r.name, r.type, r.stats.items + " items", isStale(r), logoHtml(r.name, r.logo))).join("")
+        chooserOrder(data.restaurants.filter((r) => !r.area)).map((r) => opt(r.id, r.name, r.type, r.stats.items + " items", isStale(r), logoHtml(r.name, r.logo), isNew(r))).join("")
       : chooserOrder(data.restaurants).map((r) => one(r, true)).join("");
+    // the chains within a kilometre, while the look-around's answer is fresh: nearest first, with distance and hours
+    const near = nearAnswer();
+    const nearGroup = near ? '<div class="sub-h">Near you</div>' + near.rows.slice(0, 3).map((x) => {
+      const r = byId(x.rid);
+      return r ? opt(r.id, r.name, [metres(x.km), openText(x.hours), x.where].filter(Boolean).join(" · "), r.stats.items + " items", isStale(r), logoHtml(r.name, r.logo), isNew(r)) : "";
+    }).join("") : "";
     // other countries (cities.json) are hand-checked lists of places rather than menus, so they switch region instead of restaurant.
     // They're listed like the restaurants: the country, with its city and what the list holds underneath.
     const intl = Object.entries(cities).map(([cid, c]) =>
@@ -877,7 +927,7 @@
       '<span class="po-meta">' + c.places.length + " places</span></button>").join("");
     const intlGroup = intl ? '<div class="sub-h">International</div>' + intl : "";
     const all = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false, logoHtml("All restaurants", "icons/icon-192.png"));
-    $("pickList").innerHTML = '<div class="sub-h">' + (welcomeNow ? "Choose where" : "UK") + "</div>" + all +
+    $("pickList").innerHTML = nearGroup + '<div class="sub-h">' + (welcomeNow ? "Choose where" : "UK") + "</div>" + all +
       (welcomeNow ? intlGroup + '<div class="sub-h">Or one UK restaurant</div>' + grouped : grouped + intlGroup) +
       '<p class="pick-note">More restaurants can be added by the app\'s owner from each restaurant\'s allergen guide.</p><p class="pick-share">' + addMenuLink + "</p>";
   }
@@ -934,7 +984,7 @@
     region = UK;
     store.set(REGION_KEY, UK);
     store.set(SEL_KEY, id);
-    if (id !== ALL) store.set(LAST_KEY, id);
+    if (id !== ALL) { store.set(LAST_KEY, id); sawRestaurant(id); }
     avoidUser = null;
     history.replaceState(null, "", id === ALL ? location.pathname : "#" + id);
     $("q").value = "";
@@ -948,8 +998,9 @@
   function renderRegion() {
     const inCity = region !== UK;
     $("region").hidden = !Object.keys(cities).length;
+    // "Abroad" rather than "International": the title shares the row, and the longer word made it wrap
     $("region").innerHTML = '<button type="button" data-region="' + UK + '" aria-pressed="' + !inCity + '">UK</button>' +
-      '<button type="button" data-region="' + INTL + '" aria-pressed="' + inCity + '">International</button>';
+      '<button type="button" data-region="' + INTL + '" aria-pressed="' + inCity + '">Abroad</button>';
     $("ukView").hidden = inCity;
     $("cityView").hidden = !inCity;
     $("status").hidden = inCity;
@@ -986,7 +1037,11 @@
     const chips = [["all", "All"], ["open", "Still open today"], ["fav", "★ Saved"]].concat(c.sections.filter((s) => c.places.some((p) => p.section === s)).map((s) => [s, s]));
     if (!chips.some(([v]) => v === cityFilter)) cityFilter = "all";
     const card = phrases[c.language];
-    $("chips").innerHTML = '<button type="button" data-nearopen aria-pressed="' + (nearSort && cityFilter === "open") + '">Open near me</button>' +
+    // with the look-around on and the phone inside the city, the chip names the nearest place still open today (no network needed)
+    const now0 = cityNow(c);
+    const nearest = nearAuto && here && inBounds(c, here) ? c.places.filter((p) => stillOpen(p, now0)).sort((a, b) => placeKm(a) - placeKm(b))[0] : null;
+    $("chips").innerHTML = '<button type="button" data-nearopen aria-pressed="' + (nearSort && cityFilter === "open") + '">' +
+      (nearest ? "Open near: " + esc(nearest.name) + " " + placeKm(nearest).toFixed(1) + " km ›" : "Open near me") + "</button>" +
       '<button type="button" data-near aria-pressed="' + nearSort + '">Near me</button>' +
       '<button type="button" data-map aria-pressed="' + mapOn + '">Map</button>' +
       chips.map(([v, l]) => chipHtml(["all", "open", "fav"].includes(v) ? v : "section", ["all", "open", "fav"].includes(v) ? "" : v, l,
@@ -1005,6 +1060,11 @@
       ". Places open, close and change, so check before you go.</p>" : "";
     $("cityTipsLabel").textContent = "Before you go (" + c.tips.length + ")";
     $("cityTips").innerHTML = tipsHtml(c.tips);
+    // after the first visit the introduction folds into one line, as a restaurant's tips do, with its full wording one tap away
+    const full = introFull(region);
+    $("cityIntroBox").hidden = !full;
+    $("cityStrip").hidden = full;
+    $("cityStripCount").textContent = "(" + c.tips.length + ")";
     const source = (a) => (safeUrl(a.url) ? '<a href="' + esc(safeUrl(a.url)) + '" target="_blank" rel="noopener" data-quote>' + esc(a.name) + "</a>" : "<span data-quote>" + esc(a.name) + "</span>") + ", kept by " + esc(a.by);
     $("cityFoot").innerHTML = "<p><b>Sources:</b> " + [c.list, ...(c.also || [])].map(source).join("; ") +
       "; and each place's own website. Checked " + esc(fmtDate(c.checked)) + ".</p>" +
@@ -1222,7 +1282,7 @@
     return '[out:json][timeout:10];(nwr["name"~"^(' + names + ')$",i]' + around + ';nwr["brand"~"^(' + names + ')$",i]' + around + ";);out center tags;";
   }
   const chainOf = (tags) => { const n = [tags.brand, tags.name].filter(Boolean).map((x) => x.toLowerCase()); return osmChains().find((r) => r.osm.some((o) => n.includes(o.toLowerCase()))) || null; };
-  // one row per chain: its nearest branch, and how many are within the kilometre
+  // one row per chain: its nearest branch (with OpenStreetMap's opening hours, if tagged), and how many are within the kilometre
   function nearRows(elements, at) {
     const best = new Map();
     for (const el of elements) {
@@ -1231,49 +1291,183 @@
       if (!r || lat == null || lon == null) continue;
       const km = kmTo({ lat, lon }, at);
       const where = el.tags["addr:street"] || "";
+      const hours = String(el.tags.opening_hours || "").slice(0, 200);
       const cur = best.get(r.id);
-      if (!cur) best.set(r.id, { rid: r.id, name: r.name, km, lat, lon, n: 1, where });
-      else { cur.n++; if (km < cur.km) Object.assign(cur, { km, lat, lon, where }); }
+      if (!cur) best.set(r.id, { rid: r.id, name: r.name, km, lat, lon, n: 1, where, hours });
+      else { cur.n++; if (km < cur.km) Object.assign(cur, { km, lat, lon, where, hours }); }
     }
     return [...best.values()].sort((a, b) => a.km - b.km);
   }
   const metres = (km) => (km < 0.95 ? Math.max(10, Math.round(km * 100) * 10) + " m" : km.toFixed(1) + " km");
+  // OpenStreetMap's opening_hours tag, read only in its plain shapes ("Mo-Fr 06:30-19:00; Sa-Su 08:00-18:00",
+  // "Mo-Su 07:00-20:00", "24/7", a trailing "PH off"): the spans for the given day, [] when closed, or null when the tag
+  // is any other shape, which is left unread rather than guessed. A later rule for the same day wins, as in the tag's own rules.
+  const OSM_DAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+  function osmToday(tag, day) {
+    tag = String(tag || "").trim();
+    if (!tag) return null;
+    if (tag === "24/7") return [[0, 1440]];
+    let spans = null;
+    for (const rule of tag.split(";")) {
+      const part = rule.trim();
+      if (!part || /^PH\b/.test(part)) continue;
+      const m = part.match(/^([A-Za-z,-]+)\s+(off|closed|[\d:,-]+)$/);
+      if (!m) return null;
+      const days = new Set();
+      for (const d of m[1].split(",")) {
+        const dm = d.match(/^(Mo|Tu|We|Th|Fr|Sa|Su)(?:-(Mo|Tu|We|Th|Fr|Sa|Su))?$/);
+        if (!dm) return null;
+        const a = OSM_DAYS.indexOf(dm[1]), b = dm[2] ? OSM_DAYS.indexOf(dm[2]) : a;
+        for (let n = a; ; n = (n + 1) % 7) { days.add(n); if (n === b) break; }
+      }
+      const got = [];
+      if (!/^(off|closed)$/.test(m[2])) {
+        for (const sp of m[2].split(",")) {
+          const tm = sp.match(/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/);
+          if (!tm) return null;
+          const open = +tm[1] * 60 + +tm[2], close = +tm[3] * 60 + +tm[4];
+          got.push([open, close <= open ? 1440 : close]); // past midnight counts as until midnight
+        }
+      }
+      if (days.has(day)) spans = got;
+    }
+    return spans;
+  }
+  // "open now" (until midnight or all day), "open until 19:00", "opens 08:00", "closed today", or "" when the hours
+  // aren't known in a plain form. The phone's own clock: the branches are in the UK.
+  function openText(tag) {
+    const now = new Date();
+    const spans = osmToday(tag, (now.getDay() + 6) % 7);
+    if (spans === null) return "";
+    const min = now.getHours() * 60 + now.getMinutes();
+    const on = spans.find(([o, c]) => o <= min && min < c);
+    if (on) return on[1] >= 1440 ? "open now" : "open until " + hhmm(on[1]);
+    const later = spans.filter(([o]) => o > min);
+    if (later.length) return "opens " + hhmm(later[0][0]);
+    return "closed today";
+  }
   function renderNear(rows, stamp, note) {
+    const hoursNote = rows.some((x) => openText(x.hours)) ? " Hours from OpenStreetMap too, which may be out of date." : "";
     $("nearBody").innerHTML = (note ? '<p class="muted">' + esc(note) + "</p>" : "") + (rows.length
-      ? '<ul class="near-list">' + rows.map((x) => '<li><span class="nm"><b>' + esc(x.name) + "</b><small>" + esc(metres(x.km)) + (x.where ? " · " + esc(x.where) : "") +
+      ? '<ul class="near-list">' + rows.map((x) => '<li><span class="nm"><b>' + esc(x.name) + "</b><small>" + esc([metres(x.km), openText(x.hours), x.where].filter(Boolean).join(" · ")) +
         (x.n > 1 ? " · " + x.n + " within 1 km" : "") + '</small></span><span class="near-btns"><button type="button" class="fav-btn" data-gonear="' + esc(x.rid) + '">Menu</button>' +
         '<a class="fav-btn" href="https://maps.apple.com/?ll=' + esc(x.lat + "," + x.lon) + "&q=" + encodeURIComponent(x.name) + '" target="_blank" rel="noopener">Directions</a></span></li>').join("") + "</ul>"
       : '<p class="empty">None of the app\'s restaurants is listed within 1 km of here.</p>') +
-      '<p class="muted">Branches from OpenStreetMap, which doesn\'t list every one' + (stamp ? ", looked up " + esc(stamp) : "") + ". Each chain's allergen guide covers all its branches.</p>";
+      '<p class="muted">Branches from OpenStreetMap, which doesn\'t list every one' + (stamp ? ", looked up " + esc(stamp) : "") + ". Each chain's allergen guide covers all its branches." + hoursNote + "</p>" +
+      // the opt-in, once, in context: the look-around each time the app opens
+      (store.get(NEAR_AUTO_KEY) === null ? '<div class="chg-note" data-near-ask><b>Look around each time the app opens?</b> The nearest chain then shows on the chip row under the search box, with no tap, using your position rounded to about 100 metres.' +
+        '<p class="tz-btns"><button type="button" class="pill-btn" data-near-auto="on">Keep checking</button><button type="button" class="link-btn" data-near-auto="off">Only when I tap</button></p></div>' : "");
   }
   const fmtWhen = (iso) => { const d = new Date(iso); return d.toDateString() === new Date().toDateString() ? "today at " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "on " + d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }); };
+  // the menus cover the chains' UK branches, so the query is only worth asking in the UK (roughly)
+  const inUK = (at) => at.lat > 49 && at.lat < 61 && at.lon > -9 && at.lon < 2;
+  const inBounds = (c, at) => !!c.bounds && c.bounds.lat[0] < at.lat && at.lat < c.bounds.lat[1] && c.bounds.lon[0] < at.lon && at.lon < c.bounds.lon[1];
+  const rounded = (at) => ({ lat: +at.lat.toFixed(3), lon: +at.lon.toFixed(3) });
+  const savedNear = () => { try { const s = JSON.parse(store.get(NEAR_KEY) || "null"); return s && Array.isArray(s.rows) ? s : null; } catch (e) { return null; } };
+  async function askOverpass(at) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 15000);
+    let res;
+    try { res = await fetch(OVERPASS, { method: "POST", body: "data=" + encodeURIComponent(overpassQuery(at)), signal: ctl.signal }); } finally { clearTimeout(timer); }
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const rows = nearRows((await res.json()).elements || [], at);
+    store.set(NEAR_KEY, JSON.stringify({ when: new Date().toISOString(), rows, at: rounded(at) }));
+    return rows;
+  }
   async function nearMe() {
     if (!data) return;
     if (!navigator.geolocation) { toast("This phone can't share its location here"); return; }
     $("nearBody").innerHTML = '<p class="empty">Finding your location…</p>';
     openDialog($("near"));
-    const saved = (() => { try { return JSON.parse(store.get(NEAR_KEY) || "null"); } catch (e) { return null; } })();
+    const saved = savedNear();
     const fallback = (why) => {
-      if (saved && Array.isArray(saved.rows)) renderNear(saved.rows, fmtWhen(saved.when), why + " This is the last answer.");
+      if (saved) renderNear(saved.rows, fmtWhen(saved.when), why + " This is the last answer.");
       else $("nearBody").innerHTML = '<p class="empty">' + esc(why) + "</p>";
     };
     let at;
     try {
       const pos = await new Promise((ok, bad) => navigator.geolocation.getCurrentPosition(ok, bad, { timeout: 10000, maximumAge: 120000 }));
       at = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+      store.set(NEAR_GRANTED, "1");
     } catch (e) { fallback("Couldn't get your location. Check Location Services for Safari in Settings."); return; }
+    if (!inUK(at)) {
+      const there = Object.keys(cities).find((id) => inBounds(cities[id], at));
+      $("nearBody").innerHTML = '<p class="empty">Near me covers the chains\' UK branches, and you\'re outside the UK.' +
+        (there ? " For " + esc(cities[there].name) + ", the Abroad side has the places and Open near me." : "") + "</p>";
+      return;
+    }
     $("nearBody").innerHTML = '<p class="empty">Looking for branches within 1 km…</p>';
     try {
-      const ctl = new AbortController();
-      const timer = setTimeout(() => ctl.abort(), 15000);
-      let res;
-      try { res = await fetch(OVERPASS, { method: "POST", body: "data=" + encodeURIComponent(overpassQuery(at)), signal: ctl.signal }); } finally { clearTimeout(timer); }
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const rows = nearRows((await res.json()).elements || [], at);
-      store.set(NEAR_KEY, JSON.stringify({ when: new Date().toISOString(), rows }));
-      renderNear(rows, "just now", "");
+      renderNear(await askOverpass(at), "just now", "");
+      if (data) renderChips();
     } catch (e) { fallback("Couldn't reach the map service (no signal, or it's busy)."); }
   }
+
+  // ---------- a look around when the app opens (opt-in): the nearest chain on the chip row, from the same query ----------
+  // Never a location prompt unasked: the automatic look only runs when the phone already reports the permission as
+  // granted (or a tap on Near me has worked before). One query at most every ten minutes, and only when the phone has
+  // moved more than 300 m from where the last answer was asked or that answer is over an hour old; nothing retried for
+  // ten minutes after an error. Outside the UK, or on a city page, only the position is taken (for the city's own chip).
+  const NEAR_AUTO_KEY = "gf-near-auto"; // "on" | "off"; unset = not asked yet
+  const NEAR_GRANTED = "gf-near-granted"; // a tap on Near me has had a position: the permission exists
+  const NEAR_EVERY_MS = 10 * 60000, NEAR_FRESH_MS = 60 * 60000, NEAR_MOVED_KM = 0.3;
+  let nearAuto = store.get(NEAR_AUTO_KEY) === "on";
+  let nearBusy = false, nearTriedAt = 0;
+  // the saved answer while it's fresh and the look-around is on, else null
+  const nearAnswer = () => { const s = savedNear(); return nearAuto && s && s.rows.length && Date.now() - new Date(s.when).getTime() < NEAR_FRESH_MS ? s : null; };
+  function nearChipText(r) {
+    if (nearBusy) return "Near me…";
+    const s = nearAnswer();
+    if (!s) return "Near me";
+    const row = (r && s.rows.find((x) => x.rid === r.id)) || s.rows[0];
+    return (r && row.rid === r.id ? "Here: " : "") + [row.name + " " + metres(row.km), openText(row.hours)].filter(Boolean).join(" · ") + " ›";
+  }
+  function locationGranted() {
+    const before = store.get(NEAR_GRANTED) === "1";
+    if (!(navigator.permissions && navigator.permissions.query)) return Promise.resolve(before);
+    return navigator.permissions.query({ name: "geolocation" }).then((p) => p.state === "granted").catch(() => before);
+  }
+  async function autoNear(userAsked) {
+    if (!nearAuto || !data || nearBusy || !navigator.geolocation) return;
+    if (!userAsked && (document.querySelector("dialog[open]") || Date.now() - nearTriedAt < NEAR_EVERY_MS || !(await locationGranted()))) return;
+    nearTriedAt = Date.now();
+    nearBusy = true;
+    if (region === UK) renderChips();
+    let at;
+    try {
+      const pos = await new Promise((ok, bad) => navigator.geolocation.getCurrentPosition(ok, bad, { timeout: 8000, maximumAge: 300000 }));
+      at = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+      store.set(NEAR_GRANTED, "1");
+    } catch (e) { nearBusy = false; if (region === UK) renderChips(); return; }
+    here = at;
+    if (region !== UK) { nearBusy = false; renderCity(); return; } // the city's chip reads from the list itself
+    const saved = savedNear();
+    const standing = saved && saved.at && kmTo(saved.at, at) <= NEAR_MOVED_KM && Date.now() - new Date(saved.when).getTime() < NEAR_FRESH_MS;
+    if (inUK(at) && !standing) {
+      try { await askOverpass(at); } catch (e) { /* no signal, or the service is busy: the chip keeps the last answer */ }
+    }
+    nearBusy = false;
+    renderChips();
+    if ($("picker").open) renderPicker();
+  }
+  function renderNearToggle() {
+    const b = $("nearAutoBtn");
+    if (!b) return;
+    b.setAttribute("aria-pressed", String(nearAuto));
+    $("nearAutoState").textContent = nearAuto ? "On: the nearest chain shows on the chip row each time the app opens." : "Off: Near me looks only when you tap it.";
+  }
+  function setNearAuto(on, fromHelp) {
+    store.set(NEAR_AUTO_KEY, on ? "on" : "off");
+    nearAuto = on;
+    renderNearToggle();
+    const ask = $("nearBody").querySelector("[data-near-ask]");
+    if (ask) ask.remove();
+    if (data && region === UK) renderChips();
+    toast(on ? "The app will look around each time it opens" : "Near me looks only when you tap it");
+    if (on) autoNear(fromHelp); // switched on from Help: this tap is the asking, so the phone may prompt once
+  }
+  $("nearAutoBtn").addEventListener("click", () => setNearAuto(!nearAuto, true));
+  renderNearToggle();
 
   // ---------- warnings page ----------
   // The guide's own warnings in the order that matters to a coeliac: cross-contact, then its gluten free claim, then updates
@@ -1296,7 +1490,7 @@
     if (selected === ALL) html += '<h3 class="w-rest">' + esc(r.name) + "</h3>";
     // a restaurant's own tips lead its page of the sheet, so they're one tap away once folded off the first screen
     if (selected !== ALL && r.tips && r.tips.length) html += '<h4>How to order</h4><div class="rules w-tips">' + tipsHtml(r.tips) + "</div>";
-    html += '<p class="muted">From ' + esc(plainGuideName(r)) +
+    html += '<p class="muted">From ' + esc(plainGuideName(r)) + (r.area ? ", which covers its " + esc(r.area) + " branches" : "") +
       ((sinceLooked(r) || r.changes) ? '. <button type="button" class="link-btn" data-whatchanged="' + esc(r.id) + '">What changed, noticed ' +
         esc(fmtDate((sinceLooked(r) || r.changes).date)) + " &rsaquo;</button>" : ".") + "</p>";
     if (groups.length) {
@@ -1644,6 +1838,9 @@
     $("keySetup").hidden = has;
     $("uploadFields").hidden = !has;
     $("repoName").textContent = repo.name;
+    // what Ask for it does from this phone: files it (with the key), or passes it to the owner as a link
+    $("reqHow").textContent = has ? "Know somewhere that should be here? Its own allergen information is looked up and added for you to approve."
+      : "Know somewhere that should be here? From this phone it goes to the app's owner as a link; one tap there files it, and its own allergen information is then looked up and added once the owner approves.";
   }
   function openAddMenu() {
     ["info", "picker"].forEach((id) => { if ($(id).open) $(id).close(); });
@@ -1862,11 +2059,13 @@
   function renderRequests() {
     const el = $("reqList");
     el.hidden = !requests.length;
+    // honest about where each one stands: in the app, or asked on a date and not in yet (and after a week, worth asking about)
     el.innerHTML = requests.length ? "<p><b>Asked for from this phone</b></p><ul class=\"req-list\">" + requests.slice().reverse().map((q) => {
       const r = inApp(q.name);
+      const old = Date.now() - new Date(q.at || 0).getTime() > 7 * 864e5;
       return "<li>" + esc(q.name) + (q.area ? " (" + esc(q.area) + ")" : "") + ": " + (r
         ? 'in the app <button type="button" class="link-btn" data-gotorest-req="' + esc(r.id) + '">Open &rsaquo;</button>'
-        : (q.how === "filed" ? "sent for adding " : "sent to the owner ") + esc(fmtDate(String(q.at || "").slice(0, 10)))) + "</li>";
+        : (q.how === "filed" ? "asked " : "sent to the owner ") + esc(fmtDate(String(q.at || "").slice(0, 10))) + " · not in the app yet" + (old ? " · ask the owner whether it was found" : "")) + "</li>";
     }).join("") + "</ul>" : "";
   }
   const requestLink = (q) => appUrl() + "#request=" + toB64url(JSON.stringify({ v: 1, name: q.name, area: q.area, url: q.url }));
@@ -2162,6 +2361,7 @@
       if (changed) {
         if (!prev && firstVisit && !store.get(SEEN_KEY)) store.set(SEEN_KEY, JSON.stringify(fresh.restaurants.map((r) => r.id + "@" + r.source)));
         setLooked(fresh.restaurants, true); // a restaurant new to this phone starts from what it shows now
+        noteNewRestaurants(fresh.restaurants); // and is marked New until it's opened
       }
       if (!prev || prev.built !== fresh.built) {
         data = fresh;
@@ -2252,6 +2452,7 @@
     map: () => { mapOn = !mapOn; renderCity(); },
     placeOpen: (name) => openPlaceRow(name),
     nearUk: () => nearMe(),
+    nearAuto: (v) => setNearAuto(v === "on", false),
     gonear: (rid) => { $("near").close(); select(rid); },
     say: (n) => { const p = phrases[cardLang]; if (p && p.card[n]) say(p.card[n].text, cardLang); },
     gotorestReq: (rid) => { $("upload").close(); select(rid); },
@@ -2450,7 +2651,7 @@
   if (saved) {
     try { data = JSON.parse(saved); } catch (e) { data = null; }
   }
-  if (data) setLooked(data.restaurants, true); // the menus saved on this phone are the ones you last saw
+  if (data) { setLooked(data.restaurants, true); noteNewRestaurants(data.restaurants); } // the menus saved on this phone are the ones you last saw
   // a link to a restaurant opens the UK menus; any other link (#berlin) is taken as a city until cities.json says otherwise
   if (hashRid) region = data && byId(hashRid) ? UK : hashRid;
   selected = (region === UK && hashRid) || store.get(SEL_KEY) || ALL;
@@ -2475,12 +2676,13 @@
       if (data.restaurants.length === 1) select(data.restaurants[0].id);
       else { renderPicker(); openDialog($("picker")); }
     }
+    autoNear(false); // the look around, if it's been switched on
   });
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible") return;
     if ($("staff").open || $("gfcard").open) keepAwake();
     checkForUpdate();
-    load(false);
+    load(false).then(() => autoNear(false));
     renderTzOffer();
     if (city()) renderCityList(); // open or closed may have changed while the app was in the background
   });
