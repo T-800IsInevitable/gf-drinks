@@ -8,7 +8,7 @@ For every restaurant page and the "All restaurants" page it checks:
   * nothing wider than the screen (no sideways scrolling)
   * the list shows items
 the same for each city page in cities.json (every place shown and opened), then
-the three sections above the title (UK franchises, UK cities, International):
+the three sections above the title (Chains, UK cities, Abroad):
 UK -> International (search, coeliac card, reload) -> UK, each section's
 chooser listing its own cities, each section remembering its city; each UK city
 listing the chains with branches there, a row opening the menu; the order builder (parts
@@ -535,7 +535,7 @@ def check_every_page(env):
 def want_sections(cities):
     """The header's sections (site/app.js SECTIONS): UK franchises always, then each city group that has a city."""
     groups = {c.get("group") for c in cities.values()}
-    return ["UK franchises"] + ["UK cities"] * ("uk" in groups) + ["International"] * (any(g != "uk" for g in groups))
+    return ["Chains"] + ["UK cities"] * ("uk" in groups) + ["Abroad"] * (any(g != "uk" for g in groups))
 
 
 def served_branches():
@@ -633,7 +633,7 @@ def check_the_berlin_page_in_light(env):
     ukc = [c for c, city in cities.items() if city.get("group") == "uk"]
     # the sections sit on their own row above the title (the chooser) and the search box, in this order
     labels = [b.strip() for b in page.locator("#region button").all_inner_texts()]
-    if labels != ["UK franchises"] + ["UK cities"] * bool(ukc) + ["International"] * bool(intl):
+    if labels != want_sections(cities):
         problems.append(f"the sections read {labels}")
     order = page.evaluate("[...document.querySelector('.top').children].map((el) => el.id || el.className)")
     if order[:3] != ["region", "titlebar", "search"]:
@@ -716,17 +716,20 @@ def check_berlin_on_a_sunday_evening(env):
             problems.append(f"{cid} Sunday 19:00: {pl['name']} ({hrs}) doesn't say Open now")
         if hrs and max(closes(h) for h in hrs) <= 19 * 60 and "Closed now" not in row:
             problems.append(f"{cid} Sunday 19:00: {pl['name']} ({hrs}) doesn't say Closed now")
-    page.locator('#chips [data-kind="open"]').click()
+    # Open near me: what's still open today, nearest first, in one chip
+    page.locator("#chips [data-nearopen]").click()
+    page.wait_for_selector('#chips [data-nearopen][aria-pressed="true"]')
     want = sorted(pl["name"] for pl in cities[cid]["places"] if any(closes(h) > 19 * 60 for h in sunday(pl)))
     if sorted(shown()) != want:
         problems.append(f"{cid} still open today (Sunday 19:00): shows {sorted(shown())}, expected {want}")
-    page.locator('#chips [data-kind="all"]').click()
-    page.locator("#chips [data-near]").click()
-    page.wait_for_timeout(500)
-    nearest = nearest_places(cities[cid], alex)
+    nearest = [pl for pl in nearest_places(cities[cid], alex) if pl["name"] in want]
     if shown()[:3] != [pl["name"] for pl in nearest[:3]]:
-        problems.append(f"{cid} near me: starts {shown()[:3]}, expected {[pl['name'] for pl in nearest[:3]]}")
-    page.locator("#chips [data-near]").click()
+        problems.append(f"{cid} open near me: starts {shown()[:3]}, expected {[pl['name'] for pl in nearest[:3]]}")
+    page.locator("#chips [data-nearopen]").click()
+    # the row: the language card first, then All, Open near me, Favourites; no separate Near me or Still open today
+    order = page.evaluate("[...document.querySelectorAll('#chips button')].map((b) => b.dataset.card !== undefined ? 'card' : b.dataset.nearopen !== undefined ? 'nearopen' : b.dataset.map !== undefined ? 'map' : b.dataset.kind || '?')")
+    if order[:4] != ["card", "all", "nearopen", "fav"] or order[-1] != "map" or "open" in order or page.locator("#chips [data-near]").count():
+        problems.append(f"{cid}: the chips run {order}, expected the card, All, Open near me, Favourites, then sections, Map last")
     # a street name isn't a day: searching a weekday finds only places whose own words hold it, never one by its address
     for day in ("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag", "maandag", "zondag"):
         page.locator("#q").fill(day)
@@ -810,25 +813,25 @@ def check_final_review(env):
     lines_now = lambda: {r["name"]: r["today"] for r in page.evaluate(  # noqa: E731
         "[...document.querySelectorAll('#cityList .row')].map((r) => ({ name: r.dataset.place, today: (r.querySelector('.today') || {}).textContent || '' }))")}
 
-    def expect(label, day, minute, at=None):
+    def expect(label, day, minute, at=None, shown_only=False):
         got = lines_now()
         for pl in c["places"]:
+            if shown_only and pl["name"] not in got:  # Open near me shows only what's still open
+                continue
             want = expected_today(pl, day, minute, at)
             if not got.get(pl["name"], "").startswith(want):
                 problems.append(f"{cid} {label}: {pl['name']} says {got.get(pl['name'])!r}, expected {want!r} from its hours")
     page.clock.set_fixed_time("2026-11-03T15:00:00+01:00")  # Tuesday 15:00
     page.goto(base + f"#{cid}")
     page.wait_for_selector("#cityList .row")
-    page.locator("#chips [data-near]").click()
+    page.locator("#chips [data-nearopen]").click()
     page.wait_for_timeout(500)
-    expect("Tuesday 15:00 with Near me", 1, 15 * 60, geo)
-    page.locator("#chips [data-near]").click()
-    page.locator('#chips [data-kind="open"]').click()
+    expect("Tuesday 15:00 with Open near me", 1, 15 * 60, geo, shown_only=True)
     page.evaluate("window.scrollTo(0, 0)")
     top = page.locator("#cityList .row").first.bounding_box()["y"] if page.locator("#cityList .row").count() else 0
     if top > 450:
         problems.append(f"{cid}: after choosing a filter the first result is at y={top:.0f}, below the fold")
-    page.locator('#chips [data-kind="all"]').click()
+    page.locator("#chips [data-nearopen]").click()
     page.clock.set_fixed_time("2026-11-02T13:00:00+01:00")
     page.reload()
     page.wait_for_selector("#cityList .row")
@@ -990,9 +993,15 @@ def check_first_visit(env):
     page.locator(f"#pickList [data-r=\"{ids[0]}\"]").click()
     page.wait_for_selector("#list .row")
     # wording: the guides do call some (avoided) items gluten free, so don't say they never use the words
-    if "don't claim their food is gluten free" in page.locator("#certText").inner_text():
+    if "don't claim their food is gluten free" in (page.locator("#certText").text_content() or ""):
         problems.append("certified note says the restaurants don't claim their food is gluten free")
-    page.locator("#openWarnings").click()
+    # the first visit to the menus: the restaurant chosen from the welcome has the card in full, though All was
+    # drawn behind the chooser first
+    if not page.locator("#certNote").is_visible():
+        problems.append("first visit: the restaurant chosen first doesn't show the certified-or-not card in full")
+        page.locator("#openStrip").click()
+    else:
+        page.locator("#openWarnings").click()
     page.wait_for_selector("#warnings[open]")
     if "none of these guides use" in page.locator("#warnBody").inner_text():
         problems.append("warnings intro says none of the guides use the words gluten free")
@@ -1217,9 +1226,10 @@ def check_wording(env):
 def check_u1_content_first(env):
     base, ids, cities, browser = env.base, env.ids, env.cities, env.browser
     problems = []
-    # U1, content first: a page's first visit shows its tips and the certified-or-not card in full; after that they
-    # fold into one line, the menu starts in the top half of the screen with at least four items showing (an
-    # out-of-date banner, kept in full, may push it down by its own height), and every folded word is in the sheet
+    # U1, content first: the first menu page ever opened shows the certified-or-not card (and the first tip) in full;
+    # after that, and on every other restaurant's first visit, it's one line, the menu starts in the top half of the
+    # screen with at least four items showing (an out-of-date banner, kept in full on its own restaurant's page, may
+    # push it down by its own height), and every folded word is in the sheet
     half = IPHONE["viewport"]["height"] / 2
     ctx = browser.new_context(color_scheme="light", **IPHONE)
     ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
@@ -1234,12 +1244,15 @@ def check_u1_content_first(env):
             page.reload()  # a hash change keeps the last city's folds open
         page.wait_for_selector("#cityList .row" if in_city else "#list .row")
         if not in_city:
-            if not page.locator("#certNote").is_visible() or page.locator("#openStrip").is_visible():
-                problems.append(f"{where}: the first visit doesn't show the full certified-or-not card")
-            page.reload()  # the second visit: folded
-            page.wait_for_selector("#list .row")
+            if not url:  # the first menu page ever: the card in full, with at most one tip above it
+                if not page.locator("#certNote").is_visible() or page.locator("#openStrip").is_visible() or page.locator("#tips > div").count() > 1:
+                    problems.append(f"{where}: the first menu page doesn't show the full card with at most one tip")
+                page.reload()  # the second visit: folded
+                page.wait_for_selector("#list .row")
             if page.locator("#certNote").is_visible() or page.locator("#tips").is_visible() or not page.locator("#openStrip").is_visible():
-                problems.append(f"{where}: on a second visit the tips and card don't fold into one line")
+                problems.append(f"{where}: the card and tips don't fold into one line (on a restaurant's first visit too)")
+            if not url and page.locator("#stale").is_visible():
+                problems.append("all restaurants: an out-of-date guide shows as a banner, not in the folded line")
         page.wait_for_timeout(300)
         m = page.evaluate(FIRST_SCREEN_JS, "#cityList" if in_city else "#list")
         # and again in a wide font: the iPhone's font isn't the test machine's, so the layout needs room to spare
@@ -1362,7 +1375,8 @@ def check_u2_and_u3(env):
                 problems.append(f"{where}{label}: {len(bad)} tags wrap or aren't under the name, such as {bad[0]['text']!r}")
             buttons = page.evaluate(status_js)
             hs, dots, cnts = [b["h"] for b in buttons], {b["dot"] for b in buttons}, {b["cnt"] for b in buttons}
-            if len(buttons) != 3 or max(hs) - min(hs) > 1 or max(hs) > 64 or len(dots) > 1 or len(cnts) > 1:
+            # two when "Needs a change" has nothing in it (it isn't shown); the dot sits beside the count, each in a line
+            if len(buttons) not in (2, 3) or max(hs) - min(hs) > 1 or max(hs) > 64 or len(dots) > 1 or len(cnts) > 1:
                 problems.append(f"{where}{label}: the status buttons aren't one even row (heights {hs}, dots at {sorted(dots)}, counts at {sorted(cnts)})")
             if style:
                 style.remove()
@@ -1374,7 +1388,7 @@ def check_u2_and_u3(env):
 def check_u4_and_u5(env):
     base, browser = env.base, env.browser
     problems = []
-    # U4 and U5: on All an out-of-date guide is one line pointing to its page (the full banner stays there), and the
+    # U4 and U5: on All an out-of-date guide is the chooser's tag and a few words in the folded line (the full banner stays on its page), and the
     # header is lighter: the UK / Berlin switch is in the title row, the search box has the full width, share is in
     # the chooser and refresh in Help beside when it last worked
     ctx = browser.new_context(color_scheme="light", **IPHONE)
@@ -1382,18 +1396,24 @@ def check_u4_and_u5(env):
     page = ctx.new_page()
     page.goto(base)
     page.wait_for_selector("#list .row")
-    stale_text = page.locator("#stale").inner_text() if page.locator("#stale").is_visible() else ""
-    wide_style = add_css(page, '* { font-family: Verdana, "DejaVu Sans", sans-serif !important; }')  # the test machine's fonts differ from the phone's
-    page.wait_for_timeout(150)
-    wide_height = page.locator("#stale").bounding_box()["height"] if page.locator("#stale").is_visible() else 0
-    wide_style.remove()
-    if not stale_text or max(page.locator("#stale").bounding_box()["height"], wide_height) > 70 or "may be out of date" not in stale_text:
-        problems.append(f"all restaurants: the out-of-date guides aren't one short line ({stale_text!r}, {wide_height:.0f}pt in a wide font)")
-    else:
-        page.locator("#stale [data-gotorest]").first.click()
+    # an out-of-date guide isn't a banner on All: it's the chooser's Out of date tag, a few words in the folded line,
+    # and the full banner on its own page
+    page.reload()  # the second visit: the card folded into its line
+    page.wait_for_selector("#list .row")
+    page.locator("#pickBtn").click()
+    page.wait_for_selector("#picker[open]")
+    stale_ids = page.evaluate("[...document.querySelectorAll('#pickList .pick-opt[data-r]')].filter((b) => /Out of date/.test(b.textContent)).map((b) => b.dataset.r)")
+    page.keyboard.press("Escape")
+    if stale_ids:
+        if page.locator("#stale").is_visible():
+            problems.append("all restaurants: an out-of-date guide shows as a banner")
+        if "may be out of date" not in page.locator("#stripText").inner_text():
+            problems.append("all restaurants: the folded line doesn't say a guide may be out of date")
+        page.goto(base + "#" + stale_ids[0])
         page.wait_for_selector("#list .row")
         if "It covered up to" not in page.locator("#stale").inner_text():
-            problems.append("the out-of-date line on All doesn't lead to the restaurant's full banner")
+            problems.append(f"{stale_ids[0]}: its own page doesn't have the full out-of-date banner")
+    stale_text = ", ".join(stale_ids)
     page.goto(base)
     page.wait_for_selector("#list .row")
     if page.locator("#shareBtn").is_visible() or page.locator("#refreshBtn").is_visible():
@@ -1420,7 +1440,7 @@ def check_u4_and_u5(env):
     page.wait_for_selector("#refreshBtn:not([disabled])")
     if not page.locator("#lastChecked").inner_text().startswith("Last checked today at"):
         problems.append(f"Help: after Check for new menus it says {page.locator('#lastChecked').inner_text()!r}")
-    print(f"header: the sections on a row above the title, search {search['width']:.0f}pt wide; All's stale line one line; share in the chooser; refresh in Help")
+    print(f"header: the sections on a row above the title, search {search['width']:.0f}pt wide; out-of-date guides tagged in the chooser and named in All's folded line; share in the chooser; refresh in Help")
     ctx.close()
     return problems
 
@@ -1571,15 +1591,19 @@ def check_u11(env):
 def check_u12(env):
     base, ids, cid, browser = env.base, env.ids, env.cid, env.browser
     problems = []
-    # U12: the first run's chooser says what the app is, what the colours mean and that nothing is certified, with
-    # its pointer to the sections switch (the way to the cities) still on the first screen; once left, it doesn't come back
+    # U12: the first run's chooser says what the app is and that nothing is certified, in two short paragraphs (the
+    # colours are on the count buttons and in Help), with its pointer to the sections switch (the way to the cities)
+    # and All restaurants on the first screen; once left, it doesn't come back
     ctx = browser.new_context(color_scheme="light", **IPHONE)
     page = ctx.new_page()
     page.goto(base)
     page.wait_for_selector("#picker[open]")
     welcome = norm_ws(page.locator("#pickWelcome").inner_text()) if page.locator("#pickWelcome").is_visible() else ""
-    if not all(w in welcome for w in ("Green", "Amber", "Red", "Nothing here is certified gluten free")):
+    if "Nothing here is certified gluten free" not in welcome or page.locator("#pickWelcome p").count() > 2:
         problems.append(f"first run: the welcome is {welcome!r}")
+    all_opt = page.locator('#pickList [data-r="all"]').bounding_box()
+    if all_opt["y"] + all_opt["height"] > IPHONE["viewport"]["height"]:
+        problems.append(f"first run: All restaurants ends at {all_opt['y'] + all_opt['height']:.0f}pt, below the first screen")
     for s in page.evaluate(WORDING_JS):
         problems.append(f"first run welcome calls something gluten free in the app's own voice: {s!r}")
     berlin = page.locator("#pickWelcome p").last.bounding_box()  # the line about UK cities and International
@@ -1592,7 +1616,7 @@ def check_u12(env):
     page.wait_for_selector("#picker[open]")
     if page.locator("#pickWelcome").is_visible():
         problems.append("the welcome shows again once a restaurant has been chosen")
-    print(f"first run: welcome says what green, amber and red mean; its line about the cities ends at {berlin['y'] + berlin['height']:.0f}pt")
+    print(f"first run: a two-paragraph welcome, its line about the cities ending at {berlin['y'] + berlin['height']:.0f}pt, All restaurants on the first screen")
     ctx.close()
     return problems
 
@@ -1904,13 +1928,44 @@ def check_s3(env):
     page.locator("#chips [data-nearopen]").click()
     page.wait_for_selector('#chips [data-nearopen][aria-pressed="true"]')
     open_nearest = [pl["name"] for pl in nearest if any(closes(h) > 19 * 60 for h in sunday(pl))]
-    states = {"near": pressed("[data-near]"), "open": pressed("[data-kind='open']"), "all": pressed("[data-kind='all']")}
-    if listed() != open_nearest or states != {"near": "true", "open": "true", "all": "false"}:
+    states = {"all": pressed("[data-kind='all']")}
+    if listed() != open_nearest or states != {"all": "false"}:
         problems.append(f"Open near me: shows {listed()}, expected {open_nearest}; chips pressed: {states}")
     page.locator("#chips [data-nearopen]").click()
-    if pressed("[data-nearopen]") != "false" or pressed("[data-near]") != "false" or pressed('[data-kind="all"]') != "true":
+    if pressed("[data-nearopen]") != "false" or pressed('[data-kind="all"]') != "true":
         problems.append("Open near me: a second tap doesn't turn it off")
-    print(f"open near me: {len(open_nearest)} places open on Sunday evening, nearest first, one tap on, one tap off")
+    # the distance order doesn't follow you to another city (a small one has no chip to turn it off), and All clears it
+    page.locator("#chips [data-nearopen]").click()
+    page.wait_for_selector('#chips [data-nearopen][aria-pressed="true"]')
+    small = next((c for c, city in cities.items() if len(city["places"]) < 4), None)
+    if small:
+        page.goto(base + f"#{small}")
+        page.wait_for_selector("#cityList .row")
+        if page.evaluate("document.body.classList.contains('searching')"):
+            problems.append(f"Open near me in {cid} left {small} sorted by distance, its introduction hidden, with no chip to undo it")
+        page.goto(base + f"#{cid}")
+        page.wait_for_selector("#cityList .row")
+    page.locator("#chips [data-nearopen]").click()
+    page.wait_for_selector('#chips [data-nearopen][aria-pressed="true"]')
+    page.locator('#chips [data-kind="all"]').click()
+    if page.evaluate("document.body.classList.contains('searching')") or pressed('[data-kind="all"]') != "true":
+        problems.append("Open near me: All doesn't clear its distance order")
+    ctx.close()
+    # with location refused it shows what's open today, pressed, and a second tap turns it off
+    ctx = browser.new_context(color_scheme="light", **IPHONE)
+    page = ctx.new_page()
+    page.clock.set_fixed_time("2026-11-01T19:00:00+01:00")
+    page.goto(base + f"#{cid}")
+    page.wait_for_selector("#cityList .row")
+    page.locator("#chips [data-nearopen]").click()
+    page.wait_for_selector('#chips [data-nearopen][aria-pressed="true"]')
+    if sorted(listed()) != sorted(open_nearest):
+        problems.append(f"Open near me without location: shows {sorted(listed())}, expected what's open today {sorted(open_nearest)}")
+    page.locator("#chips [data-nearopen]").click()
+    if pressed("[data-nearopen]") != "false" or pressed('[data-kind="all"]') != "true":
+        problems.append("Open near me without location: a second tap doesn't turn it off")
+    print(f"open near me: {len(open_nearest)} places open on Sunday evening, nearest first, one tap on, one tap off; "
+          "not carried to another city, cleared by All; without location, what's open today, pressed")
     ctx.close()
     return problems
 
@@ -2605,13 +2660,14 @@ def check_tap_through_one_restaurant(env):
     page.evaluate("window.scrollTo(0, 0)")  # scrolling down folds the filters away; scroll up as a person would
     page.wait_for_selector(".top:not(.collapsed)")
     page.wait_for_timeout(300)
-    page.locator('#status [data-k="change"]').click()
+    # Avoid: always shown (Needs a change isn't, on a menu with nothing in it, such as this one may be)
+    page.locator('#status [data-k="gluten"]').click()
     after = page.locator("#list .row").count()
     if after > before:
         problems.append(f"Status button: list grew from {before} to {after} rows")
     page.reload()
     page.wait_for_selector("#list .row, #list .empty")
-    if page.locator('#status [data-k="change"]').get_attribute("aria-pressed") != "true":
+    if page.locator('#status [data-k="gluten"]').get_attribute("aria-pressed") != "true":
         problems.append("Status button choice wasn't remembered after reloading")
     problems += [f"tap-through: {e}" for e in errors]
     print(f"tap-through on {ids[0]}: staff card for {name!r}, status filter {before} -> {after} rows")

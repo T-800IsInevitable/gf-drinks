@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 32;
+  const APP_VERSION = 33;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -20,7 +20,7 @@
   const REGION_KEY = "gf-region";
   const ALL = "all";
   const UK = "uk"; // the restaurant menus; any other region is a city in cities.json
-  // the header's sections: UK franchises (the chains' menus, region UK), UK cities and International (cities.json, by
+  // the header's sections: Chains (the chains' menus, region UK), UK cities and Abroad (cities.json, by
   // "group"). Each city section goes back to the city last looked at in it.
   const UKC = "ukcity", INTL = "intl";
   const $ = (id) => document.getElementById(id);
@@ -439,6 +439,7 @@
     const nearChip = osmChains().length ? '<button type="button" data-near-uk>' + esc(nearChipText(r)) + "</button>" : "";
     $("chips").innerHTML = chips.map((c) => chipHtml(c.kind, c.value, c.label, sameFilter(c, filter)) +
       (c.kind === "fav" ? (r ? '<button type="button" data-order-open>' + orderChipText(r) + "</button>" : "") + nearChip : "")).join("");
+    $("chips").hidden = false; // a city with a few places hides the row
   }
   const orderChipText = (r) => { const n = orderItems(r).length; return n ? "Your order (" + n + ") &rsaquo;" : "Build an order"; };
 
@@ -459,16 +460,18 @@
     renderCardLaunch();
     const r = byId(selected);
     const tips = (r && r.tips) || [];
-    const full = introFull();
-    // on All after the first visit, an out-of-date guide is a few words in the folded line (the Warnings sheet it
-    // opens says which guide); the full banner stays on that restaurant's own page
+    const full = introFull(MENUS);
+    // on All, an out-of-date guide is a few words in the folded line and the chooser's Out of date tag (the Warnings
+    // sheet says which guide); while the card is in full there's no folded line, so its one-line banner shows instead.
+    // The full banner stays on that restaurant's own page.
     if (selected === ALL && !full) $("stale").hidden = true;
-    $("tips").hidden = !full || !tips.length;
-    $("tips").innerHTML = tipsHtml(tips);
+    // the restaurant's headline tip leads, in full or folded ("Never oat milk."); every tip is in the Tips and warnings sheet
+    $("tips").hidden = !full || !(r && r.headline);
+    $("tips").innerHTML = r && r.headline ? "<div><b>" + esc(r.headline) + "</b></div>" : "";
     $("certNote").hidden = !full;
     $("openStrip").hidden = full;
     $("stripText").innerHTML = (r && r.headline ? "<b>" + esc(r.headline) + "</b> " : "") + esc(certShort(scope())) +
-      (selected === ALL && !full && stale.length ? " " + stale.length + (stale.length === 1 ? " guide" : " guides") + " may be out of date." : "");
+      (selected === ALL && stale.length ? " " + stale.length + (stale.length === 1 ? " guide" : " guides") + " may be out of date." : "");
     $("stripLabel").textContent = tips.length ? "Tips and warnings" : "Warnings";
   }
   const tipsHtml = (tips) => tips.map((t) => {
@@ -476,20 +479,24 @@
     return "<div>" + (m ? "<b>" + esc(m[1]) + "</b> " + esc(m[2]) : esc(t)) + "</div>";
   }).join("");
 
-  // The first time each page (a restaurant, or All) is opened, its tips and the certified-or-not card show in full.
-  // After that they fold into one line (#strip), with every word of them in the Tips and warnings sheet.
+  // The first visit to the menus (whichever page: a restaurant, or All) shows the certified-or-not card in full until
+  // Got it or the app is next opened; every other time it's one line (#strip) above the menu, with every word of it
+  // and the tips in the Tips and warnings sheet. A city's introduction folds the same way, per city.
   const INTRO_KEY = "gf-intro-seen";
+  const MENUS = "menus"; // the menus' card is read once, not once per restaurant: the food comes first
   const introNow = new Set(); // shown in full during this visit, so the card doesn't fold away while it's being read
-  function introFull(key = selected) { // a restaurant, All, or a city (its introduction folds the same way)
+  function introFull(key) { // MENUS, or a city (its introduction folds the same way)
     if (introNow.has(key)) return true;
     const seen = new Set(JSON.parse(store.get(INTRO_KEY) || "[]"));
-    if (seen.has(key)) return false;
+    // a phone from before release 33 marked each restaurant (and All) it had seen: any of those means the card was read
+    // (checked against the menus, which are loaded whenever this is asked, not cities.json, which may not be yet)
+    if (seen.has(key) || (key === MENUS && [...seen].some((k) => k === ALL || byId(k)))) return false;
     seen.add(key);
     store.set(INTRO_KEY, JSON.stringify([...seen]));
     introNow.add(key);
     return true;
   }
-  $("introDone").addEventListener("click", () => { introNow.delete(selected); renderBanners(); });
+  $("introDone").addEventListener("click", () => { introNow.delete(MENUS); renderBanners(); });
   $("cityStrip").addEventListener("click", () => { introNow.add(region); renderCity(); }); // the folded city introduction, in full for this visit
   // The certified-or-not card in a few words, for the folded line
   function certShort(rs) {
@@ -823,11 +830,14 @@
     for (const r of rs) {
       for (const i of items.get(r).concat(avoid.get(r))) n[kindOf(i)]++;
     }
-    // dot and count on one line, the label under them, so the three buttons are one even row
-    const b = (k, cls, label) => '<button type="button" data-k="' + k + '" aria-pressed="' + pick[k] + '"><span class="dot ' + cls + '"></span>' +
-      '<span class="lbl">' + label + '</span> <span class="cnt">' + n[k] + "</span></button>";
+    // dot and count together on one line, the label under them, so the buttons are one even row. "Needs a change"
+    // with nothing in it (Pret) isn't shown, unless it's the one chosen
+    const shown = (k) => n[k] > 0 || pick[k] || k !== "change";
+    const b = (k, cls, label) => (shown(k) ? '<button type="button" data-k="' + k + '" aria-pressed="' + pick[k] + '"><span class="num"><span class="dot ' + cls + '"></span>' +
+      '<span class="cnt">' + n[k] + '</span></span> <span class="lbl">' + label + "</span></button>" : "");
     $("status").classList.toggle("picking", picking());
-    $("status").innerHTML =b("straight", "d-ok", "No gluten ingredients") + b("change", "d-swap", "Needs a change") + b("gluten", "d-bad", "Avoid");
+    $("status").classList.toggle("two", !shown("change"));
+    $("status").innerHTML = b("straight", "d-ok", "No gluten ingredients") + b("change", "d-swap", "Needs a change") + b("gluten", "d-bad", "Avoid");
   }
 
   // each theme's swatch is a class in styles.css (.sw-auto and so on), so no inline styles are needed anywhere
@@ -897,10 +907,10 @@
     const rank = (r) => (r.id === last ? 0 : hasFavs(r) ? 1 : 2);
     return rs.slice().sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
   }
-  // A city section's chooser lists that section's cities; UK franchises' lists the restaurants.
+  // A city section's chooser lists that section's cities; Chains' lists the restaurants.
   function renderPicker() {
     const s = sectionOf(region);
-    $("pickerTitle").textContent = s === UK ? "Where to eat" : s === UKC ? "UK cities" : "International cities";
+    $("pickerTitle").textContent = s === UK ? "Where to eat" : s === UKC ? "UK cities" : "Abroad";
     if (s !== UK) {
       $("pickWelcome").hidden = true;
       $("pickList").innerHTML = citiesIn(s).map((cid) => {
@@ -938,7 +948,7 @@
     }).join("") : "";
     // the cities are in their own sections (the switch above), so this lists the restaurants only
     const all = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false, logoHtml("All restaurants", "icons/icon-192.png"));
-    $("pickList").innerHTML = nearGroup + '<div class="sub-h">' + (welcomeNow ? "Choose where" : "UK franchises") + "</div>" + all +
+    $("pickList").innerHTML = nearGroup + '<div class="sub-h">' + (welcomeNow ? "Choose where" : "Chains") + "</div>" + all +
       (welcomeNow ? '<div class="sub-h">Or one restaurant</div>' : "") + grouped +
       '<p class="pick-note">More restaurants can be added by the app\'s owner from each restaurant\'s allergen guide.</p><p class="pick-share">' + addMenuLink + "</p>";
   }
@@ -1003,14 +1013,14 @@
     window.scrollTo({ top: 0 });
   }
 
-  // ---------- the sections: UK franchises, UK cities, International. A city is a hand-checked list of places (cities.json), not menus ----------
-  // A city section goes to the city last looked at in it (the chooser picks another); UK franchises goes back to the menus.
+  // ---------- the sections: Chains, UK cities, Abroad. A city is a hand-checked list of places (cities.json), not menus ----------
+  // A city section goes to the city last looked at in it (the chooser picks another); Chains goes back to the menus.
   const LAST_CITY_KEY = "gf-last-city", LAST_UK_CITY_KEY = "gf-last-uk-city";
   const isUKCity = (c) => !!c && c.group === "uk";
   const sectionOf = (id) => (id === UK ? UK : isUKCity(cities[id]) ? UKC : INTL);
   const citiesIn = (s) => Object.keys(cities).filter((id) => sectionOf(id) === s);
   const lastKeyOf = (s) => (s === UKC ? LAST_UK_CITY_KEY : LAST_CITY_KEY);
-  const SECTIONS = [[UK, "UK franchises"], [UKC, "UK cities"], [INTL, "International"]];
+  const SECTIONS = [[UK, "Chains"], [UKC, "UK cities"], [INTL, "Abroad"]]; // short, so each fits one line with Larger Text
   function renderRegion() {
     const inCity = region !== UK, on = sectionOf(region);
     $("region").hidden = !Object.keys(cities).length;
@@ -1027,6 +1037,7 @@
     if (id !== UK) store.set(lastKeyOf(sectionOf(id)), id);
     $("q").value = "";
     cityFilter = "all";
+    nearSort = false; // the next city starts unsorted: it may have no chip to turn the distance order off
     mapOn = false;
     dropMap();
     history.replaceState(null, "", id !== UK ? "#" + id : selected === ALL ? location.pathname : "#" + selected);
@@ -1049,19 +1060,23 @@
     $("pickBtn").setAttribute("aria-label", c.name + ". Choose a city");
     $("guideLine").textContent = c.places.length + (c.places.length === 1 ? " place" : " places") + " · checked " + fmtDate(c.checked) + offlineTag();
     $("q").placeholder = "Search " + c.name;
-    const chips = [["all", "All"], ["open", "Still open today"], ["fav", "★ Saved"]].concat(c.sections.filter((s) => c.places.some((p) => p.section === s)).map((s) => [s, s]));
-    if (!chips.some(([v]) => v === cityFilter)) cityFilter = "all";
+    // The row, in the order it's wanted: abroad, the language card first; then All, Open near me (still open today,
+    // nearest first: one chip, where three overlapped), Favourites (the name the menus use), the sections when there's
+    // more than one, and the city's own map last. A city with a few places needs no filters, so only its card shows.
+    const few = c.places.length < 4;
+    const secs = c.sections.filter((s) => c.places.some((p) => p.section === s));
+    const chips = few ? [] : [["all", "All"], ["fav", "★ Favourites"]].concat(secs.length > 1 ? secs.map((s) => [s, s]) : []);
+    if (cityFilter !== "open" && !chips.some(([v]) => v === cityFilter)) cityFilter = "all";
     const card = phrases[c.language];
     // with the look-around on and the phone inside the city, the chip names the nearest place still open today (no network needed)
     const now0 = cityNow(c);
     const nearest = nearAuto && here && inBounds(c, here) ? c.places.filter((p) => stillOpen(p, now0)).sort((a, b) => placeKm(a) - placeKm(b))[0] : null;
-    $("chips").innerHTML = '<button type="button" data-nearopen aria-pressed="' + (nearSort && cityFilter === "open") + '">' +
-      (nearest ? "Open near: " + esc(nearest.name) + " " + placeKm(nearest).toFixed(1) + " km ›" : "Open near me") + "</button>" +
-      '<button type="button" data-near aria-pressed="' + nearSort + '">Near me</button>' +
-      '<button type="button" data-map aria-pressed="' + mapOn + '">Map</button>' +
-      chips.map(([v, l]) => chipHtml(["all", "open", "fav"].includes(v) ? v : "section", ["all", "open", "fav"].includes(v) ? "" : v, l,
-        v === cityFilter && !(v === "all" && nearSort))).join("") +
-      (card ? '<button type="button" data-card>' + esc(card.language) + " card</button>" : "");
+    const chip = ([v, l]) => chipHtml(["all", "fav"].includes(v) ? v : "section", ["all", "fav"].includes(v) ? "" : v, l, v === cityFilter && !(v === "all" && nearSort));
+    $("chips").innerHTML = (card ? '<button type="button" data-card>' + esc(card.language) + " card</button>" : "") +
+      (few ? "" : chip(chips[0]) + '<button type="button" data-nearopen aria-pressed="' + (cityFilter === "open") + '">' +
+        (nearest ? "Open near: " + esc(nearest.name) + " " + placeKm(nearest).toFixed(1) + " km ›" : "Open near me") + "</button>" +
+        chips.slice(1).map(chip).join("") + '<button type="button" data-map aria-pressed="' + mapOn + '">Map</button>');
+    $("chips").hidden = !$("chips").innerHTML;
     const n = (claim) => c.places.filter((p) => p.claim === claim).length;
     // a UK city's places were found through guides and listings rather than a coeliac society's list
     const uk = isUKCity(c);
@@ -1141,7 +1156,8 @@
     for (let i = 0; i < 7;) {
       let j = i;
       while (j < 6 && hours[j + 1] === hours[i]) j++;
-      out.push((i === j ? DAYS[i] : DAYS[i] + "–" + DAYS[j]) + " " + (hours[i] == null ? "not known" : hours[i] || "closed"));
+      // a day with a break reads "12:00–14:30 and 17:00–21:30", so the commas are only between days
+      out.push((i === j ? DAYS[i] : DAYS[i] + "–" + DAYS[j]) + " " + (hours[i] == null ? "not known" : (hours[i] || "closed").replace(/(\d:\d\d),\s*(?=\d{1,2}:\d\d)/g, "$1 and ")));
       i = j + 1;
     }
     return out.join(", ");
@@ -1168,12 +1184,12 @@
     if (p.caution) out.push('<div class="chg-note"><b>Note from this app:</b> ' + esc(p.caution) + "</div>");
     if (p.status !== "confirmed") out.push('<div class="chg-note bad"><b>Not confirmed open.</b> ' + esc(p.statusNote || "") + "</div>");
     (p.notes || []).forEach((n) => out.push("<div>" + esc(n) + "</div>"));
-    out.push(noteBox(placeFav(p)));
     out.push('<ul class="locs">' + p.locations.map((l) => '<li><a href="' + esc(mapLink(p, l)) + '" target="_blank" rel="noopener">' + esc(l.address) + "</a>" +
       "<span>" + esc([l.area, l.note].filter(Boolean).join(" · ")) + "</span>" +
       "<span>" + (l.hours ? "<b>Hours:</b> " + esc(weekText(l.hours)) + (l.kitchenCloses ? ". Kitchen closes at " + esc(l.kitchenCloses) : "") +
         (l.hoursNote ? ". " + esc(l.hoursNote) : "") + " (from its website, " + esc(fmtDate(p.checked || c.checked)) + ")"
         : "<b>Hours not known.</b> Check its website before going.") + "</span></li>").join("") + "</ul>");
+    out.push(noteBox(placeFav(p))); // after where and when, the things needed to go there
     out.push('<div class="detail-more"><button type="button" class="link-btn" data-wrong-place="' + esc(p.name) + '">Something wrong?</button></div>');
     const social = /instagram\.com/.test(p.url) ? "Instagram" : /facebook\.com/.test(p.url) ? "Facebook" : "Website";
     out.push('<div class="place-links">' + (safeUrl(p.url) ? '<a href="' + esc(safeUrl(p.url)) + '" target="_blank" rel="noopener">' + social + "</a>" : "") +
@@ -1182,9 +1198,10 @@
     // green only when the place itself says everything is gluten free and the app has nothing to add
     // amber is for items that need a change; here it marks a place the app has a caution about, and the rest are plain
     const cls = p.claim === "place-all" && !p.caution ? "t-asis" : p.caution ? "t-swap" : "t-info";
-    const label = p.claimLabel || CLAIM_TAGS[p.claim];
+    // an amber tag says why it's amber: the claim, then that there's something to ask (the row's bold flag says what)
+    const label = (p.claimLabel || CLAIM_TAGS[p.claim]) + (p.caution ? " · ask" : "");
     const star = favs.has(placeFav(p)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
-    return '<details class="row" data-place="' + esc(p.name) + '"><summary><span class="nm">' + star + noteMark(placeFav(p)) + esc(p.name) + "<small>" + subs.join(" · ") + '</small><span class="tag ' + cls + '">' +
+    return '<details class="row" data-place="' + esc(p.name) + '"><summary><span class="nm">' + star + noteMark(placeFav(p)) + esc(p.name) + "<small>" + subs.join(" · ") + '</small><span class="tag ' + cls + '">' +
       esc(label) + "</span></span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
   }
   // search what a place is and where it is, not street names or notes ("Sonntag" shouldn't find Sonntagstraße)
@@ -1208,7 +1225,7 @@
     }
     html += chainsHere(c, ts);
     const unknown = c.places.filter((p) => !p.locations.some((l) => l.hours)).length;
-    const empty = cityFilter === "fav" ? "No saved places yet. Open a place and tap ☆ Save."
+    const empty = cityFilter === "fav" ? "No favourites here yet. Open a place and tap ☆ Save."
       : cityFilter === "open" ? "None of the places with known hours are open for the rest of today."
       : 'No places match "' + esc($("q").value.trim()) + '".';
     const mapHtml = mapOn ? '<div id="cityMap" class="city-map" role="region" aria-label="Map of the places"></div><p class="muted map-note">' +
@@ -1238,7 +1255,7 @@
     return '<h2 class="group-h">The app\'s chains here<small>' + rows.length + '</small></h2><div class="pick-list chains-here">' +
       rows.map(({ r, n }) => '<button type="button" class="pick-opt" data-chain="' + esc(r.id) + '">' + logoHtml(r.name, r.logo) + '<span class="po-main"><b>' + esc(r.name) +
         "</b><span>" + n + (n === 1 ? " branch" : " branches") + " in and around " + esc(c.name) + '</span></span><span class="po-meta">Menu &rsaquo;</span></button>').join("") +
-      '</div><p class="muted">Branches from OpenStreetMap, which doesn\'t list every one. Each chain\'s menu, from its allergen guide, is under UK franchises.</p>';
+      '</div><p class="muted">Branches from OpenStreetMap, which doesn\'t list every one. Each chain\'s menu, from its allergen guide, is under Chains.</p>';
   }
   // ---------- a map of the city's places: Leaflet with OpenStreetMap's tiles, loaded only while the map is open ----------
   // The tiles are fetched while looking and never saved (the tile provider's rules forbid keeping them), so the list
@@ -1292,9 +1309,10 @@
     row.open = true;
     window.scrollTo({ top: Math.max(0, row.getBoundingClientRect().top + window.scrollY - topEl.offsetHeight - 12) });
   }
-  // "Open near me": still open today, nearest first, in one tap; a second tap turns both off
+  // "Open near me": still open today, nearest first, in one tap; a second tap turns both off, also when there was no
+  // location and it's showing only what's open today
   function toggleNearOpen() {
-    if (nearSort && cityFilter === "open") { nearSort = false; cityFilter = "all"; renderCity(); return; }
+    if (cityFilter === "open") { nearSort = false; cityFilter = "all"; renderCity(); return; }
     cityFilter = "open";
     if (nearSort) { renderCity(); window.scrollTo({ top: 0 }); return; }
     if (!navigator.geolocation) { renderCity(); toast("This phone can't share its location here"); return; }
@@ -1304,16 +1322,6 @@
       renderCity();
       window.scrollTo({ top: 0 });
     }, () => { renderCity(); toast("Couldn't get your location, so this shows what's open today. Check Location Services for Safari in Settings."); }, { timeout: 10000, maximumAge: 300000 });
-  }
-  function toggleNear() {
-    if (nearSort) { nearSort = false; renderCity(); return; }
-    if (!navigator.geolocation) { toast("This phone can't share its location here"); return; }
-    navigator.geolocation.getCurrentPosition((pos) => {
-      here = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-      nearSort = true;
-      renderCity();
-      window.scrollTo({ top: 0 });
-    }, () => toast("Couldn't get your location. Check Location Services for Safari in Settings."), { timeout: 10000, maximumAge: 300000 });
   }
 
   // ---------- "Near me" on the UK menus: the app's chains within a kilometre, from the branch list ----------
@@ -1411,8 +1419,8 @@
   function renderNear(rows, fetched, note) {
     const hoursNote = rows.some((x) => openText(x.hours)) ? " Hours from OpenStreetMap too, which may be out of date." : "";
     $("nearBody").innerHTML = (note ? '<p class="muted">' + esc(note) + "</p>" : "") + (rows.length
-      ? '<ul class="near-list">' + rows.map((x) => '<li><span class="nm"><b>' + esc(x.name) + "</b><small>" + esc([metres(x.km), openText(x.hours), x.where].filter(Boolean).join(" · ")) +
-        (x.n > 1 ? " · " + x.n + " within 1 km" : "") + '</small></span><span class="near-btns"><button type="button" class="fav-btn" data-gonear="' + esc(x.rid) + '">Menu</button>' +
+      ? '<ul class="near-list">' + rows.map((x) => '<li><span class="nm"><b>' + esc(x.name) + "</b><small>" + esc([metres(x.km), openText(x.hours), x.where].filter(Boolean).join(" · ")) +
+        (x.n > 1 ? " · " + x.n + " within 1 km" : "") + '</small></span><span class="near-btns"><button type="button" class="fav-btn" data-gonear="' + esc(x.rid) + '">Menu</button>' +
         '<a class="fav-btn" href="https://maps.apple.com/?ll=' + esc(x.lat + "," + x.lon) + "&q=" + encodeURIComponent(x.name) + '" target="_blank" rel="noopener">Directions</a></span></li>').join("") + "</ul>"
       : '<p class="empty">None of the app\'s restaurants is listed within 1 km of here.</p>') +
       '<p class="muted">Branches from OpenStreetMap, which doesn\'t list every one' + (fetched ? " (its list from " + esc(listDate(fetched)) + ")" : "") + ". Each chain's allergen guide covers all its branches." + hoursNote + "</p>" +
@@ -1453,7 +1461,7 @@
     if (!inUK(at)) {
       const there = Object.keys(cities).find((id) => inBounds(cities[id], at));
       $("nearBody").innerHTML = '<p class="empty">Near me covers the chains\' UK branches, and you\'re outside the UK.' +
-        (there ? " For " + esc(cities[there].name) + ", International has the places and Open near me." : "") + "</p>";
+        (there ? " For " + esc(cities[there].name) + ", Abroad has the places and Open near me." : "") + "</p>";
       return;
     }
     const rows = await lookNear(at);
@@ -1527,7 +1535,7 @@
 
   // ---------- the map page (the globe by the title): where you are, as you move, and every place the app knows ----------
   // The UK chains' branches come from the branch list (data/branches.json, as Near me), drawn for the part of the map
-  // on screen once it's zoomed in to a town; the city lists' places (UK and International) come from cities.json. Your position is followed
+  // on screen once it's zoomed in to a town; the city lists' places (UK and abroad) come from cities.json. Your position is followed
   // only while this page is open and the app is in front, and it never leaves the phone.
   const MAP_KM = 1.5, MAP_ZOOM = 13, MAP_PINS = 300; // zoom 13: about 3.5 km across a phone, legible even in London
   // pins: the chains' pins on the map now, by branch, so a redraw adds and removes only the difference; openPin: the
@@ -1610,7 +1618,7 @@
   function renderMapStatus() {
     const at = live.at;
     if (!at || !branchList) return;
-    if (!inUK(at)) { setMapStatus("Outside the UK, the map shows the places from the International lists. The chains' branches are in the UK only."); return; }
+    if (!inUK(at)) { setMapStatus("Outside the UK, the map shows the places from the lists abroad. The chains' branches are in the UK only."); return; }
     let n = 0;
     for (const x of branchList.b) {
       if (!inBox(x, at.lat - 0.015, at.lon - 0.03, at.lat + 0.015, at.lon + 0.03)) continue;
@@ -1965,9 +1973,9 @@
     const first = (cfg.first || []).filter((s) => r.sections.includes(s));
     const secs = first.concat(r.sections.filter((s) => !first.includes(s)));
     const notes = orderNotes[r.id] || [];
-    let html = "<p>" + esc(cfg.intro || ORDER_INTRO) + "</p>" +
-      '<p class="muted">Only items with no gluten ingredients can be ticked. Anything on the Avoid list is shown but can\'t be added. The card ends with ' +
-      esc(possessive(r.name)) + " own cross-contact warning.</p>";
+    // one short paragraph: only items with no gluten ingredients have a box to tick, and each section's Avoid items
+    // fold under it saying they can't be added
+    let html = "<p>" + esc(cfg.intro || ORDER_INTRO) + " The card ends with " + esc(possessive(r.name)) + " own cross-contact warning.</p>";
     if (notes.length) html += '<div class="chg-note bad"><b>Taken out of your order:</b> ' + notes.map(esc).join("; ") + ".</div>";
     for (const s of secs) {
       const ok = r.items.filter((i) => i.section === s && canOrder(i));
@@ -1978,10 +1986,11 @@
       for (const i of ok) {
         if ((i.sub || "") !== sub) { sub = i.sub || ""; if (sub) html += '<div class="sub-h">' + esc(cap(sub)) + "</div>"; }
         const k = favKey(r, i);
+        // only a tag that adds something ("Any milk except oat", "Ask"): every tickable item has no gluten ingredients
         const [cls, label] = tagFor(r, i);
         html += '<label class="o-row"><input type="checkbox" data-key="' + esc(k) + '"' + (keys.has(k) ? " checked" : "") + '><span class="nm">' + esc(i.name) +
           (i.order === "modify" ? "<small>" + esc(i.note) + "</small>" : i.original ? '<small lang="' + esc(r.language || "") + '">' + esc(i.original) + "</small>" : "") +
-          '</span><span class="tag ' + cls + '">' + esc(label) + "</span></label>";
+          "</span>" + (cls === "t-asis" ? "" : '<span class="tag ' + cls + '">' + esc(label) + "</span>") + "</label>";
       }
       if (av.length) {
         html += '<details class="o-avoid"><summary>' + av.length + (av.length === 1 ? " item" : " items") + " on the Avoid list: can't be added</summary>" +
@@ -1989,7 +1998,7 @@
           "</details>";
       }
     }
-    $("orderTitle").textContent = "Build an order at " + r.name;
+    $("orderTitle").textContent = "Build an order"; // the restaurant is in the header and on the card
     $("orderBody").innerHTML = html;
     renderOrderFoot(r);
   }
@@ -2642,10 +2651,11 @@
   });
   $("chips").addEventListener("click", (e) => {
     const b = e.target.closest("button[data-kind]");
-    if (!b) return; // Open near me, Near me, the card and the order chip have listeners of their own
+    if (!b) return; // Open near me, Map, the card and the order chip have listeners of their own
     const { kind, value } = b.dataset;
     if (region !== UK) {
       cityFilter = kind === "section" ? value : kind;
+      if (kind === "all") nearSort = false; // All clears Open near me's distance order too: nothing else shows it's on
       renderCity();
       window.scrollTo({ top: 0 });
       return;
@@ -2670,7 +2680,6 @@
   // data attribute names what its button does, and the attribute's value is what it does it to.
   const ACTIONS = {
     nearopen: () => toggleNearOpen(),
-    near: () => toggleNear(),
     card: () => openCard(city().language),
     orderOpen: () => openOrder(byId(selected)),
     order: (key, b, e) => { e.preventDefault(); toggleOrderButton(key); },
@@ -2681,7 +2690,7 @@
     nearUk: () => nearMe(),
     nearAuto: (v) => setNearAuto(v === "on", false),
     gonear: (rid) => { $("near").close(); select(rid); },
-    chain: (rid) => select(rid), // a UK city's chain row: its menu, under UK franchises
+    chain: (rid) => select(rid), // a UK city's chain row: its menu, under Chains
     mapMenu: (rid) => leaveMap(() => select(rid)),
     mapPlace: (name, b) => leaveMap(() => { setRegion(b.dataset.city); openPlaceRow(name); }), // the whole list, so the row is there
     say: (n) => { const p = phrases[cardLang]; if (p && p.card[n]) say(p.card[n].text, cardLang); },
