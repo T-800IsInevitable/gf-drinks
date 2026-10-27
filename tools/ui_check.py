@@ -995,8 +995,13 @@ def check_first_visit(env):
     # wording: the guides do call some (avoided) items gluten free, so don't say they never use the words
     if "don't claim their food is gluten free" in (page.locator("#certText").text_content() or ""):
         problems.append("certified note says the restaurants don't claim their food is gluten free")
-    # the card is in full only on the first menu page opened; this restaurant has it folded into one line
-    page.locator("#openWarnings" if page.locator("#openWarnings").is_visible() else "#openStrip").click()
+    # the first visit to the menus: the restaurant chosen from the welcome has the card in full, though All was
+    # drawn behind the chooser first
+    if not page.locator("#certNote").is_visible():
+        problems.append("first visit: the restaurant chosen first doesn't show the certified-or-not card in full")
+        page.locator("#openStrip").click()
+    else:
+        page.locator("#openWarnings").click()
     page.wait_for_selector("#warnings[open]")
     if "none of these guides use" in page.locator("#warnBody").inner_text():
         problems.append("warnings intro says none of the guides use the words gluten free")
@@ -1929,7 +1934,38 @@ def check_s3(env):
     page.locator("#chips [data-nearopen]").click()
     if pressed("[data-nearopen]") != "false" or pressed('[data-kind="all"]') != "true":
         problems.append("Open near me: a second tap doesn't turn it off")
-    print(f"open near me: {len(open_nearest)} places open on Sunday evening, nearest first, one tap on, one tap off")
+    # the distance order doesn't follow you to another city (a small one has no chip to turn it off), and All clears it
+    page.locator("#chips [data-nearopen]").click()
+    page.wait_for_selector('#chips [data-nearopen][aria-pressed="true"]')
+    small = next((c for c, city in cities.items() if len(city["places"]) < 4), None)
+    if small:
+        page.goto(base + f"#{small}")
+        page.wait_for_selector("#cityList .row")
+        if page.evaluate("document.body.classList.contains('searching')"):
+            problems.append(f"Open near me in {cid} left {small} sorted by distance, its introduction hidden, with no chip to undo it")
+        page.goto(base + f"#{cid}")
+        page.wait_for_selector("#cityList .row")
+    page.locator("#chips [data-nearopen]").click()
+    page.wait_for_selector('#chips [data-nearopen][aria-pressed="true"]')
+    page.locator('#chips [data-kind="all"]').click()
+    if page.evaluate("document.body.classList.contains('searching')") or pressed('[data-kind="all"]') != "true":
+        problems.append("Open near me: All doesn't clear its distance order")
+    ctx.close()
+    # with location refused it shows what's open today, pressed, and a second tap turns it off
+    ctx = browser.new_context(color_scheme="light", **IPHONE)
+    page = ctx.new_page()
+    page.clock.set_fixed_time("2026-11-01T19:00:00+01:00")
+    page.goto(base + f"#{cid}")
+    page.wait_for_selector("#cityList .row")
+    page.locator("#chips [data-nearopen]").click()
+    page.wait_for_selector('#chips [data-nearopen][aria-pressed="true"]')
+    if sorted(listed()) != sorted(open_nearest):
+        problems.append(f"Open near me without location: shows {sorted(listed())}, expected what's open today {sorted(open_nearest)}")
+    page.locator("#chips [data-nearopen]").click()
+    if pressed("[data-nearopen]") != "false" or pressed('[data-kind="all"]') != "true":
+        problems.append("Open near me without location: a second tap doesn't turn it off")
+    print(f"open near me: {len(open_nearest)} places open on Sunday evening, nearest first, one tap on, one tap off; "
+          "not carried to another city, cleared by All; without location, what's open today, pressed")
     ctx.close()
     return problems
 

@@ -462,12 +462,12 @@
     const tips = (r && r.tips) || [];
     const full = introFull(MENUS);
     // on All, an out-of-date guide is a few words in the folded line and the chooser's Out of date tag (the Warnings
-    // sheet says which guide); the full banner stays on that restaurant's own page
-    if (selected === ALL) $("stale").hidden = true;
-    // with the card in full, only the first tip shows above the menu; folded, the restaurant's headline tip leads the
-    // line ("Never oat milk."); every tip is in the Tips and warnings sheet
-    $("tips").hidden = !full || !tips.length;
-    $("tips").innerHTML = tipsHtml(tips.slice(0, 1));
+    // sheet says which guide); while the card is in full there's no folded line, so its one-line banner shows instead.
+    // The full banner stays on that restaurant's own page.
+    if (selected === ALL && !full) $("stale").hidden = true;
+    // the restaurant's headline tip leads, in full or folded ("Never oat milk."); every tip is in the Tips and warnings sheet
+    $("tips").hidden = !full || !(r && r.headline);
+    $("tips").innerHTML = r && r.headline ? "<div><b>" + esc(r.headline) + "</b></div>" : "";
     $("certNote").hidden = !full;
     $("openStrip").hidden = full;
     $("stripText").innerHTML = (r && r.headline ? "<b>" + esc(r.headline) + "</b> " : "") + esc(certShort(scope())) +
@@ -479,9 +479,9 @@
     return "<div>" + (m ? "<b>" + esc(m[1]) + "</b> " + esc(m[2]) : esc(t)) + "</div>";
   }).join("");
 
-  // The first menu page ever opened (a restaurant, or All) shows the certified-or-not card in full, once; every
-  // other time it's one line (#strip) above the menu, with every word of it and the tips in the Tips and warnings
-  // sheet. A city's introduction folds the same way, per city.
+  // The first visit to the menus (whichever page: a restaurant, or All) shows the certified-or-not card in full until
+  // Got it or the app is next opened; every other time it's one line (#strip) above the menu, with every word of it
+  // and the tips in the Tips and warnings sheet. A city's introduction folds the same way, per city.
   const INTRO_KEY = "gf-intro-seen";
   const MENUS = "menus"; // the menus' card is read once, not once per restaurant: the food comes first
   const introNow = new Set(); // shown in full during this visit, so the card doesn't fold away while it's being read
@@ -489,7 +489,8 @@
     if (introNow.has(key)) return true;
     const seen = new Set(JSON.parse(store.get(INTRO_KEY) || "[]"));
     // a phone from before release 33 marked each restaurant (and All) it had seen: any of those means the card was read
-    if (seen.has(key) || (key === MENUS && [...seen].some((k) => !cities[k]))) return false;
+    // (checked against the menus, which are loaded whenever this is asked, not cities.json, which may not be yet)
+    if (seen.has(key) || (key === MENUS && [...seen].some((k) => k === ALL || byId(k)))) return false;
     seen.add(key);
     store.set(INTRO_KEY, JSON.stringify([...seen]));
     introNow.add(key);
@@ -999,7 +1000,6 @@
   }
 
   function select(id) {
-    if (id !== selected) introNow.delete(MENUS); // the card in full is for the page it was first shown on; the next page leads with food
     selected = id;
     filter = { kind: "all" };
     region = UK;
@@ -1037,6 +1037,7 @@
     if (id !== UK) store.set(lastKeyOf(sectionOf(id)), id);
     $("q").value = "";
     cityFilter = "all";
+    nearSort = false; // the next city starts unsorted: it may have no chip to turn the distance order off
     mapOn = false;
     dropMap();
     history.replaceState(null, "", id !== UK ? "#" + id : selected === ALL ? location.pathname : "#" + selected);
@@ -1072,7 +1073,7 @@
     const nearest = nearAuto && here && inBounds(c, here) ? c.places.filter((p) => stillOpen(p, now0)).sort((a, b) => placeKm(a) - placeKm(b))[0] : null;
     const chip = ([v, l]) => chipHtml(["all", "fav"].includes(v) ? v : "section", ["all", "fav"].includes(v) ? "" : v, l, v === cityFilter && !(v === "all" && nearSort));
     $("chips").innerHTML = (card ? '<button type="button" data-card>' + esc(card.language) + " card</button>" : "") +
-      (few ? "" : chip(chips[0]) + '<button type="button" data-nearopen aria-pressed="' + (nearSort && cityFilter === "open") + '">' +
+      (few ? "" : chip(chips[0]) + '<button type="button" data-nearopen aria-pressed="' + (cityFilter === "open") + '">' +
         (nearest ? "Open near: " + esc(nearest.name) + " " + placeKm(nearest).toFixed(1) + " km ›" : "Open near me") + "</button>" +
         chips.slice(1).map(chip).join("") + '<button type="button" data-map aria-pressed="' + mapOn + '">Map</button>');
     $("chips").hidden = !$("chips").innerHTML;
@@ -1308,9 +1309,10 @@
     row.open = true;
     window.scrollTo({ top: Math.max(0, row.getBoundingClientRect().top + window.scrollY - topEl.offsetHeight - 12) });
   }
-  // "Open near me": still open today, nearest first, in one tap; a second tap turns both off
+  // "Open near me": still open today, nearest first, in one tap; a second tap turns both off, also when there was no
+  // location and it's showing only what's open today
   function toggleNearOpen() {
-    if (nearSort && cityFilter === "open") { nearSort = false; cityFilter = "all"; renderCity(); return; }
+    if (cityFilter === "open") { nearSort = false; cityFilter = "all"; renderCity(); return; }
     cityFilter = "open";
     if (nearSort) { renderCity(); window.scrollTo({ top: 0 }); return; }
     if (!navigator.geolocation) { renderCity(); toast("This phone can't share its location here"); return; }
@@ -1320,16 +1322,6 @@
       renderCity();
       window.scrollTo({ top: 0 });
     }, () => { renderCity(); toast("Couldn't get your location, so this shows what's open today. Check Location Services for Safari in Settings."); }, { timeout: 10000, maximumAge: 300000 });
-  }
-  function toggleNear() {
-    if (nearSort) { nearSort = false; renderCity(); return; }
-    if (!navigator.geolocation) { toast("This phone can't share its location here"); return; }
-    navigator.geolocation.getCurrentPosition((pos) => {
-      here = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-      nearSort = true;
-      renderCity();
-      window.scrollTo({ top: 0 });
-    }, () => toast("Couldn't get your location. Check Location Services for Safari in Settings."), { timeout: 10000, maximumAge: 300000 });
   }
 
   // ---------- "Near me" on the UK menus: the app's chains within a kilometre, from the branch list ----------
@@ -2659,10 +2651,11 @@
   });
   $("chips").addEventListener("click", (e) => {
     const b = e.target.closest("button[data-kind]");
-    if (!b) return; // Open near me, Near me, the card and the order chip have listeners of their own
+    if (!b) return; // Open near me, Map, the card and the order chip have listeners of their own
     const { kind, value } = b.dataset;
     if (region !== UK) {
       cityFilter = kind === "section" ? value : kind;
+      if (kind === "all") nearSort = false; // All clears Open near me's distance order too: nothing else shows it's on
       renderCity();
       window.scrollTo({ top: 0 });
       return;
@@ -2687,7 +2680,6 @@
   // data attribute names what its button does, and the attribute's value is what it does it to.
   const ACTIONS = {
     nearopen: () => toggleNearOpen(),
-    near: () => toggleNear(),
     card: () => openCard(city().language),
     orderOpen: () => openOrder(byId(selected)),
     order: (key, b, e) => { e.preventDefault(); toggleOrderButton(key); },
