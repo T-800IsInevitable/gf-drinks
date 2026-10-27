@@ -18,7 +18,8 @@
 <!-- Scripts and styles only from this app's own files (nothing inline; the map library is a copy in vendor/),
      connections only to this app, the GitHub API that uploads use, and the OpenStreetMap query service that Near me
      uses. Images also from blob: URLs, which is how a photo picked for Add a menu is read before it's re-saved as a
-     JPEG, and from OpenStreetMap's tile server for the map. -->
+     JPEG, from data: URLs, because the map library clears an unloaded tile with a one-pixel data: GIF (the UI check
+     fails without it), and from OpenStreetMap's tile server for the map. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://tile.openstreetmap.org; connect-src 'self' https://api.github.com https://overpass-api.de; base-uri 'none'; form-action 'none'; object-src 'none'">
 <script src="theme.js"></script>
 </head>
@@ -159,7 +160,7 @@
     </details>
     <details class="more">
       <summary>Near me</summary>
-      <p>On <b>All restaurants</b>, the <b>Near me</b> chip under the search box lists which of the app's chains have a branch within a kilometre, nearest first, with its menu and directions one tap away. The branches come from OpenStreetMap, which doesn't list every one; each chain's allergen guide covers all its branches. The last answer is kept for when there's no signal.</p>
+      <p>On <b>All restaurants</b>, the <b>Near me</b> chip under the search box lists which of the app's chains have a branch within a kilometre, nearest first, with its menu and directions one tap away. The branches come from OpenStreetMap, which doesn't list every one; each chain's allergen guide covers all its branches. Your position is sent to OpenStreetMap once per tap, rounded to about 100 metres, and never kept; the last answer is kept for when there's no signal.</p>
     </details>
     <details class="more" id="pushHelp" hidden>
       <summary>Tell me about new menus</summary>
@@ -343,6 +344,7 @@
       </div>
       <p class="muted">PDF or photos of the allergen menu. You can pick several pages.</p>
       <label class="field">Notes (optional)<textarea id="upNotes" rows="2" placeholder="e.g. Only the lunch menu"></textarea></label>
+      <p class="muted">The files and notes go into the app's public project on GitHub, so write nothing private.</p>
       <p><button type="submit" id="upSend" class="pill-btn">Upload</button></p>
       <p id="upStatus" class="muted" role="status"></p>
       <p class="muted">Signed in to upload. <button type="button" id="keyForget" class="link-btn">Remove key</button></p>

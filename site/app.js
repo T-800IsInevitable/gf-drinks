@@ -2,8 +2,16 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 27;
+  const APP_VERSION = 28;
   document.documentElement.dataset.version = APP_VERSION;
+  // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
+  // saying to open it directly: nothing here should be tapped through someone else's page.
+  let framed = false;
+  try { framed = window.top !== window.self; } catch (e) { framed = true; }
+  if (framed) {
+    document.body.textContent = "Open Twoo's Treat Temple directly, not inside another page.";
+    return;
+  }
   const DATA_KEY = "gf-data-v2";
   const SEL_KEY = "gf-selected";
   const FAV_KEY = "gf-favourites";
@@ -15,6 +23,11 @@
   const INTL = "intl"; // the header switch's other side: the city last looked at
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  // An address from the data before it becomes a link: http(s), or a path of the app's own; anything with another
+  // scheme (javascript:, data:) is dropped. tools/check.py refuses such an address at build time; this is the belt.
+  // (control characters and spaces go first, since a browser drops them before it reads the scheme; a protocol-relative
+  // address, //host, counts as another site's too)
+  const safeUrl = (u) => { u = String(u || "").replace(/[\u0000- ]/g, ""); return /^https?:\/\//i.test(u) || !/^([a-z][a-z0-9+.-]*:|\/\/)/i.test(u) ? u : ""; };
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } },
@@ -145,8 +158,8 @@
   }
   const pageText = (p) => (!p || !p.length ? "" : (p.length > 1 ? "Guide pages " : "Guide page ") + p.join(", "));
   // a restaurant's own mark (restaurants/<id>/logo.png, the icon its site publishes) or, without one, a lettered badge
-  const logoHtml = (name, src, cls) => '<span class="logo-wrap' + (src ? "" : " none") + (cls ? " " + cls : "") + '" aria-hidden="true">' +
-    (src ? '<img class="logo" src="' + esc(src) + '" alt="">' : "") +
+  const logoHtml = (name, src, cls) => '<span class="logo-wrap' + (safeUrl(src) ? "" : " none") + (cls ? " " + cls : "") + '" aria-hidden="true">' +
+    (safeUrl(src) ? '<img class="logo" src="' + esc(safeUrl(src)) + '" alt="">' : "") +
     '<span class="mono">' + esc(String(name || "?").replace(/^(the|a)\s+/i, "").charAt(0).toUpperCase()) + "</span></span>";
   // a mark that doesn't load (offline before it was ever seen) leaves the lettered badge showing
   document.addEventListener("error", (e) => { const w = e.target && e.target.closest && e.target.closest(".logo-wrap"); if (w) w.classList.add("broken"); }, true);
@@ -247,7 +260,7 @@
 
   // "Guide page 7" opens the guide itself at that page (the guides are published with the app; whether the phone's
   // PDF viewer jumps to the page is up to it). Starbucks has two guides, so a row says which one its pages are in.
-  const guideFile = (r, i) => { const files = r.guideFiles || {}; const src = r.guides && i.src != null ? (r.guides[i.src] || {}).source : r.source; return files[src] || ""; };
+  const guideFile = (r, i) => { const files = r.guideFiles || {}; const src = r.guides && i.src != null ? (r.guides[i.src] || {}).source : r.source; return safeUrl(files[src]); };
   function guideLinkHtml(r, i) {
     const text = pageText(i.pages), file = guideFile(r, i);
     if (!text) return "<span></span>";
@@ -433,7 +446,7 @@
         ' guide may be out of date</b> <span class="go">&rsaquo;</span></button>').join("");
     } else $("stale").innerHTML = stale.map((r) =>
       "<p><b>" + esc(r.name) + " guide may be out of date.</b> It covered up to " + esc(fmtDate(r.guide.validUntil)) +
-      ". Check in store before ordering" + (r.officialUrl ? ', or see <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">their allergen info</a>' : "") + "." +
+      ". Check in store before ordering" + (safeUrl(r.officialUrl) ? ', or see <a href="' + esc(safeUrl(r.officialUrl)) + '" target="_blank" rel="noopener">their allergen info</a>' : "") + "." +
       (r.latestGuide ? " " + esc(r.latestGuide.note) + " (checked " + esc(fmtDate(r.latestGuide.checked)) + ")" : "") + "</p>").join("");
     renderFavAlerts();
     renderNews();
@@ -811,17 +824,17 @@
     const whatChanged = (r) => { const c = sinceLooked(r) || r.changes; return c ? ' <button type="button" class="link-btn" data-whatchanged="' + esc(r.id) + '">What changed, noticed ' +
       esc(fmtDate(c.date)) + " &rsaquo;</button>" : ""; };
     // the guides themselves, as published with the app: one link, or one per guide when there are several
-    const guideLinks = (r) => Object.entries(r.guideFiles || {}).map(([src, file], n, all) => ' <a href="' + esc(file) + '" target="_blank" rel="noopener">Open the ' +
+    const guideLinks = (r) => Object.entries(r.guideFiles || {}).filter(([, file]) => safeUrl(file)).map(([src, file], n, all) => ' <a href="' + esc(file) + '" target="_blank" rel="noopener">Open the ' +
       (all.length > 1 ? esc(((r.guides || []).find((g) => g.source === src) || {}).title || "guide " + (n + 1)) + " guide" : "guide") + "</a>").join("");
+    const official = (r) => (safeUrl(r.officialUrl) ? ' <a href="' + esc(safeUrl(r.officialUrl)) + '" target="_blank" rel="noopener">Official site</a>' : "");
     const lineShort = (r) => "<p><b>" + esc(r.name) + ":</b> " + esc(r.covers ? r.covers + ". " : "") + "From " + esc(plainGuideName(r)) + ". " +
-      esc(r.stats.items) + " with no gluten ingredients, " + esc(r.stats.avoid) + " to avoid." +
-      (r.officialUrl ? ' <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">Official site</a>' : "") + guideLinks(r) + "</p>";
+      esc(r.stats.items) + " with no gluten ingredients, " + esc(r.stats.avoid) + " to avoid." + official(r) + guideLinks(r) + "</p>";
     // "Menus in this app" (Help) keeps the raw file name, for the record
     const lineFull = (r) => {
       const g = r.guide || {};
       return "<p><b>" + esc(r.name) + ":</b> " + esc(r.covers ? r.covers + ". " : "") + "From " + esc(r.source) +
         (g.version ? " (version " + esc(fmtDate(g.version)) + ")" : "") + ". " + esc(r.stats.items) + " with no gluten ingredients, " + esc(r.stats.avoid) +
-        " to avoid." + (r.officialUrl ? ' <a href="' + esc(r.officialUrl) + '" target="_blank" rel="noopener">Official site</a>' : "") + guideLinks(r) + whatChanged(r) + "</p>";
+        " to avoid." + official(r) + guideLinks(r) + whatChanged(r) + "</p>";
     };
     $("sources").innerHTML = scope().map(lineShort).join("");
     $("infoSources").innerHTML = data.restaurants.map(lineFull).join("") + "<p>Rules: " + esc([...new Set(data.restaurants.map((r) => r.rule))].join(" ")) +
@@ -992,7 +1005,7 @@
       ". Places open, close and change, so check before you go.</p>" : "";
     $("cityTipsLabel").textContent = "Before you go (" + c.tips.length + ")";
     $("cityTips").innerHTML = tipsHtml(c.tips);
-    const source = (a) => '<a href="' + esc(a.url) + '" target="_blank" rel="noopener" data-quote>' + esc(a.name) + "</a>, kept by " + esc(a.by);
+    const source = (a) => (safeUrl(a.url) ? '<a href="' + esc(safeUrl(a.url)) + '" target="_blank" rel="noopener" data-quote>' + esc(a.name) + "</a>" : "<span data-quote>" + esc(a.name) + "</span>") + ", kept by " + esc(a.by);
     $("cityFoot").innerHTML = "<p><b>Sources:</b> " + [c.list, ...(c.also || [])].map(source).join("; ") +
       "; and each place's own website. Checked " + esc(fmtDate(c.checked)) + ".</p>" +
       (c.footNotes || []).map((n) => "<p>" + esc(n) + "</p>").join("");
@@ -1078,8 +1091,8 @@
         (l.hoursNote ? ". " + esc(l.hoursNote) : "") + " (from its website, " + esc(fmtDate(p.checked || c.checked)) + ")"
         : "<b>Hours not known.</b> Check its website before going.") + "</span></li>").join("") + "</ul>");
     out.push('<div class="detail-more"><button type="button" class="link-btn" data-wrong-place="' + esc(p.name) + '">Something wrong?</button></div>');
-    out.push('<div class="place-links"><a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + (/instagram\.com/.test(p.url) ? "Instagram" : "Website") + "</a>" +
-      (p.listPage ? '<a href="' + esc(p.listPage) + '" target="_blank" rel="noopener">Support groups\' entry</a>' : "") +
+    out.push('<div class="place-links">' + (safeUrl(p.url) ? '<a href="' + esc(safeUrl(p.url)) + '" target="_blank" rel="noopener">' + (/instagram\.com/.test(p.url) ? "Instagram" : "Website") + "</a>" : "") +
+      (safeUrl(p.listPage) ? '<a href="' + esc(safeUrl(p.listPage)) + '" target="_blank" rel="noopener">Support groups\' entry</a>' : "") +
       '<button type="button" class="fav-btn" data-fav="' + esc(placeFav(p)) + '" aria-pressed="' + favs.has(placeFav(p)) + '">' + (favs.has(placeFav(p)) ? "★ Saved" : "☆ Save") + "</button></div>");
     // green only when the place itself says everything is gluten free and the app has nothing to add
     // amber is for items that need a change; here it marks a place the app has a caution about, and the rest are plain
@@ -1204,7 +1217,8 @@
   const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   function overpassQuery(at) {
     const names = osmChains().flatMap((r) => r.osm).map(reEsc).join("|");
-    const around = "(around:1000," + at.lat.toFixed(5) + "," + at.lon.toFixed(5) + ")";
+    // the position goes out rounded to about 100 metres: a search within a kilometre needs no more than that
+    const around = "(around:1000," + at.lat.toFixed(3) + "," + at.lon.toFixed(3) + ")";
     return '[out:json][timeout:10];(nwr["name"~"^(' + names + ')$",i]' + around + ';nwr["brand"~"^(' + names + ')$",i]' + around + ";);out center tags;";
   }
   const chainOf = (tags) => { const n = [tags.brand, tags.name].filter(Boolean).map((x) => x.toLowerCase()); return osmChains().find((r) => r.osm.some((o) => n.includes(o.toLowerCase()))) || null; };
@@ -1772,7 +1786,8 @@
       const base = (await gh(await api("/git/commits/" + parent), "reading the branch")).tree.sha;
       const tree = (await gh(await send("/git/trees", { base_tree: base, tree: entries }), "saving the folder")).sha;
       if (tree === base && !fresh) return false;
-      const commit = (await gh(await send("/git/commits", { message, tree, parents: [parent] }), "saving the upload")).sha;
+      // the app's own name as the author, so an upload never reads as a commit the owner made by hand
+      const commit = (await gh(await send("/git/commits", { message, tree, parents: [parent], author: { name: "Twoo's Treat Temple app", email: "app@gf-drinks.invalid" } }), "saving the upload")).sha;
       const moved = fresh ? await send("/git/refs", { ref: "refs/heads/" + UPLOAD_BRANCH, sha: commit })
         : await send("/git/refs/heads/" + UPLOAD_BRANCH, { sha: commit, force: false }, "PATCH");
       if (moved.ok) return true;
@@ -1999,14 +2014,15 @@
       return { keys, notes: got };
     } catch (e) { return null; }
   }
-  // does a favourite key still name something in the app (for a note that isn't on a favourite)
+  // does a favourite key still name something in the app (for a note that isn't on a favourite): an item with no
+  // gluten ingredients or a listed place, never an Avoid row, so a link can't plant a note under something to avoid
   function keyExists(k) {
     const [head, ...rest] = k.split("|");
     if (head.startsWith("city:")) { const c = cities[head.slice(5)]; return !!c && c.places.some((p) => p.name === rest.join("|")); }
     const r = byId(head);
     const [section, ...nm] = rest;
     const name = nm.join("|");
-    return !!r && r.items.concat(r.avoid).some((x) => x.section === section && x.name === name);
+    return !!r && r.items.some((x) => x.section === section && x.name === name);
   }
   // Sort a link's favourites against this phone and the menus as they are now. A dish whose section was renamed
   // follows its name (as saved favourites do); one now on the Avoid list, or gone, isn't added.
@@ -2046,13 +2062,23 @@
     importing = sortFavs(got.keys);
     // notes come along for anything still in the app, without replacing a note this phone already has
     importing.notes = Object.fromEntries(Object.entries(got.notes).filter(([k]) => !noteOf(k) && (importing.add.has(k) || favs.has(k) || keyExists(k))));
+    // notes left out, and said so: ones this phone already has (kept as they are), and ones on something now on the
+    // Avoid list or gone from the app
+    const notesKept = Object.keys(got.notes).filter((k) => noteOf(k)).length;
+    const notesLeft = Object.keys(got.notes).filter((k) => !noteOf(k) && !importing.notes[k]).length;
     const { add, have, skip } = importing;
     const nNotes = Object.keys(importing.notes).length;
     const li = (t) => "<li>" + esc(t) + "</li>";
+    // the notes are shown in full before anything is added: a note from someone else's link shouldn't read as yours unseen
+    const noteLabel = (k) => add.get(k) || (k.startsWith("city:") ? k.split("|").slice(1).join("|")
+      : k.split("|").slice(2).join("|") + " at " + ((byId(k.split("|")[0]) || {}).name || k.split("|")[0]));
     $("favImportBody").innerHTML =
       (add.size ? "<h3>To add (" + add.size + ")</h3><ul class=\"chg-list\">" + [...add.values()].map(li).join("") + "</ul>" : '<p class="muted">Nothing new to add.</p>') +
       (have.length ? '<p class="muted">' + have.length + (have.length === 1 ? " is" : " are") + " already saved on this phone.</p>" : "") +
-      (nNotes ? '<p class="muted">' + nNotes + (nNotes === 1 ? " note comes" : " notes come") + " with the link.</p>" : "") +
+      (nNotes ? "<h3>Notes in the link (" + nNotes + ")</h3><ul class=\"chg-list\">" + Object.entries(importing.notes).map(([k, t]) =>
+        "<li><b>" + esc(noteLabel(k)) + ":</b> " + esc(t) + "</li>").join("") + "</ul>" : "") +
+      (notesKept ? '<p class="muted">' + notesKept + (notesKept === 1 ? " note stays as it is" : " notes stay as they are") + " on this phone, which already has one there.</p>" : "") +
+      (notesLeft ? '<p class="muted">' + notesLeft + (notesLeft === 1 ? " note isn't" : " notes aren't") + " added: on something now on the Avoid list, or gone from the app.</p>" : "") +
       (skip.length ? "<h3>Not added (" + skip.length + ")</h3><ul class=\"chg-list\">" + skip.map((x) => li(x.label + " " + x.why + ".")).join("") + "</ul>" : "");
     $("favImportAdd").hidden = !add.size && !nNotes;
     $("favImportAdd").textContent = add.size === 1 ? "Add this to this phone" : add.size ? "Add these " + add.size + " to this phone" : "Add the notes to this phone";

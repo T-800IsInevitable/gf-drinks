@@ -96,6 +96,17 @@ def guide_links(page_html, page_url, pattern):
     return out
 
 
+def quoted(text):
+    """Text from another site (a reader's message, a dish's name, build output) as it goes into a pull request or an
+    issue: no backticks, so it can't end a code span or a code fence and turn into markdown, links or instructions."""
+    return str(text).replace("`", "'")
+
+
+def link(url):
+    """An address from another site as a plain autolink (<https://…>): nothing in it can become markdown."""
+    return "<" + re.sub(r"[\s<>`]", "", str(url)) + ">"
+
+
 def file_name(url):
     """The guide's own file name, tidied for the repository."""
     name = urllib.parse.unquote(urllib.parse.urlsplit(url).path.rsplit("/", 1)[-1])
@@ -212,23 +223,24 @@ def what_changed(rid):
     if run.returncode:
         tail = "\n".join((run.stdout + run.stderr).strip().splitlines()[-15:])
         return ("**The build couldn't read it**, so the checks will fail and the live menus stay as they are until the reader "
-                f"is updated for it:\n\n```\n{tail}\n```")
+                f"is updated for it:\n\n```\n{quoted(tail)}\n```")
     built = json.loads((ROOT / "site" / "data" / "r" / f"{rid}.json").read_text(encoding="utf-8"))
     c = built.get("changes")
-    text = f"**What changed, from the build:** {changes.summary(c)}."
+    # dish names come from the PDF: in code spans, where nothing in them can become a link, a mention or emphasis
+    text = f"**What changed, from the build:** `{quoted(changes.summary(c))}`."
     if c and c.get("nowAvoid"):
-        text += "\n\n**Now on the Avoid list (contain gluten):** " + ", ".join(f"{x['name']} ({x['section']})" for x in c["nowAvoid"]) + "."
+        text += "\n\n**Now on the Avoid list (contain gluten):** " + ", ".join(f"`{quoted(x['name'] + ' (' + x['section'] + ')')}`" for x in c["nowAvoid"]) + "."
     return text
 
 
 def pr_body(r, changed):
     lines = [f"**{r['name']}** has a new allergen guide on its website ({r['page']}).", ""]
     for u in r["new"]:
-        lines.append(f"- New: `{u['name']}` ([as published]({u['url']}))")
+        lines.append(f"- New: `{u['name']}` (as published: {link(u['url'])})")
         for old in u.get("replaces", []):
-            lines.append(f"  - It replaces `{old}`, which moves to `guides/archive/`.")
+            lines.append(f"  - It replaces `{quoted(old)}`, which moves to `guides/archive/`.")
         if u.get("unreadable"):
-            lines.append(f"  - The reader stopped on it: {u['unreadable']}")
+            lines.append(f"  - The reader stopped on it: `{quoted(u['unreadable'])}`")
     lines += ["", changed, "",
               "Before merging, read the **Menu build** summary on the checks and look over what changed: the app shows it once "
               "this is merged. Nothing here merges by itself.", "",
@@ -288,7 +300,7 @@ def problem_issue(r):
     folder = f"restaurants/{r['id']}/"
     return (f"Guide watch: couldn't check {r['name']}",
             f"The weekly guide watch couldn't check **{r['name']}** for a new allergen guide:\n\n"
-            + "\n".join(f"- {p}" for p in r["problems"]) +
+            + "\n".join(f"- `{quoted(p)}`" for p in r["problems"]) +
             f"\n\nUntil it can, look for a new guide by hand ({r['page']}); the guide reminders still say when the one in "
             "the app is due to end. If the restaurant moved its guide, update `watch` in "
             f"`{folder}restaurant.json`. If its site blocks the check for good, remove `watch` there and keep checking by hand. "
@@ -300,7 +312,7 @@ def manual_issue(r):
     names = ", ".join(u["name"] for u in r["new"])
     return (f"Guide watch: new {r['name']} guide ({names})",
             f"**{r['name']}** links a guide the app hasn't seen before:\n\n"
-            + "\n".join(f"- [{u['name']}]({u['url']})" for u in r["new"]) +
+            + "\n".join(f"- `{u['name']}`: {link(u['url'])}" for u in r["new"]) +
             f"\n\nIts menu is kept by hand, so read the guide and update `{folder}menu.csv` and the dates in "
             f"`{folder}restaurant.json`, adding the PDF to `{folder}guides/`. If it isn't actually newer, close this issue.\n\n"
             + WORKFLOW)

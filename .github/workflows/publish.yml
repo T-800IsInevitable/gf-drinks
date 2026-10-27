@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - uses: ./.github/actions/build-check
 
@@ -31,27 +31,28 @@ jobs:
       - name: Work out the notification for this publish
         run: python tools/push.py --plan --out push-message.json
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: push-message
           path: push-message.json
           retention-days: 3
 
-      - uses: actions/configure-pages@v6
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
 
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: site
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
 
   # One push notification per publish with a new guide, to the phones saved in the PUSH_SUBSCRIPTIONS secret
   # (tools/push.py). With no phones saved, or nothing new, it says so and does nothing. It never fails the publish.
@@ -60,17 +61,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: push-message
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
 
-      - run: pip install pywebpush==2.5.0
+      # by hash (tools/requirements-notify-lock.txt): this job holds the push secrets, so nothing unverified runs in it,
+      # the build tools included (http-ece ships as source and needs setuptools to build)
+      - run: |
+          pip install --require-hashes -r tools/requirements-buildtools-lock.txt
+          pip install --require-hashes --no-build-isolation -r tools/requirements-notify-lock.txt
 
       - name: Tell the phones about new menus
         env:
