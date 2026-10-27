@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 Tell the phones about new menus: one push notification after a publish that brought a new guide, and the app's icon
-badge with it. Nothing is sent when the publish changed no guide (a code-only release, or the same menus again).
+badge with it. Also "Update N is live!" after a publish that raised the app's release number, when site/whatsnew.json
+has notes for that release (opening the app's What's new page); a release without notes goes out quietly. Nothing is
+sent when the publish changed no guide and no announced release (the same menus again).
 
 There's no server. Each phone's push subscription is saved by hand as the repository secret PUSH_SUBSCRIPTIONS (one
 JSON object per line, or a JSON array), and the private half of the push key pair as VAPID_PRIVATE_KEY (its public
@@ -22,8 +24,12 @@ import argparse
 import json
 import os
 import re
+import sys
 from pathlib import Path
 from urllib.parse import unquote, urlparse
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from check_release import app_number  # noqa: E402
 
 try:
     from py_vapid import Vapid
@@ -82,6 +88,28 @@ def plan(previous=ROOT / ".previous", data=SITE / "data"):
     while msg["nowAvoid"] and len(json.dumps(msg, ensure_ascii=False).encode("utf-8")) > MAX_BYTES:
         msg["nowAvoid"].pop()  # a big change must still arrive; the phone's favourites check then covers fewer items
     return msg
+
+
+def release_plan(previous=ROOT / ".previous", site=SITE):
+    """'Update N is live!' when this publish raises the release number past the live one (.previous/app-version, from
+    fetch_previous.py) and whatsnew.json has notes for it, or None. An unknown live release announces nothing, so a
+    failed download can't announce an old release again."""
+    try:
+        live = int((previous / "app-version").read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return None
+    new = app_number((site / "app.js").read_text(encoding="utf-8"))
+    note = next((n for n in read(site / "whatsnew.json") or [] if isinstance(n, dict) and n.get("version") == new), None)
+    if new <= live or not note:
+        return None
+    # "?whatsnew", not a #: the phone may still be on the last release when it's tapped, which reads a # as a page name
+    return {"title": f"Update {new} is live!", "body": f"Tap to see the new features: {note['title']}"[:400],
+            "tag": "gf-update", "url": "?whatsnew"}  # no badge: that counts the guides not yet looked at
+
+
+def messages(previous=ROOT / ".previous", data=SITE / "data", site=SITE):
+    """Everything to send for this publish: the new guides first (what matters at the counter), then the release."""
+    return [m for m in (plan(previous, data), release_plan(previous, site)) if m]
 
 
 def scrub(error):
@@ -164,13 +192,15 @@ def main():
     ap.add_argument("--send", type=Path, help="send the message in this file")
     args = ap.parse_args()
     if args.plan:
-        msg = plan(args.previous)
-        args.out.write_text(json.dumps(msg or {"send": False}, indent=1, ensure_ascii=False), encoding="utf-8")
-        print(f"push: {msg['body'] if msg else 'no new guide, so nothing to send'}")
+        msgs = messages(args.previous)
+        args.out.write_text(json.dumps({"messages": msgs} if msgs else {"send": False}, indent=1, ensure_ascii=False), encoding="utf-8")
+        print("push: " + (" | ".join(f"{m['title']}: {m['body']}" for m in msgs) if msgs else "no new guide or announced release, so nothing to send"))
         return
     if args.send:
-        msg = read(args.send)
-        if not msg or msg.get("send") is False:
+        saved = read(args.send) or {}
+        # {"messages": [...]}, or a single message as plans from before releases were announced wrote it
+        msgs = saved.get("messages") if isinstance(saved.get("messages"), list) else [saved] if saved.get("body") else []
+        if not msgs:
             print("push: nothing to send")
             return
         subs = subscriptions(os.environ.get("PUSH_SUBSCRIPTIONS"))
@@ -179,12 +209,13 @@ def main():
             print("push: no phones saved yet (set the PUSH_SUBSCRIPTIONS and VAPID_PRIVATE_KEY secrets), so nothing sent")
             return
         claim = contact(os.environ.get("GITHUB_REPOSITORY", ""))
-        lines = send(msg, subs, vapid_key(key), claim)
-        print("\n".join(lines))
         summary = os.environ.get("GITHUB_STEP_SUMMARY")
-        if summary:
-            with open(summary, "a", encoding="utf-8") as f:
-                f.write("## Notifications\n\n" + msg["body"] + "\n\n" + "\n".join(f"- {l}" for l in lines) + "\n")
+        for msg in msgs:
+            lines = send(msg, subs, vapid_key(key), claim)
+            print(f"{msg['title']}:\n" + "\n".join(lines))
+            if summary:
+                with open(summary, "a", encoding="utf-8") as f:
+                    f.write(f"## Notification: {msg['title']}\n\n" + msg["body"] + "\n\n" + "\n".join(f"- {l}" for l in lines) + "\n")
         return
     ap.print_help()
 

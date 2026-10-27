@@ -20,6 +20,9 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from check_release import app_number  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / ".previous"
 LIVE = "https://t-800isinevitable.github.io/gf-drinks/"
@@ -43,6 +46,11 @@ def main():
                           "a different --previous DIR to tools/build.py to publish anyway.")
     (OUT / "r").mkdir(parents=True, exist_ok=True)
     (OUT / "restaurants.json").write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
+    # the live release number, so tools/push.py can announce a new one; not worth stopping the build for
+    try:
+        (OUT / "app-version").write_text(str(app_number(get(base + "app.js").decode("utf-8"))), encoding="utf-8")
+    except BaseException as e:  # app_number stops with SystemExit when it can't find the number
+        print(f"  live release number unknown ({e}); a new release won't be announced this time")
     for r in index.get("restaurants", []):
         try:
             (OUT / "r" / f"{r['id']}.json").write_bytes(get(base + r["file"]))

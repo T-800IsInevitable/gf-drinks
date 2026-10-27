@@ -129,6 +129,48 @@ def check_restaurant(r, err):
     print(f"{rid}: {len(d['items'])} with no gluten ingredients, {len(d['avoid'])} to avoid, guide valid until {d['guide'].get('validUntil')}")
 
 
+def check_branches(d, ids, err):
+    """data/branches.json (tools/fetch_branches.py): [chain number, lat, lon, street, opening_hours] per branch, every
+    one in the UK. A chain the app no longer has is only skipped by the app, so it's reported, not failed."""
+    chains, rows = d.get("chains"), d.get("b")
+    if not isinstance(chains, list) or not isinstance(rows, list) or not rows:
+        err("branches: needs a list of chains and at least one branch")
+        return
+    gone = [c for c in chains if c not in ids]
+    if gone:
+        print(f"branches: {gone} aren't in the app any more; the app skips their branches")
+    for x in rows:
+        ok = (isinstance(x, list) and len(x) == 5 and isinstance(x[0], int) and 0 <= x[0] < len(chains)
+              and all(isinstance(v, (int, float)) for v in x[1:3]) and all(isinstance(v, str) for v in x[3:]))
+        if not ok or not (49 < x[1] < 61 and -9 < x[2] < 2):
+            err(f"branches: {x!r} isn't a UK branch in the expected form")
+            return
+    print(f"branches: {len(rows)} from OpenStreetMap, fetched {d.get('fetched')}")
+
+
+def check_whatsnew(notes, app_v, err):
+    """site/whatsnew.json: the notes for each announced release (What's new, and the "Update N is live!" notification
+    that tools/push.py sends when the release it names goes live). Newest first, never ahead of the app."""
+    if not isinstance(notes, list):
+        err("whatsnew.json: must be a list")
+        return
+    seen = []
+    for n in notes:
+        v = n.get("version") if isinstance(n, dict) else None
+        if not isinstance(v, int) or v > app_v or v in seen:
+            err(f"whatsnew.json: version {v!r} must be a release number, once, no later than APP_VERSION ({app_v})")
+            continue
+        seen.append(v)
+        if not (isinstance(n.get("title"), str) and n["title"].strip()) or len(n["title"]) > 90:
+            err(f"whatsnew.json {v}: needs a title of up to 90 characters (it ends the notification's sentence)")
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(n.get("date", ""))):
+            err(f"whatsnew.json {v}: date must be YYYY-MM-DD")
+        if not n.get("items") or not all(isinstance(i, str) and i.strip() for i in n["items"]):
+            err(f"whatsnew.json {v}: needs a list of items")
+    if seen != sorted(seen, reverse=True):
+        err("whatsnew.json: newest release first")
+
+
 def check_city(cid, c, phrases, err):
     for key in ("name", "language", "checked", "list", "tips", "sections", "places", "country", "bounds"):
         if not c.get(key):
@@ -190,6 +232,8 @@ def main():
         err("duplicate restaurant ids")
     for r in index["restaurants"]:
         check_restaurant(r, err)
+    if (DATA / "branches.json").exists():  # written by the publish job only (tools/fetch_branches.py)
+        check_branches(json.loads((DATA / "branches.json").read_text(encoding="utf-8")), set(ids), err)
     cities = json.loads((SITE / "cities.json").read_text(encoding="utf-8"))
     phrases = json.loads((SITE / "phrases.json").read_text(encoding="utf-8"))
     for cid, c in cities.items():
@@ -199,6 +243,8 @@ def main():
     sw_v = cache_number((SITE / "sw.js").read_text(encoding="utf-8"))
     if app_v != sw_v:
         err(f"release: APP_VERSION in site/app.js ({app_v}) and CACHE in site/sw.js ({sw_v}) must match")
+    if (SITE / "whatsnew.json").exists():
+        check_whatsnew(json.loads((SITE / "whatsnew.json").read_text(encoding="utf-8")), app_v, err)
     if errors:
         print("\nCHECK FAILED:")
         for e in errors:

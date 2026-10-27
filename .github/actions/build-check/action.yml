@@ -79,7 +79,9 @@ runs:
         sudo pkill -TERM apt-get || true; sleep 5; sudo pkill -KILL apt-get || true
         for i in $(seq 1 24); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 5; done
         sudo dpkg --configure -a || true  # the timeout may have cut apt off mid-install
-        sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list 2>/dev/null || true
+        # newer runner images name the mirror in apt-mirrors.txt (sources say mirror+file:), so switch it there too
+        sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/apt-mirrors.txt /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list 2>/dev/null || true
+        grep -rh "ubuntu.com" /etc/apt/apt-mirrors.txt /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null | sort -u || true
         sudo apt-get update -qq
         timeout 10m python -m playwright install-deps chromium webkit
 

@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 30;
+  const APP_VERSION = 31;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -1268,38 +1268,45 @@
     }, () => toast("Couldn't get your location. Check Location Services for Safari in Settings."), { timeout: 10000, maximumAge: 300000 });
   }
 
-  // ---------- "Near me" on the UK menus: the app's chains within a kilometre, looked up in OpenStreetMap ----------
-  // One query to the Overpass API per tap (restaurant.json "osm" names what OpenStreetMap calls each chain's branches).
-  // OpenStreetMap doesn't list every branch, which is a convenience problem, not a safety one: each chain's allergen
-  // guide covers all its branches. The last answer is kept, for when there's no signal.
+  // ---------- "Near me" on the UK menus: the app's chains within a kilometre, from the branch list ----------
+  // data/branches.json is every UK branch of the app's chains, fetched from OpenStreetMap by the publish job
+  // (tools/fetch_branches.py, weekly), so Near me answers at once, works offline, and where you are never leaves the
+  // phone. OpenStreetMap doesn't list every branch, which is a convenience problem, not a safety one: each chain's
+  // allergen guide covers all its branches.
   const NEAR_KEY = "gf-near";
-  const OVERPASS = "https://overpass-api.de/api/interpreter";
   const osmChains = () => data.restaurants.filter((r) => Array.isArray(r.osm) && r.osm.length);
-  const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  // the app's chains inside an Overpass area: "(around:metres,lat,lon)" or a box "(south,west,north,east)"
-  function chainQuery(area) {
-    const names = osmChains().flatMap((r) => r.osm).map(reEsc).join("|");
-    return '[out:json][timeout:10];(nwr["name"~"^(' + names + ')$",i]' + area + ';nwr["brand"~"^(' + names + ')$",i]' + area + ";);out center tags;";
+  // { fetched: "YYYY-MM-DD", chains: [restaurant id], b: [[chain number, lat, lon, street, opening_hours]] }
+  let branchList = null, branchLoading = null;
+  const NO_LIST = "The list of the chains' branches isn't on this phone yet: it downloads when the app has signal.";
+  function loadBranches() {
+    if (branchList) return Promise.resolve(branchList);
+    if (!branchLoading) {
+      branchLoading = fetch("data/branches.json", { cache: "no-cache" }).then((res) => (res.ok ? res.json() : null))
+        .then((j) => { branchList = j && Array.isArray(j.b) && Array.isArray(j.chains) ? j : null; return branchList; })
+        .catch(() => null)
+        .finally(() => { branchLoading = null; });
+    }
+    return branchLoading;
   }
-  // the position goes out rounded to about 100 metres: a search within a kilometre needs no more than that
-  const overpassQuery = (at) => chainQuery("(around:1000," + at.lat.toFixed(3) + "," + at.lon.toFixed(3) + ")");
-  const chainOf = (tags) => { const n = [tags.brand, tags.name].filter(Boolean).map((x) => x.toLowerCase()); return osmChains().find((r) => r.osm.some((o) => n.includes(o.toLowerCase()))) || null; };
-  // a node's own point, or the middle of a way or relation
-  const elPos = (el) => { const lat = el.lat != null ? el.lat : el.center && el.center.lat, lon = el.lon != null ? el.lon : el.center && el.center.lon; return lat == null || lon == null ? null : { lat, lon }; };
+  // one entry of the list as a branch, or null for a chain no longer in the app (or a malformed entry)
+  function branchOf(list, x) {
+    const r = Array.isArray(x) && byId(list.chains[x[0]]);
+    if (!r || !Number.isFinite(x[1]) || !Number.isFinite(x[2])) return null;
+    return { rid: r.id, name: r.name, lat: x[1], lon: x[2], where: String(x[3] || ""), hours: String(x[4] || "") };
+  }
+  // the list's branches inside a box (a cheap test before any distance is worked out)
+  const inBox = (x, s, w, n, e) => x[1] > s && x[1] < n && x[2] > w && x[2] < e;
   // one row per chain: its nearest branch (with OpenStreetMap's opening hours, if tagged), and how many are within the kilometre
-  function nearRows(elements, at) {
+  function nearRows(list, at) {
     const best = new Map();
-    for (const el of elements) {
-      const pos = elPos(el);
-      const r = el.tags && chainOf(el.tags);
-      if (!r || !pos) continue;
-      const { lat, lon } = pos;
-      const km = kmTo(pos, at);
-      const where = el.tags["addr:street"] || "";
-      const hours = String(el.tags.opening_hours || "").slice(0, 200);
-      const cur = best.get(r.id);
-      if (!cur) best.set(r.id, { rid: r.id, name: r.name, km, lat, lon, n: 1, where, hours });
-      else { cur.n++; if (km < cur.km) Object.assign(cur, { km, lat, lon, where, hours }); }
+    for (const x of list.b) {
+      if (!inBox(x, at.lat - 0.01, at.lon - 0.02, at.lat + 0.01, at.lon + 0.02)) continue;
+      const b = branchOf(list, x);
+      const km = b && kmTo(b, at);
+      if (!b || km > 1) continue;
+      const cur = best.get(b.rid);
+      if (!cur) best.set(b.rid, { ...b, km, n: 1 });
+      else { cur.n++; if (km < cur.km) Object.assign(cur, b, { km, n: cur.n }); }
     }
     return [...best.values()].sort((a, b) => a.km - b.km);
   }
@@ -1352,35 +1359,31 @@
     if (later.length) return "opens " + hhmm(later[0][0]);
     return "closed today";
   }
-  function renderNear(rows, stamp, note) {
+  const listDate = (iso) => (iso ? new Date(iso + "T12:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "");
+  function renderNear(rows, fetched, note) {
     const hoursNote = rows.some((x) => openText(x.hours)) ? " Hours from OpenStreetMap too, which may be out of date." : "";
     $("nearBody").innerHTML = (note ? '<p class="muted">' + esc(note) + "</p>" : "") + (rows.length
       ? '<ul class="near-list">' + rows.map((x) => '<li><span class="nm"><b>' + esc(x.name) + "</b><small>" + esc([metres(x.km), openText(x.hours), x.where].filter(Boolean).join(" · ")) +
         (x.n > 1 ? " · " + x.n + " within 1 km" : "") + '</small></span><span class="near-btns"><button type="button" class="fav-btn" data-gonear="' + esc(x.rid) + '">Menu</button>' +
         '<a class="fav-btn" href="https://maps.apple.com/?ll=' + esc(x.lat + "," + x.lon) + "&q=" + encodeURIComponent(x.name) + '" target="_blank" rel="noopener">Directions</a></span></li>').join("") + "</ul>"
       : '<p class="empty">None of the app\'s restaurants is listed within 1 km of here.</p>') +
-      '<p class="muted">Branches from OpenStreetMap, which doesn\'t list every one' + (stamp ? ", looked up " + esc(stamp) : "") + ". Each chain's allergen guide covers all its branches." + hoursNote + "</p>" +
+      '<p class="muted">Branches from OpenStreetMap, which doesn\'t list every one' + (fetched ? " (its list from " + esc(listDate(fetched)) + ")" : "") + ". Each chain's allergen guide covers all its branches." + hoursNote + "</p>" +
       // the opt-in, once, in context: the look-around each time the app opens
-      (store.get(NEAR_AUTO_KEY) === null ? '<div class="chg-note" data-near-ask><b>Look around each time the app opens?</b> The nearest chain then shows on the chip row under the search box, with no tap, using your position rounded to about 100 metres.' +
+      (store.get(NEAR_AUTO_KEY) === null ? '<div class="chg-note" data-near-ask><b>Look around each time the app opens?</b> The nearest chain then shows on the chip row under the search box, with no tap. Your position stays on this phone.' +
         '<p class="tz-btns"><button type="button" class="pill-btn" data-near-auto="on">Keep checking</button><button type="button" class="link-btn" data-near-auto="off">Only when I tap</button></p></div>' : "");
   }
   const fmtWhen = (iso) => { const d = new Date(iso); return d.toDateString() === new Date().toDateString() ? "today at " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "on " + d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }); };
-  // the menus cover the chains' UK branches, so the query is only worth asking in the UK (roughly)
+  // the menus cover the chains' UK branches, so the list is only worth reading in the UK (roughly)
   const inUK = (at) => at.lat > 49 && at.lat < 61 && at.lon > -9 && at.lon < 2;
   const inBounds = (c, at) => !!c.bounds && c.bounds.lat[0] < at.lat && at.lat < c.bounds.lat[1] && c.bounds.lon[0] < at.lon && at.lon < c.bounds.lon[1];
   const rounded = (at) => ({ lat: +at.lat.toFixed(3), lon: +at.lon.toFixed(3) });
   const savedNear = () => { try { const s = JSON.parse(store.get(NEAR_KEY) || "null"); return s && Array.isArray(s.rows) ? s : null; } catch (e) { return null; } };
-  async function overpassElements(query) {
-    const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 15000);
-    let res;
-    try { res = await fetch(OVERPASS, { method: "POST", body: "data=" + encodeURIComponent(query), signal: ctl.signal }); } finally { clearTimeout(timer); }
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    return (await res.json()).elements || [];
-  }
-  async function askOverpass(at) {
-    const rows = nearRows(await overpassElements(overpassQuery(at)), at);
-    store.set(NEAR_KEY, JSON.stringify({ when: new Date().toISOString(), rows, at: rounded(at) }));
+  // the chains near a position, from the branch list; the answer is kept for the chip and the chooser's Near you group
+  async function lookNear(at) {
+    const list = await loadBranches();
+    if (!list) return null;
+    const rows = nearRows(list, at);
+    store.set(NEAR_KEY, JSON.stringify({ when: new Date().toISOString(), rows, at: rounded(at), fetched: list.fetched }));
     return rows;
   }
   async function nearMe() {
@@ -1390,7 +1393,7 @@
     openDialog($("near"));
     const saved = savedNear();
     const fallback = (why) => {
-      if (saved) renderNear(saved.rows, fmtWhen(saved.when), why + " This is the last answer.");
+      if (saved) renderNear(saved.rows, saved.fetched, why + " This is the last answer, from " + fmtWhen(saved.when) + ".");
       else $("nearBody").innerHTML = '<p class="empty">' + esc(why) + "</p>";
     };
     let at;
@@ -1405,21 +1408,19 @@
         (there ? " For " + esc(cities[there].name) + ", the Abroad side has the places and Open near me." : "") + "</p>";
       return;
     }
-    $("nearBody").innerHTML = '<p class="empty">Looking for branches within 1 km…</p>';
-    try {
-      renderNear(await askOverpass(at), "just now", "");
-      if (data && region === UK) renderChips();
-    } catch (e) { fallback("Couldn't reach the map service (no signal, or it's busy)."); }
+    const rows = await lookNear(at);
+    if (!rows) { fallback(NO_LIST); return; }
+    renderNear(rows, branchList && branchList.fetched, "");
+    if (data && region === UK) renderChips();
   }
 
-  // ---------- a look around when the app opens (opt-in): the nearest chain on the chip row, from the same query ----------
+  // ---------- a look around when the app opens (opt-in): the nearest chain on the chip row, from the branch list ----------
   // Never a location prompt unasked: the automatic look only runs when the phone already reports the permission as
-  // granted (or a tap on Near me has worked before). One query at most every ten minutes, and only when the phone has
-  // moved more than 300 m from where the last answer was asked or that answer is over an hour old; nothing retried for
-  // ten minutes after an error. Outside the UK, or on a city page, only the position is taken (for the city's own chip).
+  // granted (or a tap on Near me has worked before), and reads the position at most every ten minutes. Nothing leaves
+  // the phone. Outside the UK, or on a city page, only the position is taken (for the city's own chip).
   const NEAR_AUTO_KEY = "gf-near-auto"; // "on" | "off"; unset = not asked yet
   const NEAR_GRANTED = "gf-near-granted"; // a tap on Near me has had a position: the permission exists
-  const NEAR_EVERY_MS = 10 * 60000, NEAR_FRESH_MS = 60 * 60000, NEAR_MOVED_KM = 0.3;
+  const NEAR_EVERY_MS = 10 * 60000, NEAR_FRESH_MS = 60 * 60000;
   let nearAuto = store.get(NEAR_AUTO_KEY) === "on";
   let nearBusy = false, nearTriedAt = 0;
   // the saved answer while it's fresh and the look-around is on, else null
@@ -1452,14 +1453,9 @@
     } catch (e) { nearBusy = false; if (region === UK) renderChips(); return; }
     here = at;
     if (region !== UK) { nearBusy = false; renderCity(); return; } // the city's chip reads from the list itself
-    const saved = savedNear();
-    const age = saved ? Date.now() - new Date(saved.when).getTime() : Infinity;
-    const standing = saved && saved.at && kmTo(saved.at, at) <= NEAR_MOVED_KM && age < NEAR_FRESH_MS;
-    if (inUK(at) && !standing && age >= NEAR_EVERY_MS) { // the ten minutes hold across launches too
-      try { await askOverpass(at); } catch (e) { /* no signal, or the service is busy: the chip keeps the last answer */ }
-    }
+    if (inUK(at)) await lookNear(at); // no list yet: the chip keeps the last answer
     nearBusy = false;
-    if (region === UK) renderChips(); else renderCity(); // the page may have changed hands during the query
+    if (region === UK) renderChips(); else renderCity(); // the page may have changed hands meanwhile
     if ($("picker").open) renderPicker();
   }
   function renderNearToggle() {
@@ -1482,31 +1478,21 @@
   renderNearToggle();
 
   // ---------- the map page (the globe by the title): where you are, as you move, and every place the app knows ----------
-  // The UK chains' branches come from the same OpenStreetMap lookup as Near me (the menus carry no addresses); the
-  // Abroad lists' places come from cities.json. Your position is followed only while this page is open and the app is
-  // in front. It goes out, rounded to about 100 metres, only to look for branches: when the page opens, after you've
-  // moved half a kilometre (at most once a minute), and when you tap Search this area (which sends the box on screen).
-  const MAP_KEY = "gf-map-branches"; // the branches last found, for when there's no signal
-  const MAP_KM = 1.5, MAP_MOVED_KM = 0.5, MAP_EVERY_MS = 60000, MAP_MAX = 300, MAP_AREA_KM = 0.75;
-  const live = { map: null, watch: null, me: null, ring: null, places: null, branches: null, at: null, follow: true,
-    found: new Map(), mineAt: null, areaAt: null, lookedWhen: 0, busy: false };
-  const savedBranches = () => {
-    try {
-      const s = JSON.parse(store.get(MAP_KEY) || "null");
-      return s && Array.isArray(s.items) ? { when: s.when, items: s.items.filter((b) => b && Number.isFinite(b.lat) && Number.isFinite(b.lon)) } : null;
-    } catch (e) { return null; }
-  };
+  // The UK chains' branches come from the branch list (data/branches.json, as Near me), drawn for the part of the map
+  // on screen once it's zoomed in to a town; the Abroad lists' places come from cities.json. Your position is followed
+  // only while this page is open and the app is in front, and it never leaves the phone.
+  const MAP_KM = 1.5, MAP_ZOOM = 13, MAP_PINS = 300; // zoom 13: about 3.5 km across a phone, legible even in London
+  // pins: the chains' pins on the map now, by branch, so a redraw adds and removes only the difference; openPin: the
+  // one whose popup is open, kept whatever the redraw (opening a popup pans the map)
+  const live = { map: null, watch: null, me: null, ring: null, places: null, branches: null, at: null, follow: true, pins: new Map(), openPin: null };
   const setMapStatus = (t) => { $("mapStatus").textContent = t; };
   const awayText = (l) => (live.at ? metres(kmTo(l, live.at)) + " away" : "");
-  // narrow enough for a small phone's map, and clear of Search this area at the top
+  // narrow enough for a small phone's map, and clear of the hint at the top
   const POPUP = { maxWidth: 230, autoPanPaddingTopLeft: [12, 64], autoPanPaddingBottomRight: [12, 12] };
   function openLiveMap() {
     if (!data) return;
     openDialog($("mapPage"));
     live.follow = true;
-    live.found = new Map();
-    const s = savedBranches();
-    if (s) s.items.forEach((b) => live.found.set(b.key, b));
     setMapStatus(navigator.geolocation ? "Finding where you are…" : "This phone can't share its location here.");
     $("mapOffline").hidden = !offlineNow;
     drawLiveMap();
@@ -1514,7 +1500,7 @@
   async function drawLiveMap() {
     try { await loadLeaflet(); } catch (e) { setMapStatus("The map couldn't load. Check your signal and try again."); return; }
     if (!$("mapPage").open || live.map) return;
-    // the zoom buttons go bottom left, out of the way of the popups and Search this area at the top
+    // the zoom buttons go bottom left, out of the way of the popups and the hint at the top
     const map = L.map($("liveMap"), { zoomControl: false });
     L.control.zoom({ position: "bottomleft" }).addTo(map);
     live.map = map;
@@ -1523,23 +1509,36 @@
     live.places = L.layerGroup().addTo(map);
     live.branches = L.layerGroup().addTo(map);
     drawPlacePins();
-    drawBranchPins();
     // until the phone answers: where you were last seen, else the city on screen, else the whole UK
     const c = city(), last = here || (savedNear() || {}).at;
     if (last) map.setView([last.lat, last.lon], 15);
     else if (c) map.fitBounds([[c.bounds.lat[0], c.bounds.lon[0]], [c.bounds.lat[1], c.bounds.lon[1]]]);
     else map.setView([54.4, -2.5], 5);
     map.on("dragstart", () => { live.follow = false; renderMapButtons(); });
-    map.on("moveend", renderMapButtons);
+    map.on("moveend", () => { drawBranchPins(); renderMapButtons(); });
     renderMapButtons();
     watchMe();
+    mapBranches();
+  }
+  // the branch list, drawn once it's here (on a weak signal the map shouldn't wait for it); tried again at most
+  // every half minute while the map is open, on the next position
+  let branchTriedAt = 0;
+  async function mapBranches() {
+    if (!branchList && Date.now() - branchTriedAt < 30000) return;
+    branchTriedAt = Date.now();
+    await loadBranches();
+    if (!live.map) return;
+    drawBranchPins();
+    renderMapStatus();
+    renderMapButtons();
+    if (!branchList) setMapStatus(NO_LIST + " Only the Abroad places show for now.");
   }
   function watchMe() {
     if (live.watch != null || !navigator.geolocation || !live.map || document.hidden) return;
     live.watch = navigator.geolocation.watchPosition(onPosition, (e) => {
       if (e.code !== 1) return; // slow to find, or lost for a moment: the watch carries on
       stopWatch();
-      setMapStatus("Location is off for this app, so the map can't show where you are. Check Location Services for Safari in Settings. Search this area still finds branches.");
+      setMapStatus("Location is off for this app, so the map can't show where you are. Check Location Services for Safari in Settings.");
       renderMapButtons();
     }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
   }
@@ -1556,74 +1555,59 @@
       live.me = L.circleMarker(ll, { radius: 8, color: "#ffffff", weight: 3, fillColor: "#1e6fd9", fillOpacity: 1, className: "you-dot" }).bindPopup("You are here").addTo(live.map);
     } else { live.me.setLatLng(ll); live.ring.setLatLng(ll).setRadius(acc); }
     if (live.follow) { if (first) live.map.setView(ll, Math.max(live.map.getZoom(), 15)); else live.map.panTo(ll); }
-    // a look around you: once a minute at most (across closing and reopening too), and only when there's none yet,
-    // you've moved half a kilometre, or the last one is over an hour old
-    const since = Date.now() - live.lookedWhen;
-    const wanted = !live.mineAt || kmTo(live.mineAt, at) > MAP_MOVED_KM || since > NEAR_FRESH_MS;
-    if (!inUK(at)) { if (first) setMapStatus("Outside the UK, the map shows the places from the Abroad lists. The chains' branches are looked up in the UK only."); }
-    else if (wanted && (!live.lookedWhen || since >= MAP_EVERY_MS)) {
-      lookFor("(around:" + MAP_KM * 1000 + "," + at.lat.toFixed(3) + "," + at.lon.toFixed(3) + ")", rounded(at), "within " + MAP_KM + " km of you", true);
-    } else if (first) {
-      const s = savedBranches();
-      setMapStatus(s && s.items.length ? "Branches from the last look, " + fmtWhen(s.when) + ", from OpenStreetMap." : "");
-    }
+    if (branchList) renderMapStatus(); else mapBranches();
     renderMapButtons();
   }
-  function searchHere() {
-    if (!live.map) return;
-    const b = live.map.getBounds(), mid = b.getCenter();
-    lookFor("(" + [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map((n) => n.toFixed(3)).join(",") + ")", rounded({ lat: mid.lat, lon: mid.lng }), "in this area", false);
-  }
-  async function lookFor(area, centre, where, mine) {
-    if (live.busy) return;
-    live.busy = true;
-    live.lookedWhen = Date.now();
-    const before = { mineAt: live.mineAt, areaAt: live.areaAt }; // put back if the look fails, so it can be tried again
-    live.areaAt = centre;
-    if (mine) live.mineAt = centre;
-    renderMapButtons();
-    setMapStatus("Looking for branches " + where + "…");
-    try {
-      const els = await overpassElements(chainQuery(area));
-      if (!live.map) return; // closed while asking
-      let n = 0;
-      for (const el of els) {
-        const r = el.tags && chainOf(el.tags), pos = elPos(el);
-        if (!r || !pos) continue;
-        n++;
-        const b = { key: el.type + el.id, rid: r.id, lat: pos.lat, lon: pos.lon, where: String(el.tags["addr:street"] || "").slice(0, 80), hours: String(el.tags.opening_hours || "").slice(0, 200) };
-        live.found.delete(b.key); // the newest go last, so the oldest go first once there are too many
-        live.found.set(b.key, b);
-      }
-      while (live.found.size > MAP_MAX) live.found.delete(live.found.keys().next().value);
-      store.set(MAP_KEY, JSON.stringify({ when: new Date().toISOString(), items: [...live.found.values()] }));
-      drawBranchPins();
-      setMapStatus((n ? n + (n === 1 ? " branch" : " branches") + " of the app's chains " + where : "None of the app's chains is listed " + where) +
-        ". From OpenStreetMap, which misses some" + (n ? "; its hours may be out of date." : "."));
-    } catch (e) {
-      Object.assign(live, before); // the next position after the minute tries again, and Search this area comes back
-      if (live.map) setMapStatus("Couldn't reach the map service (no signal, or it's busy)." + (live.found.size ? " The chains' pins are from the last look." : ""));
-    } finally {
-      live.busy = false;
-      renderMapButtons();
+  // how many of the chains' branches are around you, worked out on the phone from the list
+  function renderMapStatus() {
+    const at = live.at;
+    if (!at || !branchList) return;
+    if (!inUK(at)) { setMapStatus("Outside the UK, the map shows the places from the Abroad lists. The chains' branches are in the UK only."); return; }
+    let n = 0;
+    for (const x of branchList.b) {
+      if (!inBox(x, at.lat - 0.015, at.lon - 0.03, at.lat + 0.015, at.lon + 0.03)) continue;
+      const b = branchOf(branchList, x);
+      if (b && kmTo(b, at) <= MAP_KM) n++;
     }
+    setMapStatus((n ? n + (n === 1 ? " branch" : " branches") + " of the app's chains within " + MAP_KM + " km of you" : "None of the app's chains is listed within " + MAP_KM + " km of you") +
+      ". From OpenStreetMap's list of " + listDate(branchList.fetched) + ", which misses some" + (n ? "; its hours may be out of date." : "."));
   }
   // a pin: the dot you see, inside a clear circle the size of a fingertip (44 px) that takes the tap
   function addPin(layer, ll, colour, cls, popup) {
-    L.circleMarker(ll, { radius: 8, color: "#ffffff", weight: 2, fillColor: colour, fillOpacity: 0.95, interactive: false }).addTo(layer);
-    L.circleMarker(ll, { radius: 22, stroke: false, fillColor: "#000000", fillOpacity: 0, className: cls }).bindPopup(popup, POPUP).addTo(layer);
+    const dot = L.circleMarker(ll, { radius: 8, color: "#ffffff", weight: 2, fillColor: colour, fillOpacity: 0.95, interactive: false }).addTo(layer);
+    const hit = L.circleMarker(ll, { radius: 22, stroke: false, fillColor: "#000000", fillOpacity: 0, className: cls }).bindPopup(popup, POPUP).addTo(layer);
+    return [dot, hit];
   }
-  // the chains' pins take the app's own colour; the Abroad places take their list row's colours (pinColour)
+  // the chains' pins take the app's own colour; only the branches on screen are drawn, nearest the middle first, and
+  // none while the map shows more than a town (thousands of pins would bury the map and slow the phone)
   function drawBranchPins() {
-    if (!live.branches) return;
-    live.branches.clearLayers();
+    if (!live.branches || !live.map) return;
+    const want = new Map();
+    if (branchList && live.map.getZoom() >= MAP_ZOOM) {
+      const v = live.map.getBounds(), mid = v.getCenter(), centre = { lat: mid.lat, lon: mid.lng };
+      const shown = [];
+      for (const x of branchList.b) {
+        if (!inBox(x, v.getSouth(), v.getWest(), v.getNorth(), v.getEast())) continue;
+        const b = branchOf(branchList, x);
+        if (b) shown.push(b);
+      }
+      shown.sort((a, b) => kmTo(a, centre) - kmTo(b, centre));
+      shown.slice(0, MAP_PINS).forEach((b) => want.set(b.rid + "|" + b.lat + "|" + b.lon, b));
+    }
+    for (const [key, layers] of live.pins) {
+      if (want.has(key) || key === live.openPin) continue;
+      layers.forEach((l) => live.branches.removeLayer(l));
+      live.pins.delete(key);
+    }
     const colour = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
-    for (const b of live.found.values()) {
-      const r = byId(b.rid);
-      if (!r) continue; // a chain no longer in the app
-      addPin(live.branches, [b.lat, b.lon], colour, "pin-branch", () => "<b>" + esc(r.name) + "</b><br>" + esc([awayText(b), openText(b.hours), b.where].filter(Boolean).join(" · ")) +
-        '<br><span class="pop-btns"><button type="button" class="link-btn" data-map-menu="' + esc(r.id) + '">Menu &rsaquo;</button>' +
-        '<a class="link-btn" href="https://maps.apple.com/?ll=' + esc(b.lat + "," + b.lon) + "&q=" + encodeURIComponent(r.name) + '" target="_blank" rel="noopener">Directions</a></span>');
+    for (const [key, b] of want) {
+      if (live.pins.has(key)) continue;
+      const layers = addPin(live.branches, [b.lat, b.lon], colour, "pin-branch", () => "<b>" + esc(b.name) + "</b><br>" + esc([awayText(b), openText(b.hours), b.where].filter(Boolean).join(" · ")) +
+        '<br><span class="pop-btns"><button type="button" class="link-btn" data-map-menu="' + esc(b.rid) + '">Menu &rsaquo;</button>' +
+        '<a class="link-btn" href="https://maps.apple.com/?ll=' + esc(b.lat + "," + b.lon) + "&q=" + encodeURIComponent(b.name) + '" target="_blank" rel="noopener">Directions</a></span>');
+      // after the close has finished (and not during the map's own removal), so a pin is never removed mid-close
+      layers[1].on("popupopen", () => { live.openPin = key; }).on("popupclose", () => { live.openPin = null; setTimeout(() => { if (live.map) drawBranchPins(); }, 0); });
+      live.pins.set(key, layers);
     }
   }
   function drawPlacePins() {
@@ -1642,17 +1626,14 @@
     }
   }
   function renderMapButtons() {
-    const follow = $("mapFollow"), search = $("mapSearch");
-    follow.hidden = !live.map || !live.at || live.follow;
-    if (!live.map) { search.hidden = true; return; }
-    const mid = live.map.getCenter(), at = { lat: mid.lat, lon: mid.lng }, near = live.map.getZoom() >= 13;
-    search.hidden = live.busy || !!(live.follow && live.at) || !inUK(at) || (!!live.areaAt && kmTo(live.areaAt, at) < MAP_AREA_KM);
-    search.disabled = !near;
-    search.textContent = near ? "Search this area" : "Zoom in to look for branches";
+    $("mapFollow").hidden = !live.map || !live.at || live.follow;
+    if (!live.map) { $("mapHint").hidden = true; return; }
+    const mid = live.map.getCenter();
+    // zoomed out over the UK: say why the chains' pins have gone
+    $("mapHint").hidden = !branchList || live.map.getZoom() >= MAP_ZOOM || !inUK({ lat: mid.lat, lon: mid.lng });
   }
   function leaveMap(then) { $("mapPage").close(); then(); }
   $("mapBtn").addEventListener("click", openLiveMap);
-  $("mapSearch").addEventListener("click", searchHere);
   $("mapFollow").addEventListener("click", () => {
     live.follow = true;
     if (live.at && live.map) live.map.setView([live.at.lat, live.at.lon], Math.max(live.map.getZoom(), 15));
@@ -1661,8 +1642,7 @@
   $("mapPage").addEventListener("close", () => {
     stopWatch();
     if (live.map) live.map.remove();
-    // where and when it last looked stay, so opening and closing the map can't send a query each time
-    Object.assign(live, { map: null, me: null, ring: null, places: null, branches: null, at: null });
+    Object.assign(live, { map: null, me: null, ring: null, places: null, branches: null, at: null, pins: new Map(), openPin: null });
   });
   // the phone's position is watched only while the map is in front of you
   document.addEventListener("visibilitychange", () => { if (document.hidden) stopWatch(); else if ($("mapPage").open) watchMe(); });
@@ -2703,6 +2683,20 @@
   });
   $("picker").addEventListener("close", () => { welcomeNow = false; });
   $("appVersion").textContent = "App version " + APP_VERSION + ".";
+  // ---------- What's new: each announced release's own notes (whatsnew.json), from Help or the notification ----------
+  async function openWhatsNew() {
+    $("whatsNewBody").innerHTML = '<p class="empty">Loading…</p>';
+    if (!$("whatsNew").open) openDialog($("whatsNew"));
+    let notes = null;
+    try { const res = await fetch("whatsnew.json", { cache: "no-cache" }); if (res.ok) notes = await res.json(); } catch (e) { /* no signal, never saved */ }
+    notes = Array.isArray(notes) ? notes.filter((n) => n && Number.isFinite(n.version) && n.title && Array.isArray(n.items)) : [];
+    $("whatsNewBody").innerHTML = notes.length
+      ? notes.slice(0, 6).map((n) => "<h3>" + esc(n.title) + '</h3><p class="muted">Update ' + n.version + (n.date ? ", " + esc(fmtDate(n.date)) : "") +
+          (n.version === APP_VERSION ? " (this one)" : n.version > APP_VERSION ? " (on its way: close the app and open it again)" : "") + "</p>" +
+          '<ul class="news-items">' + n.items.map((i) => "<li>" + esc(i) + "</li>").join("") + "</ul>").join("")
+      : '<p class="empty">Couldn\'t load the notes. Try again with signal.</p>';
+  }
+  $("whatsNewBtn").addEventListener("click", openWhatsNew);
   // what to send the owner if something breaks: no tracking, nothing leaves the phone unless you send it
   function errorDetails() {
     const lines = ["Twoo's Treat Temple, app version " + APP_VERSION, "Menus built: " + (data ? data.built : "not loaded"),
@@ -2724,7 +2718,7 @@
     }
   });
   $("infoBtn").addEventListener("click", () => { renderLastChecked(); openDialog($("info")); });
-  ["picker", "info", "gfcard", "warnings", "staff", "changes", "report", "favImport", "order", "near", "mapPage"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
+  ["picker", "info", "gfcard", "warnings", "staff", "changes", "report", "favImport", "order", "near", "mapPage", "whatsNew"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
   ["staff", "gfcard"].forEach((id) => $(id).addEventListener("close", () => { if (!$("staff").open && !$("gfcard").open) letGo(); }));
   $("refreshBtn").addEventListener("click", () => load(true));
   $("shareBtn").addEventListener("click", () => {
@@ -2847,6 +2841,9 @@
   const requestCode = rawHash.startsWith("request=") ? rawHash.slice(8) : "";
   if (importCode || requestCode) history.replaceState(null, "", location.pathname); // added or not, a reload shouldn't ask again
   const hashId = importCode || requestCode ? "" : rawHash;
+  // "?whatsnew": the "Update N is live!" notification (a query, not a #, which the last release would read as a page)
+  const wantNews = /(^|[?&])whatsnew(=|&|$)/.test(location.search.slice(1));
+  if (wantNews) history.replaceState(null, "", location.pathname + location.hash); // a reload shouldn't open it again
   const [hashRid, hashItem] = hashId.split("/");
   const saved = store.get(DATA_KEY);
   if (saved) {
@@ -2858,6 +2855,7 @@
   selected = (region === UK && hashRid) || store.get(SEL_KEY) || ALL;
   render();
   if (requestCode) openRequestFrom(requestCode); // a place asked for on another phone, passed on by link
+  if (wantNews) openWhatsNew();
   let itemPending = hashItem || "";
   if (itemPending && data && byId(hashRid)) { showItem(hashRid, itemPending); itemPending = ""; }
   try { // back where you were after the app reloaded itself for new code
@@ -2873,11 +2871,12 @@
     if (data && itemPending && byId(hashRid)) { showItem(hashRid, itemPending); itemPending = ""; }
     importReady.data = true;
     maybeImport();
-    if (data && region === UK && !hashId && !fromFavLink && !requestCode && !store.get(SEL_KEY)) { // not over a request link's form
+    if (data && region === UK && !hashId && !fromFavLink && !requestCode && !wantNews && !store.get(SEL_KEY)) { // not over a request link's form or What's new
       if (data.restaurants.length === 1) select(data.restaurants[0].id);
       else { renderPicker(); openDialog($("picker")); }
     }
     autoNear(false); // the look around, if it's been switched on
+    if (data && osmChains().length) loadBranches(); // quietly, so the map and Near me have it without signal later
   });
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible") return;

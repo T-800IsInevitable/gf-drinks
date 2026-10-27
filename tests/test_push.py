@@ -22,6 +22,55 @@ def restaurant(rid, name, source, items=3, changes=None, title="Autumn 2026"):
             "stats": {"items": items, "avoid": 1}, "changes": changes, "hash": source[:8]}
 
 
+class Release(unittest.TestCase):
+    """'Update N is live!': only when the release number went up past the live one and whatsnew.json announces it."""
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: shutil.rmtree(self.tmp, ignore_errors=True))
+        self.prev, self.site = self.tmp / "previous", self.tmp / "site"
+        self.prev.mkdir()
+        self.site.mkdir()
+
+    def given(self, live, new, notes):
+        if live is not None:
+            (self.prev / "app-version").write_text(str(live), encoding="utf-8")
+        (self.site / "app.js").write_text(f"(() => {{\n  const APP_VERSION = {new};\n}})();\n", encoding="utf-8")
+        (self.site / "whatsnew.json").write_text(json.dumps(notes), encoding="utf-8")
+        return push.release_plan(self.prev, self.site)
+
+    NOTES = [{"version": 31, "date": "2026-10-27", "title": "Maps that work offline", "items": ["a"]}]
+
+    def test_a_new_announced_release_is_announced(self):
+        m = self.given(30, 31, self.NOTES)
+        self.assertEqual(m["title"], "Update 31 is live!")
+        self.assertEqual(m["body"], "Tap to see the new features: Maps that work offline")
+        self.assertEqual(m["url"], "?whatsnew")  # a query, which the release before reads as nothing
+        self.assertNotIn("badge", m)  # the badge counts new guides
+
+    def test_no_notes_no_announcement(self):
+        self.assertIsNone(self.given(30, 31, [{**self.NOTES[0], "version": 30}]))
+
+    def test_the_same_release_again_isnt_announced(self):
+        self.assertIsNone(self.given(31, 31, self.NOTES))
+
+    def test_an_unknown_live_release_isnt_announced(self):
+        self.assertIsNone(self.given(None, 31, self.NOTES))
+
+    def test_guides_come_first_then_the_release(self):
+        with mock.patch.object(push, "plan", return_value={"title": "New menus in Treat Temple", "body": "x"}), \
+                mock.patch.object(push, "release_plan", return_value={"title": "Update 31 is live!", "body": "y"}):
+            self.assertEqual([m["title"] for m in push.messages()], ["New menus in Treat Temple", "Update 31 is live!"])
+
+    def test_each_message_is_sent(self):
+        plan = self.tmp / "push-message.json"
+        plan.write_text(json.dumps({"messages": [{"title": "A", "body": "a"}, {"title": "B", "body": "b"}]}), encoding="utf-8")
+        env = {"PUSH_SUBSCRIPTIONS": '{"endpoint": "https://web.push.apple.com/x", "keys": {}}', "VAPID_PRIVATE_KEY": "k"}
+        with mock.patch.dict(push.os.environ, env, clear=False), mock.patch.object(push, "send", return_value=["phone 1: sent"]) as sent, \
+                mock.patch.object(sys, "argv", ["push.py", "--send", str(plan)]), mock.patch("builtins.print"):
+            push.main()
+        self.assertEqual([c.args[0]["title"] for c in sent.call_args_list], ["A", "B"])
+
+
 class Plan(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
