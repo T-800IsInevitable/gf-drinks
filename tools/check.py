@@ -129,6 +129,25 @@ def check_restaurant(r, err):
     print(f"{rid}: {len(d['items'])} with no gluten ingredients, {len(d['avoid'])} to avoid, guide valid until {d['guide'].get('validUntil')}")
 
 
+def check_branches(d, ids, err):
+    """data/branches.json (tools/fetch_branches.py): [chain number, lat, lon, street, opening_hours] per branch, every
+    one in the UK. A chain the app no longer has is only skipped by the app, so it's reported, not failed."""
+    chains, rows = d.get("chains"), d.get("b")
+    if not isinstance(chains, list) or not isinstance(rows, list) or not rows:
+        err("branches: needs a list of chains and at least one branch")
+        return
+    gone = [c for c in chains if c not in ids]
+    if gone:
+        print(f"branches: {gone} aren't in the app any more; the app skips their branches")
+    for x in rows:
+        ok = (isinstance(x, list) and len(x) == 5 and isinstance(x[0], int) and 0 <= x[0] < len(chains)
+              and all(isinstance(v, (int, float)) for v in x[1:3]) and all(isinstance(v, str) for v in x[3:]))
+        if not ok or not (49 < x[1] < 61 and -9 < x[2] < 2):
+            err(f"branches: {x!r} isn't a UK branch in the expected form")
+            return
+    print(f"branches: {len(rows)} from OpenStreetMap, fetched {d.get('fetched')}")
+
+
 def check_city(cid, c, phrases, err):
     for key in ("name", "language", "checked", "list", "tips", "sections", "places", "country", "bounds"):
         if not c.get(key):
@@ -190,6 +209,8 @@ def main():
         err("duplicate restaurant ids")
     for r in index["restaurants"]:
         check_restaurant(r, err)
+    if (DATA / "branches.json").exists():  # written by the publish job only (tools/fetch_branches.py)
+        check_branches(json.loads((DATA / "branches.json").read_text(encoding="utf-8")), set(ids), err)
     cities = json.loads((SITE / "cities.json").read_text(encoding="utf-8"))
     phrases = json.loads((SITE / "phrases.json").read_text(encoding="utf-8"))
     for cid, c in cities.items():

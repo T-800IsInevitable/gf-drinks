@@ -41,7 +41,6 @@ import sys
 import tempfile
 import threading
 import time
-import urllib.parse
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -2547,64 +2546,60 @@ def check_f7_map(env):
     return problems
 
 
+def branch_list(index, at, rows):
+    """A data/branches.json for the checks: rows are (restaurant id, km due north of at, street, opening_hours)."""
+    ids = [r["id"] for r in index["restaurants"] if r.get("osm")]
+    dlat = 1 / 111.2
+    return {"fetched": "2026-10-20", "chains": ids,
+            "b": sorted([ids.index(rid), round(at["latitude"] + km * dlat, 5), at["longitude"], street, hours] for rid, km, street, hours in rows)}
+
+
+def with_branches(browser, at, listing, init="", **kw):
+    """A phone at `at` whose app gets `listing` as its branch list (None: the list is missing), with every request
+    that leaves the app's own server recorded. The service worker is blocked, so the list isn't served from its cache."""
+    ctx = browser.new_context(color_scheme="light", geolocation=at, permissions=["geolocation"], service_workers="block", **IPHONE, **kw)
+    ctx.add_init_script("localStorage.setItem('gf-selected', 'all');" + init)
+    out = []
+    ctx.on("request", lambda r: out.append(r.url) if not r.url.startswith("http://127.0.0.1") else None)
+    ctx.route("**/data/branches.json", lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps(listing))
+              if listing is not None else route.fulfill(status=404, body=""))
+    ctx.route("https://tile.openstreetmap.org/**", lambda route: route.fulfill(status=200, content_type="image/png", body=PNG))
+    return ctx, out
+
+
 def check_f8_near_me(env):
     base, browser, index = env.base, env.browser, env.index
     problems = []
-    # F8: Near me on All restaurants asks OpenStreetMap (answered here by a fake) for the app's chains within a
-    # kilometre, lists them nearest first with their menu and directions, keeps the answer, and shows it again with
-    # a note when the service can't be reached.
+    # F8: Near me on All restaurants finds the app's chains within a kilometre in the branch list (data/branches.json,
+    # fetched weekly by the publish job), lists them nearest first with their menu and directions, and keeps the answer.
+    # Nothing about where you are leaves the phone. Without a list it shows the last answer and says why.
     chains = [r for r in index["restaurants"] if r.get("osm")]
     pret = next((r for r in chains if r["id"] == "pret-uk"), chains[0])
     other = next((r for r in chains if r["id"] != pret["id"]), None)
     at = {"latitude": 51.5308, "longitude": -0.1238}  # King's Cross
-    dlat = 1 / 111.2  # about a kilometre, due north
-
-    def node(n, name, km, brand=None, way=False):
-        tags = {"name": name, "addr:street": "Euston Road"}
-        if brand:
-            tags["brand"] = brand
-        pos = {"lat": at["latitude"] + km * dlat, "lon": at["longitude"]}
-        el = {"type": "way" if way else "node", "id": n, "tags": tags}
-        el.update({"center": pos} if way else pos)
-        return el
-
-    elements = [node(1, pret["osm"][0], 0.3), node(2, pret["osm"][-1].upper(), 0.8),
-                node(4, "Not a chain", 0.1), node(5, pret["osm"][0] + " Something", 0.1)]  # names are matched whole
+    rows_in = [(pret["id"], 0.3, "Euston Road", ""), (pret["id"], 0.8, "Euston Road", ""), (pret["id"], 5, "Far Away Road", "")]
     if other:
-        elements.append(node(3, "Coffee corner", 0.8, brand=other["osm"][0], way=True))
-    asked = []
-
-    def overpass(route):
-        asked.append(urllib.parse.unquote((route.request.post_data or "").removeprefix("data=")))
-        route.fulfill(status=200, content_type="application/json", body=json.dumps({"elements": elements}))
-
-    ctx = browser.new_context(color_scheme="light", geolocation=at, permissions=["geolocation"], **IPHONE)
-    ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+        rows_in.append((other["id"], 0.8, "", ""))
+    listing = branch_list(index, at, rows_in)
+    ctx, outside = with_branches(browser, at, listing)
     page = ctx.new_page()
     errors = []
     page.on("pageerror", lambda e: errors.append(f"page error: {e}"))
     page.on("console", lambda m: errors.append(f"console {m.type}: {m.text}") if m.type == "error" else None)
-    page.route("https://overpass-api.de/**", overpass)
     page.goto(base)
     page.wait_for_selector("#list .row")
     page.locator("#chips [data-near-uk]").click()
     page.wait_for_selector("#near[open] .near-list li", timeout=15000)
     rows = [norm_ws(t) for t in page.locator("#near .near-list li .nm").all_inner_texts()]
-    want_first = f"{pret['name']} 300 m · Euston Road · 2 within 1 km"
+    want_first = f"{pret['name']} 300 m · Euston Road · 2 within 1 km"  # the branch 5 km away isn't counted
     if not rows or rows[0] != want_first:
         problems.append(f"near me: first row {rows[0] if rows else None!r}, expected {want_first!r}")
     if other and (len(rows) != 2 or not rows[1].startswith(f"{other['name']} 800 m")):
         problems.append(f"near me: rows {rows}, expected {other['name']} second at 800 m")
-    if any("Not a chain" in r or "Something" in r for r in rows):
-        problems.append(f"near me: a place that isn't one of the app's chains was listed: {rows}")
-    for r in chains:
-        if not all(o in (asked[0] if asked else "") for o in r["osm"]):
-            problems.append(f"near me: the query doesn't ask for {r['name']}'s names {r['osm']}")
-    if len(asked) != 1:
-        problems.append(f"near me: {len(asked)} queries for one tap")
-    # V6: the position goes out rounded to about 100 metres (three decimal places), never to the metre
-    if asked and "around:1000,51.531,-0.124)" not in asked[0]:
-        problems.append(f"near me: the query doesn't round the position to three decimal places ({asked[0][:160]!r})")
+    if "list from 20 Oct" not in norm_ws(page.locator("#nearBody").inner_text()):
+        problems.append("near me: doesn't say how old the branch list is")
+    if outside:
+        problems.append(f"near me: requests left the phone: {outside[:3]}")
     href = page.locator("#near .near-list li").first.locator("a").get_attribute("href")
     if not href.startswith("https://maps.apple.com/?ll="):
         problems.append(f"near me: directions link {href!r}")
@@ -2616,25 +2611,21 @@ def check_f8_near_me(env):
         problems.append("near me: the chip isn't on the restaurant's page, or isn't plain without the look-around")
     saved = page.evaluate("localStorage.getItem('gf-near')")
     ctx.close()
-    # no signal: the last answer, with a note saying so
-    ctx = browser.new_context(color_scheme="light", geolocation=at, permissions=["geolocation"], **IPHONE)
-    ctx.add_init_script("localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-near', " + json.dumps(saved) + ")")
+    # no list on this phone yet: the last answer, with a note saying so
+    ctx, _ = with_branches(browser, at, None, "localStorage.setItem('gf-near', " + json.dumps(saved) + ")")
     page = ctx.new_page()
-    page.route("https://overpass-api.de/**", lambda route: route.abort())
     page.goto(base)
     page.wait_for_selector("#list .row")
     page.locator("#chips [data-near-uk]").click()
     page.wait_for_selector("#near[open] .near-list li", timeout=15000)
     body = norm_ws(page.locator("#nearBody").inner_text())
-    if "last answer" not in body or "today at" not in body or pret["name"] not in body:
-        problems.append(f"near me offline: {body[:160]!r}")
+    if "last answer" not in body or "today at" not in body or pret["name"] not in body or "isn't on this phone yet" not in body:
+        problems.append(f"near me without the list: {body[:160]!r}")
     ctx.close()
     problems += [f"near me: {e}" for e in errors]
-    # E1: the look around when the app opens. Switched on, permission granted: one query on opening, the chip reads off
-    # the nearest chain with its hours, the chooser gets a Near you group, a reopen at the same spot asks nothing more,
-    # and the chain's own page says Here
-    elements[0]["tags"]["opening_hours"] = "24/7"
-    asked.clear()
+    # E1: the look around when the app opens. Switched on, permission granted: the chip reads off the nearest chain with
+    # its hours, the chooser gets a Near you group, a reload keeps it, and the chain's own page says Here
+    listing = branch_list(index, at, [(pret["id"], 0.3, "Euston Road", "24/7")] + rows_in[1:])
     chip = lambda: norm_ws(page.locator("#chips [data-near-uk]").inner_text())  # noqa: E731
 
     def settled():  # the look-around runs after the menus load: give it up to ten seconds to write the chip
@@ -2643,18 +2634,16 @@ def check_f8_near_me(env):
                 break
             page.wait_for_timeout(250)
         return chip()
-    ctx = browser.new_context(color_scheme="light", geolocation=at, permissions=["geolocation"], **IPHONE)
-    ctx.add_init_script("localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-near-auto', 'on')")
+    ctx, outside = with_branches(browser, at, listing, "localStorage.setItem('gf-near-auto', 'on')")
     page = ctx.new_page()
-    page.route("https://overpass-api.de/**", overpass)
+    # a call to anywhere the policy forbids is blocked before it's a request, so it shows only as a console error
+    page.on("console", lambda m: problems.append(f"look around console {m.type}: {m.text}") if m.type == "error" else None)
     page.goto(base)
     page.wait_for_selector("#list .row")
     settled()
     want_chip = f"{pret['name']} 300 m · open now ›"
     if chip() != want_chip:
         problems.append(f"look around: the chip reads {chip()!r}, expected {want_chip!r}")
-    if len(asked) != 1:
-        problems.append(f"look around: {len(asked)} queries on opening, expected 1")
     page.locator("#pickBtn").click()
     page.wait_for_selector("#picker[open]")
     heads = [norm_ws(t).lower() for t in page.locator("#pickList .sub-h").all_inner_texts()]  # the headings are set in capitals
@@ -2665,9 +2654,6 @@ def check_f8_near_me(env):
     page.reload()
     page.wait_for_selector("#list .row")
     settled()
-    page.wait_for_timeout(300)
-    if len(asked) != 1:
-        problems.append(f"look around: reopening at the same spot asked again ({len(asked)} queries)")
     if chip() != want_chip:
         problems.append(f"look around: after a reload the chip reads {chip()!r}")
     page.goto(base + f"#{pret['id']}")
@@ -2675,30 +2661,28 @@ def check_f8_near_me(env):
     page.wait_for_timeout(300)
     if chip() != "Here: 300 m · open now ›":  # the chain's own page: no name, so the section chips stay within reach
         problems.append(f"look around: on {pret['name']}'s page the chip reads {chip()!r}")
+    if outside:
+        problems.append(f"look around: requests left the phone: {outside[:3]}")
     ctx.close()
-    # abroad (Alexanderplatz): the position is taken, but the UK query isn't sent
-    asked.clear()
-    ctx = browser.new_context(color_scheme="light", geolocation=ALEX, permissions=["geolocation"], **IPHONE)
-    ctx.add_init_script("localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-near-auto', 'on')")
+    # abroad (Alexanderplatz): the position is taken, but there's no UK chain to name
+    ctx, _ = with_branches(browser, ALEX, listing, "localStorage.setItem('gf-near-auto', 'on')")
     page = ctx.new_page()
-    page.route("https://overpass-api.de/**", overpass)
     page.goto(base)
     page.wait_for_selector("#list .row")
     page.wait_for_timeout(1200)
-    if asked or chip() != "Near me":
-        problems.append(f"look around: in Berlin it sent {len(asked)} queries, chip {chip()!r}")
+    if chip() != "Near me":
+        problems.append(f"look around: in Berlin the chip reads {chip()!r}")
+    if page.evaluate("localStorage.getItem('gf-near-granted')") != "1":  # it did run: the position was read
+        problems.append("look around: in Berlin it never read the position")
     ctx.close()
     # not switched on: nothing on opening; the first answer to a tap offers the choice, and Keep checking switches it on
-    asked.clear()
-    ctx = browser.new_context(color_scheme="light", geolocation=at, permissions=["geolocation"], **IPHONE)
-    ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+    ctx, _ = with_branches(browser, at, listing)
     page = ctx.new_page()
-    page.route("https://overpass-api.de/**", overpass)
     page.goto(base)
     page.wait_for_selector("#list .row")
     page.wait_for_timeout(1200)
-    if asked:
-        problems.append("look around: it queried on opening without being switched on")
+    if chip() != "Near me" or page.evaluate("localStorage.getItem('gf-near-granted')") is not None:
+        problems.append(f"look around: it ran on opening without being switched on (chip {chip()!r})")
     page.locator("#chips [data-near-uk]").click()
     page.wait_for_selector("#near[open] .near-list li", timeout=15000)
     if not page.locator("#near [data-near-ask]").count():
@@ -2708,39 +2692,27 @@ def check_f8_near_me(env):
     if page.evaluate("localStorage.getItem('gf-near-auto')") != "on" or page.locator("#near [data-near-ask]").count():
         problems.append("look around: Keep checking didn't switch it on")
     ctx.close()
-    print(f"near me: {rows}; offline shows the last answer; the look around on opening: one query, the chip, Near you, nothing abroad, the opt-in")
+    print(f"near me: {rows}; nothing leaves the phone; without the list the last answer; the look around on opening: the chip, Near you, nothing abroad, the opt-in")
     return problems
 
 
 def check_f16_live_map(env):
     base, browser, index, cities = env.base, env.browser, env.index, env.cities
     problems = []
-    # F16: the globe by the title opens the map page. It follows the phone, looks for the chains' branches around it once
-    # (the position rounded to three decimal places), again only after half a kilometre and a minute, pins every Abroad
-    # place, sends the box on screen for Search this area, and a pin's Menu or Open goes to the page or the row. Closing it
-    # takes the map down. The tiles and OpenStreetMap's answers are faked, and the page's clock is moved on, not waited for.
+    # F16: the globe by the title opens the map page. It follows the phone, draws the chains' branches from the branch
+    # list for the part of the map on screen (none when zoomed out past a town), pins every Abroad place, and a pin's
+    # Menu or Open goes to the page or the row. Nothing but the map's tiles leaves the phone. Closing it takes the map down.
     chains = [r for r in index["restaurants"] if r.get("osm")]
     pret = next((r for r in chains if r["id"] == "pret-uk"), chains[0])
     at = {"latitude": 51.5308, "longitude": -0.1238}  # King's Cross
-    dlat = 1 / 111.2  # about a kilometre, due north
-    elements = [{"type": "node", "id": 1, "lat": at["latitude"] + 0.3 * dlat, "lon": at["longitude"],
-                 "tags": {"name": pret["osm"][0], "addr:street": "Euston Road", "opening_hours": "24/7"}},
-                {"type": "way", "id": 2, "center": {"lat": at["latitude"] - 0.6 * dlat, "lon": at["longitude"]}, "tags": {"brand": pret["osm"][0], "name": "Somewhere"}},
-                {"type": "node", "id": 3, "lat": at["latitude"], "lon": at["longitude"] + 0.001, "tags": {"name": "Not a chain"}}]
-    asked = []
-
-    def overpass(route):
-        asked.append(urllib.parse.unquote((route.request.post_data or "").removeprefix("data=")))
-        route.fulfill(status=200, content_type="application/json", body=json.dumps({"elements": elements}))
+    dlat = 1 / 111.2
+    listing = branch_list(index, at, [(pret["id"], 0.3, "Euston Road", "24/7"), (pret["id"], -0.6, "", ""), (pret["id"], 30, "", "")])
 
     def opened(ctx):
         page = ctx.new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(f"page error: {e}"))
         page.on("console", lambda m: errors.append(f"console {m.type}: {m.text}") if m.type == "error" else None)
-        page.clock.install()
-        page.route("https://overpass-api.de/**", overpass)
-        page.route("https://tile.openstreetmap.org/**", lambda route: route.fulfill(status=200, content_type="image/png", body=PNG))
         page.goto(base)
         page.wait_for_selector("#list .row")
         page.locator("#mapBtn").click()
@@ -2757,73 +2729,50 @@ def check_f16_live_map(env):
     status = lambda page: norm_ws(page.locator("#mapStatus").inner_text())  # noqa: E731
     dot = lambda page: page.locator("#liveMap path.you-dot").bounding_box()  # noqa: E731
     pin = lambda page: page.locator("#liveMap path.pin-branch").first.bounding_box()  # noqa: E731
-    ctx = browser.new_context(color_scheme="light", geolocation=at, permissions=["geolocation"], **IPHONE)
-    ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+    ctx, outside = with_branches(browser, at, listing)
     page, errors = opened(ctx)
-    settled = lambda: "branches" in status(page) and "Looking" not in status(page)  # noqa: E731
-    until(page, settled)
-    want = "2 branches of the app's chains within 1.5 km of you. From OpenStreetMap, which misses some; its hours may be out of date."
+    until(page, lambda: "branches" in status(page))
+    want = "2 branches of the app's chains within 1.5 km of you. From OpenStreetMap's list of 20 Oct, which misses some; its hours may be out of date."
     if status(page) != want:
         problems.append(f"live map: the status reads {status(page)!r}, expected {want!r}")
     if not page.locator("#liveMap path.you-dot").count():
         problems.append("live map: no dot for where you are")
     branches = page.locator("#liveMap path.pin-branch").count()
     if branches != 2:
-        problems.append(f"live map: {branches} branch pins, expected 2 (the place that isn't a chain left out)")
+        problems.append(f"live map: {branches} branch pins on screen, expected 2 (the one 30 km away isn't)")
     places = page.locator("#liveMap path.pin-place").count()
     want_places = sum(1 for c in cities.values() for p in c["places"] for l in p["locations"] if l.get("lat") is not None)
     if places != want_places:
         problems.append(f"live map: {places} pins for the Abroad places, expected {want_places}")
-    if len(asked) != 1 or "around:1500,51.531,-0.124)" not in asked[0]:
-        problems.append(f"live map: {len(asked)} queries on opening, the first {asked[0][:160] if asked else None!r}")
     if "OpenStreetMap" not in page.locator("#liveMap .leaflet-control-attribution").inner_text():
         problems.append("live map: no OpenStreetMap attribution")
-    saved = json.loads(page.evaluate("localStorage.getItem('gf-map-branches')") or "{}")
-    if len(saved.get("items", [])) != 2:
-        problems.append(f"live map: {len(saved.get('items', []))} branches kept for when there's no signal, expected 2")
-    # moving: the map follows (the pins move under a dot that stays put); 0.6 km on asks nothing within the minute,
-    # and asks again once the minute is up and the phone reports in
+    # moving: the map follows (the pins move under a dot that stays put)
     before_dot, before_pin = dot(page), pin(page)
     ctx.set_geolocation({"latitude": at["latitude"] + 0.6 * dlat, "longitude": at["longitude"]})
     until(page, lambda: abs(pin(page)["y"] - before_pin["y"]) > 20, 4000)
     page.wait_for_timeout(500)
     if abs(pin(page)["y"] - before_pin["y"]) < 20 or abs(dot(page)["y"] - before_dot["y"]) > 20:
         problems.append(f"live map: after moving the dot went {before_dot['y']:.0f} -> {dot(page)['y']:.0f} and a pin {before_pin['y']:.0f} -> {pin(page)['y']:.0f}; the map didn't follow")
-    if len(asked) != 1:
-        problems.append(f"live map: asked again within the minute ({len(asked)} queries)")
-    page.clock.fast_forward(61000)
-    ctx.set_geolocation({"latitude": at["latitude"] + 0.62 * dlat, "longitude": at["longitude"]})
-    until(page, lambda: len(asked) > 1, 4000)
-    if len(asked) != 2 or "around:1500,51.536,-0.124)" not in asked[-1]:
-        problems.append(f"live map: after half a kilometre and a minute, {len(asked)} queries, the last {asked[-1][:160]!r}")
-    until(page, settled, 4000)
-    # a minute on but under half a kilometre from the last look: nothing asked
-    page.clock.fast_forward(61000)
-    ctx.set_geolocation({"latitude": at["latitude"] + 0.9 * dlat, "longitude": at["longitude"]})
-    page.wait_for_timeout(1000)
-    if len(asked) != 2:
-        problems.append(f"live map: asked again after only 0.3 km ({len(asked)} queries)")
-    # dragging the map away stops the following and offers Search this area, which sends the box on screen
+    # dragging the map away stops the following; zoomed out past a town the chains' pins go, with a hint saying why
     box = page.locator("#liveMap").bounding_box()
     x, y = box["x"] + box["width"] / 2, box["y"] + box["height"] * 0.1
     page.mouse.move(x, y)
     page.mouse.down()
-    for step in range(1, 21):  # most of the map's height: well over the 750 m before Search this area is offered
+    for step in range(1, 21):
         page.mouse.move(x, y + box["height"] * 0.04 * step)
     page.mouse.up()
     page.wait_for_timeout(800)
-    if not page.locator("#mapSearch").is_visible() or not page.locator("#mapFollow").is_visible():
-        problems.append(f"live map: after dragging the map away, Search this area showing {page.locator('#mapSearch').is_visible()}, "
-                        f"the button back to you {page.locator('#mapFollow').is_visible()} (status {status(page)!r})")
-    else:
-        page.locator("#mapSearch").click()
-        until(page, lambda: len(asked) > 2, 4000)
-        if len(asked) != 3 or not re.search(r"\(\d+\.\d{3},-?\d+\.\d{3},\d+\.\d{3},-?\d+\.\d{3}\)", asked[-1]):
-            problems.append(f"live map: Search this area sent {asked[-1][:160] if len(asked) > 2 else 'nothing'!r}")
-        page.locator("#mapFollow").click()
-        page.wait_for_timeout(600)
-        if page.locator("#mapFollow").is_visible() or page.locator("#mapSearch").is_visible():
-            problems.append("live map: back to you, the two buttons are still showing")
+    if not page.locator("#mapFollow").is_visible():
+        problems.append("live map: after dragging the map away, there's no button back to you")
+    for _ in range(4):
+        page.locator("#liveMap .leaflet-control-zoom-out").click()
+        page.wait_for_timeout(400)
+    if page.locator("#liveMap path.pin-branch").count() or not page.locator("#mapHint").is_visible():
+        problems.append(f"live map zoomed out: {page.locator('#liveMap path.pin-branch').count()} branch pins, hint showing {page.locator('#mapHint').is_visible()}")
+    page.locator("#mapFollow").click()
+    page.wait_for_timeout(800)
+    if page.locator("#mapFollow").is_visible() or page.locator("#mapHint").is_visible() or not page.locator("#liveMap path.pin-branch").count():
+        problems.append("live map: back to you, the pins didn't come back or the buttons are still showing")
     # a branch's Menu opens the chain's page and closes the map
     page.locator("#liveMap path.pin-branch").first.click(force=True)
     page.wait_for_selector("#liveMap .leaflet-popup [data-map-menu]", timeout=5000)
@@ -2836,29 +2785,23 @@ def check_f16_live_map(env):
         problems.append("live map: Menu didn't open the chain's page")
     if page.locator("#liveMap .leaflet-pane").count():
         problems.append("live map: the map is still up after the page closed")
-    # closed, the position isn't followed: moving far and a minute on asks nothing
-    n = len(asked)
-    page.clock.fast_forward(61000)
-    ctx.set_geolocation({"latitude": at["latitude"] + 3 * dlat, "longitude": at["longitude"]})
-    page.wait_for_timeout(1000)
-    if len(asked) != n:
-        problems.append("live map: still looking for branches after the map was closed")
+    off_map = [u for u in outside if not u.startswith("https://tile.openstreetmap.org/")]
+    if off_map:
+        problems.append(f"live map: requests left the phone other than map tiles: {off_map[:3]}")
     problems += [f"live map: {e}" for e in errors]
     ctx.close()
-    # abroad: no query to OpenStreetMap, a word on why, and a place's Open opens its row on its city's page
-    asked.clear()
-    ctx = browser.new_context(color_scheme="light", geolocation=ALEX, permissions=["geolocation"], **IPHONE)
-    ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+    # abroad: a word on why there are no chains, and a place's Open opens its row on its city's page
+    ctx, _ = with_branches(browser, ALEX, listing)
     page, errors = opened(ctx)
     until(page, lambda: "Outside the UK" in status(page))
-    if asked or "Outside the UK" not in status(page):
-        problems.append(f"live map abroad: {len(asked)} queries, status {status(page)!r}")
+    if "Outside the UK" not in status(page):
+        problems.append(f"live map abroad: status {status(page)!r}")
     for _ in range(2):  # out to the city, so some of its places are on screen
         page.locator("#liveMap .leaflet-control-zoom-out").click()
         page.wait_for_timeout(400)
     box = page.locator("#liveMap").bounding_box()
     inside = [b for b in (p.bounding_box() for p in page.locator("#liveMap path.pin-place").all())
-              if b and box["x"] + 20 < b["x"] < box["x"] + box["width"] - 40 and box["y"] + 60 < b["y"] < box["y"] + box["height"] - 40]
+              if b and box["x"] + 20 < b["x"] < box["x"] + box["width"] - 60 and box["y"] + 60 < b["y"] < box["y"] + box["height"] - 60]
     if not inside:
         problems.append("live map abroad: no place pins on screen around Alexanderplatz")
     else:
@@ -2873,8 +2816,10 @@ def check_f16_live_map(env):
     problems += [f"live map abroad: {e}" for e in errors]
     ctx.close()
     # location refused: the map still opens with every pin it can show, and says why there's no dot
-    ctx = browser.new_context(color_scheme="light", **IPHONE)
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
     ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+    ctx.route("**/data/branches.json", lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps(listing)))
+    ctx.route("https://tile.openstreetmap.org/**", lambda route: route.fulfill(status=200, content_type="image/png", body=PNG))
     page, errors = opened(ctx)
     until(page, lambda: "Location is off" in status(page))
     if "Location is off" not in status(page) or page.locator("#liveMap path.you-dot").count():
@@ -2883,8 +2828,20 @@ def check_f16_live_map(env):
         problems.append("live map without location: the Abroad places aren't all pinned")
     problems += [f"live map without location: {e}" for e in errors]
     ctx.close()
-    print(f"live map: {branches} branches and {places} places pinned, one query on opening, the dot followed, a second query after 0.5 km and a minute, "
-          "Search this area, Menu and Open, abroad and without location")
+    # no branch list on this phone yet: the map still opens, with the Abroad places, and says so
+    ctx, _ = with_branches(browser, at, None)
+    page, errors = opened(ctx)
+    until(page, lambda: "isn't on this phone yet" in status(page), 4000)
+    page.wait_for_timeout(1000)  # and a position arriving doesn't overwrite it
+    if page.locator("#liveMap path.pin-branch").count() or page.locator("#liveMap path.pin-place").count() != want_places:
+        problems.append("live map without the list: wrong pins")
+    want = "The list of the chains' branches isn't on this phone yet: it downloads when the app has signal. Only the Abroad places show for now."
+    if status(page) != want:
+        problems.append(f"live map without the list: status {status(page)!r}")
+    problems += [f"live map without the list: {e}" for e in errors if "404" not in e]
+    ctx.close()
+    print(f"live map: {branches} branches and {places} places pinned, the dot followed, zoomed out the chains go with a hint, "
+          "Menu and Open, nothing but tiles left the phone, abroad, without location, without the list")
     return problems
 
 

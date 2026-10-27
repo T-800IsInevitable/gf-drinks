@@ -1,12 +1,15 @@
 name: Build menu and publish app
 
 # On every push to main: the same build and checks as the pull request check
-# (.github/actions/build-check), then the site goes to GitHub Pages.
+# (.github/actions/build-check), then the site goes to GitHub Pages. Also every Monday, so the chains' branch list
+# (tools/fetch_branches.py) is never more than a week old even in a week with nothing else to publish.
 on:
   push:
     branches: [main]
     paths-ignore:
       - "inbox/**"
+  schedule:
+    - cron: "30 4 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -21,11 +24,22 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45 # the checks (with a slow package mirror) and the branch list's twelve minutes
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - uses: ./.github/actions/build-check
+
+      # every UK branch of the chains, from OpenStreetMap, for the map and Near me: asked on the Monday run (and by
+      # hand); a push publishes the live list again while it's under a week old. A busy or broken answer keeps the live
+      # list, and nothing here fails the publish (the pull request check doesn't ask: its UI checks bring their own list)
+      - name: Fetch the chains' branches
+        timeout-minutes: 12
+        continue-on-error: true
+        run: python tools/fetch_branches.py ${{ github.event_name == 'push' && '--reuse-days 7' || '' }}
+
+      - name: Check the branch list with everything else
+        run: python tools/check.py
 
       # what to tell the phones once this is live: only a publish that brought a new guide says anything
       - name: Work out the notification for this publish
