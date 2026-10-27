@@ -18,12 +18,15 @@ runs:
       with:
         python-version: "3.12"
         cache: pip
-        cache-dependency-path: tools/requirements.lock
+        cache-dependency-path: tools/requirements-lock.txt
 
-    # every package by its hash (tools/requirements.lock, from uv pip compile), so a tampered release can't get in
+    # every package by its hash (tools/*-lock.txt, from uv pip compile), so a tampered release can't get in. The build
+    # tools go first, so a package that ships as source is built with a checked setuptools, not one pip fetches itself.
     - name: Install the PDF reader and test tools
       shell: bash
-      run: pip install --require-hashes -r tools/requirements.lock
+      run: |
+        pip install --require-hashes -r tools/requirements-buildtools-lock.txt
+        pip install --require-hashes --no-build-isolation -r tools/requirements-lock.txt
 
     - name: Download the menus that are live now
       shell: bash

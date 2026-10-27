@@ -226,9 +226,10 @@ def what_changed(rid):
                 f"is updated for it:\n\n```\n{quoted(tail)}\n```")
     built = json.loads((ROOT / "site" / "data" / "r" / f"{rid}.json").read_text(encoding="utf-8"))
     c = built.get("changes")
-    text = f"**What changed, from the build:** {quoted(changes.summary(c))}."
+    # dish names come from the PDF: in code spans, where nothing in them can become a link, a mention or emphasis
+    text = f"**What changed, from the build:** `{quoted(changes.summary(c))}`."
     if c and c.get("nowAvoid"):
-        text += "\n\n**Now on the Avoid list (contain gluten):** " + ", ".join(quoted(f"{x['name']} ({x['section']})") for x in c["nowAvoid"]) + "."
+        text += "\n\n**Now on the Avoid list (contain gluten):** " + ", ".join(f"`{quoted(x['name'] + ' (' + x['section'] + ')')}`" for x in c["nowAvoid"]) + "."
     return text
 
 
@@ -239,7 +240,7 @@ def pr_body(r, changed):
         for old in u.get("replaces", []):
             lines.append(f"  - It replaces `{quoted(old)}`, which moves to `guides/archive/`.")
         if u.get("unreadable"):
-            lines.append(f"  - The reader stopped on it: {quoted(u['unreadable'])}")
+            lines.append(f"  - The reader stopped on it: `{quoted(u['unreadable'])}`")
     lines += ["", changed, "",
               "Before merging, read the **Menu build** summary on the checks and look over what changed: the app shows it once "
               "this is merged. Nothing here merges by itself.", "",
@@ -299,7 +300,7 @@ def problem_issue(r):
     folder = f"restaurants/{r['id']}/"
     return (f"Guide watch: couldn't check {r['name']}",
             f"The weekly guide watch couldn't check **{r['name']}** for a new allergen guide:\n\n"
-            + "\n".join(f"- {quoted(p)}" for p in r["problems"]) +
+            + "\n".join(f"- `{quoted(p)}`" for p in r["problems"]) +
             f"\n\nUntil it can, look for a new guide by hand ({r['page']}); the guide reminders still say when the one in "
             "the app is due to end. If the restaurant moved its guide, update `watch` in "
             f"`{folder}restaurant.json`. If its site blocks the check for good, remove `watch` there and keep checking by hand. "

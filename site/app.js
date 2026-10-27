@@ -25,7 +25,9 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   // An address from the data before it becomes a link: http(s), or a path of the app's own; anything with another
   // scheme (javascript:, data:) is dropped. tools/check.py refuses such an address at build time; this is the belt.
-  const safeUrl = (u) => { u = String(u || ""); return /^https?:\/\//i.test(u) || !/^[a-z][a-z0-9+.-]*:/i.test(u) ? u : ""; };
+  // (control characters and spaces go first, since a browser drops them before it reads the scheme; a protocol-relative
+  // address, //host, counts as another site's too)
+  const safeUrl = (u) => { u = String(u || "").replace(/[\u0000- ]/g, ""); return /^https?:\/\//i.test(u) || !/^([a-z][a-z0-9+.-]*:|\/\/)/i.test(u) ? u : ""; };
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } },
@@ -1785,7 +1787,7 @@
       const tree = (await gh(await send("/git/trees", { base_tree: base, tree: entries }), "saving the folder")).sha;
       if (tree === base && !fresh) return false;
       // the app's own name as the author, so an upload never reads as a commit the owner made by hand
-      const commit = (await gh(await send("/git/commits", { message, tree, parents: [parent], author: { name: "Twoo's Treat Temple app", email: "treat-temple-app@users.noreply.github.com" } }), "saving the upload")).sha;
+      const commit = (await gh(await send("/git/commits", { message, tree, parents: [parent], author: { name: "Twoo's Treat Temple app", email: "app@gf-drinks.invalid" } }), "saving the upload")).sha;
       const moved = fresh ? await send("/git/refs", { ref: "refs/heads/" + UPLOAD_BRANCH, sha: commit })
         : await send("/git/refs/heads/" + UPLOAD_BRANCH, { sha: commit, force: false }, "PATCH");
       if (moved.ok) return true;
@@ -2060,6 +2062,10 @@
     importing = sortFavs(got.keys);
     // notes come along for anything still in the app, without replacing a note this phone already has
     importing.notes = Object.fromEntries(Object.entries(got.notes).filter(([k]) => !noteOf(k) && (importing.add.has(k) || favs.has(k) || keyExists(k))));
+    // notes left out, and said so: ones this phone already has (kept as they are), and ones on something now on the
+    // Avoid list or gone from the app
+    const notesKept = Object.keys(got.notes).filter((k) => noteOf(k)).length;
+    const notesLeft = Object.keys(got.notes).filter((k) => !noteOf(k) && !importing.notes[k]).length;
     const { add, have, skip } = importing;
     const nNotes = Object.keys(importing.notes).length;
     const li = (t) => "<li>" + esc(t) + "</li>";
@@ -2071,6 +2077,8 @@
       (have.length ? '<p class="muted">' + have.length + (have.length === 1 ? " is" : " are") + " already saved on this phone.</p>" : "") +
       (nNotes ? "<h3>Notes in the link (" + nNotes + ")</h3><ul class=\"chg-list\">" + Object.entries(importing.notes).map(([k, t]) =>
         "<li><b>" + esc(noteLabel(k)) + ":</b> " + esc(t) + "</li>").join("") + "</ul>" : "") +
+      (notesKept ? '<p class="muted">' + notesKept + (notesKept === 1 ? " note stays as it is" : " notes stay as they are") + " on this phone, which already has one there.</p>" : "") +
+      (notesLeft ? '<p class="muted">' + notesLeft + (notesLeft === 1 ? " note isn't" : " notes aren't") + " added: on something now on the Avoid list, or gone from the app.</p>" : "") +
       (skip.length ? "<h3>Not added (" + skip.length + ")</h3><ul class=\"chg-list\">" + skip.map((x) => li(x.label + " " + x.why + ".")).join("") + "</ul>" : "");
     $("favImportAdd").hidden = !add.size && !nNotes;
     $("favImportAdd").textContent = add.size === 1 ? "Add this to this phone" : add.size ? "Add these " + add.size + " to this phone" : "Add the notes to this phone";

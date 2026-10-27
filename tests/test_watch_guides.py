@@ -172,8 +172,13 @@ class Checking(Site):
         body = w.pr_body(r, "**What changed:** x")
         self.assertIn("(as published: <https://pret.test/a).pdf>)", body)
         self.assertIn("It replaces `old'.pdf`", body)
-        self.assertIn("The reader stopped on it: stopped '''", body)
+        self.assertIn("The reader stopped on it: `stopped '''`", body)
         self.assertNotIn("](", body)
+        # text from a PDF or a site sits in code spans, where a link, a mention or emphasis can't render
+        r2 = {"id": "pret-uk", "name": "Pret", "page": "https://pret.test/p", "new": [{"name": "A.pdf", "url": "https://pret.test/a.pdf", "replaces": [],
+                                                                   "unreadable": "see [here](https://evil.test) @someone"}], "problems": ["Couldn't open [x](https://evil.test) @someone"]}
+        self.assertIn("`see [here](https://evil.test) @someone`", w.pr_body(r2, ""))
+        self.assertIn("- `Couldn't open [x](https://evil.test) @someone`", w.problem_issue(r2)[1])
         title, body = w.manual_issue({"name": "Knoops", "id": "knoops-uk", "new": [{"name": "K.pdf", "url": "https://k.test/k.pdf"}]})
         self.assertIn("- `K.pdf`: <https://k.test/k.pdf>", body)
 
