@@ -2624,13 +2624,14 @@ def check_tap_through_one_restaurant(env):
     page.evaluate("window.scrollTo(0, 0)")  # scrolling down folds the filters away; scroll up as a person would
     page.wait_for_selector(".top:not(.collapsed)")
     page.wait_for_timeout(300)
-    page.locator('#status [data-k="change"]').click()
+    # Avoid: always shown (Needs a change isn't, on a menu with nothing in it, such as this one may be)
+    page.locator('#status [data-k="gluten"]').click()
     after = page.locator("#list .row").count()
     if after > before:
         problems.append(f"Status button: list grew from {before} to {after} rows")
     page.reload()
     page.wait_for_selector("#list .row, #list .empty")
-    if page.locator('#status [data-k="change"]').get_attribute("aria-pressed") != "true":
+    if page.locator('#status [data-k="gluten"]').get_attribute("aria-pressed") != "true":
         problems.append("Status button choice wasn't remembered after reloading")
     problems += [f"tap-through: {e}" for e in errors]
     print(f"tap-through on {ids[0]}: staff card for {name!r}, status filter {before} -> {after} rows")
