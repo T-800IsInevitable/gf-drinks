@@ -75,6 +75,9 @@ runs:
       run: |
         timeout 8m python -m playwright install-deps chromium webkit && exit 0
         echo "::warning::The package mirror was too slow; trying Ubuntu's own archive"
+        # the timeout stopped the wrapper, not the apt-get underneath it, which keeps the package lock: stop that too
+        sudo pkill -TERM apt-get || true; sleep 5; sudo pkill -KILL apt-get || true
+        for i in $(seq 1 24); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 5; done
         sudo dpkg --configure -a || true  # the timeout may have cut apt off mid-install
         sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list 2>/dev/null || true
         sudo apt-get update -qq
