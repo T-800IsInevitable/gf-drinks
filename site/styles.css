@@ -233,9 +233,10 @@ body.searching .hide-searching { display: none !important; }
 .detail b { color: var(--fg); font-weight: 600; }
 .detail .w-quote { margin: 0; }
 .detail-foot { display: flex; align-items: center; gap: 10px; }
-/* the buttons share the full width, so Add to order, Show staff and Save sit on one row */
-.foot-btns { display: flex; flex-wrap: wrap; gap: 8px; flex: 1 1 auto; min-width: 0; }
-.foot-btns > * { flex: 1 1 0; white-space: nowrap; }
+/* Show staff, the one that matters at a counter, has a full-width row of its own; Add to order and Save share the one under it */
+.foot-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1 1 auto; min-width: 0; }
+.foot-btns > * { min-width: 0; white-space: nowrap; }
+.foot-btns > .staff-btn { grid-column: 1 / -1; order: -1; font-size: 0.9375rem; }
 .detail-more { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; }
 .detail-more > span:empty { display: none; }
 .detail-more .link-btn { font-size: 0.8438rem; font-weight: 600; }

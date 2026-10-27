@@ -2765,9 +2765,13 @@ def check_e_review(env):
     accent = page.evaluate("() => { const b = document.createElement('button'); b.className = 'pill-btn'; document.body.appendChild(b); const c = getComputedStyle(b).backgroundColor; b.remove(); return c; }")
     if page.evaluate("(el) => getComputedStyle(el).backgroundColor", row.locator(".staff-btn").element_handle()) != accent:
         problems.append("opened item: Show staff isn't the filled button")
-    tops = {round(b["y"]) for b in [h.bounding_box() for h in row.locator(".foot-btns > *").all()] if b}
-    if len(tops) > 1:
-        problems.append(f"opened item: the buttons wrap over {len(tops)} rows")
+    # Show staff has a full-width row of its own; the others share the row under it
+    boxes = {h.get_attribute("class"): h.bounding_box() for h in row.locator(".foot-btns > *").all()}
+    staff_box, rest = boxes.get("staff-btn"), [b for c, b in boxes.items() if c != "staff-btn" and b]
+    if not staff_box or staff_box["width"] < row.locator(".foot-btns").bounding_box()["width"] - 2:
+        problems.append("opened item: Show staff doesn't have the full width")
+    if rest and (len({round(b["y"]) for b in rest}) > 1 or min(b["y"] for b in rest) < staff_box["y"] + staff_box["height"]):
+        problems.append("opened item: Add to order and Save aren't on one row under Show staff")
     ctx.close()
     ctx, page, errors = visit(browser, base + f"#{index['restaurants'][0]['id']}")
     if page.evaluate("parseFloat(getComputedStyle(document.querySelector('#warnCount')).marginLeft)") <= 0:
@@ -2986,7 +2990,7 @@ def check_f15_requests(env):
         if (meta.get("name"), meta.get("area"), meta.get("url")) != ("Wagamama", "London", "https://wagamama.com"):
             problems.append(f"requests: the file says {meta}")
     listed = norm_ws(page.locator("#reqList").inner_text())
-    if "Wagamama (London)" not in listed or "sent for adding" not in listed:
+    if "Wagamama (London)" not in listed or "asked" not in listed or "not in the app yet" not in listed:  # E9's honest state line
         problems.append(f"requests: the phone's own list says {listed!r}")
     # a place that's already here
     have = index["restaurants"][0]
