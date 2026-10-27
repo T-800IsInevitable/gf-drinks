@@ -58,31 +58,32 @@ button { font: inherit; color: inherit; }
   position: fixed; left: 0; right: 0; top: 0; z-index: 5; background: var(--bg);
   padding: calc(env(safe-area-inset-top, 0px) + 10px) max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px));
   border-bottom: 1px solid var(--line);
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; flex-direction: column; gap: 8px; /* 8, not 10: the sections row costs a row, and the menu should still start in the top half */
 }
-.top .chips, .top .status { transition: max-height 0.2s ease, opacity 0.2s ease, margin 0.2s ease; max-height: 80px; }
-.top.collapsed .chips, .top.collapsed .status { max-height: 0; opacity: 0; overflow: hidden; margin-top: -10px; pointer-events: none; }
+.top .chips, .top .status, .top .region { transition: max-height 0.2s ease, opacity 0.2s ease, margin 0.2s ease; max-height: 80px; }
+.top.collapsed .chips, .top.collapsed .status { max-height: 0; opacity: 0; overflow: hidden; margin-top: -8px; pointer-events: none; }
+/* scrolling down folds the section switch away too; it sits above the title, so it gives its room back from the top */
+.top.collapsed .region { max-height: 0; opacity: 0; overflow: hidden; padding-block: 0; margin-bottom: -8px; pointer-events: none; }
 .titlebar { display: flex; align-items: center; gap: 12px; }
 .picker {
   flex: 1; min-width: 0; border: 0; background: none; padding: 0; text-align: left; cursor: pointer;
   display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 4px;
 }
-.app-name { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); grid-column: 1 / -1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* the title shares its row with the UK / International switch, so it may wrap rather than clip */
+.app-name { font-size: 0.75rem; line-height: 1.2; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); grid-column: 1 / -1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* a long name (a restaurant's, a city's) may wrap rather than clip */
 .pick-name { font-family: var(--display); font-weight: 800; font-size: clamp(1.125rem, 4.9vw, 1.5rem); line-height: 1.15; letter-spacing: -0.01em; white-space: normal; overflow: visible; }
 .caret { width: 20px; height: 20px; color: var(--accent); }
 .guide { margin: 2px 0 0; font-size: 0.8125rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .picker .guide { grid-column: 1 / -1; white-space: normal; }
 .actions { display: flex; gap: 4px; align-items: center; }
-.actions .region { display: flex; flex: none; }
 .icon-btn {
   width: 44px; height: 44px; border-radius: 999px; border: 0; background: var(--chip);
   display: grid; place-items: center; cursor: pointer; color: var(--accent);
 }
 .icon-btn svg { width: 20px; height: 20px; }
-/* UK / International */
-.region { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; background: var(--chip); border-radius: 10px; padding: 3px; }
-.region button { border: 0; background: transparent; border-radius: 8px; padding: 6px 8px; min-height: 44px; min-width: 44px; justify-content: center; font-size: 0.9062rem; font-weight: 600; color: var(--muted); cursor: pointer; }
+/* the sections: UK franchises, UK cities, International; the whole width, three even columns, a label may wrap */
+.region { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; background: var(--chip); border-radius: 10px; padding: 2px; }
+.region button { border: 0; background: transparent; border-radius: 8px; padding: 4px 6px; min-height: 44px; min-width: 44px; justify-content: center; font-size: 0.875rem; font-weight: 600; line-height: 1.15; color: var(--muted); cursor: pointer; }
 .region button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line), 0 1px 3px rgba(0, 0, 0, 0.12); }
 .search {
   display: flex; align-items: center; gap: 8px; background: var(--chip); border-radius: 10px; padding: 0 10px;
@@ -319,6 +320,9 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 .po-main span { font-size: 0.8125rem; color: var(--muted); }
 .po-meta { font-size: 0.8125rem; color: var(--muted); white-space: nowrap; }
 .pick-note { font-size: 0.8125rem; color: var(--muted); margin: 4px 2px 0; }
+/* a UK city's chains, as rows like the chooser's: the name takes the room, so it lines up whatever the logo */
+.chains-here .po-main { flex: 1; }
+.chains-here .pick-opt { background: var(--surface); }
 .pick-share { margin-top: 10px; display: flex; justify-content: center; }
 /* each restaurant's own mark (its site icon) on a light tile, so dark marks show in dark mode too; a lettered badge without one */
 .logo-wrap { position: relative; display: inline-grid; place-items: center; width: 38px; height: 38px; flex: none; border-radius: 10px; background: #fff; border: 1px solid var(--line); overflow: hidden; }

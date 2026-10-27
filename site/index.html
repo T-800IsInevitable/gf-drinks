@@ -25,6 +25,8 @@
 </head>
 <body>
 <header class="top">
+  <!-- The sections: UK franchises (the chains' menus), UK cities and International; the chooser under it picks within one -->
+  <div id="region" class="region" role="group" aria-label="Section"></div>
   <div class="titlebar">
     <button type="button" id="pickBtn" class="picker" aria-haspopup="dialog" aria-label="Choose restaurant">
       <span class="app-name">Treat Temple</span>
@@ -36,7 +38,6 @@
       <button type="button" id="mapBtn" class="icon-btn" aria-label="Map of where you are and the places near you">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h18M12 3c2.5 2.4 3.8 5.4 3.8 9s-1.3 6.6-3.8 9c-2.5-2.4-3.8-5.4-3.8-9s1.3-6.6 3.8-9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
       </button>
-      <div id="region" class="region" role="group" aria-label="Where"></div>
       <button type="button" id="infoBtn" class="icon-btn" aria-label="About and help">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v6M12 7.5v.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
       </button>
@@ -120,6 +121,7 @@
       <p><b>Food and drinks with no gluten ingredients</b>, from each restaurant's own allergen guide, and how to order them.</p>
       <p>Green: no gluten ingredients as listed. Amber: ask for a change when you order. Red: avoid it, because it contains gluten or isn't suitable.</p>
       <p>Nothing here is certified gluten free. If you have coeliac disease, tell staff when you order.</p>
+      <p>The switch at the top also has <b>UK cities</b> and <b>International</b>: places in a city that are all gluten free, by their own word or a listing.</p>
     </div>
     <div id="pickList" class="pick-list"></div>
     <p class="pick-share"><button type="button" id="shareBtn" class="link-btn">Share this app</button></p>
@@ -169,12 +171,12 @@
     <details class="more">
       <summary>Near me</summary>
       <p>The <b>Near me</b> chip under the search box lists which of the app's chains have a branch within a kilometre, nearest first, with its menu, directions and, where OpenStreetMap has them, its opening hours one tap away. The branches come from OpenStreetMap, which doesn't list every one; each chain's allergen guide covers its UK branches. The app keeps a list of them, refreshed each week, and works out what's near you on this phone, so it works without signal and your position goes nowhere.</p>
-      <p><b>Keep checking:</b> with this on, each time the app opens, and at most every ten minutes while you move about, the app reads your position and the nearest chain shows on that chip ("Pret A Manger 300 m · open until 19:00") with no tap. Only the last answer is kept, on this phone, and it never asks for your location on its own: switch it on here, or when Near me first answers. On an iPhone the permission can lapse after a day unless Location Services for Safari is set to Allow; the chip then reads Near me again until you tap it. Abroad, the chip names the nearest listed place still open today, from the list on this phone.</p>
+      <p><b>Keep checking:</b> with this on, each time the app opens, and at most every ten minutes while you move about, the app reads your position and the nearest chain shows on that chip ("Pret A Manger 300 m · open until 19:00") with no tap. Only the last answer is kept, on this phone, and it never asks for your location on its own: switch it on here, or when Near me first answers. On an iPhone the permission can lapse after a day unless Location Services for Safari is set to Allow; the chip then reads Near me again until you tap it. On a city's page, the chip names the nearest listed place still open today, from the list on this phone.</p>
       <p><button type="button" id="nearAutoBtn" class="pill-btn" aria-pressed="false">Keep checking when the app opens</button> <span id="nearAutoState" class="muted"></span></p>
     </details>
     <details class="more">
       <summary>Map</summary>
-      <p>The <b>globe</b> by the title opens a map with your position, which moves as you do, the branches of the app's chains around you, and every place on the Abroad lists, coloured as on their lists. Tap a pin for the distance, whether it's open today and directions, then <b>Menu</b> for a chain's menu or <b>Open</b> for a place's own words in its list. Drag the map anywhere in the UK and zoom in to a town to see the branches there; the round button brings it back to you.</p>
+      <p>The <b>globe</b> by the title opens a map with your position, which moves as you do, the branches of the app's chains around you, and every place on the city lists, UK and International, coloured as on their lists. Tap a pin for the distance, whether it's open today and directions, then <b>Menu</b> for a chain's menu or <b>Open</b> for a place's own words in its list. Drag the map anywhere in the UK and zoom in to a town to see the branches there; the round button brings it back to you.</p>
       <p>Your position is followed only while the map is open and the app is in front, and stays on this phone: the branches come from the app's own list (from OpenStreetMap, which doesn't list every one, refreshed each week), so the pins show without signal. The map's background comes from OpenStreetMap while you have signal, so it can tell roughly which area you're looking at.</p>
     </details>
     <details class="more" id="pushHelp" hidden>
@@ -200,8 +202,9 @@
       <p>Open any item and tap <b>Share this item</b> for a link that opens straight to it. Tap <b>Something wrong?</b> (on any item or city place) for a ready message with the restaurant, item and guide page, to send to whoever looks after the app. <b>Guide page 7</b> in an opened item opens the restaurant's own guide, at that page where the phone's PDF viewer can, to show staff or to double-check.</p>
     </details>
     <details class="more">
-      <summary>International: Berlin and Amsterdam</summary>
-      <p>Choose a country from the title (they're listed under <b>International</b>, like the restaurants; the app also offers a city when your phone is on its time) for places there that are all gluten free, by their own word or the coeliac society's list, or that say they make gluten free food in a separate kitchen. <b>International</b> next to the title goes straight to the city you last looked at. Each tag says who makes that claim. Each row says whether it's open now (local time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Open near me</b> shows what's still open today, nearest first; <b>Still open today</b>, <b>Near me</b> and <b>★ Saved</b> narrow the list on their own. <b>Map</b> shows the places as pins in the row's colours (OpenStreetMap, while you have signal); tap a pin, then Open. The <b>German card</b> or <b>Dutch card</b> chip opens the coeliac card, and <b>About the tags</b> and <b>Before you go</b> open under the introduction. Tap <b>UK</b> to go back to the menus.</p>
+      <summary>UK franchises, UK cities and International</summary>
+      <p>The switch at the top has three sections. <b>UK franchises</b> has the chains' menus, from their own allergen guides: the title under the switch chooses a restaurant, or All restaurants. <b>UK cities</b> (London, York, Sheffield, Poole and Worksop) and <b>International</b> (Berlin and Amsterdam) list places that are all gluten free, by their own word or a listing, or that say part of what they serve is, or that they make gluten free food in a separate kitchen: the title chooses the city, and each section goes back to the city you last looked at. The app also offers an International city when your phone is on its time.</p>
+      <p>A UK city's places were found through coeliac guides and Coeliac Sanctuary's listings; an International city's come from the coeliac society's list there. A UK city also lists the app's chains with branches in and around it, each with its menu one tap away. On a city's page, each tag says who makes that claim. Each row says whether it's open now (local time). Open a place for its own words, its addresses with map links, opening hours, and anything to ask about, such as oats. <b>Open near me</b> shows what's still open today, nearest first; <b>Still open today</b>, <b>Near me</b> and <b>★ Saved</b> narrow the list on their own. <b>Map</b> shows the places as pins in the row's colours (OpenStreetMap, while you have signal); tap a pin, then Open. The <b>German card</b> or <b>Dutch card</b> chip opens the coeliac card, and <b>About the tags</b> and <b>Before you go</b> open under the introduction. Tap <b>UK franchises</b> to go back to the menus.</p>
     </details>
     <details class="more">
       <summary>Travelling</summary>
@@ -321,7 +324,7 @@
   </form>
 </dialog>
 
-<!-- The map page (the globe by the title): where you are as you move, the chains' branches near you, the Abroad places -->
+<!-- The map page (the globe by the title): where you are as you move, the chains' branches near you, the city lists' places -->
 <dialog id="mapPage" class="full map-page" aria-labelledby="mapTitle">
   <form method="dialog" class="sheet">
     <div class="sheet-head">

@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 31;
+  const APP_VERSION = 32;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -20,7 +20,9 @@
   const REGION_KEY = "gf-region";
   const ALL = "all";
   const UK = "uk"; // the restaurant menus; any other region is a city in cities.json
-  const INTL = "intl"; // the header switch's other side: the city last looked at
+  // the header's sections: UK franchises (the chains' menus, region UK), UK cities and International (cities.json, by
+  // "group"). Each city section goes back to the city last looked at in it.
+  const UKC = "ukcity", INTL = "intl";
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   // An address from the data before it becomes a link: http(s), or a path of the app's own; anything with another
@@ -134,8 +136,8 @@
     }
     return possessive(r.name) + " allergen guide" + (g.version ? " (" + fmtDate(g.version) + ")" : "");
   }
-  function listOr(arr) {
-    return arr.length < 2 ? arr.join("") : arr.slice(0, -1).join(", ") + " or " + arr[arr.length - 1];
+  function listOr(arr, word = "or") {
+    return arr.length < 2 ? arr.join("") : arr.slice(0, -1).join(", ") + " " + word + " " + arr[arr.length - 1];
   }
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
   function guideLine(r) {
@@ -895,7 +897,23 @@
     const rank = (r) => (r.id === last ? 0 : hasFavs(r) ? 1 : 2);
     return rs.slice().sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
   }
+  // A city section's chooser lists that section's cities; UK franchises' lists the restaurants.
   function renderPicker() {
+    const s = sectionOf(region);
+    $("pickerTitle").textContent = s === UK ? "Where to eat" : s === UKC ? "UK cities" : "International cities";
+    if (s !== UK) {
+      $("pickWelcome").hidden = true;
+      $("pickList").innerHTML = citiesIn(s).map((cid) => {
+        const c = cities[cid], uk = s === UKC;
+        return '<button type="button" class="pick-opt" data-region="' + esc(cid) + '" aria-pressed="' + (region === cid) + '">' +
+          '<span class="logo-wrap flag" aria-hidden="true">' + esc(c.flag || "") + '</span><span class="po-main"><b>' + esc(uk ? c.name : c.country || c.name) + "</b><span>" +
+          (uk ? "Places" : esc(c.name) + ": places") + " that are all gluten free, by their own word or " + (uk ? "a listing" : "the coeliac society's list") +
+          (c.places.some((p) => p.claim === "place-part") ? ", or that say part of what they serve is" : "") +
+          (c.places.some((p) => p.claim === "separate") ? ", or that say they have a separate gluten free kitchen" : "") + "</span></span>" +
+          '<span class="po-meta">' + c.places.length + (c.places.length === 1 ? " place" : " places") + "</span></button>";
+      }).join("");
+      return;
+    }
     const last = store.get(LAST_KEY);
     // first run: say what the app is, and put the other countries next to All restaurants so they're on the first screen without scrolling
     if (!welcomeNow && !store.get(SEL_KEY) && !store.get(WELCOME_KEY)) { welcomeNow = true; store.set(WELCOME_KEY, "1"); }
@@ -918,18 +936,10 @@
       const r = byId(x.rid);
       return r ? opt(r.id, r.name, [metres(x.km), openText(x.hours), x.where].filter(Boolean).join(" · "), r.stats.items + " items", isStale(r), logoHtml(r.name, r.logo), isNew(r)) : "";
     }).join("") : "";
-    // other countries (cities.json) are hand-checked lists of places rather than menus, so they switch region instead of restaurant.
-    // They're listed like the restaurants: the country, with its city and what the list holds underneath.
-    const intl = Object.entries(cities).map(([cid, c]) =>
-      '<button type="button" class="pick-opt" data-region="' + esc(cid) + '" aria-pressed="' + (region === cid) + '">' +
-      '<span class="logo-wrap flag" aria-hidden="true">' + esc(c.flag || "") + '</span><span class="po-main"><b>' + esc(c.country || c.name) + "</b><span>" + esc(c.name) +
-      ": places that are all gluten free, by their own word or the coeliac society's list" +
-      (c.places.some((p) => p.claim === "separate") ? ", or that say they have a separate gluten free kitchen" : "") + "</span></span>" +
-      '<span class="po-meta">' + c.places.length + " places</span></button>").join("");
-    const intlGroup = intl ? '<div class="sub-h">International</div>' + intl : "";
+    // the cities are in their own sections (the switch above), so this lists the restaurants only
     const all = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false, logoHtml("All restaurants", "icons/icon-192.png"));
-    $("pickList").innerHTML = nearGroup + '<div class="sub-h">' + (welcomeNow ? "Choose where" : "UK") + "</div>" + all +
-      (welcomeNow ? intlGroup + '<div class="sub-h">Or one UK restaurant</div>' + grouped : grouped + intlGroup) +
+    $("pickList").innerHTML = nearGroup + '<div class="sub-h">' + (welcomeNow ? "Choose where" : "UK franchises") + "</div>" + all +
+      (welcomeNow ? '<div class="sub-h">Or one restaurant</div>' : "") + grouped +
       '<p class="pick-note">More restaurants can be added by the app\'s owner from each restaurant\'s allergen guide.</p><p class="pick-share">' + addMenuLink + "</p>";
   }
 
@@ -944,12 +954,12 @@
     const zone = myZone();
     if (!zone) return;
     const asked = store.get(TZ_KEY);
-    const there = Object.keys(cities).find((id) => zoneOf(cities[id]) === zone);
+    const there = citiesIn(INTL).find((id) => zoneOf(cities[id]) === zone); // a UK city shares UK time, so it's never offered this way
     const btns = (yes) => '<p class="tz-btns"><button type="button" class="pill-btn" data-tz="yes">' + yes + '</button><button type="button" class="link-btn" data-tz="no">Not now</button></p>';
-    if (region === UK && there && asked !== zone) {
+    if (sectionOf(region) !== INTL && there && asked !== zone) {
       el.innerHTML = "<p><b>You're on " + esc(cities[there].name) + " time.</b> Show " + esc(cities[there].name) + " places?</p>" + btns("Show " + esc(cities[there].name));
       el.dataset.to = there;
-    } else if (region !== UK && cities[region] && !there && asked === zoneOf(cities[region])) {
+    } else if (sectionOf(region) === INTL && cities[region] && !there && asked === zoneOf(cities[region])) {
       el.innerHTML = "<p><b>You're back on UK time.</b> Show the UK menus?</p>" + btns("Show UK menus");
       el.dataset.to = UK;
     } else return;
@@ -993,24 +1003,28 @@
     window.scrollTo({ top: 0 });
   }
 
-  // ---------- UK / International switch: a city is a hand-checked list of places (cities.json), not menus ----------
-  // International goes to the city last looked at (the chooser picks the country); UK goes back to the menus.
-  const LAST_CITY_KEY = "gf-last-city";
+  // ---------- the sections: UK franchises, UK cities, International. A city is a hand-checked list of places (cities.json), not menus ----------
+  // A city section goes to the city last looked at in it (the chooser picks another); UK franchises goes back to the menus.
+  const LAST_CITY_KEY = "gf-last-city", LAST_UK_CITY_KEY = "gf-last-uk-city";
+  const isUKCity = (c) => !!c && c.group === "uk";
+  const sectionOf = (id) => (id === UK ? UK : isUKCity(cities[id]) ? UKC : INTL);
+  const citiesIn = (s) => Object.keys(cities).filter((id) => sectionOf(id) === s);
+  const lastKeyOf = (s) => (s === UKC ? LAST_UK_CITY_KEY : LAST_CITY_KEY);
+  const SECTIONS = [[UK, "UK franchises"], [UKC, "UK cities"], [INTL, "International"]];
   function renderRegion() {
-    const inCity = region !== UK;
+    const inCity = region !== UK, on = sectionOf(region);
     $("region").hidden = !Object.keys(cities).length;
-    // "Abroad" rather than "International": the title shares the row, and the longer word made it wrap
-    $("region").innerHTML = '<button type="button" data-region="' + UK + '" aria-pressed="' + !inCity + '">UK</button>' +
-      '<button type="button" data-region="' + INTL + '" aria-pressed="' + inCity + '">Abroad</button>';
+    $("region").innerHTML = SECTIONS.filter(([s]) => s === UK || citiesIn(s).length)
+      .map(([s, label]) => '<button type="button" data-region="' + s + '" aria-pressed="' + (s === on) + '">' + label + "</button>").join("");
     $("ukView").hidden = inCity;
     $("cityView").hidden = !inCity;
     $("status").hidden = inCity;
   }
   function setRegion(id) {
-    if (id === INTL) { const lastCity = store.get(LAST_CITY_KEY); id = cities[lastCity] ? lastCity : Object.keys(cities)[0] || UK; }
+    if (id === INTL || id === UKC) { const ids = citiesIn(id), last = store.get(lastKeyOf(id)); id = ids.includes(last) ? last : ids[0] || UK; }
     region = id;
     store.set(REGION_KEY, id);
-    if (id !== UK) store.set(LAST_CITY_KEY, id);
+    if (id !== UK) store.set(lastKeyOf(sectionOf(id)), id);
     $("q").value = "";
     cityFilter = "all";
     mapOn = false;
@@ -1021,7 +1035,7 @@
   }
   $("region").addEventListener("click", (e) => {
     const b = e.target.closest("[data-region]");
-    if (b && (b.dataset.region === UK) !== (region === UK)) setRegion(b.dataset.region);
+    if (b && b.dataset.region !== sectionOf(region)) setRegion(b.dataset.region);
   });
 
   const mapLink = (p, l) => "https://maps.apple.com/?q=" + encodeURIComponent(p.name) + "&address=" + encodeURIComponent(l.address);
@@ -1029,11 +1043,11 @@
   function renderCity() {
     const c = city();
     if (!c) { $("cityList").innerHTML = '<p class="empty">Loading…</p>'; return; }
-    store.set(LAST_CITY_KEY, region); // where International goes next time
+    store.set(lastKeyOf(sectionOf(region)), region); // where its section goes next time
     syncSearching();
     $("pickName").textContent = c.name;
-    $("pickBtn").setAttribute("aria-label", c.name + ". Choose where to eat");
-    $("guideLine").textContent = c.places.length + " places · checked " + fmtDate(c.checked) + offlineTag();
+    $("pickBtn").setAttribute("aria-label", c.name + ". Choose a city");
+    $("guideLine").textContent = c.places.length + (c.places.length === 1 ? " place" : " places") + " · checked " + fmtDate(c.checked) + offlineTag();
     $("q").placeholder = "Search " + c.name;
     const chips = [["all", "All"], ["open", "Still open today"], ["fav", "★ Saved"]].concat(c.sections.filter((s) => c.places.some((p) => p.section === s)).map((s) => [s, s]));
     if (!chips.some(([v]) => v === cityFilter)) cityFilter = "all";
@@ -1049,13 +1063,17 @@
         v === cityFilter && !(v === "all" && nearSort))).join("") +
       (card ? '<button type="button" data-card>' + esc(card.language) + " card</button>" : "");
     const n = (claim) => c.places.filter((p) => p.claim === claim).length;
+    // a UK city's places were found through guides and listings rather than a coeliac society's list
+    const uk = isUKCity(c);
     $("cityIntroLine").innerHTML = "<b>Tags say who calls a place gluten free</b>, not the app. Tell staff you're coeliac.";
     $("cityIntro").innerHTML = "<b>Each place's tag says who calls it gluten free.</b> " +
-      [n("place-all") && n("place-all") + " say so themselves", n("list-all") && n("list-all") + " are listed as all gluten free by the support groups but don't say so on their own websites",
+      [n("place-all") && n("place-all") + " say so themselves",
+        n("list-all") && n("list-all") + (uk ? " are listed as all gluten free by others and have only a social media page or a market's, so their own words weren't checked" : " are listed as all gluten free by the support groups but don't say so on their own websites"),
         n("place-part") && n("place-part") + " says only part of its range is", n("separate") && n("separate") + " says it makes gluten free food in a separate kitchen"]
-        .filter(Boolean).join("; ") + ". That's their claim, not the app's. They come from the list kept by " + esc(c.list.by) +
-      (c.also || []).map((a) => " and " + esc(a.by)).join("") +
-      ", checked against each place's own website on " + esc(fmtDate(c.checked)) + ". Nobody from this app has seen their kitchens, so tell staff you have coeliac disease.";
+        .filter(Boolean).join("; ") + ". That's their claim, not the app's. " + (uk ? "They were found through " : "They come from the list kept by ") +
+      // who keeps a list is a name ("My Gluten Free Guide"), not the app's words, so it's marked as quoted
+      listOr([c.list, ...(c.also || [])].map((a) => "<span data-quote>" + esc(a.by) + "</span>"), "and") +
+      ", checked against each place's own website" + (uk ? " where it has one" : "") + " on " + esc(fmtDate(c.checked)) + ". Nobody from this app has seen their kitchens, so tell staff you have coeliac disease.";
     $("cityStale").hidden = !cityStale(c);
     $("cityStale").innerHTML = cityStale(c) ? "<p><b>This list may be out of date.</b> It was checked on " + esc(fmtDate(c.checked)) +
       ". Places open, close and change, so check before you go.</p>" : "";
@@ -1066,7 +1084,7 @@
     $("cityIntroBox").hidden = !full;
     $("cityStrip").hidden = full;
     $("cityStripCount").textContent = "(" + c.tips.length + ")";
-    const source = (a) => (safeUrl(a.url) ? '<a href="' + esc(safeUrl(a.url)) + '" target="_blank" rel="noopener" data-quote>' + esc(a.name) + "</a>" : "<span data-quote>" + esc(a.name) + "</span>") + ", kept by " + esc(a.by);
+    const source = (a) => (safeUrl(a.url) ? '<a href="' + esc(safeUrl(a.url)) + '" target="_blank" rel="noopener" data-quote>' + esc(a.name) + "</a>" : "<span data-quote>" + esc(a.name) + "</span>") + ", kept by <span data-quote>" + esc(a.by) + "</span>";
     $("cityFoot").innerHTML = "<p><b>Sources:</b> " + [c.list, ...(c.also || [])].map(source).join("; ") +
       "; and each place's own website. Checked " + esc(fmtDate(c.checked)) + ".</p>" +
       (c.footNotes || []).map((n) => "<p>" + esc(n) + "</p>").join("");
@@ -1090,26 +1108,31 @@
   // render (placeBranches), since sorting by distance per place per line adds up.
   const branches = (p) => (nearSort && here ? [p.locations.slice().sort((a, b) => kmTo(a, here) - kmTo(b, here))[0]] : p.locations);
   // A branch's day is: a span [open, close] (close = when the kitchen stops, if earlier), "closed", or unknown (no hours, or null).
-  function branchToday(l, day) {
+  // every range in a day: "12:00–14:30, 17:00–21:30" (a break for the afternoon) -> [[720, 870], [1020, 1290]]
+  const spans = (h) => [...String(h || "").matchAll(/(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/g)].map((m) => [m[1] * 60 + +m[2], m[3] * 60 + +m[4]]);
+  // On a day with a break, the range that matters at that minute: the one open now, else the next, else the last.
+  function branchToday(l, day, min) {
     if (!l.hours || l.hours[day] == null) return { unknown: true };
-    const s = span(l.hours[day]);
-    if (!s) return { closed: true };
+    const ss = spans(l.hours[day]);
+    if (!ss.length) return { closed: true };
+    const s = ss.find(([o, c]) => o <= min && min < c) || ss.find(([o]) => o > min) || ss[ss.length - 1];
     const kitchen = span("00:00–" + (l.kitchenCloses || "24:00"));
-    return { open: s[0], close: Math.min(s[1], kitchen[1]), kitchen: !!l.kitchenCloses && kitchen[1] < s[1] };
+    return { open: s[0], close: Math.min(s[1], kitchen[1]), kitchen: !!l.kitchenCloses && kitchen[1] < s[1], door: s[1] };
   }
   // now: { day, min } from cityNow(c), worked out once for a whole render; ls: the place's branches, likewise
-  const stillOpen = (p, now, ls) => (ls || branches(p)).some((l) => { const b = branchToday(l, now.day); return b.close > now.min; });
+  const stillOpen = (p, now, ls) => (ls || branches(p)).some((l) => { const b = branchToday(l, now.day, now.min); return b.close > now.min; });
   function todayLine(p, now, ls) {
     const { day, min } = now;
     ls = ls || branches(p);
-    const bs = ls.map((l) => ({ l, ...branchToday(l, day) }));
+    const bs = ls.map((l) => ({ l, ...branchToday(l, day, min) }));
     if (bs.every((b) => b.unknown)) return "";
     const where = (list) => (ls.length > 1 && list.length < ls.length ? " at " + listOr([...new Set(list.map((b) => b.l.area))]) : "");
     const openNow = bs.filter((b) => b.open <= min && min < b.close);
-    if (openNow.length) return "Open now" + where(openNow) + ", " + (openNow.some((b) => b.kitchen) ? "kitchen until " : "until ") + hhmm(Math.max(...openNow.map((b) => b.close)));
+    const until = Math.max(...openNow.map((b) => b.close));
+    if (openNow.length) return "Open now" + where(openNow) + ", " + (openNow.some((b) => b.kitchen) ? "kitchen until " : "until ") + (until >= 1440 ? "midnight" : hhmm(until));
     const later = bs.filter((b) => b.open > min);
     if (later.length) return "Opens at " + hhmm(Math.min(...later.map((b) => b.open))) + where(later);
-    if (bs.some((b) => b.open != null && b.kitchen && min < span(b.l.hours[day])[1])) return "Kitchen closed";
+    if (bs.some((b) => b.open != null && b.kitchen && min < b.door)) return "Kitchen closed";
     if (bs.some((b) => b.open != null)) return "Closed now";
     return bs.some((b) => b.unknown) ? "" : "Closed today";
   }
@@ -1141,7 +1164,7 @@
       out.push('<blockquote class="w-quote" lang="' + esc(p.says.lang) + '">' + esc(p.says.text) + "<cite>Its website</cite></blockquote>");
       if (p.says.en) out.push("<div data-quote><b>In English:</b> " + esc(p.says.en) + ' <span class="muted">(the app\'s translation)</span></div>');
     }
-    if (p.listed) out.push("<div data-quote><b>From the coeliac support groups' list:</b> " + esc(p.listed) + "</div>");
+    if (p.listed) out.push("<div data-quote><b>" + (p.listedBy ? "From " + esc(p.listedBy) + ":" : "From the coeliac support groups' list:") + "</b> " + esc(p.listed) + "</div>");
     if (p.caution) out.push('<div class="chg-note"><b>Note from this app:</b> ' + esc(p.caution) + "</div>");
     if (p.status !== "confirmed") out.push('<div class="chg-note bad"><b>Not confirmed open.</b> ' + esc(p.statusNote || "") + "</div>");
     (p.notes || []).forEach((n) => out.push("<div>" + esc(n) + "</div>"));
@@ -1152,8 +1175,9 @@
         (l.hoursNote ? ". " + esc(l.hoursNote) : "") + " (from its website, " + esc(fmtDate(p.checked || c.checked)) + ")"
         : "<b>Hours not known.</b> Check its website before going.") + "</span></li>").join("") + "</ul>");
     out.push('<div class="detail-more"><button type="button" class="link-btn" data-wrong-place="' + esc(p.name) + '">Something wrong?</button></div>');
-    out.push('<div class="place-links">' + (safeUrl(p.url) ? '<a href="' + esc(safeUrl(p.url)) + '" target="_blank" rel="noopener">' + (/instagram\.com/.test(p.url) ? "Instagram" : "Website") + "</a>" : "") +
-      (safeUrl(p.listPage) ? '<a href="' + esc(safeUrl(p.listPage)) + '" target="_blank" rel="noopener">Support groups\' entry</a>' : "") +
+    const social = /instagram\.com/.test(p.url) ? "Instagram" : /facebook\.com/.test(p.url) ? "Facebook" : "Website";
+    out.push('<div class="place-links">' + (safeUrl(p.url) ? '<a href="' + esc(safeUrl(p.url)) + '" target="_blank" rel="noopener">' + social + "</a>" : "") +
+      (safeUrl(p.listPage) ? '<a href="' + esc(safeUrl(p.listPage)) + '" target="_blank" rel="noopener">' + (isUKCity(c) ? "Its listing" : "Support groups' entry") + "</a>" : "") +
       '<button type="button" class="fav-btn" data-fav="' + esc(placeFav(p)) + '" aria-pressed="' + favs.has(placeFav(p)) + '">' + (favs.has(placeFav(p)) ? "★ Saved" : "☆ Save") + "</button></div>");
     // green only when the place itself says everything is gluten free and the app has nothing to add
     // amber is for items that need a change; here it marks a place the app has a caution about, and the rest are plain
@@ -1182,6 +1206,7 @@
       if (!inSec.length) continue;
       html += '<h2 class="group-h">' + esc(s) + "<small>" + inSec.length + "</small></h2>" + '<div class="card">' + inSec.map((p) => placeHtml(c, p, now)).join("") + "</div>";
     }
+    html += chainsHere(c, ts);
     const unknown = c.places.filter((p) => !p.locations.some((l) => l.hours)).length;
     const empty = cityFilter === "fav" ? "No saved places yet. Open a place and tap ☆ Save."
       : cityFilter === "open" ? "None of the places with known hours are open for the rest of today."
@@ -1191,6 +1216,29 @@
     $("cityList").innerHTML = mapHtml + (cityFilter === "fav" ? favShareBar() : "") + (html || '<p class="empty">' + empty + "</p>" + (cityFilter === "all" ? emptyExtras($("q").value) : "")) +
       (cityFilter === "open" && unknown ? '<p class="muted">' + unknown + " places with unknown hours aren't shown.</p>" : "");
     if (mapOn) drawMap(c, places); else dropMap();
+  }
+  // A UK city also holds the app's chains: one row each, with how many of its branches are in the city's area (the
+  // branch list, so offline too), and its menu one tap away. The area is the city's bounds, a box, hence "in and around".
+  let chainsTriedAt = 0;
+  function chainsHere(c, ts) {
+    if (!isUKCity(c) || cityFilter !== "all" || !data) return "";
+    if (!branchList) { // tried at most every half minute, not on every keystroke while there's no list to have
+      if (Date.now() - chainsTriedAt > 30000) { chainsTriedAt = Date.now(); loadBranches().then((l) => { if (l && city() === c) renderCityList(); }); }
+      return "";
+    }
+    const count = new Map();
+    for (const x of branchList.b) {
+      if (!inBox(x, c.bounds.lat[0], c.bounds.lon[0], c.bounds.lat[1], c.bounds.lon[1])) continue;
+      const b = branchOf(branchList, x);
+      if (b) count.set(b.rid, (count.get(b.rid) || 0) + 1);
+    }
+    const rows = [...count].map(([rid, n]) => ({ r: byId(rid), n })).filter((x) => x.r && matches({ name: x.r.name + " " + (x.r.type || "") }, ts))
+      .sort((a, b) => a.r.name.localeCompare(b.r.name));
+    if (!rows.length) return "";
+    return '<h2 class="group-h">The app\'s chains here<small>' + rows.length + '</small></h2><div class="pick-list chains-here">' +
+      rows.map(({ r, n }) => '<button type="button" class="pick-opt" data-chain="' + esc(r.id) + '">' + logoHtml(r.name, r.logo) + '<span class="po-main"><b>' + esc(r.name) +
+        "</b><span>" + n + (n === 1 ? " branch" : " branches") + " in and around " + esc(c.name) + '</span></span><span class="po-meta">Menu &rsaquo;</span></button>').join("") +
+      '</div><p class="muted">Branches from OpenStreetMap, which doesn\'t list every one. Each chain\'s menu, from its allergen guide, is under UK franchises.</p>';
   }
   // ---------- a map of the city's places: Leaflet with OpenStreetMap's tiles, loaded only while the map is open ----------
   // The tiles are fetched while looking and never saved (the tile provider's rules forbid keeping them), so the list
@@ -1405,7 +1453,7 @@
     if (!inUK(at)) {
       const there = Object.keys(cities).find((id) => inBounds(cities[id], at));
       $("nearBody").innerHTML = '<p class="empty">Near me covers the chains\' UK branches, and you\'re outside the UK.' +
-        (there ? " For " + esc(cities[there].name) + ", the Abroad side has the places and Open near me." : "") + "</p>";
+        (there ? " For " + esc(cities[there].name) + ", International has the places and Open near me." : "") + "</p>";
       return;
     }
     const rows = await lookNear(at);
@@ -1479,7 +1527,7 @@
 
   // ---------- the map page (the globe by the title): where you are, as you move, and every place the app knows ----------
   // The UK chains' branches come from the branch list (data/branches.json, as Near me), drawn for the part of the map
-  // on screen once it's zoomed in to a town; the Abroad lists' places come from cities.json. Your position is followed
+  // on screen once it's zoomed in to a town; the city lists' places (UK and International) come from cities.json. Your position is followed
   // only while this page is open and the app is in front, and it never leaves the phone.
   const MAP_KM = 1.5, MAP_ZOOM = 13, MAP_PINS = 300; // zoom 13: about 3.5 km across a phone, legible even in London
   // pins: the chains' pins on the map now, by branch, so a redraw adds and removes only the difference; openPin: the
@@ -1531,7 +1579,7 @@
     drawBranchPins();
     renderMapStatus();
     renderMapButtons();
-    if (!branchList) setMapStatus(NO_LIST + " Only the Abroad places show for now.");
+    if (!branchList) setMapStatus(NO_LIST + " Only the city lists' places show for now.");
   }
   function watchMe() {
     if (live.watch != null || !navigator.geolocation || !live.map || document.hidden) return;
@@ -1562,7 +1610,7 @@
   function renderMapStatus() {
     const at = live.at;
     if (!at || !branchList) return;
-    if (!inUK(at)) { setMapStatus("Outside the UK, the map shows the places from the Abroad lists. The chains' branches are in the UK only."); return; }
+    if (!inUK(at)) { setMapStatus("Outside the UK, the map shows the places from the International lists. The chains' branches are in the UK only."); return; }
     let n = 0;
     for (const x of branchList.b) {
       if (!inBox(x, at.lat - 0.015, at.lon - 0.03, at.lat + 0.015, at.lon + 0.03)) continue;
@@ -2633,6 +2681,7 @@
     nearUk: () => nearMe(),
     nearAuto: (v) => setNearAuto(v === "on", false),
     gonear: (rid) => { $("near").close(); select(rid); },
+    chain: (rid) => select(rid), // a UK city's chain row: its menu, under UK franchises
     mapMenu: (rid) => leaveMap(() => select(rid)),
     mapPlace: (name, b) => leaveMap(() => { setRegion(b.dataset.city); openPlaceRow(name); }), // the whole list, so the row is there
     say: (n) => { const p = phrases[cardLang]; if (p && p.card[n]) say(p.card[n].text, cardLang); },
@@ -2725,7 +2774,7 @@
     const r = region === UK && byId(selected);
     const c = city();
     const url = appUrl() + (c ? "#" + region : r ? "#" + r.id : "");
-    const text = c ? "Places in " + c.name + " for coeliacs, from the coeliac support groups' list"
+    const text = c ? "Places in " + c.name + " for coeliacs, " + (isUKCity(c) ? "found through coeliac guides and listings" : "from the coeliac support groups' list")
       : r ? "Food and drinks with no gluten ingredients at " + r.name : "Food and drinks with no gluten ingredients at restaurants and coffee shops";
     shareLink("Twoo's Treat Temple", text, url);
   });
