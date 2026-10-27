@@ -107,9 +107,32 @@ def release_plan(previous=ROOT / ".previous", site=SITE):
             "tag": "gf-update", "url": "?whatsnew"}  # no badge: that counts the guides not yet looked at
 
 
+def city_plan(previous=ROOT / ".previous", site=SITE):
+    """'Leeds is in the app' when this publish adds a city to cities.json that the live one (.previous/cities.json, from
+    fetch_previous.py) doesn't have, or None. As for the release, an unknown live list announces nothing, so a failed
+    download can't announce every city again."""
+    try:
+        live, now = read(previous / "cities.json"), read(site / "cities.json")
+    except ValueError:  # a damaged download: say nothing rather than stop the publish
+        return None
+    if not isinstance(live, dict) or not isinstance(now, dict):  # nor announce every city from a list that isn't one
+        return None
+    new = [cid for cid in now if cid not in live]
+    if not new:
+        return None
+    names = [now[cid]["name"] for cid in new]
+    places = sum(len(now[cid].get("places") or []) for cid in new)
+    who = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+    return {"title": f"{who} {'is' if len(names) == 1 else 'are'} in the app"[:120],
+            "body": f"{places} {'place' if places == 1 else 'places'} to eat, from coeliac guides, each checked against its own website where it has one. Tap to see "
+                    + ("it." if len(names) == 1 else "them."),
+            "tag": "gf-cities", "url": "#" + new[0] if len(new) == 1 else ""}
+
+
 def messages(previous=ROOT / ".previous", data=SITE / "data", site=SITE):
-    """Everything to send for this publish: the new guides first (what matters at the counter), then the release."""
-    return [m for m in (plan(previous, data), release_plan(previous, site)) if m]
+    """Everything to send for this publish: the new guides first (what matters at the counter), then new cities, then
+    the release."""
+    return [m for m in (plan(previous, data), city_plan(previous, site), release_plan(previous, site)) if m]
 
 
 def scrub(error):

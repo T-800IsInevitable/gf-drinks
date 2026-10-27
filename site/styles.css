@@ -478,6 +478,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 /* ---- "Guide page 7" opens the guide ---- */
 .guide-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent); font-weight: 600; text-decoration: none; }
 /* ---- places asked for by name ---- */
+#cityAsk { scroll-margin-top: 20px; } /* opened from a city list: scrolled to, with room above */
 .req-list { padding-left: 18px; font-size: 0.875rem; display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
 .req-list li { color: var(--fg); }
 .sheet h3.first { margin-top: 12px; }

@@ -51,6 +51,14 @@ def main():
         (OUT / "app-version").write_text(str(app_number(get(base + "app.js").decode("utf-8"))), encoding="utf-8")
     except BaseException as e:  # app_number stops with SystemExit when it can't find the number
         print(f"  live release number unknown ({e}); a new release won't be announced this time")
+    # the live cities, so tools/push.py can announce a new one; as for the release, not worth stopping the build for
+    try:
+        live_cities = get(base + "cities.json")
+        if not isinstance(json.loads(live_cities), dict):  # an error page or a damaged copy is no list to compare with
+            raise ValueError("not a list of cities")
+        (OUT / "cities.json").write_bytes(live_cities)
+    except Exception as e:
+        print(f"  live cities unknown ({e}); a new city won't be announced this time")
     for r in index.get("restaurants", []):
         try:
             (OUT / "r" / f"{r['id']}.json").write_bytes(get(base + r["file"]))

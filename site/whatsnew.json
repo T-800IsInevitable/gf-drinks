@@ -1,5 +1,15 @@
 [
   {
+    "version": 34,
+    "date": "2026-10-27",
+    "title": "Ask for a city",
+    "items": [
+      "A city not in the app? Ask for it at the bottom of the UK cities or Abroad list, or under Add a menu.",
+      "Its places are found through coeliac guides and each one is checked against its own website where it has one, then added once the app's owner approves. You'll get a notification when it's in.",
+      "Every city in the app is now re-checked each month, so a place that has closed or changed what it says comes off the list sooner."
+    ]
+  },
+  {
     "version": 33,
     "date": "2026-10-27",
     "title": "Less clutter: the food comes first",

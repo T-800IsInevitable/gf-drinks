@@ -137,7 +137,7 @@
     <p>Each restaurant's own allergen warnings, word for word, plus what its guide doesn't tell you.</p>
     <p><button type="button" id="openWarnings2" class="pill-btn">Read the warnings</button></p>
     <h3>Add a menu</h3>
-    <p id="uploadInfo">Know a place that should be here? Ask for it by name: its own allergen information is looked up and sent to the app's owner to approve. Or send its allergen menu (PDF or photos) to whoever shared this app. The owner can send either straight to the app, where it's checked within a day and added once approved.</p>
+    <p id="uploadInfo">Know a place that should be here? Ask for it by name: its own allergen information is looked up and sent to the app's owner to approve. You can ask for a whole city the same way. Or send its allergen menu (PDF or photos) to whoever shared this app. The owner can send either straight to the app, where it's checked within a day and added once approved.</p>
     <p><button type="button" id="openUpload" class="pill-btn">Add a menu</button></p>
     <h3>Reading the tags</h3>
     <ul class="legend">
@@ -355,6 +355,12 @@
     <label class="field">Its website (optional)<input id="reqUrl" inputmode="url" placeholder="e.g. wagamama.com" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
     <p><button type="button" id="reqSend" class="pill-btn">Ask for it</button></p>
     <p id="reqStatus" class="muted" role="status"></p>
+    <h3 id="cityAsk">Ask for a city</h3>
+    <p id="cityHow">Name a city, and the places there that say everything they serve is gluten free are found through coeliac guides and checked against their own websites, for the app's owner to approve.</p>
+    <label class="field">City<input id="cityName" placeholder="e.g. Leeds" autocomplete="off"></label>
+    <label class="field">Country<input id="cityCountry" placeholder="e.g. UK" autocomplete="off"></label>
+    <p><button type="button" id="citySend" class="pill-btn">Ask for it</button></p>
+    <p id="cityStatus" class="muted" role="status"></p>
     <div id="reqList" hidden></div>
     <h3>Or send its menu</h3>
     <div id="keySetup" hidden>

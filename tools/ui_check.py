@@ -3395,6 +3395,96 @@ def check_f15_requests(env):
     return problems
 
 
+def check_city_requests(env):
+    base, browser, cities = env.base, env.browser, env.cities
+    problems = []
+    # asking for a whole city: from a city list's "A city not here?", filed with the owner's key as one request with
+    # kind "city" on the uploads branch; a city already here is pointed to; without the key it's a link that fills the
+    # city form in on the owner's phone
+    name = "Llanfairpwll"
+    if any(c["name"] == name for c in cities.values()):
+        return [f"city requests: {name} is in cities.json now; pick another made-up city for this check"]
+    cid = next(iter(cities))
+    fake = FakeGitHub()
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-github-key', 'k')")
+    page = ctx.new_page()
+    page.route("https://api.github.com/**", fake.handle)
+    page.goto(base + "#" + cid)
+    page.wait_for_selector("#cityList .row")
+    page.locator("#pickBtn").click()
+    page.wait_for_selector("#picker[open] [data-askcity]")
+    page.locator("#picker [data-askcity]").click()
+    page.wait_for_selector("#upload[open]")
+    page.wait_for_timeout(300)
+    if page.locator("#picker[open]").count() or not page.locator("#cityName").is_visible():
+        problems.append("city requests: A city not here? didn't open the city form")
+    page.locator("#cityName").fill(name)
+    page.locator("#cityCountry").fill("UK")
+    page.locator("#citySend").click()
+    page.wait_for_selector("#cityStatus.done", timeout=10000)
+    files = [f for f in fake.files("uploads") if f.startswith("inbox/requests/")]
+    if len(files) != 1 or not files[0].endswith("-city-llanfairpwll-uk.json") or fake.refs["main"] != "c0":
+        problems.append(f"city requests: expected one city request on uploads and main untouched; {fake.files('uploads')}, main {fake.refs['main']}")
+    else:
+        blob = fake.blobs[fake.trees[fake.commits[fake.refs["uploads"]]["tree"]][files[0]]]
+        meta = json.loads(base64.b64decode(blob).decode("utf-8"))
+        if (meta.get("kind"), meta.get("name"), meta.get("area")) != ("city", name, "UK"):
+            problems.append(f"city requests: the file says {meta}")
+    listed = norm_ws(page.locator("#reqList").inner_text())
+    if f"The city of {name} (UK)" not in listed or "not in the app yet" not in listed:
+        problems.append(f"city requests: the phone's own list says {listed!r}")
+    # a city that's already here: pointed to, and Open it goes there
+    page.locator("#cityName").fill(cities[cid]["name"].upper())
+    page.locator("#cityCountry").fill(cities[cid]["country"])
+    page.locator("#citySend").click()
+    page.wait_for_timeout(300)
+    said = norm_ws(page.locator("#cityStatus").inner_text())
+    if "already in the app" not in said or len([f for f in fake.files("uploads") if f.startswith("inbox/requests/")]) != 1:
+        problems.append(f"city requests: asking for {cities[cid]['name']} again said {said!r}")
+    page.locator("#cityStatus [data-gotocity-req]").click()
+    page.wait_for_timeout(300)
+    if page.locator("#upload[open]").count() or not page.url.endswith("#" + cid):
+        problems.append(f"city requests: Open it didn't open {cid}: {page.url}")
+    ctx.close()
+    # without the key: a link to pass on, which fills the city form in on the owner's phone and files only on a tap
+    ctx = browser.new_context(color_scheme="light", **IPHONE)
+    ctx.add_init_script(SHARE_MOCK)
+    page = ctx.new_page()
+    page.goto(base + "#" + cid)
+    page.wait_for_selector("#cityList .row")
+    page.locator("#pickBtn").click()
+    page.locator("#picker [data-askcity]").click()
+    page.wait_for_selector("#upload[open]")
+    page.locator("#cityName").fill(name)
+    page.locator("#cityCountry").fill("Wales")
+    page.locator("#citySend").click()
+    page.wait_for_selector("#cityStatus.done", timeout=10000)
+    shared = page.evaluate("window.__shared") or {}
+    link = shared.get("url", "")
+    if "#request=" not in link or name not in shared.get("text", ""):
+        problems.append(f"city requests: without the key the request should be shared as a link: {shared}")
+    ctx.close()
+    fake = FakeGitHub()
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-github-key', 'k')")
+    page = ctx.new_page()
+    page.route("https://api.github.com/**", fake.handle)
+    page.goto(link)
+    page.wait_for_selector("#upload[open]")
+    page.wait_for_timeout(300)
+    if page.locator("#cityName").input_value() != name or page.locator("#cityCountry").input_value() != "Wales" \
+            or page.locator("#reqName").input_value() or "uploads" in fake.refs:
+        problems.append("city requests: the link should fill the city form in and file nothing by itself")
+    page.locator("#citySend").click()
+    page.wait_for_selector("#cityStatus.done", timeout=10000)
+    if not any(f.endswith("-city-llanfairpwll-wales.json") for f in fake.files("uploads")):
+        problems.append(f"city requests: Ask for it after the link didn't file the city request: {fake.files('uploads')}")
+    ctx.close()
+    print("city requests: asked from a city list, filed as a city request on uploads, a known city pointed to, a link without the key, filed from the link on tap")
+    return problems
+
+
 def check_f5_push(env):
     base, browser = env.base, env.browser
     problems = []
@@ -3501,6 +3591,7 @@ CHECKS = [
     ("f11_notes", check_f11_notes),
     ("f14_guide_link", check_f14_guide_link),
     ("f15_requests", check_f15_requests),
+    ("city_requests", check_city_requests),
     ("f5_push", check_f5_push),
 ]
 
