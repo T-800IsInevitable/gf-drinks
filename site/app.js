@@ -2683,6 +2683,20 @@
   });
   $("picker").addEventListener("close", () => { welcomeNow = false; });
   $("appVersion").textContent = "App version " + APP_VERSION + ".";
+  // ---------- What's new: each announced release's own notes (whatsnew.json), from Help or the notification ----------
+  async function openWhatsNew() {
+    $("whatsNewBody").innerHTML = '<p class="empty">Loading…</p>';
+    if (!$("whatsNew").open) openDialog($("whatsNew"));
+    let notes = null;
+    try { const res = await fetch("whatsnew.json", { cache: "no-cache" }); if (res.ok) notes = await res.json(); } catch (e) { /* no signal, never saved */ }
+    notes = Array.isArray(notes) ? notes.filter((n) => n && Number.isFinite(n.version) && n.title && Array.isArray(n.items)) : [];
+    $("whatsNewBody").innerHTML = notes.length
+      ? notes.slice(0, 6).map((n) => "<h3>" + esc(n.title) + '</h3><p class="muted">Update ' + n.version + (n.date ? ", " + esc(fmtDate(n.date)) : "") +
+          (n.version === APP_VERSION ? " (this one)" : n.version > APP_VERSION ? " (on its way: close the app and open it again)" : "") + "</p>" +
+          '<ul class="news-items">' + n.items.map((i) => "<li>" + esc(i) + "</li>").join("") + "</ul>").join("")
+      : '<p class="empty">Couldn\'t load the notes. Try again with signal.</p>';
+  }
+  $("whatsNewBtn").addEventListener("click", openWhatsNew);
   // what to send the owner if something breaks: no tracking, nothing leaves the phone unless you send it
   function errorDetails() {
     const lines = ["Twoo's Treat Temple, app version " + APP_VERSION, "Menus built: " + (data ? data.built : "not loaded"),
@@ -2704,7 +2718,7 @@
     }
   });
   $("infoBtn").addEventListener("click", () => { renderLastChecked(); openDialog($("info")); });
-  ["picker", "info", "gfcard", "warnings", "staff", "changes", "report", "favImport", "order", "near", "mapPage"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
+  ["picker", "info", "gfcard", "warnings", "staff", "changes", "report", "favImport", "order", "near", "mapPage", "whatsNew"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target === $(id)) $(id).close(); }));
   ["staff", "gfcard"].forEach((id) => $(id).addEventListener("close", () => { if (!$("staff").open && !$("gfcard").open) letGo(); }));
   $("refreshBtn").addEventListener("click", () => load(true));
   $("shareBtn").addEventListener("click", () => {
@@ -2827,6 +2841,9 @@
   const requestCode = rawHash.startsWith("request=") ? rawHash.slice(8) : "";
   if (importCode || requestCode) history.replaceState(null, "", location.pathname); // added or not, a reload shouldn't ask again
   const hashId = importCode || requestCode ? "" : rawHash;
+  // "?whatsnew": the "Update N is live!" notification (a query, not a #, which the last release would read as a page)
+  const wantNews = /(^|[?&])whatsnew(=|&|$)/.test(location.search.slice(1));
+  if (wantNews) history.replaceState(null, "", location.pathname + location.hash); // a reload shouldn't open it again
   const [hashRid, hashItem] = hashId.split("/");
   const saved = store.get(DATA_KEY);
   if (saved) {
@@ -2838,6 +2855,7 @@
   selected = (region === UK && hashRid) || store.get(SEL_KEY) || ALL;
   render();
   if (requestCode) openRequestFrom(requestCode); // a place asked for on another phone, passed on by link
+  if (wantNews) openWhatsNew();
   let itemPending = hashItem || "";
   if (itemPending && data && byId(hashRid)) { showItem(hashRid, itemPending); itemPending = ""; }
   try { // back where you were after the app reloaded itself for new code
@@ -2853,7 +2871,7 @@
     if (data && itemPending && byId(hashRid)) { showItem(hashRid, itemPending); itemPending = ""; }
     importReady.data = true;
     maybeImport();
-    if (data && region === UK && !hashId && !fromFavLink && !requestCode && !store.get(SEL_KEY)) { // not over a request link's form
+    if (data && region === UK && !hashId && !fromFavLink && !requestCode && !wantNews && !store.get(SEL_KEY)) { // not over a request link's form or What's new
       if (data.restaurants.length === 1) select(data.restaurants[0].id);
       else { renderPicker(); openDialog($("picker")); }
     }

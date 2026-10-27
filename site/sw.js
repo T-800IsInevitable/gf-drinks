@@ -9,9 +9,9 @@ const CACHE = "gf-menus-v31";
 const SHELL = ["./", "index.html", "styles.css", "theme.js", "compare.js", "app.js", "manifest.webmanifest",
   "vendor/leaflet/leaflet.js", "vendor/leaflet/leaflet.css",
   "data/restaurants.json", "phrases.json", "cities.json", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/favicon.png"];
-// saved at install too when it's there, so the map and Near me work offline from the first open; a site without it
-// (the first publish, or a week OpenStreetMap never answered) must still install
-const EXTRA = ["data/branches.json"];
+// saved at install too when they're there, so the map, Near me and What's new work offline from the first open; a site
+// without one (the first publish, or a week OpenStreetMap never answered) must still install
+const EXTRA = ["data/branches.json", "whatsnew.json"];
 const TIMEOUT_MS = 4000;
 const isData = (url) => url.pathname.endsWith(".json");
 const isGuide = (url) => /\/guides\//.test(url.pathname);
@@ -89,7 +89,8 @@ async function newest(url) {
   }
 }
 
-// ---------- notifications about new menus (tools/push.py sends them after a publish that brought a new guide) ----------
+// ---------- notifications about new menus (tools/push.py sends them after a publish that brought a new guide), and ----------
+// ---------- "Update N is live!" after an announced release, which opens the app's What's new (?whatsnew) ----------
 // The message names the restaurants and what changed, and carries the keys of items that now contain gluten. The app
 // keeps a copy of the favourites here (IndexedDB "gf", store "kv", key "favs"; localStorage isn't readable from a
 // service worker), so the notification can say when one of them is affected.
@@ -117,7 +118,8 @@ self.addEventListener("push", (e) => {
     const hit = (msg.nowAvoid || []).filter((k) => favs.has(k)).map((k) => k.split("|").slice(2).join("|"));
     let body = msg.body || "New menus are in.";
     if (hit.length) body = "A favourite now contains gluten: " + hit.slice(0, 3).join(", ") + (hit.length > 3 ? " and " + (hit.length - 3) + " more" : "") + ". " + body;
-    try { if ("setAppBadge" in self.navigator) await self.navigator.setAppBadge(msg.badge || 1); } catch (err) { /* no badge */ }
+    // the badge counts new guides; a release announcement carries none ("Update N is live!", tag gf-update)
+    try { if (msg.badge && "setAppBadge" in self.navigator) await self.navigator.setAppBadge(msg.badge); } catch (err) { /* no badge */ }
     await self.registration.showNotification(msg.title || "Treat Temple", {
       body, tag: msg.tag || "gf-menus", icon: "icons/icon-192.png", badge: "icons/icon-192.png", renotify: !!hit.length,
       data: { url: msg.url || "" },

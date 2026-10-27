@@ -460,6 +460,13 @@ def webkit_checks(p, base, ids, cid):
     return problems
 
 
+def stand_in_branches(site):
+    """One branch per chain, in a line north of King's Cross: enough for the app to have a list in any check."""
+    index = json.loads((site / "data" / "restaurants.json").read_text(encoding="utf-8"))
+    ids = [r["id"] for r in index["restaurants"] if r.get("osm")]
+    return {"fetched": "2026-10-20", "chains": ids, "b": [[n, round(51.5308 + n * 0.002, 5), -0.1238, "", ""] for n in range(len(ids))]}
+
+
 class Quiet(SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
@@ -468,6 +475,17 @@ class Quiet(SimpleHTTPRequestHandler):
         # a weak signal: every answer but the service worker's own file takes this long
         if self.server.lag["s"] and not self.path.startswith("/sw.js"):
             time.sleep(self.server.lag["s"])
+        # the branch list is written by the publish job only (tools/fetch_branches.py), so a pull request's check has
+        # none: answer a small stand-in rather than a 404 the app's quiet download would log (never written to disk,
+        # where a publish could pick it up). The near-me and map checks serve their own through with_branches().
+        if self.path.split("?")[0] == "/data/branches.json" and not (Path(self.directory) / "data" / "branches.json").exists():
+            body = json.dumps(stand_in_branches(Path(self.directory))).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         super().do_GET()
 
     def log_request(self, code="-", size="-"):
@@ -2845,6 +2863,44 @@ def check_f16_live_map(env):
     return problems
 
 
+def check_whats_new(env):
+    base, browser = env.base, env.browser
+    problems = []
+    # What's new: the "Update N is live!" notification opens ?whatsnew (a query, so the release before reads it as
+    # nothing), which shows each announced release's notes and then drops the query, so a reload doesn't open it again.
+    # Help opens it too, and its words keep to the app's rule on gluten free.
+    notes = json.loads((SITE / "whatsnew.json").read_text(encoding="utf-8"))
+    app_v = int(re.search(r"APP_VERSION = (\d+)", (SITE / "app.js").read_text(encoding="utf-8")).group(1))
+    ctx = browser.new_context(color_scheme="light", **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(f"page error: {e}"))
+    page.goto(base + "?whatsnew")
+    page.wait_for_selector("#whatsNew[open] .news-items", timeout=15000)
+    body = norm_ws(page.locator("#whatsNewBody").inner_text())
+    if notes[0]["title"] not in body or f"Update {notes[0]['version']}" not in body:
+        problems.append(f"what's new: {body[:120]!r}")
+    if notes[0]["version"] == app_v and "(this one)" not in body:
+        problems.append("what's new: the release on the phone isn't marked as this one")
+    if "whatsnew" in page.url:
+        problems.append(f"what's new: the address still asks for it ({page.url})")
+    problems += [f"what's new says gluten free in the app's own voice: {s!r}" for s in page.evaluate(WORDING_JS) if s in body]
+    page.locator("#whatsNew .link-btn[value=close]").click()
+    page.reload()
+    page.wait_for_selector("#list .row")
+    page.wait_for_timeout(500)
+    if page.locator("#whatsNew[open]").count() or page.locator("#picker[open]").count():
+        problems.append("what's new: a reload opened something it shouldn't")
+    page.locator("#infoBtn").click()
+    page.locator("#whatsNewBtn").click()
+    page.wait_for_selector("#whatsNew[open] .news-items", timeout=5000)
+    problems += [f"what's new: {e}" for e in errors]
+    ctx.close()
+    print(f"what's new: {len(notes)} releases, opened by ?whatsnew and from Help")
+    return problems
+
+
 def check_e_review(env):
     base, cid, cities, browser, index = env.base, env.cid, env.cities, env.browser, env.index
     problems = []
@@ -3286,6 +3342,7 @@ CHECKS = [
     ("f7_map", check_f7_map),
     ("f8_near_me", check_f8_near_me),
     ("f16_live_map", check_f16_live_map),
+    ("whats_new", check_whats_new),
     ("f10_read_aloud", check_f10_read_aloud),
     ("f11_notes", check_f11_notes),
     ("f14_guide_link", check_f14_guide_link),

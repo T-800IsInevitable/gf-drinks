@@ -179,7 +179,7 @@
     </details>
     <details class="more" id="pushHelp" hidden>
       <summary>Tell me about new menus</summary>
-      <p>A notification when a restaurant's guide changes, a badge on the app's icon, and a warning if a favourite now contains gluten. There's no server behind this app: your phone's notification address is saved by the app's owner, by hand, in the project's settings on GitHub, and nothing else leaves the phone.</p>
+      <p>A notification when a restaurant's guide changes, a badge on the app's icon, and a warning if a favourite now contains gluten. Also one when an update with new features arrives, which opens What's new. There's no server behind this app: your phone's notification address is saved by the app's owner, by hand, in the project's settings on GitHub, and nothing else leaves the phone.</p>
       <p><button type="button" id="pushOn" class="pill-btn">Tell me about new menus</button> <span id="pushState" class="muted"></span></p>
       <div id="pushBox" hidden>
         <p>Send this to whoever looks after the app. If that's you, add it as a line of the <b>PUSH_SUBSCRIPTIONS</b> secret under the project's Settings, Secrets and variables, Actions.</p>
@@ -226,7 +226,7 @@
       <div id="infoSources"></div>
     </details>
     <p id="storageState" class="muted" hidden></p>
-    <p id="appVersion" class="muted"></p>
+    <p><span id="appVersion" class="muted"></span> <button type="button" id="whatsNewBtn" class="link-btn">What's new</button></p>
     <p><button type="button" id="copyDetails" class="link-btn">Copy details for the owner</button> <span id="errorCount" class="muted"></span></p>
   </form>
 </dialog>
@@ -307,6 +307,17 @@
       <button class="link-btn" value="close">Done</button>
     </div>
     <div id="nearBody"></div>
+  </form>
+</dialog>
+
+<!-- Each announced release's notes (whatsnew.json): from Help, or the "Update N is live!" notification (?whatsnew) -->
+<dialog id="whatsNew" aria-labelledby="whatsNewTitle">
+  <form method="dialog" class="sheet">
+    <div class="sheet-head">
+      <h2 id="whatsNewTitle">What's new</h2>
+      <button class="link-btn" value="close">Done</button>
+    </div>
+    <div id="whatsNewBody"></div>
   </form>
 </dialog>
 

@@ -440,6 +440,9 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 .map-follow { right: 10px; bottom: 28px; width: 48px; height: 48px; display: grid; place-items: center; }
 .map-follow svg { width: 22px; height: 22px; }
 .pop-btns { display: flex; gap: 14px; }
+/* What's new: each release's notes */
+.sheet .news-items { padding-left: 20px; margin-bottom: 4px; }
+.news-items li + li { margin-top: 4px; }
 .pop-btns a { text-decoration: none; }
 /* full-size tap targets: the zoom buttons and a popup's close button */
 .live-map.leaflet-touch .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; }

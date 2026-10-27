@@ -1,0 +1,22 @@
+[
+  {
+    "version": 31,
+    "date": "2026-10-27",
+    "title": "The map and Near me now work instantly, even without signal",
+    "items": [
+      "The chains' branches now come with the app, refreshed every week, so the map and Near me answer at once and work offline.",
+      "Your position no longer leaves your phone: what's near you is worked out on the phone itself.",
+      "On the map, zoom in to a town to see the chains' branches there."
+    ]
+  },
+  {
+    "version": 30,
+    "date": "2026-10-27",
+    "title": "A map of everywhere you can eat",
+    "items": [
+      "Tap the globe next to the restaurant name for a map with your position, which follows you as you move.",
+      "Pins show the chains' branches around you and every place on the Abroad lists, in their list colours.",
+      "Tap a pin for the distance, today's hours and directions, then Menu for the chain's menu or Open for the place's own words."
+    ]
+  }
+]
