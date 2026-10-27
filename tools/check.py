@@ -23,6 +23,24 @@ ORDERS = {"asis", "any", "except", "swap", "modify"}
 CITY_CLAIMS = {"place-all", "list-all", "place-part", "separate"}
 # opening hours as the app reads them (site/app.js, span()): "HH:MM–HH:MM", a note may follow
 HOURS = re.compile(r"(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})")
+# the keys that hold a web address, anywhere in the data (plus any key ending in Url)
+URL_KEYS = {"url", "officialUrl", "listPage", "logoUrl"}
+SAFE_URL = re.compile(r"https://\S+")
+
+
+def check_urls(obj, where, err, path=""):
+    """Every web address in the data must be https: the app puts them straight into links (site/app.js safeUrl()
+    drops anything else, but a bad one should never get as far as a publish)."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k in URL_KEYS or k.endswith("Url"):
+                if v and not (isinstance(v, str) and SAFE_URL.fullmatch(v)):
+                    err(f"{where}: {path}{k} {v!r} isn't an https address")
+            else:
+                check_urls(v, where, err, f"{path}{k}.")
+    elif isinstance(obj, list):
+        for n, v in enumerate(obj):
+            check_urls(v, where, err, f"{path}{n}.")
 
 
 def check_restaurant(r, err):
@@ -106,6 +124,8 @@ def check_restaurant(r, err):
         err(f"{rid}: the index and the menu file don't carry the same fingerprint")
     if "built" in d:
         err(f"{rid}: the menu file carries a build time, which would make every release re-download it")
+    check_urls(r, rid, err)
+    check_urls(d, rid, err)
     print(f"{rid}: {len(d['items'])} with no gluten ingredients, {len(d['avoid'])} to avoid, guide valid until {d['guide'].get('validUntil')}")
 
 
@@ -155,9 +175,7 @@ def check_city(cid, c, phrases, err):
                     err(f"{where}: {l.get('address')} {day} hours {x!r} aren't HH:MM–HH:MM")
                 elif m and int(m[3]) * 60 + int(m[4]) <= int(m[1]) * 60 + int(m[2]):
                     err(f"{where}: {l.get('address')} {day} closes before it opens ({x!r}); past midnight isn't supported")
-        for u in [p.get("url"), p.get("listPage")]:
-            if u is not None and not str(u).startswith("https://"):
-                err(f"{where}: link {u!r} isn't https")
+    check_urls(c, f"city {cid}", err)  # the list's own address, each place's website and list entry
     print(f"city {cid}: {len(c.get('places', []))} places, checked {c.get('checked')}")
 
 

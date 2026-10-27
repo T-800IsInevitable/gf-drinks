@@ -1919,7 +1919,15 @@ def check_f2(env):
     page.wait_for_selector("#toast:not([hidden])")
     if "damaged" not in page.locator("#toast").inner_text():
         problems.append("favourites link: a damaged link doesn't say so")
-    print(f"favourites link: round trip of {len(mine)}; opening one adds 3, skips 1 already saved, follows a renamed section, leaves out 2")
+    # V7: a note that comes with a link is shown in full before anything is added, and a note on an Avoid row is left out
+    avoid_key = key("starbucks-uk", sb["avoid"][0])
+    code = base64.urlsafe_b64encode(json.dumps({"v": 2, "f": [link_keys[0]], "n": {link_keys[0]: "ask for a clean jug", avoid_key: "staff said it is fine"}}).encode()).decode().rstrip("=")
+    page.goto(base + "#favs=" + code)
+    page.wait_for_selector("#favImport[open]")
+    body = norm_ws(page.locator("#favImportBody").inner_text())
+    if "Notes in the link (1)" not in body or "ask for a clean jug" not in body or "staff said it is fine" in body:
+        problems.append(f"favourites link: the notes aren't shown before adding, or a note on an Avoid row got through ({body[:200]!r})")
+    print(f"favourites link: round trip of {len(mine)}; opening one adds 3, skips 1 already saved, follows a renamed section, leaves out 2; notes shown first")
     ctx.close()
     return problems
 
@@ -2592,6 +2600,9 @@ def check_f8_near_me(env):
             problems.append(f"near me: the query doesn't ask for {r['name']}'s names {r['osm']}")
     if len(asked) != 1:
         problems.append(f"near me: {len(asked)} queries for one tap")
+    # V6: the position goes out rounded to about 100 metres (three decimal places), never to the metre
+    if asked and "around:1000,51.531,-0.124)" not in asked[0]:
+        problems.append(f"near me: the query doesn't round the position to three decimal places ({asked[0][:160]!r})")
     href = page.locator("#near .near-list li").first.locator("a").get_attribute("href")
     if not href.startswith("https://maps.apple.com/?ll="):
         problems.append(f"near me: directions link {href!r}")

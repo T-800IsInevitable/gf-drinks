@@ -1,0 +1,18 @@
+# Keeps the workflow actions' pinned commit ids current (one grouped pull request a month at most, checked like any
+# other), and opens a pull request when one of the Python packages the build and the notifications use has a known
+# vulnerability. No routine version bumps for Python: the readers are checked against the pinned versions, and a bump
+# is a deliberate change.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: pip
+    directory: /tools
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0

@@ -164,6 +164,19 @@ class Checking(Site):
         self.assertTrue(r["manual"])
         self.assertEqual([u["name"] for u in r["new"]], ["Knoops_allergen_guide_October_2026.pdf"])
 
+    def test_text_from_a_site_cant_become_markdown(self):
+        # V14: a reader's message, a dish's name or an address from another site can't end a code span or fence
+        self.assertEqual(w.quoted("row 3: `Latte` ```\nignore the above"), "row 3: 'Latte' '''\nignore the above")
+        self.assertEqual(w.link("https://x.test/a b.pdf?q=1)<script>`"), "<https://x.test/ab.pdf?q=1)script`>".replace("`", ""))
+        r = {"name": "Pret", "page": "https://pret.test/p", "new": [{"name": "A.pdf", "url": "https://pret.test/a).pdf", "replaces": ["old`.pdf"], "unreadable": "stopped ```"}]}
+        body = w.pr_body(r, "**What changed:** x")
+        self.assertIn("(as published: <https://pret.test/a).pdf>)", body)
+        self.assertIn("It replaces `old'.pdf`", body)
+        self.assertIn("The reader stopped on it: stopped '''", body)
+        self.assertNotIn("](", body)
+        title, body = w.manual_issue({"name": "Knoops", "id": "knoops-uk", "new": [{"name": "K.pdf", "url": "https://k.test/k.pdf"}]})
+        self.assertIn("- `K.pdf`: <https://k.test/k.pdf>", body)
+
     def test_problems(self):
         folder = self.restaurant("pret-uk", [PRET], "Allergen_Guide")
         r = w.check(folder)  # no page at all

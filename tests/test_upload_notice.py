@@ -104,6 +104,12 @@ class UploadNotice(unittest.TestCase):
         self.upload("2026-11-03T1500-pho-london", {"restaurant": "Pho", "area": "London"})
         self.assertEqual(self.run_notice(), ["Upload waiting: 2026-11-03T1012-cafe-berlin", "Upload waiting: 2026-11-03T1500-pho-london"])
 
+    def test_a_folder_name_cant_become_markdown(self):
+        # V16: the folder name goes into the issue in a code span; a backtick or anything else odd in it is dropped
+        self.upload("2026-11-03T1012-cafe`[x](e)-berlin", {"restaurant": "Cafe", "area": "Berlin"})
+        self.assertEqual(self.run_notice(), ["Upload waiting: 2026-11-03T1012-cafexe-berlin"])
+        self.assertNotIn("`[", FakeGitHub.issues[0]["body"])
+
     def request(self, file, meta):
         """Put a request by name on the uploads branch, as the app does."""
         self.git("switch", "-q", "-C", "uploads", "origin/uploads" if self.has_uploads() else "main")

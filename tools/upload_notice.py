@@ -41,6 +41,12 @@ def clean(v):
     return re.sub(r"[`\s]+", " ", str(v or "")).strip()[:80]
 
 
+def clean_name(v):
+    """A folder or file name as it goes into an issue (in backticks): the app's names are letters, digits, dots, dashes and
+    underscores, so anything else is dropped rather than let it end the code span and become markdown."""
+    return re.sub(r"[^A-Za-z0-9._-]", "", str(v or ""))[:80] or "upload"
+
+
 def read_json(path):
     try:
         return json.loads(git("show", f"{BRANCH}:{path}") or "{}")
@@ -57,7 +63,7 @@ def waiting():
         if folder.lower() == "readme.md" or folder == REQUESTS:
             continue
         meta = read_json(f"{path}/upload.json")
-        out.append({"folder": folder, "restaurant": clean(meta.get("restaurant")), "area": clean(meta.get("area"))})
+        out.append({"folder": clean_name(folder), "restaurant": clean(meta.get("restaurant")), "area": clean(meta.get("area"))})
     return out
 
 
@@ -70,7 +76,7 @@ def requests_waiting():
             continue
         meta = read_json(path)
         url = str(meta.get("url") or "").strip()[:200]
-        out.append({"file": path.split("/")[-1], "name": clean(meta.get("name")), "area": clean(meta.get("area")),
+        out.append({"file": clean_name(path.split("/")[-1]), "name": clean(meta.get("name")), "area": clean(meta.get("area")),
                     "url": url if URL.fullmatch(url) else ""})  # one plain https address, or nothing
     return out
 
