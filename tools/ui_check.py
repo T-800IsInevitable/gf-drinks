@@ -2721,8 +2721,8 @@ def check_f11_notes(env):
     # another phone opens the link: the favourite and its note arrive
     ctx, page, errors2 = visit(browser, base + "#favs=" + code, wait="#favImport[open]")
     body = norm_ws(page.locator("#favImportBody").inner_text())
-    if "1 note comes with the link" not in body:
-        problems.append(f"notes: the import sheet doesn't mention the note: {body!r}")
+    if "Notes in the link (1)" not in body or "Ask for a clean jug" not in body:  # shown in full before it's added (V7)
+        problems.append(f"notes: the import sheet doesn't show the note: {body!r}")
     page.locator("#favImportAdd").click()
     page.wait_for_timeout(400)
     if page.evaluate("JSON.parse(localStorage.getItem('gf-notes') || '{}')") != {key: "Ask for a clean jug"}:
