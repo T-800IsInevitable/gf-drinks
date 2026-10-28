@@ -19,8 +19,8 @@ MSG = {"title": "New menus in Treat Temple", "body": "Pret A Manger: November 20
        "url": "#pret-uk", "nowAvoid": ["pret-uk|Hot drinks|Oat latte", "pret-uk|Food|Granola pot"], "badge": 1}
 
 
-def run(favs, msg=MSG, open_client=False):
-    env = {**os.environ, "OPEN_CLIENT": "1" if open_client else ""}
+def run(favs, msg=MSG, open_client=False, hang_idb=False):
+    env = {**os.environ, "OPEN_CLIENT": "1" if open_client else "", "HANG_IDB": "1" if hang_idb else ""}
     done = subprocess.run(["node", str(HARNESS), str(SW), json.dumps(favs), json.dumps(msg)], capture_output=True, text=True, env=env)
     if done.returncode:
         raise AssertionError(done.stderr)
@@ -50,6 +50,10 @@ class Push(unittest.TestCase):
         out = run([], open_client=True)
         self.assertTrue(out["focused"])
         self.assertEqual(out["navigated"], "https://example.test/gf-drinks/#pret-uk")
+
+    def test_storage_that_never_answers_still_shows_the_notification(self):
+        out = run(["pret-uk|Food|Granola pot"], hang_idb=True)
+        self.assertEqual(out["notifications"][0]["body"], MSG["body"])
 
     def test_a_message_without_json_still_shows(self):
         out = run([], msg={"body": "plain"})

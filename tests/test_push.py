@@ -206,6 +206,23 @@ class Send(unittest.TestCase):
         self.assertEqual(calls[0][1], msg)
         self.assertEqual(calls[0][2], {"sub": "https://github.com/o/r"})
 
+    def test_each_phone_is_listed_with_its_check_code(self):
+        sub = {"endpoint": "https://push.example/abc", "keys": {}}
+        self.assertEqual(push.code(sub), "f7a263f8")
+        with mock.patch.object(push, "webpush", lambda **k: None):
+            line = push.send({"title": "t", "body": "b"}, [sub], "PEM", "https://x.github.io")[0]
+        self.assertIn(f"code {push.code(sub)}", line)
+        self.assertNotIn("abc", line)
+
+    def test_a_test_message_shows_anew_each_time(self):
+        from datetime import datetime, timezone
+        one = push.test_message(datetime(2026, 7, 1, 13, 5, tzinfo=timezone.utc))
+        two = push.test_message(datetime(2026, 7, 1, 13, 6, tzinfo=timezone.utc))
+        self.assertNotEqual(one["tag"], two["tag"])
+        self.assertTrue(one["tag"].startswith("gf-test-"))
+        self.assertIn("14:05 UK time", one["body"])  # summer time
+        self.assertNotIn("gluten free", one["body"])
+
     def test_the_contact_is_one_push_services_accept(self):
         self.assertEqual(push.contact("T-800IsInevitable/gf-drinks"), "https://t-800isinevitable.github.io")
         try:
