@@ -3552,11 +3552,30 @@ def check_f5_push(env):
     if not page.locator("#pushHelp").is_hidden():
         problems.append("push: the notifications section shows outside the Home Screen app")
     ctx.close()
+    # a phone subscribed with the app's old key pair: the subscription is let go and a tap asked for (an iPhone
+    # subscribes only from a tap), saying why
+    ctx, page, errors = visit(browser, base + "#knoops-uk", init=mock + "window.__sub = fakeSub(); localStorage.setItem('gf-push', '{\"endpoint\":\"https://push.example/old\"}');")
+    page.locator("#infoBtn").click()
+    page.wait_for_selector("#info[open]")
+    page.locator("#pushHelp summary").click()
+    page.wait_for_selector("#pushOn:not([hidden])", timeout=5000)
+    if page.evaluate("window.__sub") is not None or "new key" not in page.locator("#pushState").inner_text():
+        problems.append(f"push: an old-key subscription wasn't let go with a reason: {page.locator('#pushState').inner_text()!r}")
+    page.locator("#pushOn").click()
+    page.wait_for_selector("#pushBox:not([hidden])", timeout=5000)
+    page.reload()
+    page.locator("#infoBtn").click()
+    page.locator("#pushHelp summary").click()
+    page.wait_for_selector("#pushBox:not([hidden])", timeout=5000)  # subscribed again with the new key: kept this time
+    if page.evaluate("window.__sub") is None:
+        problems.append("push: a subscription made with the new key was let go")
+    problems += [f"push (new key): {e}" for e in errors]
+    ctx.close()
     sw = (SITE / "sw.js").read_text(encoding="utf-8")
     for want in ('addEventListener("push"', 'addEventListener("notificationclick"', "setAppBadge", "nowAvoid"):
         if want not in sw:
             problems.append(f"push: sw.js has no {want}")
-    print("push: offered only in the Home Screen app; subscribe shows the address and check code with the app's key; switch off unsubscribes")
+    print("push: offered only in the Home Screen app; subscribe shows the address and check code with the app's key; switch off unsubscribes; an old key's subscription is let go")
     return problems
 
 

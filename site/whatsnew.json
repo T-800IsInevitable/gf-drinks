@@ -1,5 +1,14 @@
 [
   {
+    "version": 38,
+    "date": "2026-10-28",
+    "title": "Notifications need switching on again",
+    "items": [
+      "The app's notifications have a new key, for safety. Open Help, then Tell me about new menus, and tap it to switch them on again.",
+      "Then tap Send… so whoever shared the app with you can save this phone's new address."
+    ]
+  },
+  {
     "version": 35,
     "date": "2026-10-28",
     "title": "Asking for a place or a city is simpler",
