@@ -1,5 +1,14 @@
 [
   {
+    "version": 35,
+    "date": "2026-10-28",
+    "title": "Asking for a place or a city is simpler",
+    "items": [
+      "Under Add a menu, type the place or the city and tap Send. It goes in a message to whoever shared the app with you, and they add it.",
+      "Nothing about GitHub or keys shows unless you open I'm the app's owner at the bottom."
+    ]
+  },
+  {
     "version": 34,
     "date": "2026-10-27",
     "title": "Ask for a city",

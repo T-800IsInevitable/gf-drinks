@@ -3140,8 +3140,8 @@ def check_e_review(env):
     text = norm_ws(page.locator("#reqList").inner_text())
     if "not in the app yet" not in text or "ask the owner" not in text:
         problems.append(f"requests: the state line reads {text[:120]!r}")
-    if "goes to the app's owner as a link" not in page.locator("#reqHow").inner_text():
-        problems.append("requests: without the key the sheet doesn't say the request goes as a link")
+    if "goes to whoever shared this app" not in page.locator("#reqHow").inner_text() or page.locator("#reqSend").inner_text() != "Send…":
+        problems.append("requests: without the key the sheet should say plainly that Send passes it on")
     ctx.close()
     ctx = browser.new_context(color_scheme="light", timezone_id=cities[cid].get("timeZone", "Europe/Berlin"), **IPHONE)
     ctx.add_init_script(f"localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-intro-seen', JSON.stringify(['all', {json.dumps(cid)}]))")
