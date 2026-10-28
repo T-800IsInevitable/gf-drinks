@@ -373,19 +373,6 @@
       <label class="field">Restaurant and city<input id="shareName" placeholder="e.g. Café Name, Berlin" autocomplete="off"></label>
       <p><button type="button" id="shareSend" class="pill-btn">Send…</button></p>
       <p id="shareStatus" class="muted" role="status"></p>
-      <details class="owner">
-      <summary>I'm the app's owner</summary>
-      <p>Uploading straight to the app needs a one-time GitHub key for this app's project. It's saved on this phone only.</p>
-      <ol>
-        <li>In Safari, open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
-        <li>Name it <b>Treat Temple upload</b> and pick an expiry.</li>
-        <li>Under <b>Repository access</b>, choose <b>Only select repositories</b> and pick <b id="repoName">gf-drinks</b>.</li>
-        <li>Under <b>Permissions → Repository permissions</b>, set <b>Contents</b> to <b>Read and write</b>.</li>
-        <li>Tap <b>Generate token</b>, copy it and paste it below.</li>
-      </ol>
-      <label class="field">GitHub key<input id="keyInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></label>
-      <p><button type="button" id="keySave" class="pill-btn">Save key</button></p>
-      </details>
     </div>
     <div id="uploadFields" hidden>
       <label class="field">Restaurant<input id="upName" required placeholder="e.g. Café Name" autocomplete="off"></label>
@@ -402,6 +389,19 @@
       <p id="upStatus" class="muted" role="status"></p>
       <p class="muted">Signed in to upload. <button type="button" id="keyForget" class="link-btn">Remove key</button></p>
     </div>
+    <details class="owner" id="ownerKey">
+    <summary>I'm the app's owner</summary>
+    <p>Uploading straight to the app needs a one-time GitHub key for this app's project. It's saved on this phone only.</p>
+    <ol>
+      <li>In Safari, open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
+      <li>Name it <b>Treat Temple upload</b>, and under <b>Expiration</b> choose <b>No expiration</b>, so the app never asks again.</li>
+      <li>Under <b>Repository access</b>, choose <b>Only select repositories</b> and pick <b id="repoName">gf-drinks</b>.</li>
+      <li>Under <b>Permissions → Repository permissions</b>, set <b>Contents</b> to <b>Read and write</b>.</li>
+      <li>Tap <b>Generate token</b>, copy it and paste it below.</li>
+    </ol>
+    <label class="field">GitHub key<input id="keyInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></label>
+    <p><button type="button" id="keySave" class="pill-btn">Save key</button></p>
+    </details>
   </form>
 </dialog>
 

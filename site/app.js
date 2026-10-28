@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 34;
+  const APP_VERSION = 35;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -2073,12 +2073,16 @@
     const has = !!store.get(KEY_KEY);
     $("keySetup").hidden = has;
     $("uploadFields").hidden = !has;
+    $("ownerKey").hidden = has; // folded away at the very bottom: anyone else never needs it
     $("repoName").textContent = repo.name;
-    // what Ask for it does from this phone: files it (with the key), or passes it to the owner as a link
+    // what the button does from this phone: files it (with the key), or sends it to the owner in a message. Without
+    // the key the words are plain steps: nothing about GitHub, links or filing
     $("reqHow").textContent = has ? "Know somewhere that should be here? Its own allergen information is looked up and added for you to approve."
-      : "Know somewhere that should be here? From this phone it goes to the app's owner as a link; one tap there files it, and its own allergen information is then looked up and added once the owner approves.";
-    $("cityHow").textContent = "Name a city, and the places there that say everything they serve is gluten free are found through coeliac guides and checked against their own websites" +
-      (has ? ", for you to approve." : ". From this phone it goes to the app's owner as a link, and they approve the list.");
+      : "Know somewhere that should be here? Fill this in and tap Send. It goes to whoever shared this app with you, in Messages or any app you choose, and they add it.";
+    $("cityHow").textContent = has
+      ? "Name a city, and the places there that say everything they serve is gluten free are found through coeliac guides and checked against their own websites, for you to approve."
+      : "Want a whole city? Fill this in and tap Send, the same way. The places there that say everything they serve is gluten free are then found and checked, and added.";
+    ["reqSend", "citySend"].forEach((id) => { $(id).textContent = has ? "Ask for it" : "Send…"; });
   }
   function openAddMenu() {
     ["info", "picker"].forEach((id) => { if ($(id).open) $(id).close(); });
@@ -2367,7 +2371,7 @@
         const sent = await shareOrCopy(title, text, requestLink(q), "Link copied. Send it to whoever looks after the app.");
         if (!sent) { status.textContent = "Not sent."; return; }
         q.how = "shared";
-        status.textContent = "Sent to the app's owner. Thank you!";
+        status.textContent = "Sent. Thank you! It's listed below until it's in the app.";
       }
       status.classList.add("done");
       requests.push(q);
@@ -2400,7 +2404,8 @@
     $(f.name).value = q.name;
     $(f.area).value = q.area;
     if (f.url) $(f.url).value = q.url;
-    $(f.status).textContent = store.get(KEY_KEY) ? "From a link. Tap Ask for it to file it." : "From a link. This phone doesn't hold the upload key, so Ask for it passes it on again.";
+    $(f.status).textContent = store.get(KEY_KEY) ? "From a link. Tap Ask for it to file it."
+      : "From a link. To file it from this phone, add the GitHub key under I'm the app's owner at the bottom, then tap Ask for it.";
     $(f.name).focus();
   }
 
