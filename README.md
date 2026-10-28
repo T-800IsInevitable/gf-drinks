@@ -180,3 +180,4 @@ python -m http.server -d site 8000               # open http://localhost:8000
 - `site/`: the app (HTML, CSS, JavaScript, offline support, icons)
 
 Unofficial. Not affiliated with any restaurant.
+
