@@ -74,6 +74,9 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # the push secrets live in the "notify" environment, which only main may use: a workflow run from any other branch
+    # (a pull request's own copy, or one started by hand there) can't read them
+    environment: notify
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 

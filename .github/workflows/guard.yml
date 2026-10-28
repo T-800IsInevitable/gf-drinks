@@ -1,0 +1,51 @@
+name: Guard pull request
+
+# Judges every pull request by main's own rules. pull_request_target runs this file and the tools as they are on
+# main, whatever the pull request changes, so a pull request can't loosen the checks that judge it (checks.yml runs
+# the pull request's own copy). Nothing from the pull request is run: only its menu and city files are read, as data.
+#  - A routine's pull request (branches scan/, city/, recheck/) may change only its own files (tools/guard.py).
+#  - Its menus and cities are built and checked with main's tools/build.py and tools/check.py.
+# The token reads only, and no secret is used here. main requires this check (job "guard") to pass.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+
+      - run: |
+          pip install --require-hashes -r tools/requirements-buildtools-lock.txt
+          pip install --require-hashes --no-build-isolation -r tools/requirements-lock.txt
+
+      # the branch name goes in through the environment, never into the script's text
+      - name: A routine's pull request changes only its own files
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: python tools/guard.py
+
+      - name: Its menus and cities, built and checked by main's rules
+        env:
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          git fetch --no-tags --depth=1 origin "refs/pull/$PR/head"
+          rm -rf restaurants
+          git checkout FETCH_HEAD -- restaurants site/cities.json
+          python tools/build.py
+          python tools/check.py
