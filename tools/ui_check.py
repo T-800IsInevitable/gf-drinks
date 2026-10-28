@@ -259,14 +259,15 @@ def place_text(pl):
 class FakeGitHub:
     """Just enough of GitHub's API for Add a menu: the Git Data calls an upload makes, kept in memory.
     fail_blob=n drops the signal on the nth file; lose_answer moves the branch but the answer never arrives;
-    status=(code, headers, message) answers every call with that error."""
+    status=(code, headers, message) answers every call with that error; read_only is a key the account could write
+    with but that was given Contents read-only, so GitHub turns away every write."""
 
-    def __init__(self, fail_blob=None, lose_answer=False, status=None):
+    def __init__(self, fail_blob=None, lose_answer=False, status=None, read_only=False):
         self.refs = {"main": "c0"}
         self.commits = {"c0": {"tree": "t0", "parents": [], "message": ""}}
         self.trees = {"t0": {}}
         self.blobs = {}
-        self.fail_blob, self.lose_answer, self.status = fail_blob, lose_answer, status
+        self.fail_blob, self.lose_answer, self.status, self.read_only = fail_blob, lose_answer, status, read_only
         self.blob_calls = 0
         self.other = []  # calls an upload shouldn't make, such as the old one-file-at-a-time /contents PUTs
 
@@ -298,6 +299,10 @@ class FakeGitHub:
         path = req.url.split("/repos/T-800IsInevitable/gf-drinks", 1)[-1]
         body = json.loads(req.post_data or "{}") if req.method in ("POST", "PATCH") else {}
         sha_of = lambda s: hashlib.sha1(s.encode()).hexdigest()[:12]
+        if req.method == "GET" and path == "":
+            return reply(200, {"name": "gf-drinks", "permissions": {"push": True}})  # the account's, whatever the key may do
+        if self.read_only and req.method != "GET":
+            return reply(403, {"message": "Resource not accessible by personal access token"})
         m = re.fullmatch(r"/git/ref/heads/(\w+)", path)
         if req.method == "GET" and m:
             return reply(200, {"object": {"sha": self.refs[m[1]]}}) if m[1] in self.refs else reply(404, {"message": "Not Found"})
@@ -426,7 +431,25 @@ def upload_checks(browser, base, engine):
     if "no longer works" not in said or "signal" in said or page.evaluate("localStorage.getItem('gf-github-key')") or page.locator("#keySetup").is_hidden():
         problems.append(f"{engine} expired key: said {said!r}, and the key should be removed with its steps reopened")
     ctx.close()
-    print(f"{engine} uploads: one commit each on uploads, JPEG photos, safe retries, rate limit keeps the key, expired key removed")
+    # a key without write access: the upload says so (not "expired"); saving such a key is refused at once
+    fake = FakeGitHub(read_only=True)
+    ctx, page = session(fake)
+    said = upload(page)
+    if "Read and write" not in said or "expired" in said or page.evaluate("localStorage.getItem('gf-github-key')"):
+        problems.append(f"{engine} read-only key: said {said!r}, and the key should be removed")
+    for fake, keep in ((FakeGitHub(read_only=True), False), (FakeGitHub(), True)):
+        page.route("https://api.github.com/**", fake.handle)
+        page.evaluate("localStorage.removeItem('gf-github-key')")
+        if not page.evaluate("document.getElementById('ownerKey').open"):
+            page.locator("#ownerKey summary").click()
+        page.locator("#keyInput").fill("k2")
+        page.locator("#keySave").click()
+        page.wait_for_timeout(500)
+        if bool(page.evaluate("localStorage.getItem('gf-github-key')")) != keep:
+            problems.append(f"{engine} saving a {'working' if keep else 'read-only'} key: {'refused' if keep else 'kept'}")
+        page.unroute("https://api.github.com/**")
+    ctx.close()
+    print(f"{engine} uploads: one commit each on uploads, JPEG photos, safe retries, rate limit keeps the key, expired key removed, read-only key turned away")
     return problems
 
 
