@@ -84,7 +84,9 @@ def plan(previous=ROOT / ".previous", data=SITE / "data"):
     url = "#" + new_index["restaurants"][0]["id"] if len(news) == 1 and len(new_index["restaurants"]) else ""
     if len(news) == 1:
         url = "#" + next(r["id"] for r in new_index["restaurants"] if news[0].startswith(r["name"] + ":"))
-    msg = {"title": TITLE, "body": body[:400], "tag": "gf-menus", "url": url, "nowAvoid": keys[:KEYS_MOST], "badge": len(news)}
+    # a tag of its own: iPhones replace a notification with the same tag silently (no banner), so one still in the
+    # Notification Centre would swallow the next
+    msg = {"title": TITLE, "body": body[:400], "tag": "gf-menus-" + str(new_index.get("built", ""))[:16], "url": url, "nowAvoid": keys[:KEYS_MOST], "badge": len(news)}
     while msg["nowAvoid"] and len(json.dumps(msg, ensure_ascii=False).encode("utf-8")) > MAX_BYTES:
         msg["nowAvoid"].pop()  # a big change must still arrive; the phone's favourites check then covers fewer items
     return msg
@@ -104,7 +106,7 @@ def release_plan(previous=ROOT / ".previous", site=SITE):
         return None
     # "?whatsnew", not a #: the phone may still be on the last release when it's tapped, which reads a # as a page name
     return {"title": f"Update {new} is live!", "body": f"Tap to see the new features: {note['title']}"[:400],
-            "tag": "gf-update", "url": "?whatsnew"}  # no badge: that counts the guides not yet looked at
+            "tag": f"gf-update-{new}", "url": "?whatsnew"}  # no badge: that counts the guides not yet looked at
 
 
 def city_plan(previous=ROOT / ".previous", site=SITE):
@@ -126,7 +128,7 @@ def city_plan(previous=ROOT / ".previous", site=SITE):
     return {"title": f"{who} {'is' if len(names) == 1 else 'are'} in the app"[:120],
             "body": f"{places} {'place' if places == 1 else 'places'} to eat, from coeliac guides, each checked against its own website where it has one. Tap to see "
                     + ("it." if len(names) == 1 else "them."),
-            "tag": "gf-cities", "url": "#" + new[0] if len(new) == 1 else ""}
+            "tag": "gf-cities-" + "-".join(new), "url": "#" + new[0] if len(new) == 1 else ""}
 
 
 def messages(previous=ROOT / ".previous", data=SITE / "data", site=SITE):

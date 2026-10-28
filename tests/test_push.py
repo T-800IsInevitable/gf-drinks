@@ -45,6 +45,7 @@ class Release(unittest.TestCase):
         self.assertEqual(m["title"], "Update 31 is live!")
         self.assertEqual(m["body"], "Tap to see the new features: Maps that work offline")
         self.assertEqual(m["url"], "?whatsnew")  # a query, which the release before reads as nothing
+        self.assertEqual(m["tag"], "gf-update-31")  # its own tag, so it can't silently replace Update 30's
         self.assertNotIn("badge", m)  # the badge counts new guides
 
     def test_no_notes_no_announcement(self):
@@ -74,6 +75,7 @@ class Release(unittest.TestCase):
         self.assertEqual(m["title"], "Leeds is in the app")
         self.assertEqual(m["body"], "3 places to eat, from coeliac guides, each checked against its own website where it has one. Tap to see it.")
         self.assertEqual(m["url"], "#leeds")
+        self.assertEqual(m["tag"], "gf-cities-leeds")
         self.assertNotIn("gluten free", m["body"])
         m = self.cities({"york": york}, {"york": york, "leeds": {"name": "Leeds", "places": [{}]}, "lyon": {"name": "Lyon", "places": [{}]}})
         self.assertEqual((m["title"], m["url"]), ("Leeds and Lyon are in the app", ""))
@@ -129,6 +131,7 @@ class Plan(unittest.TestCase):
         self.assertEqual(m["title"], push.TITLE)
         self.assertEqual(m["body"], "Pret A Manger: November 2026 guide: 2 now contain gluten, 5 new.")
         self.assertEqual(m["url"], "#pret-uk")
+        self.assertEqual(m["tag"], "gf-menus-x")  # from the build time, so each publish's message is its own
         self.assertEqual(m["nowAvoid"], ["pret-uk|Hot drinks|Oat latte", "pret-uk|Food|Granola pot"])
         self.assertEqual(m["badge"], 1)
         self.assertNotIn("gluten free", m["body"])
