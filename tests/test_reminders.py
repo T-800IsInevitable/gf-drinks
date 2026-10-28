@@ -38,7 +38,7 @@ class FakeGitHub(BaseHTTPRequestHandler):
 
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
-        self.issues.append(body)
+        self.issues.append({**body, "user": {"login": "github-actions[bot]"}})  # as GitHub answers: the workflow opened it
         self.answer(201, {"html_url": f"https://github.test/o/r/issues/{len(self.issues)}"})
 
 

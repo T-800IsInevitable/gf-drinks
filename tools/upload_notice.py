@@ -86,7 +86,8 @@ def requests_waiting():
 
 
 def issue_body(u):
-    what = " ".join(x for x in (u["restaurant"], u["area"]) if x) or "a menu"
+    # in code spans, as request_body has them: no @mention or link from the uploader's words
+    what = " ".join(f"`{x.replace('`', '')}`" for x in (u["restaurant"], u["area"]) if x) or "a menu"
     return (f"A menu is waiting in `inbox/{u['folder']}/` on the `uploads` branch ({what}).\n\n"
             "The scan follows `tools/SCAN_INSTRUCTIONS.md`: it reads the upload and opens a pull request for you to check. "
             "This issue closes once that pull request is open.\n\n"

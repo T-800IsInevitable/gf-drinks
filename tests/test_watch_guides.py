@@ -226,7 +226,7 @@ class FakeGitHub(BaseHTTPRequestHandler):
         if self.path == "/repos/o/r/actions/workflows/checks.yml/dispatches":
             return self.answer(204)
         if self.path == "/repos/o/r/issues":
-            self.issues.append(body)
+            self.issues.append({**body, "user": {"login": "github-actions[bot]"}})  # as GitHub answers: the workflow opened it
             return self.answer(201, {"html_url": f"https://github.test/o/r/issues/{len(self.issues)}"})
         self.answer(404, {})
 
