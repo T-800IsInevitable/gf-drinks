@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 36;
+  const APP_VERSION = 37;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -2104,12 +2104,15 @@
       const res = await api("");
       const info = res.ok ? await res.json() : null;
       if (!info || !(info.permissions && info.permissions.push)) throw new Error(res.status);
+      // that says what the account may do, not the key: a key with Contents read-only passes it. So write a tiny
+      // file GitHub keeps loose, in no folder or commit, which only a key that can upload is allowed to
+      if (!(await send("/git/blobs", { content: "key check", encoding: "utf-8" })).ok) throw new Error("read-only");
       $("keyInput").value = "";
       toast("Key saved");
       showUploadState();
     } catch (e) {
       store.remove(KEY_KEY);
-      toast("That key can't upload to " + repo.name + ". Check it has Contents: Read and write.");
+      toast("That key can't upload to " + repo.name + ". Check " + repo.name + " is picked and Contents is Read and write.");
     }
   });
   // A big "Take photos or choose a PDF" button stands in for the browser's own file box, with a small preview of each pick
@@ -2195,20 +2198,24 @@
       return await new Promise((ok, bad) => c.toBlob((b) => (b ? ok(b) : bad(new Error("couldn't save the photo " + file.name))), "image/jpeg", 0.88));
     } finally { URL.revokeObjectURL(url); }
   }
-  // GitHub's answer, or an error saying what went wrong. 401, or a 403 that isn't GitHub's rate limit, means the
-  // saved key no longer works, so it's removed. A rate limit is GitHub's, not the key's: the key stays.
+  // GitHub's answer, or an error saying what went wrong. 401 means the saved key has expired or been deleted; a 403
+  // that isn't GitHub's rate limit means the key works but may not write here. Either way it's removed, and
+  // keyTrouble() says which. A rate limit is GitHub's, not the key's: the key stays.
   async function gh(res, what) {
     if (res.ok) return res.json();
     const body = await res.json().catch(() => ({}));
     const limited = res.status === 429 || res.headers.get("x-ratelimit-remaining") === "0" || /rate limit/i.test(body.message || "");
     if (res.status === 401 || (res.status === 403 && !limited)) {
       store.remove(KEY_KEY);
-      throw new Error("EXPIRED_KEY");
+      throw new Error(res.status === 401 ? "EXPIRED_KEY" : "KEY_CANT_WRITE");
     }
     const err = new Error(limited ? "GitHub is limiting uploads for now, so wait an hour" : (body.message || "HTTP " + res.status) + " while " + what);
     err.status = res.status;
     throw err;
   }
+  const keyTrouble = (err) => err.message === "EXPIRED_KEY" ? "This GitHub key no longer works: it has expired or been deleted. Make a new one below."
+    : err.message === "KEY_CANT_WRITE" ? "GitHub turned this key away: it can't write to " + repo.name + ". Make a new one below, with " + repo.name + " picked and Contents set to Read and write."
+    : "";
   const send = (path, body, method = "POST") => api(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   // Every file goes into one commit (the files, then the folder, then the commit, then moving the branch on to it),
   // so an upload arrives whole or not at all: a half-finished folder is never left for the daily scan.
@@ -2277,8 +2284,8 @@
       showUpFiles();
       toast("Menu uploaded");
     } catch (err) {
-      if (err.message === "EXPIRED_KEY") {
-        status.textContent = "This GitHub key no longer works (it may have expired). Make a new one below.";
+      if (keyTrouble(err)) {
+        status.textContent = keyTrouble(err);
         showUploadState();
       } else {
         const why = err instanceof TypeError ? "no connection" : err.message; // fetch fails with a TypeError offline
@@ -2379,7 +2386,7 @@
       renderRequests();
       [f.name, f.area, f.url].filter(Boolean).forEach((id) => { $(id).value = ""; });
     } catch (err) {
-      if (err.message === "EXPIRED_KEY") { status.textContent = "This GitHub key no longer works (it may have expired). Make a new one below."; showUploadState(); }
+      if (keyTrouble(err)) { status.textContent = keyTrouble(err); showUploadState(); }
       else status.textContent = "It didn't send (" + (err instanceof TypeError ? "no connection" : err.message) + "). Try again when you have signal.";
     } finally {
       btn.disabled = false;
