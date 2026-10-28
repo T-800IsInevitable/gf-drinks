@@ -1,0 +1,34 @@
+name: Test notification
+
+# Run by hand (Actions, Test notification, Run workflow; github.com works on a phone): one test notification to every
+# phone in the PUSH_SUBSCRIPTIONS secret, so notifications can be checked without a release (tools/push.py --test).
+# The summary lists each phone with its check code, which the app shows under Help, Tell me about new menus: a phone
+# whose code isn't listed has an address the secret doesn't hold.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+
+      # by hash, as in publish.yml's notify job: this job holds the push secrets
+      - run: |
+          pip install --require-hashes -r tools/requirements-buildtools-lock.txt
+          pip install --require-hashes --no-build-isolation -r tools/requirements-notify-lock.txt
+
+      - name: Send a test notification
+        env:
+          PUSH_SUBSCRIPTIONS: ${{ secrets.PUSH_SUBSCRIPTIONS }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python tools/push.py --test

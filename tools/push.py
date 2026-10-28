@@ -19,12 +19,15 @@ To make a new key pair (if the private half is lost; phones then switch notifica
 Usage:
   python tools/push.py --plan [--out push-message.json]   # after build.py, with .previous/ from fetch_previous.py
   python tools/push.py --send push-message.json           # after the deploy; needs the two secrets in the environment
+  python tools/push.py --test                             # one test notification to every phone (test-notification.yml)
 """
 import argparse
+import hashlib
 import json
 import os
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
@@ -137,6 +140,24 @@ def messages(previous=ROOT / ".previous", data=SITE / "data", site=SITE):
     return [m for m in (plan(previous, data), city_plan(previous, site), release_plan(previous, site)) if m]
 
 
+def test_message(now=None):
+    """A notification sent by hand to check the phones: its own tag, and the time, so each test shows anew."""
+    now = now or datetime.now(timezone.utc)
+    try:
+        from zoneinfo import ZoneInfo
+        local, zone = now.astimezone(ZoneInfo("Europe/London")), "UK time"
+    except Exception:  # no time zone data: say UTC
+        local, zone = now, "UTC"
+    return {"title": "Test notification", "body": f"Sent by the app's owner at {local:%H:%M} {zone}. Notifications reach this phone.",
+            "tag": f"gf-test-{now:%Y%m%d%H%M%S}", "url": ""}
+
+
+def code(sub):
+    """A phone's check code: the start of a hash of its address, which the app shows too (Help, Tell me about new
+    menus), so the owner can match a line of the secret to a phone without the address going in the public log."""
+    return hashlib.sha256(str((sub or {}).get("endpoint") or "").encode("utf-8")).hexdigest()[:8]
+
+
 def scrub(error):
     """An error's text without the long tokens in it (a connection error quotes the phone's address, which is secret)."""
     return re.sub(r"[A-Za-z0-9_-]{20,}", "…", str(error))[:200]
@@ -194,7 +215,7 @@ def send(msg, subs, private_key, claim):
     lines = []
     for n, sub in enumerate(subs, 1):
         # the host only: part of an endpoint is part of a secret, and the job's log is public
-        who = f"phone {n} ({urlparse(str((sub or {}).get('endpoint') or '')).netloc or 'no endpoint'})"
+        who = f"phone {n} ({urlparse(str((sub or {}).get('endpoint') or '')).netloc or 'no endpoint'}, code {code(sub)})"
         try:
             webpush(subscription_info=sub, data=json.dumps(msg), vapid_private_key=private_key, vapid_claims={"sub": claim}, ttl=86400)
             lines.append(f"{who}: sent")
@@ -215,14 +236,15 @@ def main():
     ap.add_argument("--previous", type=Path, default=ROOT / ".previous")
     ap.add_argument("--out", type=Path, default=Path("push-message.json"))
     ap.add_argument("--send", type=Path, help="send the message in this file")
+    ap.add_argument("--test", action="store_true", help="send one test notification to every phone")
     args = ap.parse_args()
     if args.plan:
         msgs = messages(args.previous)
         args.out.write_text(json.dumps({"messages": msgs} if msgs else {"send": False}, indent=1, ensure_ascii=False), encoding="utf-8")
         print("push: " + (" | ".join(f"{m['title']}: {m['body']}" for m in msgs) if msgs else "no new guide or announced release, so nothing to send"))
         return
-    if args.send:
-        saved = read(args.send) or {}
+    if args.send or args.test:
+        saved = (read(args.send) or {}) if args.send else {"messages": [test_message()]}
         # {"messages": [...]}, or a single message as plans from before releases were announced wrote it
         msgs = saved.get("messages") if isinstance(saved.get("messages"), list) else [saved] if saved.get("body") else []
         if not msgs:

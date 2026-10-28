@@ -3494,7 +3494,7 @@ def check_f5_push(env):
     mock = """
       Object.defineProperty(navigator, 'standalone', { get: () => true });
       window.__sub = null; window.__opts = null;
-      const fakeSub = () => ({ toJSON: () => ({ endpoint: 'https://push.example/abc', keys: { p256dh: 'k', auth: 'a' } }), unsubscribe: async () => { window.__sub = null; return true; } });
+      const fakeSub = () => ({ endpoint: 'https://push.example/abc', toJSON: () => ({ endpoint: 'https://push.example/abc', keys: { p256dh: 'k', auth: 'a' } }), unsubscribe: async () => { window.__sub = null; return true; } });
       const pm = { getSubscription: async () => window.__sub, subscribe: async (o) => { window.__opts = o; window.__sub = fakeSub(); return window.__sub; } };
       window.Notification = { permission: 'default', requestPermission: async () => { window.Notification.permission = 'granted'; return 'granted'; } };
       window.PushManager = window.PushManager || function () {};
@@ -3514,6 +3514,9 @@ def check_f5_push(env):
         problems.append(f"push: subscribed with key length {key_len}, shows {shown[:60]!r}")
     if "PUSH_SUBSCRIPTIONS" not in page.locator("#pushBox").inner_text():
         problems.append("push: the box doesn't say where the owner saves the address")
+    # the same check code as tools/push.py lists for this address (tests/test_push.py pins it)
+    if "f7a263f8" not in page.locator("#pushCode").inner_text():
+        problems.append(f"push: check code shows {page.locator('#pushCode').inner_text()!r}, not push.py's f7a263f8")
     page.locator("#pushOff").click()
     page.wait_for_selector("#pushOn:not([hidden])", timeout=5000)
     if page.evaluate("window.__sub") is not None or not page.locator("#pushBox").is_hidden():
@@ -3530,7 +3533,7 @@ def check_f5_push(env):
     for want in ('addEventListener("push"', 'addEventListener("notificationclick"', "setAppBadge", "nowAvoid"):
         if want not in sw:
             problems.append(f"push: sw.js has no {want}")
-    print("push: offered only in the Home Screen app; subscribe shows the address with the app's key; switch off unsubscribes")
+    print("push: offered only in the Home Screen app; subscribe shows the address and check code with the app's key; switch off unsubscribes")
     return problems
 
 

@@ -22,6 +22,7 @@ const self = {
 };
 const indexedDB = {
   open: () => {
+    if (process.env.HANG_IDB) return {}; // a phone whose storage never answers
     const r = { result: { createObjectStore() {}, transaction: () => ({ objectStore: () => ({ get: () => req(favs) }) }) } };
     setTimeout(() => r.onsuccess && r.onsuccess(), 0);
     return r;

@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 35;
+  const APP_VERSION = 36;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -2872,6 +2872,14 @@
   const PUSH_SAVED = "gf-push"; // the subscription this phone last showed, so a replacement by the phone is noticed
   const canPush = () => standalone && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
   const b64ToBytes = (s) => { const b = atob(s.replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(b, (c) => c.charCodeAt(0)); };
+  // the start of a hash of the address, as tools/push.py lists each phone it sent to: matches a line of the secret
+  // to this phone without the address itself going in the public log
+  async function pushCode(endpoint) {
+    try {
+      const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(endpoint || ""));
+      return "This phone's check code: " + Array.from(new Uint8Array(hash).slice(0, 4), (b) => b.toString(16).padStart(2, "0")).join("") + ". A test notification's summary on GitHub lists the code of every phone it went to.";
+    } catch (e) { return ""; }
+  }
   async function pushState() {
     if (!canPush()) { $("pushHelp").hidden = true; return; }
     $("pushHelp").hidden = false;
@@ -2891,6 +2899,7 @@
       const now = JSON.stringify(sub.toJSON());
       $("pushSub").value = now;
       el.textContent = was && was !== now ? "This phone's address has changed, so send it again." : "On, once the owner has this phone's address.";
+      $("pushCode").textContent = await pushCode(sub.endpoint);
     } else el.textContent = was ? "Switched off, or the phone let it go. Tap to switch it on again, then send the new address." : "";
   }
   $("pushOn").addEventListener("click", async () => {
