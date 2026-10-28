@@ -56,10 +56,38 @@ class Release(unittest.TestCase):
     def test_an_unknown_live_release_isnt_announced(self):
         self.assertIsNone(self.given(None, 31, self.NOTES))
 
-    def test_guides_come_first_then_the_release(self):
+    def test_guides_come_first_then_cities_then_the_release(self):
         with mock.patch.object(push, "plan", return_value={"title": "New menus in Treat Temple", "body": "x"}), \
+                mock.patch.object(push, "city_plan", return_value={"title": "Leeds is in the app", "body": "z"}), \
                 mock.patch.object(push, "release_plan", return_value={"title": "Update 31 is live!", "body": "y"}):
-            self.assertEqual([m["title"] for m in push.messages()], ["New menus in Treat Temple", "Update 31 is live!"])
+            self.assertEqual([m["title"] for m in push.messages()], ["New menus in Treat Temple", "Leeds is in the app", "Update 31 is live!"])
+
+    def cities(self, live, now):
+        if live is not None:
+            (self.prev / "cities.json").write_text(json.dumps(live), encoding="utf-8")
+        (self.site / "cities.json").write_text(json.dumps(now), encoding="utf-8")
+        return push.city_plan(self.prev, self.site)
+
+    def test_a_new_city_is_announced(self):
+        york = {"name": "York", "places": [{}]}
+        m = self.cities({"york": york}, {"york": york, "leeds": {"name": "Leeds", "places": [{}, {}, {}]}})
+        self.assertEqual(m["title"], "Leeds is in the app")
+        self.assertEqual(m["body"], "3 places to eat, from coeliac guides, each checked against its own website where it has one. Tap to see it.")
+        self.assertEqual(m["url"], "#leeds")
+        self.assertNotIn("gluten free", m["body"])
+        m = self.cities({"york": york}, {"york": york, "leeds": {"name": "Leeds", "places": [{}]}, "lyon": {"name": "Lyon", "places": [{}]}})
+        self.assertEqual((m["title"], m["url"]), ("Leeds and Lyon are in the app", ""))
+
+    def test_no_new_city_or_no_live_list_announces_nothing(self):
+        york = {"name": "York", "places": [{}]}
+        self.assertIsNone(self.cities({"york": york}, {"york": york}))
+        self.assertIsNone(self.cities({"york": york, "poole": york}, {"york": york}))  # a city taken out isn't news
+        self.assertIsNone(self.cities([], {"york": york}))  # a live list that isn't one doesn't announce every city
+        (self.prev / "cities.json").write_text("<html>Not found", encoding="utf-8")
+        self.assertIsNone(push.city_plan(self.prev, self.site))  # nor does a damaged one stop the publish
+        shutil.rmtree(self.prev)
+        self.prev.mkdir()
+        self.assertIsNone(self.cities(None, {"york": york}))
 
     def test_each_message_is_sent(self):
         plan = self.tmp / "push-message.json"

@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 33;
+  const APP_VERSION = 34;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -921,7 +921,7 @@
           (c.places.some((p) => p.claim === "place-part") ? ", or that say part of what they serve is" : "") +
           (c.places.some((p) => p.claim === "separate") ? ", or that say they have a separate gluten free kitchen" : "") + "</span></span>" +
           '<span class="po-meta">' + c.places.length + (c.places.length === 1 ? " place" : " places") + "</span></button>";
-      }).join("");
+      }).join("") + '<p class="pick-share"><button type="button" class="link-btn" data-askcity>A city not here? Ask for it &rsaquo;</button></p>';
       return;
     }
     const last = store.get(LAST_KEY);
@@ -2077,6 +2077,8 @@
     // what Ask for it does from this phone: files it (with the key), or passes it to the owner as a link
     $("reqHow").textContent = has ? "Know somewhere that should be here? Its own allergen information is looked up and added for you to approve."
       : "Know somewhere that should be here? From this phone it goes to the app's owner as a link; one tap there files it, and its own allergen information is then looked up and added once the owner approves.";
+    $("cityHow").textContent = "Name a city, and the places there that say everything they serve is gluten free are found through coeliac guides and checked against their own websites" +
+      (has ? ", for you to approve." : ". From this phone it goes to the app's owner as a link, and they approve the list.");
   }
   function openAddMenu() {
     ["info", "picker"].forEach((id) => { if ($(id).open) $(id).close(); });
@@ -2084,6 +2086,7 @@
     renderRequests();
     $("upStatus").textContent = "";
     $("reqStatus").textContent = "";
+    $("cityStatus").textContent = "";
     openDialog($("upload"));
   }
   $("openUpload").addEventListener("click", openAddMenu);
@@ -2287,60 +2290,81 @@
   // where the scan routine already looks: inbox/requests/ on the uploads branch, from the phone with the upload key,
   // or as a link to that phone from any other. The routine finds the place's own allergen information and opens a
   // pull request; nothing reaches the app without the owner's merge.
-  const REQ_KEY = "gf-requests"; // asked for from this phone: [{ name, area, url, at, how: "filed" | "shared" }]
+  // A whole city goes the same way, as a request with kind "city" (area is then its country): the routine finds the
+  // places there that say everything is gluten free and opens a pull request adding the city to cities.json.
+  const REQ_KEY = "gf-requests"; // asked for from this phone: [{ kind?: "city", name, area, url, at, how: "filed" | "shared" }]
   const requests = (() => { try { const a = JSON.parse(store.get(REQ_KEY) || "[]"); return Array.isArray(a) ? a.slice(-30) : []; } catch (e) { return []; } })();
   const saveRequests = () => store.set(REQ_KEY, JSON.stringify(requests.slice(-30)));
   const sameName = (a, b) => norm(a).replace(/[^a-z0-9]/g, "") === norm(b).replace(/[^a-z0-9]/g, "");
   const inApp = (name) => (data ? data.restaurants.find((r) => sameName(r.name, name) || (Array.isArray(r.osm) && r.osm.some((o) => sameName(o, name)))) : null);
+  const cityInApp = (name) => Object.keys(cities).find((id) => sameName(cities[id].name, name)) || "";
+  const isCityReq = (q) => q.kind === "city";
   function renderRequests() {
     const el = $("reqList");
     el.hidden = !requests.length;
     // honest about where each one stands: in the app, or asked on a date and not in yet (and after a week, worth asking about)
     el.innerHTML = requests.length ? "<p><b>Asked for from this phone</b></p><ul class=\"req-list\">" + requests.slice().reverse().map((q) => {
-      const r = inApp(q.name);
-      const old = Date.now() - new Date(q.at || 0).getTime() > 7 * 864e5;
-      return "<li>" + esc(q.name) + (q.area ? " (" + esc(q.area) + ")" : "") + ": " + (r
-        ? 'in the app <button type="button" class="link-btn" data-gotorest-req="' + esc(r.id) + '">Open &rsaquo;</button>'
+      const r = isCityReq(q) ? null : inApp(q.name), cid = isCityReq(q) ? cityInApp(q.name) : "";
+      const old = Date.now() - new Date(q.at || 0).getTime() > (isCityReq(q) ? 14 : 7) * 864e5; // a city takes longer to check
+      return "<li>" + (isCityReq(q) ? "The city of " : "") + esc(q.name) + (q.area ? " (" + esc(q.area) + ")" : "") + ": " + (r || cid
+        ? 'in the app <button type="button" class="link-btn" ' + (cid ? 'data-gotocity-req="' + esc(cid) : 'data-gotorest-req="' + esc(r.id)) + '">Open &rsaquo;</button>'
         : (q.how === "filed" ? "asked " : "sent to the owner ") + esc(fmtDate(String(q.at || "").slice(0, 10))) + " · not in the app yet" + (old ? " · ask the owner whether it was found" : "")) + "</li>";
     }).join("") + "</ul>" : "";
   }
-  const requestLink = (q) => appUrl() + "#request=" + toB64url(JSON.stringify({ v: 1, name: q.name, area: q.area, url: q.url }));
+  const requestLink = (q) => appUrl() + "#request=" + toB64url(JSON.stringify({ v: 1, name: q.name, area: q.area, url: q.url, ...(isCityReq(q) ? { kind: "city" } : {}) }));
   function readRequestCode(code) {
     try {
       const d = JSON.parse(fromB64url(code));
       const s = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
       const q = { name: s(d.name, 80), area: s(d.area, 60), url: s(d.url, 200) };
+      if (d.kind === "city") { q.kind = "city"; q.url = ""; }
       if (!/^https:\/\/[^\s/]+\.[^\s/]+/.test(q.url)) q.url = "";
       return q.name ? q : null;
     } catch (e) { return null; }
   }
-  async function askForPlace() {
-    const name = $("reqName").value.trim(), area = $("reqArea").value.trim();
-    let url = $("reqUrl").value.trim();
-    const status = $("reqStatus");
+  // The form's fields and wording for each kind of request
+  const ASK = {
+    place: { name: "reqName", area: "reqArea", url: "reqUrl", btn: "reqSend", status: "reqStatus",
+      missing: "Add the place's name and its city or country.",
+      filed: "Asked. Its allergen information will be looked up and sent to GitHub for you to approve.",
+      share: (q) => ["Please add " + q.name + " to Treat Temple", "Could you add " + q.name + " (" + q.area + ") to Twoo's Treat Temple? Open this link on your phone to file it."] },
+    city: { name: "cityName", area: "cityCountry", btn: "citySend", status: "cityStatus",
+      missing: "Add the city and its country.",
+      filed: "Asked. Its places will be looked up and checked, and sent to GitHub for you to approve. A city takes a little longer than a place.",
+      share: (q) => ["Please add " + q.name + " to Treat Temple", "Could you add the places in " + q.name + " (" + q.area + ") to Twoo's Treat Temple? Open this link on your phone to file it."] },
+  };
+  async function askFor(kind) {
+    const f = ASK[kind];
+    const name = $(f.name).value.trim(), area = $(f.area).value.trim();
+    let url = f.url ? $(f.url).value.trim() : "";
+    const status = $(f.status);
     status.classList.remove("done");
-    if (!name || !area) { status.textContent = "Add the place's name and its city or country."; return; }
+    if (!name || !area) { status.textContent = f.missing; return; }
     if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
     if (url && !/^https:\/\/[^\s/]+\.[^\s/]+/.test(url)) { status.textContent = "That website address doesn't look right. Leave it out if you're not sure."; return; }
-    const have = inApp(name);
+    const have = kind === "city" ? null : inApp(name), haveCity = kind === "city" ? cityInApp(name) : "";
     if (have) {
       status.innerHTML = "<b>" + esc(have.name) + "</b> is already in the app. " + '<button type="button" class="link-btn" data-gotorest-req="' + esc(have.id) + '">Open it &rsaquo;</button>';
       return;
     }
-    const q = { name, area, url, at: new Date().toISOString() };
-    const btn = $("reqSend");
+    if (haveCity) {
+      status.innerHTML = "<b>" + esc(cities[haveCity].name) + "</b> is already in the app. " + '<button type="button" class="link-btn" data-gotocity-req="' + esc(haveCity) + '">Open it &rsaquo;</button>';
+      return;
+    }
+    const q = { ...(kind === "city" ? { kind } : {}), name, area, url, at: new Date().toISOString() };
+    const btn = $(f.btn);
     btn.disabled = true;
     try {
       if (store.get(KEY_KEY)) {
         status.textContent = "Sending…";
-        const file = "inbox/requests/" + q.at.slice(0, 16).replace(/:/g, "") + "-" + slug(name) + "-" + slug(area) + ".json";
-        const meta = { name, area, url, requestedAt: q.at, requestedFrom: "Twoo's Treat Temple app" };
-        await commitFiles([{ path: file, b64: btoa(unescape(encodeURIComponent(JSON.stringify(meta, null, 2)))) }], "Request " + name + " (" + area + ")");
+        const file = "inbox/requests/" + q.at.slice(0, 16).replace(/:/g, "") + "-" + (kind === "city" ? "city-" : "") + slug(name) + "-" + slug(area) + ".json";
+        const meta = { ...(kind === "city" ? { kind } : {}), name, area, url, requestedAt: q.at, requestedFrom: "Twoo's Treat Temple app" };
+        await commitFiles([{ path: file, b64: btoa(unescape(encodeURIComponent(JSON.stringify(meta, null, 2)))) }], "Request " + (kind === "city" ? "the city of " : "") + name + " (" + area + ")");
         q.how = "filed";
-        status.textContent = "Asked. Its allergen information will be looked up and sent to GitHub for you to approve.";
+        status.textContent = f.filed;
       } else {
-        const sent = await shareOrCopy("Please add " + name + " to Treat Temple", "Could you add " + name + " (" + area + ") to Twoo's Treat Temple? Open this link on your phone to file it.",
-          requestLink(q), "Link copied. Send it to whoever looks after the app.");
+        const [title, text] = f.share(q);
+        const sent = await shareOrCopy(title, text, requestLink(q), "Link copied. Send it to whoever looks after the app.");
         if (!sent) { status.textContent = "Not sent."; return; }
         q.how = "shared";
         status.textContent = "Sent to the app's owner. Thank you!";
@@ -2349,7 +2373,7 @@
       requests.push(q);
       saveRequests();
       renderRequests();
-      ["reqName", "reqArea", "reqUrl"].forEach((id) => { $(id).value = ""; });
+      [f.name, f.area, f.url].filter(Boolean).forEach((id) => { $(id).value = ""; });
     } catch (err) {
       if (err.message === "EXPIRED_KEY") { status.textContent = "This GitHub key no longer works (it may have expired). Make a new one below."; showUploadState(); }
       else status.textContent = "It didn't send (" + (err instanceof TypeError ? "no connection" : err.message) + "). Try again when you have signal.";
@@ -2357,18 +2381,27 @@
       btn.disabled = false;
     }
   }
-  $("reqSend").addEventListener("click", askForPlace);
-  ["reqName", "reqArea", "reqUrl"].forEach((id) => $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); askForPlace(); } }));
+  Object.keys(ASK).forEach((kind) => {
+    const f = ASK[kind];
+    $(f.btn).addEventListener("click", () => askFor(kind));
+    [f.name, f.area, f.url].filter(Boolean).forEach((id) => $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); askFor(kind); } }));
+  });
+  // the city form, from a city list's "A city not here?": scrolled to, rather than focused, so no keyboard jumps up unasked
+  function openAskCity() {
+    openAddMenu();
+    $("cityAsk").scrollIntoView({ block: "start" });
+  }
   // a request link (#request=...) from another phone fills the fields in; a tap on Ask for it files it (a link alone files nothing)
   function openRequestFrom(code) {
     const q = readRequestCode(code);
     if (!q) { toast("That request link is damaged. Ask for it to be sent again."); return; }
+    const f = ASK[isCityReq(q) ? "city" : "place"];
     openAddMenu();
-    $("reqName").value = q.name;
-    $("reqArea").value = q.area;
-    $("reqUrl").value = q.url;
-    $("reqStatus").textContent = store.get(KEY_KEY) ? "From a link. Tap Ask for it to file it." : "From a link. This phone doesn't hold the upload key, so Ask for it passes it on again.";
-    $("reqName").focus();
+    $(f.name).value = q.name;
+    $(f.area).value = q.area;
+    if (f.url) $(f.url).value = q.url;
+    $(f.status).textContent = store.get(KEY_KEY) ? "From a link. Tap Ask for it to file it." : "From a link. This phone doesn't hold the upload key, so Ask for it passes it on again.";
+    $(f.name).focus();
   }
 
   // ---------- share an item, and "Something wrong?" ----------
@@ -2695,6 +2728,8 @@
     mapPlace: (name, b) => leaveMap(() => { setRegion(b.dataset.city); openPlaceRow(name); }), // the whole list, so the row is there
     say: (n) => { const p = phrases[cardLang]; if (p && p.card[n]) say(p.card[n].text, cardLang); },
     gotorestReq: (rid) => { $("upload").close(); select(rid); },
+    gotocityReq: (cid) => { $("upload").close(); setRegion(cid); },
+    askcity: () => openAskCity(),
     elsewhere: (to) => goElsewhere(to),
     sharefavs: () => shareFavs(),
     shareItem: (ref) => { const { r, i } = itemByRef(ref); if (i) shareLink("Twoo's Treat Temple", i.name + " at " + r.name, itemUrl(r, i)); },
