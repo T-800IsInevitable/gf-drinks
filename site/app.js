@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 37;
+  const APP_VERSION = 38;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -2875,8 +2875,9 @@
   // The phone subscribes with the public half of the app's push key; the private half is a GitHub secret, and
   // tools/push.py sends one notification after a publish that brought a new guide. There's no server, so the phone's
   // subscription (its notification address) is sent to the owner, who saves it by hand as the PUSH_SUBSCRIPTIONS secret.
-  const PUSH_KEY = "BL9p-_E-Ln3CxCioOhIz0WHw9AfDbdNGMfnPuQpZTZiztpvgMxtuS8JBPJSGs5f4qmxAmEUy0pmOIXihW9ncHdk";
+  const PUSH_KEY = "BJf7aCEWune4ftKgKFCvLvEai7FP4-sACvOwWX-K1tX1Bo9VpqYew4Zm87sk04aXO0FKb2IotKoXYO2U4_JxFLM";
   const PUSH_SAVED = "gf-push"; // the subscription this phone last showed, so a replacement by the phone is noticed
+  const PUSH_KEY_SAVED = "gf-push-key"; // the key that subscription was made with, so a new key pair is noticed
   const canPush = () => standalone && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
   const b64ToBytes = (s) => { const b = atob(s.replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(b, (c) => c.charCodeAt(0)); };
   // the start of a hash of the address, as tools/push.py lists each phone it sent to: matches a line of the secret
@@ -2899,6 +2900,13 @@
     }
     let sub = null;
     try { sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription(); } catch (e) { /* none */ }
+    // made with the app's old key pair, so nothing sent with the new one reaches it: let it go, and ask for a tap to
+    // switch on again (an iPhone subscribes only from a tap)
+    const rekeyed = !!sub && store.get(PUSH_KEY_SAVED) !== PUSH_KEY;
+    if (rekeyed) {
+      try { await sub.unsubscribe(); } catch (e) { /* gone anyway */ }
+      sub = null;
+    }
     const was = store.get(PUSH_SAVED);
     $("pushOn").hidden = !!sub;
     $("pushBox").hidden = !sub;
@@ -2907,7 +2915,8 @@
       $("pushSub").value = now;
       el.textContent = was && was !== now ? "This phone's address has changed, so send it again." : "On, once the owner has this phone's address.";
       $("pushCode").textContent = await pushCode(sub.endpoint);
-    } else el.textContent = was ? "Switched off, or the phone let it go. Tap to switch it on again, then send the new address." : "";
+    } else el.textContent = rekeyed ? "The app's notifications have a new key. Tap to switch them on again, then send the new address."
+      : was ? "Switched off, or the phone let it go. Tap to switch it on again, then send the new address." : "";
   }
   $("pushOn").addEventListener("click", async () => {
     try {
@@ -2916,6 +2925,7 @@
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(PUSH_KEY) });
       store.set(PUSH_SAVED, JSON.stringify(sub.toJSON()));
+      store.set(PUSH_KEY_SAVED, PUSH_KEY);
       await pushState();
       toast("Now send the address to the app's owner");
     } catch (e) { logError(e.message, "push"); toast("Couldn't switch notifications on: " + e.message); }
@@ -2925,6 +2935,7 @@
   $("pushOff").addEventListener("click", async () => {
     try { const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription(); if (sub) await sub.unsubscribe(); } catch (e) { /* nothing to undo */ }
     store.remove(PUSH_SAVED);
+    store.remove(PUSH_KEY_SAVED);
     pushState();
     toast("Notifications off. Tell the owner to remove this phone's address.");
   });
