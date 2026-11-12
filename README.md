@@ -152,6 +152,212 @@ python tools/snapshot.py && python tools/ui_check.py
 python -m http.server -d site 8000               # open http://localhost:8000
 ```
 
+## Developer reference
+
+Detail that only one kind of task needs. `CLAUDE.md` holds the rules and points here.
+
+### Restaurant config and readers
+
+- `restaurants/<id>/restaurant.json` names a **reader** (`tools/adapters/<reader>.py`), or several as `"readers": [...]` merged into one menu (Starbucks drinks and food).
+- It also holds display details, `tips`, `headline`, `gaps` (what the guide doesn't tell a coeliac) and `recheckDays`.
+- `headline` is the one tip on the folded line above the menu. Every page shows its tips that way, except the first menu page ever opened (`MENUS`), where the card shows in full once.
+- `headline` is required when there are tips, under 60 characters, and taken from the tips, never new advice.
+- When a reader decides an item itself because the guide wasn't plain (blank allergen column, sources disagreeing, versions under different names), it also sets the item's `decided`.
+- `decided` is one plain-English sentence the app shows on the item ("How the app decided") and in the Warnings sheet. The raw `warnings` strings are for the build log only.
+- Readers, automatic from PDFs in `guides/` (newest edition wins): `starbucks_uk_pdf`, `starbucks_uk_food_pdf`, `pret_uk_pdf`, `five_guys_uk_pdf`, `pho_uk_pdf`, `blank_street_uk_pdf`, `greggs_uk_pdf`, `caffe_nero_uk_pdf`, `pizza_express_uk_pdf`.
+- `nandos_uk_json` reads the snapshot `tools/fetch_nandos.py` saves, since Nando's publishes its allergens only as a page per dish.
+- `manual_csv` reads a hand-kept `menu.csv` (see `restaurants/_template/`; used for Knoops).
+- Every PDF reader needs a `newest_pdf(guides_folder)`.
+- The readers share `tools/adapters/common.py`: `clean`, the cereal pattern (`CEREAL`, `CEREAL_CAPS`: the union of every reader's list, never narrower), `cereal_code`, `newest_by` and `result`. `build.py` works out `validUntil` for all of them.
+- `tools/adapters/notices.py` extracts each guide's own warnings word for word for the Warnings page, including an "accreditation" kind for a guide's own gluten free claim.
+
+### Cross-checks between a guide's sources
+
+- Caffè Nero's allergen table is checked against its ingredient lists (names matched loosely, an exact name always winning).
+- Nando's table is checked against the line above it.
+- A disagreement counts as gluten.
+- PizzaExpress lists a dish with a gluten mark only with the change its Please note column says makes it suitable for coeliacs ("With the GF base, please").
+- PizzaExpress puts an item with no gluten mark but no Coeliacs tick on the Avoid list.
+- Anything named with oat (oat drink) is on the Avoid list whatever a guide's ticks say.
+
+### Roles, renames and the order builder
+
+- A row that isn't a dish to order gets a `roles` entry (see `CLAUDE.md`). Examples: Five Guys' meat and toppings, Blank Street's milks.
+- `rename` fixes a clash: Five Guys' sausage is "Hot dog sausage", because its menu Hot Dog comes in a wheat bun.
+- `order` in `restaurant.json` sets up the order builder (several items on one staff card). It has three parts:
+  - `intro`: its words, each fact checkable against the guide or the tips.
+  - `first`: the sections shown first (the parts of dishes). One the guide no longer has stops the build.
+  - `cardLine`: the card's request, ending "please."
+- The builder is on every restaurant's page.
+- What's in an order is only ever a key into `r.items` (never the Avoid list; ingredients listed on their own are left out).
+- A key that no longer resolves is dropped and named.
+- `tests/snapshots/order-<id>.txt` records what the builder offers and blocks.
+- `restaurants/<id>/logo.png` (`tools/fetch_logos.py`, honest UA, run by hand) is the chain's own site icon for the chooser. `logoUrl` names a better image on its site.
+
+### Build, generated data and previous menus
+
+- `tools/build.py` builds `site/data/restaurants.json`: the build time, and each restaurant's name, file, guide, stats, logo and a fingerprint of its menu.
+- It also builds `site/data/r/<id>.json`: the menu and settings, with no build time in it, so an unchanged menu stays byte for byte the same and phones get "not modified".
+- `tools/check.py` validates. `site/data/` is generated, not committed.
+- `build.py` tidies item names by case only (`CAPS_WORDS` lists the real capitals), so a saved favourite still matches.
+- `build.py` publishes each restaurant's current guide PDF under `site/guides/<id>/` (generated, ignored by git) and records `guideFiles` and, for a merged restaurant, each row's `src`, so "Guide page 7" links to the right guide.
+- `tools/fetch_previous.py` downloads the live menus into `.previous/`. `tools/changes.py` then records what changed in each new guide ("changes"), carried forward until the next guide.
+- The app shows it as a dismissable "what's new" banner, plus a lasting "What changed" link in Warnings and Help.
+- The app warns about favourites that are now to avoid or gone: in full on that restaurant's own page and on All, and as a short line elsewhere.
+- A download failure in `fetch_previous.py` stops the build (`SystemExit`) rather than publishing with every restaurant's changes silently dropped. A 404 (nothing published yet) is treated as the first deploy, not a failure.
+- `site/compare.js` is a line-for-line port of `compare()` in `tools/changes.py`. `tests/test_changes_js.py` runs both side by side (Node) on the real Starbucks summer and autumn drinks guides and on made-up older versions of every menu (`tests/fixtures/changes/`). Refresh the `menu-*.json` fixtures when a reader changes a lot.
+
+### Checks and workflows
+
+- `tools/snapshot.py` compares each menu with `tests/snapshots/<id>.txt` (same guide only).
+- `tools/ui_check.py` drives the app in Playwright at iPhone size, light and dark. `tests/` has unit tests.
+- `.github/workflows/checks.yml` runs all of it on pull requests. It has no `paths-ignore`, because a required check that's skipped blocks merging.
+- `.github/workflows/publish.yml` builds, checks and deploys to GitHub Pages on every push to `main` (pushes touching only `inbox/` are ignored).
+- `publish.yml` and `checks.yml` share the steps in `.github/actions/build-check` (a composite action, so the job names the branch protection needs don't change). The test browsers are cached by Playwright version.
+- `guide-reminders.yml` opens an issue for guides ending within three weeks.
+- `guide-watch.yml` runs weekly (`tools/watch_guides.py`):
+  - it checks each restaurant's `watch` page for a guide PDF it hasn't seen (by sha256, `guides/archive/` included);
+  - it asks the reader's `newest_pdf()` whether it would use it;
+  - if so it opens a pull request (old guide moved to `guides/archive/`), then dispatches `checks.yml` on it, since a pull request opened with `GITHUB_TOKEN` doesn't trigger workflows;
+  - blocked or changed pages, and new guides for `manual_csv` restaurants, open issues;
+  - it identifies itself honestly and never tries to get round a site's blocking.
+- `keep-alive.yml` re-enables the scheduled workflows monthly through the API (GitHub switches them off after 60 days with no activity). It commits nothing, so it works with `main` protected. The daily scan also checks their state (step 0 of `SCAN_INSTRUCTIONS.md`).
+- The tools that open issues and pull requests share `tools/gh.py`.
+
+### `ui_check.py` conventions
+
+- One function per check, registered in `CHECKS` (`--list`; `--only NAME` runs one).
+- What a check expects comes from the built menus and `cities.json` where it can (`expected_today` reads a place's hours the way the app does), so upkeep of a menu or a city doesn't break an unrelated check. Don't write a place, an item or a season into a check by name.
+- It runs everything in Chromium, then loads every page and uploads again in WebKit (the iPhone's engine).
+- Upload checks run against `FakeGitHub`, an in-memory Git Data API, with the service worker blocked (in WebKit, requests from a page it controls get past `page.route`).
+- Playwright's `wait_for_function` uses `eval`, which the content security policy blocks. Use `wait_for_selector`.
+- A test style goes in through the CSSOM (`add_css`), which the policy doesn't govern.
+- `--shots DIR` saves screenshots.
+- It measures that item tags don't wrap and the status buttons stay one even row, in the phone's font and a wide one.
+- It holds first-screen height to the top half with four items showing (an order pill broke it).
+- It enforces the accessibility rules in `CLAUDE.md`.
+- `check_e_review` and the look-around part of `check_f8_near_me` hold the look-around. `check_f16_live_map` holds the map page, including that nothing but map tiles leaves the phone.
+
+### The app's files (`site/`)
+
+- `index.html`, `app.js`, `styles.css`, `sw.js`, `manifest.webmanifest`, `phrases.json` (coeliac card), `cities.json`.
+- `sw.js` serves the app's own files cache-first from the release's cache, precached past the browser's and server's caches. `.json` is network-first with a 4 second fallback to the saved copy, revalidated with `cache: "no-cache"`. Bump `CACHE` when shell files change.
+- Why a release raises `CACHE` and `APP_VERSION`: the change of service worker is what makes phones reload into the new code. Phones serve the app's own files from the release's saved copy, so code changed without a raise would never reach them. `check.py` holds the two equal and `tools/check_release.py` (in the pull request check) fails if code changed without a raise. It counts `site/vendor` as app code.
+- Colour: amber (`--swap`) means "this item needs a change": the Swap and Ask tags, and a Berlin place with a caution. Banners and notes are neutral (surface colour, a small ⓘ). Item tags sit under the name.
+- First-screen height: anything new above the menu on a restaurant page costs it. Put page actions in the chip row under the search box, where they cost none.
+
+### Cities (`site/cities.json`)
+
+- Hand-checked places in cities, each with its `country` and `flag`.
+- `"group": "uk"` puts a city under UK cities. Any other is Abroad.
+- The header's sections (`#region` above the title: Chains, UK cities, Abroad; `SECTIONS`, `sectionOf()`) each go back to the city last looked at in them (`gf-last-uk-city`, `gf-last-city`). The chooser lists only the current section's restaurants or cities.
+- A UK city also lists the app's chains with branches inside its `bounds` (`chainsHere()`, from the branch list), each row opening the chain's menu. It needs no coeliac card.
+- A day's `hours` can hold a break (`"12:00–14:30, 17:00–21:30"`, read by `spans()`).
+- `check.py` validates it. Re-check reminders come from `reminders.py`.
+- A city's introduction folds after its first visit like the UK strip (`introFull(region)`, `#cityStrip`).
+- Each city is re-checked monthly: `reminders.py` opens "Places check: …" a month after its `checked` date (one city a morning). That starts the routine's "Re-checking a city", ending in a pull request that renews `checked`.
+- Search covers name, type, description and area, not street names.
+
+#### Where the places came from
+
+- Berlin: the berlin-glutenfrei.de list (Berlin contacts of the German Coeliac Society).
+- Amsterdam: the Dutch Coeliac Society's Zorgeloos Glutenvrij list (glutenvrij.nl) plus the city's official guide.
+- Each checked against the place's own website.
+- The UK cities' places (London, York, Sheffield, Poole, and Leaky Teacup in Retford under Worksop) were found through Coeliac Sanctuary's listings and coeliac guides, since Coeliac UK's venue guide is for members only.
+- A place with no website of its own is kept only when Coeliac Sanctuary or its market lists it as all gluten free, as `list-all` with `listed` and `listedBy`, and `unconfirmed`.
+- A city can name more than one source (`list`, `also`) and its own footer lines (`footNotes`).
+
+### Uploads and the scan routine
+
+- The app's Add menu button uploads to `inbox/` on the **`uploads` branch**, never `main`.
+- All of an upload's files go in one commit through GitHub's Git Data API (blobs, tree, commit, then moving the branch), so an upload arrives whole or not at all.
+- A retry reuses the same folder and files, so a retry after a lost answer adds nothing.
+- A scheduled Claude task follows `tools/SCAN_INSTRUCTIONS.md` and opens a pull request to `main` per upload for the owner to approve.
+- GitHub triggers on routines support only pull request, release and issue events (no push, no branch filter). So `upload-notice.yml` (every 15 minutes, on `main`, because a push workflow would use the stale copy on `uploads`) opens an "Upload waiting: <folder>" issue per upload.
+- Issues opened by `github-actions[bot]` don't fire a routine's GitHub trigger, so the routine has none and runs on its schedule, 07:15 and 19:15 London time. GitHub also runs the 15-minute cron only every few hours.
+- Only issues opened by the bot count as already opened (`gh.issue_titles`).
+- The issue holds the folder name and restaurant and area only, never the uploader's notes.
+- A place asked for by name is `inbox/requests/<when>-<name>-<area>.json` on `uploads`. The phone files it with the key, or is passed it as a `#request=` link that only fills the form in. `upload_notice.py` notices it, and the "Places asked for by name" section of `SCAN_INSTRUCTIONS.md` handles it.
+- A whole city asked for is the same file with `"kind": "city"` (area = its country). The "Ask for a city" form is in the same sheet, linked from the bottom of the UK cities and Abroad lists (`askFor()`/`ASK` in `app.js`). It opens "City requested: …" and is handled by "Cities asked for": the routine researches the city by the venue rules in `CLAUDE.md` and opens a pull request adding one `cities.json` entry.
+- An upload's GitHub key (`app.js`, `KEY_KEY`) is removed from the phone, with a clear message (`keyTrouble()`), on a 401 (expired or deleted) or a 403 that isn't GitHub's rate limit (wrong repository, or Contents read-only). That means the key no longer works, not that the connection failed.
+- Saving a key checks it can write by creating one loose blob, because the repository's `permissions.push` reflects the account, not a fine-grained key.
+
+### Security measures
+
+- The routine works under the owner's GitHub account, so its safeguards are:
+  - no MCP connectors and no PR-comment watching in its settings;
+  - `guard.yml` (required, `pull_request_target`, so main's copy judges every pull request): a `scan/`, `city/` or `recheck/` branch may change only its own files (`tools/guard.py`), and every pull request's `restaurants/` and `site/cities.json` are built and checked with main's tools;
+  - the push secrets in the `notify` environment, which only `main` may use.
+- What comes from outside is data, never instructions: `tools/SCAN_INSTRUCTIONS.md` ("What counts as instructions") and the routine's prompt say so, and the routine stops on an issue not opened by `github-actions[bot]`.
+- Every web address in the built data and `cities.json` must be `https://` (`check.py`, `check_urls`). `app.js` passes each through `safeUrl()` before it becomes a link.
+- Text quoted from a site or a reader into a pull request or issue goes through `quoted()` and `link()` in `watch_guides.py`, and `clean_name()` in `upload_notice.py`.
+- The jobs install Python packages by hash from `tools/*-lock.txt` (`uv pip compile --universal --generate-hashes`, build tools first and then `--no-build-isolation`). `tests/test_requirements.py` holds the locks to the plain `requirements*.txt` pins, so rerun it after changing one.
+- Actions are pinned by commit id and bumped by Dependabot. A ruleset restricting updates to `main` was tried and removed: on a personal repository it blocks the owner's own merges.
+- `tests/test_vendor.py` holds the Leaflet copy to its official fingerprint.
+- The app shows nothing when framed by another page.
+
+### Content security policy and the map library
+
+- `index.html` has a Content Security Policy `<meta>` tag allowing scripts and styles only from the app's own files: no inline script or style anywhere (the saved theme is applied by `theme.js`; the theme swatches are classes).
+- Anything new that loads a `blob:`, `data:` or outside URL needs the policy updated too. Photos for upload are read through `blob:` URLs. The map's tiles come from `tile.openstreetmap.org` (img-src).
+- Nothing in the app talks to OpenStreetMap's query service: the publish job does, for the branch list.
+- The map library is a copy in `site/vendor/leaflet/`, loaded only when a map opens. Pins are `circleMarker`s, so none of Leaflet's images are needed.
+
+### Branch list, Near me and the look-around
+
+- `restaurant.json` `osm` lists what OpenStreetMap calls a chain's branches. `tools/fetch_branches.py` matches them in the publish job (also every Monday) into `site/data/branches.json`: `{fetched, chains: [id], b: [[chain number, lat, lon, street, opening_hours]]}`, about 5,600 rows.
+- Near me and the map read it on the phone (`loadBranches()`, `branchOf()`, `nearRows()`; last Near me answer kept in `gf-near`).
+- The phone never queries Overpass, because the public servers are often too busy to answer a phone in time.
+- Only the Monday run (and a run by hand) asks Overpass. A push publishes the live list again while it's under a week old (`--reuse-days 7`).
+- A busy week, a list that lost a fifth of its rows or every branch of a chain, or any error keeps the live list (`from_live`, `broken()`), inside a fixed time budget. The step can't fail the publish (`continue-on-error`).
+- The app loads the list quietly at startup. The list is optional at service worker install (`EXTRA` in `sw.js`, carried over from the last release's cache when the site has none), and `newest()` answers a 404 or 5xx with the saved copy, so one bad publish never takes the pins off a phone.
+- The pull request check has no list: `ui_check.py` serves its own through `with_branches()`, with the service worker blocked so the route applies.
+- The look around when the app opens (`gf-near-auto`; `autoNear()`, offered once in the Near me sheet and switchable in Help):
+  - reads the position at most every ten minutes and matches it against the branch list (`lookNear()`);
+  - runs only when the phone already reports the permission as granted (`locationGranted()`), so no prompt appears unasked;
+  - `osmToday()` and `openText()` read OpenStreetMap's `opening_hours` in its plain shapes only and show nothing otherwise;
+  - `nearChipText()` puts the answer on the Near me chip (every UK page) and `renderPicker()` in a Near you group;
+  - outside the UK (`inUK`) no chain is named, and a city page's chip names the nearest listed place still open.
+- A restaurant the phone hasn't seen is in `gf-known-restaurants` and New (a note on All, a tag in the chooser) until opened or dismissed (`noteNewRestaurants`, `isNew`, `sawRestaurant`).
+- `favLine()` says in the new-guide note whether the favourites there survived, judging "gone" from the menu itself, so a long-gone favourite is never called unchanged.
+
+### The map page
+
+- `#mapPage`, opened by the globe `#mapBtn` by the title (`openLiveMap()` and the `live` state in `app.js`).
+- It uses `watchPosition` only while it's open and the app is visible.
+- It draws the branch list's pins for the part of the map on screen, at zoom 13 or closer (at most 300, nearest the middle first).
+- A redraw adds and removes only the difference and keeps the pin whose popup is open, because opening one pans the map.
+- The list loads after the map, so a weak signal doesn't hold it up.
+- Zoomed out over the UK, `#mapHint` says to zoom in.
+- Every city list's places, in the UK and abroad, are pinned from `cities.json`.
+
+### Push notifications
+
+- `tools/push.py`: plan in the build job, send in the `notify` job after the deploy.
+- `push-message.json` holds `{"messages": [...]}`: the new guides, then "<City> is in the app" for a city the live `cities.json` (`.previous/cities.json`) lacks, then "Update N is live!" when `APP_VERSION` passed the live one.
+- `fetch_previous.py` saves the live version as `.previous/app-version`, and `site/whatsnew.json` has notes for it.
+- The notification opens `?whatsnew`, a query because the release before reads a `#` as a page name. To announce a release, put its notes at the top of `whatsnew.json`.
+- The key pair is split between `PUSH_KEY` in `app.js` and the `VAPID_PRIVATE_KEY` secret. A phone records the key it subscribed with in `gf-push-key`. After a new pair, `pushState()` lets an old-key subscription go and asks for a tap, since an iPhone subscribes only from a tap.
+- Phones' subscriptions are saved by hand in `PUSH_SUBSCRIPTIONS`.
+- `test-notification.yml` (run by hand) sends `push.py --test` to every phone. It lists each with a check code (the first 8 hex of the SHA-256 of its endpoint) that the app shows too (`pushCode()`), so a stale line in the secret shows up without the address going in the public log.
+- `sw.js` reads the favourites from IndexedDB (`gf`/`kv`/`favs`, mirrored by `saveFavs()`) to say when one now contains gluten, giving up after 1.5 seconds so a notification always shows.
+
+### Notes and speech
+
+- Personal notes are `gf-notes` (keyed like favourites) and travel in the favourites link (`v: 2`, `n`).
+- The coeliac card's Say it uses the phone's own speech (`SPEECH_LANG` maps a card's language to a voice locale).
+
+### Adding a restaurant from a new PDF layout
+
+- Write a reader, compare its output row by row against the rendered pages, and add a cross-check between the guide's own sources where possible.
+- Make the reader stop the build on anything it can't place (stray marks, two drinks run together).
+
+### Known gaps
+
+- Hotel Chocolat publishes no café allergen guide online. Add it from photos of the in-café information via the app's Add menu.
+- Knoops' newest guide is from March 2024, so it shows as possibly out of date.
+- Not yet tested on a real device: installing, in-app upload with a real GitHub key, the first daily scan of a real menu, the reminder workflow's first issue. The German coeliac card hasn't been checked by a native speaker.
+
 ## Files
 
 - `restaurants/<id>/`: one folder per restaurant (`restaurant.json`, plus guides or `menu.csv`)
