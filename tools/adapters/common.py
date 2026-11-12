@@ -13,9 +13,12 @@ from pathlib import Path
 
 import pdfplumber
 
-CEREAL_WORDS = r"wheat\w*|rye|barley|oats?|oatmeal|oatly|spelt|kamut|malt(?:ed)?|gluten(?![\s-]*free)"
+# each cereal with whatever is run on to it (OATMILK, RYEFLOUR, BARLEYMALT), plus wheat by its other names; malt only
+# as malt or malted, so maltodextrin and maltitol stay out, as before
+CEREALS = "wheat|rye|barley|oat|spelt|kamut|khorasan|durum|semolina|couscous|bulgur|bulghur|triticale|einkorn|emmer|farro|freekeh|seitan"
+CEREAL_WORDS = rf"(?:{CEREALS})\w*|malt(?:ed)?|gluten(?![\s-]*free)"
 CEREAL = re.compile(rf"\b({CEREAL_WORDS})\b", re.I)
-CEREAL_CAPS = re.compile(r"\b(WHEAT\w*|RYE|BARLEY|OATS?|OATMEAL|OATLY|SPELT|KAMUT|MALT(?:ED)?|GLUTEN(?![\s-]*FREE))\b")
+CEREAL_CAPS = re.compile(rf"\b((?:{CEREALS.upper()})\w*|MALT(?:ED)?|GLUTEN(?![\s-]*FREE))\b")
 MONTHS = {name: n for n, name in enumerate(calendar.month_name) if name}  # "January" -> 1
 INVISIBLE = re.compile("[​-‍﻿]")  # zero-width characters some guides carry
 
@@ -28,7 +31,11 @@ def clean(s):
 def cereal_code(word):
     """A cereal as the app records it: 'oats', 'OATMEAL' and 'Oatly' are OAT; 'WHEATFLOUR' is WHEAT; 'malted' is MALT."""
     w = word.upper()
-    for head, code in (("OAT", "OAT"), ("WHEAT", "WHEAT"), ("MALT", "MALT")):
+    # the codes stay the ones the app knows: wheat's other names are WHEAT, khorasan is KAMUT
+    for head, code in (("OAT", "OAT"), ("WHEAT", "WHEAT"), ("MALT", "MALT"), ("RYE", "RYE"), ("BARLEY", "BARLEY"),
+                       ("SPELT", "SPELT"), ("KAMUT", "KAMUT"), ("KHORASAN", "KAMUT"), ("GLUTEN", "GLUTEN"),
+                       *((h, "WHEAT") for h in ("DURUM", "SEMOLINA", "COUSCOUS", "BULGUR", "BULGHUR", "TRITICALE",
+                                                "EINKORN", "EMMER", "FARRO", "FREEKEH", "SEITAN"))):
         if w.startswith(head):
             return code
     return w

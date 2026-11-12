@@ -47,8 +47,11 @@ runs:
     - name: Check the release number went up with any app code change
       if: inputs.release-base != ''
       shell: bash
+      # the ref goes in through the environment, never into the script's text (a branch name can hold $(...))
+      env:
+        RELEASE_BASE: ${{ inputs.release-base }}
       run: |
-        git fetch --depth=1 origin "${{ inputs.release-base }}"
+        git fetch --depth=1 origin "$RELEASE_BASE"
         python tools/check_release.py FETCH_HEAD
 
     # the browsers by Playwright's version, so a run doesn't download them (the step that has stalled before)
