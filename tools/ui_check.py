@@ -3161,7 +3161,7 @@ def check_e_review(env):
     page.locator("#openUpload").click()
     page.wait_for_selector("#upload[open]")
     text = norm_ws(page.locator("#reqList").inner_text())
-    if "not in the app yet" not in text or "ask the owner" not in text:
+    if "not in the app yet" not in text or "ask whoever looks after the app" not in text:
         problems.append(f"requests: the state line reads {text[:120]!r}")
     if "goes to whoever shared this app" not in page.locator("#reqHow").inner_text() or page.locator("#reqSend").inner_text() != "Send…":
         problems.append("requests: without the key the sheet should say plainly that Send passes it on")
@@ -3535,8 +3535,9 @@ def check_f5_push(env):
     key_len = page.evaluate("window.__opts && window.__opts.applicationServerKey && window.__opts.applicationServerKey.length")
     if "https://push.example/abc" not in shown or key_len != 65 or not page.evaluate("window.__opts.userVisibleOnly"):
         problems.append(f"push: subscribed with key length {key_len}, shows {shown[:60]!r}")
-    if "PUSH_SUBSCRIPTIONS" not in page.locator("#pushBox").inner_text():
-        problems.append("push: the box doesn't say where the owner saves the address")
+    # the box says who to send the address to; the steps for saving it are the owner's, in the README
+    if "Send this to whoever looks after the app" not in page.locator("#pushBox").inner_text():
+        problems.append("push: the box doesn't say who to send the address to")
     # the same check code as tools/push.py lists for this address (tests/test_push.py pins it)
     if "f7a263f8" not in page.locator("#pushCode").inner_text():
         problems.append(f"push: check code shows {page.locator('#pushCode').inner_text()!r}, not push.py's f7a263f8")
