@@ -128,6 +128,14 @@ def parse_rows(pdf, pdf_path):
                 if row_ticks:
                     raise SystemExit(f"ERROR: p.{pno}: ticks at y={top:.0f} with no product name. Menu not updated.")
                 continue
+            # a mark in a product row's allergen columns that isn't the tick (a new font, a ✓ instead of the guide's own
+            # glyph) would read as no mark at all and turn the item green: stop instead. A mark is a lone glyph or two;
+            # headings repeated across a page are whole words, so those are left alone
+            odd = [w for w in words if w["x0"] >= peanut["x0"] - 7 and top <= mid(w) <= bot
+                   and len(w["text"]) <= 2 and w["text"].strip(TICK)]
+            if odd:
+                raise SystemExit(f"ERROR: p.{pno} {name}: {odd[0]['text']!r} in the allergen columns isn't the guide's tick. "
+                                 "Layout changed? Menu not updated.")
             gl = set()
             for t in row_ticks:
                 used.add(id(t))

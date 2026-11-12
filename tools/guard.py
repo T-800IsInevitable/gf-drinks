@@ -23,19 +23,33 @@ import gh  # noqa: E402
 CITY_FILES = {"site/cities.json"}
 
 
+AUTOMATED = ("scan", "city", "recheck", "guide-watch")
+
+
 def scope(ref, paths):
     """What's wrong with a pull request from branch ref changing these paths: a list of problems, empty if fine."""
-    if ref.startswith("scan/"):
-        ids = {m[1] for p in paths if (m := re.fullmatch(r"restaurants/([a-z0-9][a-z0-9-]*)/.+", p))}
-        outside = [p for p in paths if not re.fullmatch(r"restaurants/[a-z0-9][a-z0-9-]*/.+", p)]
-        if outside:
-            return [f"a scan/ pull request may change only one restaurant's folder, not {', '.join(sorted(outside))}"]
-        if len(ids) > 1:
-            return [f"a scan/ pull request changes one restaurant, not {', '.join(sorted(ids))}"]
-        return []
-    if ref.startswith(("city/", "recheck/")):
+    # the prefix is read whatever its case, so "Scan/x" can't step round the limits below (the owner's own branches,
+    # such as city-requests, have no slash after the word)
+    kind = next((k for k in AUTOMATED if re.match(rf"{k}/", ref, re.I)), None)
+    if kind and not ref.startswith(kind + "/"):
+        return [f"branch {ref!r} looks like a {kind}/ branch but isn't named exactly {kind}/<id>-...; rename it"]
+    if kind == "scan":
+        # scan/<id>-<YYYY-MM-DD>, perhaps with a retry's suffix (-b): the restaurant the branch names, and only that one
+        m = re.fullmatch(r"scan/([a-z0-9][a-z0-9-]*?)-\d{4}-\d{2}-\d{2}(?:-[a-z0-9]{1,8})?", ref)
+        if not m:
+            return [f"a scan/ branch is named scan/<id>-<YYYY-MM-DD>, not {ref!r}"]
+        outside = sorted(p for p in paths if not p.startswith(f"restaurants/{m[1]}/"))
+        return [f"a scan/ pull request for {m[1]} may change only restaurants/{m[1]}/, not {', '.join(outside)}"] if outside else []
+    if kind == "guide-watch":
+        # guide-watch/<id>-<hash>: a new guide PDF, and the old one moved to archive/, in that restaurant's guides/ only
+        m = re.fullmatch(r"guide-watch/([a-z0-9][a-z0-9-]*?)-[0-9a-f]{10}", ref)
+        if not m:
+            return [f"a guide-watch/ branch is named guide-watch/<id>-<hash>, not {ref!r}"]
+        outside = sorted(p for p in paths if not p.startswith(f"restaurants/{m[1]}/guides/"))
+        return [f"a guide-watch/ pull request may change only restaurants/{m[1]}/guides/, not {', '.join(outside)}"] if outside else []
+    if kind in ("city", "recheck"):
         outside = sorted(set(paths) - CITY_FILES)
-        return [f"a {ref.split('/')[0]}/ pull request may change only site/cities.json, not {', '.join(outside)}"] if outside else []
+        return [f"a {kind}/ pull request may change only site/cities.json, not {', '.join(outside)}"] if outside else []
     return []
 
 

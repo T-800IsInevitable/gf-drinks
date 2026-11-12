@@ -189,6 +189,29 @@ def build_one(folder):
     return meta, data
 
 
+def avoid_share(menu):
+    rows = len(menu.get("items") or []) + len(menu.get("avoid") or [])
+    return len(menu.get("avoid") or []) / rows if rows else 0.0
+
+
+def avoid_drop(prev, full, folder):
+    """A reader that stops seeing a guide's gluten marks (a new font, a new tick) fails open: everything turns green.
+    So a new guide whose share of Avoid rows falls below two thirds of the live menu's stops the build, unless
+    restaurant.json's "avoidDropOk" names this very guide (the owner has checked the drop against it)."""
+    if not prev or avoid_share(prev) < 0.1:
+        return
+    before, after = avoid_share(prev), avoid_share(full)
+    if after >= before * 2 / 3:
+        return
+    config = json.loads((folder / "restaurant.json").read_text(encoding="utf-8"))
+    if config.get("avoidDropOk") and config["avoidDropOk"] == full.get("source"):
+        print(f"  Avoid share {before:.0%} -> {after:.0%}, accepted for this guide (avoidDropOk)")
+        return
+    raise SystemExit(f"ERROR: {folder.name}: the Avoid list fell from {before:.0%} to {after:.0%} of the menu. A reader that "
+                     "misses the guide's gluten marks looks like this. Check the guide; if the drop is real, set "
+                     f"\"avoidDropOk\" in restaurant.json to {full.get('source')!r}.")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Build every restaurant's menu into site/data/.")
     ap.add_argument("ids", nargs="*", help="only these restaurants (for testing)")
@@ -210,6 +233,7 @@ def main():
         full = {**meta, **data}
         prev_path = args.previous / "r" / f"{meta['id']}.json"
         prev = json.loads(prev_path.read_text(encoding="utf-8")) if prev_path.exists() else None
+        avoid_drop(prev, full, folder)
         full["changes"] = changes.compare(prev, full)
         if prev and prev.get("source") == full["source"]:
             print("  same guide as the live menu" + (f"; keeping its changes {changes.summary(full['changes'])}" if full["changes"] else ""))

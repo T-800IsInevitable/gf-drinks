@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 38;
+  const APP_VERSION = 39;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -29,7 +29,8 @@
   // scheme (javascript:, data:) is dropped. tools/check.py refuses such an address at build time; this is the belt.
   // (control characters and spaces go first, since a browser drops them before it reads the scheme; a protocol-relative
   // address, //host, counts as another site's too)
-  const safeUrl = (u) => { u = String(u || "").replace(/[\u0000- ]/g, ""); return /^https?:\/\//i.test(u) || !/^([a-z][a-z0-9+.-]*:|\/\/)/i.test(u) ? u : ""; };
+  // (a browser reads a backslash as a slash in an address, so /\host is another site's too)
+  const safeUrl = (u) => { u = String(u || "").replace(/[\u0000- ]/g, ""); const s = u.replace(/\\/g, "/"); return /^https?:\/\//i.test(s) || !/^([a-z][a-z0-9+.-]*:|\/\/)/i.test(s) ? u : ""; };
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } },
