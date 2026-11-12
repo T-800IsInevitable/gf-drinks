@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 39;
+  const APP_VERSION = 40;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -820,7 +820,7 @@
     $("avoidWrap").hidden = !avoidHtml;
     $("avoid").innerHTML = avoidHtml;
     // folded until wanted: it opens by itself while searching or when the Avoid button is chosen, and a tap on it overrides that
-    $("avoidTitle").textContent = "Avoid: contains gluten or not suitable" + (glutenHits ? " (" + glutenHits + ")" : "");
+    $("avoidTitle").textContent = "Avoid: contains gluten, or the restaurant says it isn't suitable for coeliacs" + (glutenHits ? " (" + glutenHits + ")" : "");
     $("avoidWrap").open = avoidUser !== null ? avoidUser : !!($("q").value.trim() || pick.gluten);
     return shown;
   }
@@ -895,7 +895,7 @@
     };
     $("sources").innerHTML = scope().map(lineShort).join("");
     $("infoSources").innerHTML = data.restaurants.map(lineFull).join("") + "<p>Rules: " + esc([...new Set(data.restaurants.map((r) => r.rule))].join(" ")) +
-      " If the allergen column and ingredients disagree, the item is left out.</p><p>Last built " + esc(fmtDate(data.built)) + ".</p>";
+      " If a guide's allergen column and ingredients disagree, the item is treated as containing gluten and goes on the Avoid list.</p><p>Last built " + esc(fmtDate(data.built)) + ".</p>";
   }
 
   // The chooser lists the restaurant used last first, then those with saved favourites, then the rest A to Z.
@@ -918,7 +918,7 @@
         const c = cities[cid], uk = s === UKC;
         return '<button type="button" class="pick-opt" data-region="' + esc(cid) + '" aria-pressed="' + (region === cid) + '">' +
           '<span class="logo-wrap flag" aria-hidden="true">' + esc(c.flag || "") + '</span><span class="po-main"><b>' + esc(uk ? c.name : c.country || c.name) + "</b><span>" +
-          (uk ? "Places" : esc(c.name) + ": places") + " that are all gluten free, by their own word or " + (uk ? "a listing" : "the coeliac society's list") +
+          (uk ? "Places" : esc(c.name) + ": places") + " that say everything they serve is gluten free, or that " + (uk ? "a coeliac listing calls" : "the coeliac society's list calls") + " all gluten free" +
           (c.places.some((p) => p.claim === "place-part") ? ", or that say part of what they serve is" : "") +
           (c.places.some((p) => p.claim === "separate") ? ", or that say they have a separate gluten free kitchen" : "") + "</span></span>" +
           '<span class="po-meta">' + c.places.length + (c.places.length === 1 ? " place" : " places") + "</span></button>";
@@ -951,7 +951,7 @@
     const all = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false, logoHtml("All restaurants", "icons/icon-192.png"));
     $("pickList").innerHTML = nearGroup + '<div class="sub-h">' + (welcomeNow ? "Choose where" : "Chains") + "</div>" + all +
       (welcomeNow ? '<div class="sub-h">Or one restaurant</div>' : "") + grouped +
-      '<p class="pick-note">More restaurants can be added by the app\'s owner from each restaurant\'s allergen guide.</p><p class="pick-share">' + addMenuLink + "</p>";
+      '<p class="pick-note">Missing a restaurant? Ask for it under Add a menu.</p><p class="pick-share">' + addMenuLink + "</p>";
   }
 
   // The phone's time zone says where it is without asking for its location. Offered once per trip, and UK again on the way home.
@@ -1084,7 +1084,7 @@
     $("cityIntroLine").innerHTML = "<b>Tags say who calls a place gluten free</b>, not the app. Tell staff you're coeliac.";
     $("cityIntro").innerHTML = "<b>Each place's tag says who calls it gluten free.</b> " +
       [n("place-all") && n("place-all") + " say so themselves",
-        n("list-all") && n("list-all") + (uk ? " are listed as all gluten free by others and have only a social media page or a market's, so their own words weren't checked" : " are listed as all gluten free by the support groups but don't say so on their own websites"),
+        n("list-all") && n("list-all") + (uk ? " are called all gluten free by a coeliac listing. They have no website of their own, only social media or a market page, so the app couldn't check what they say themselves" : " are listed as all gluten free by the support groups but don't say so on their own websites"),
         n("place-part") && n("place-part") + " says only part of its range is", n("separate") && n("separate") + " says it makes gluten free food in a separate kitchen"]
         .filter(Boolean).join("; ") + ". That's their claim, not the app's. " + (uk ? "They were found through " : "They come from the list kept by ") +
       // who keeps a list is a name ("My Gluten Free Guide"), not the app's words, so it's marked as quoted
@@ -1316,7 +1316,7 @@
     if (cityFilter === "open") { nearSort = false; cityFilter = "all"; renderCity(); return; }
     cityFilter = "open";
     if (nearSort) { renderCity(); window.scrollTo({ top: 0 }); return; }
-    if (!navigator.geolocation) { renderCity(); toast("This phone can't share its location here"); return; }
+    if (!navigator.geolocation) { renderCity(); toast("This phone can't share its location with the app. Check Location Services for Safari in Settings."); return; }
     navigator.geolocation.getCurrentPosition((pos) => {
       here = { lat: pos.coords.latitude, lon: pos.coords.longitude };
       nearSort = true;
@@ -1423,7 +1423,7 @@
       ? '<ul class="near-list">' + rows.map((x) => '<li><span class="nm"><b>' + esc(x.name) + "</b><small>" + esc([metres(x.km), openText(x.hours), x.where].filter(Boolean).join(" · ")) +
         (x.n > 1 ? " · " + x.n + " within 1 km" : "") + '</small></span><span class="near-btns"><button type="button" class="fav-btn" data-gonear="' + esc(x.rid) + '">Menu</button>' +
         '<a class="fav-btn" href="https://maps.apple.com/?ll=' + esc(x.lat + "," + x.lon) + "&q=" + encodeURIComponent(x.name) + '" target="_blank" rel="noopener">Directions</a></span></li>').join("") + "</ul>"
-      : '<p class="empty">None of the app\'s restaurants is listed within 1 km of here.</p>') +
+      : '<p class="empty">None of the app\'s chains is listed within 1 km of you.</p>') +
       '<p class="muted">Branches from OpenStreetMap, which doesn\'t list every one' + (fetched ? " (its list from " + esc(listDate(fetched)) + ")" : "") + ". Each chain's allergen guide covers all its branches." + hoursNote + "</p>" +
       // the opt-in, once, in context: the look-around each time the app opens
       (store.get(NEAR_AUTO_KEY) === null ? '<div class="chg-note" data-near-ask><b>Look around each time the app opens?</b> The nearest chain then shows on the chip row under the search box, with no tap. Your position stays on this phone.' +
@@ -1445,7 +1445,7 @@
   }
   async function nearMe() {
     if (!data) return;
-    if (!navigator.geolocation) { toast("This phone can't share its location here"); return; }
+    if (!navigator.geolocation) { toast("This phone can't share its location with the app. Check Location Services for Safari in Settings."); return; }
     $("nearBody").innerHTML = '<p class="empty">Finding your location…</p>';
     openDialog($("near"));
     const saved = savedNear();
@@ -1550,7 +1550,7 @@
     if (!data) return;
     openDialog($("mapPage"));
     live.follow = true;
-    setMapStatus(navigator.geolocation ? "Finding where you are…" : "This phone can't share its location here.");
+    setMapStatus(navigator.geolocation ? "Finding where you are…" : "This phone can't share its location with the app. Check Location Services for Safari in Settings.");
     $("mapOffline").hidden = !offlineNow;
     drawLiveMap();
   }
@@ -2320,7 +2320,7 @@
       const old = Date.now() - new Date(q.at || 0).getTime() > (isCityReq(q) ? 14 : 7) * 864e5; // a city takes longer to check
       return "<li>" + (isCityReq(q) ? "The city of " : "") + esc(q.name) + (q.area ? " (" + esc(q.area) + ")" : "") + ": " + (r || cid
         ? 'in the app <button type="button" class="link-btn" ' + (cid ? 'data-gotocity-req="' + esc(cid) : 'data-gotorest-req="' + esc(r.id)) + '">Open &rsaquo;</button>'
-        : (q.how === "filed" ? "asked " : "sent to the owner ") + esc(fmtDate(String(q.at || "").slice(0, 10))) + " · not in the app yet" + (old ? " · ask the owner whether it was found" : "")) + "</li>";
+        : (q.how === "filed" ? "asked " : "sent ") + esc(fmtDate(String(q.at || "").slice(0, 10))) + " · not in the app yet" + (old ? " · ask whoever looks after the app whether it was found" : "")) + "</li>";
     }).join("") + "</ul>" : "";
   }
   const requestLink = (q) => appUrl() + "#request=" + toB64url(JSON.stringify({ v: 1, name: q.name, area: q.area, url: q.url, ...(isCityReq(q) ? { kind: "city" } : {}) }));
@@ -2817,7 +2817,7 @@
   renderErrors();
   $("copyDetails").addEventListener("click", async () => {
     const text = errorDetails();
-    try { await navigator.clipboard.writeText(text); toast("Details copied. Paste them into a message to the owner."); }
+    try { await navigator.clipboard.writeText(text); toast("Details copied. Paste them into a message to whoever looks after the app."); }
     catch (e) {
       if (navigator.share) { try { await navigator.share({ title: "Treat Temple details", text }); } catch (err) { /* share sheet closed */ } }
       else toast("Couldn't copy them.");
@@ -2914,7 +2914,7 @@
     if (sub) {
       const now = JSON.stringify(sub.toJSON());
       $("pushSub").value = now;
-      el.textContent = was && was !== now ? "This phone's address has changed, so send it again." : "On, once the owner has this phone's address.";
+      el.textContent = was && was !== now ? "This phone's address has changed, so send it again." : "On, once whoever looks after the app has this phone's address.";
       $("pushCode").textContent = await pushCode(sub.endpoint);
     } else el.textContent = rekeyed ? "The app's notifications have a new key. Tap to switch them on again, then send the new address."
       : was ? "Switched off, or the phone let it go. Tap to switch it on again, then send the new address." : "";
@@ -2928,17 +2928,17 @@
       store.set(PUSH_SAVED, JSON.stringify(sub.toJSON()));
       store.set(PUSH_KEY_SAVED, PUSH_KEY);
       await pushState();
-      toast("Now send the address to the app's owner");
+      toast("Now send the address to whoever looks after the app");
     } catch (e) { logError(e.message, "push"); toast("Couldn't switch notifications on: " + e.message); }
   });
   $("pushSend").addEventListener("click", () => shareOrCopy("Treat Temple notifications",
-    "My phone's notification address for Twoo's Treat Temple (add it as a line of the PUSH_SUBSCRIPTIONS secret):\n" + $("pushSub").value, "", "Copied. Paste it into a message to the owner."));
+    "My phone's notification address for Twoo's Treat Temple (add it as a line of the PUSH_SUBSCRIPTIONS secret):\n" + $("pushSub").value, "", "Copied. Paste it into a message to whoever looks after the app."));
   $("pushOff").addEventListener("click", async () => {
     try { const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription(); if (sub) await sub.unsubscribe(); } catch (e) { /* nothing to undo */ }
     store.remove(PUSH_SAVED);
     store.remove(PUSH_KEY_SAVED);
     pushState();
-    toast("Notifications off. Tell the owner to remove this phone's address.");
+    toast("Notifications off. Ask whoever looks after the app to remove this phone's address.");
   });
   pushState();
   // the icon's badge counts guides not yet looked at; opening the app clears it
