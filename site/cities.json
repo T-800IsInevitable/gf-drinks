@@ -1456,5 +1456,81 @@
         "statusNote": "It has only a Facebook page, so its own words and hours weren't checked. Listings give its address as 25 Bridgegate or as Unit 3, Bridgegate Centre."
       }
     ]
+  },
+  "bath": {
+    "name": "Bath",
+    "country": "United Kingdom",
+    "flag": "🇬🇧",
+    "group": "uk",
+    "language": "en",
+    "timeZone": "Europe/London",
+    "checked": "2026-10-28",
+    "recheckDays": 90,
+    "bounds": {
+      "lat": [
+        51.34,
+        51.42
+      ],
+      "lon": [
+        -2.42,
+        -2.32
+      ]
+    },
+    "list": {
+      "name": "Gluten free places to eat in Bath",
+      "by": "Coeliac Sanctuary",
+      "url": "https://www.coeliacsanctuary.co.uk/wheretoeat/somerset/bath"
+    },
+    "tips": [
+      "Oats: food labelled gluten free in the UK can contain oats, and many cafés offer oat milk. This app counts oats as gluten, so ask whether anything has oats in it.",
+      "Beer: ordinary beer and lager contain gluten. Some of these places also sell a beer labelled gluten free, so ask which one it is.",
+      "Before you go: small places change their hours, and some open only a few days a week. Check the website or social media first."
+    ],
+    "sections": [
+      "Shops"
+    ],
+    "footNotes": [
+      "Coeliac Sanctuary lists other Bath places with gluten free menus or options. They're left out here because their kitchens also use gluten.",
+      "Unofficial guide. Not affiliated with any of these places or the guides named here."
+    ],
+    "places": [
+      {
+        "name": "Flapjackery",
+        "section": "Shops",
+        "claim": "place-all",
+        "type": "Flapjack and sweet shop (takeaway only, no café)",
+        "locations": [
+          {
+            "area": "City centre",
+            "address": "2 New Bond Street, Bath BA1 1BH",
+            "lat": 51.38285,
+            "lon": -2.36043,
+            "hours": [
+              "10:00–17:00",
+              "10:00–17:00",
+              "10:00–17:00",
+              "10:00–17:00",
+              "10:00–17:00",
+              "10:00–17:00",
+              "10:00–17:00"
+            ]
+          }
+        ],
+        "url": "https://www.flapjackery.co.uk/",
+        "says": {
+          "text": "became completely gluten-free while maintaining our original taste and quality",
+          "lang": "en"
+        },
+        "listed": "Completely gluten free (though gluten free oats are used in most products) shop which specialises in flapjack.",
+        "listedBy": "Coeliac Sanctuary",
+        "caution": "Its flapjacks are made with oats, which it says are certified gluten free oats. This app counts oats as gluten, so think carefully before eating here.",
+        "flag": "Oat flapjacks: think first",
+        "listPage": "https://www.coeliacsanctuary.co.uk/wheretoeat/somerset/bath/flapjackery",
+        "notes": [
+          "It also has a second Bath shop on Pulteney Bridge, which Coeliac Sanctuary doesn't list, so it isn't included here."
+        ],
+        "status": "confirmed"
+      }
+    ]
   }
 }
