@@ -1703,7 +1703,10 @@ def check_u8(env):
     labels = page.locator("#warnBody .w-label").all_text_contents()
     sb = menu_of("starbucks-uk")
     sheet = norm_ws(page.locator("#warnBody").text_content())
-    if "Cross-contact" not in labels or "Other allergen updates" not in labels or labels.index("Cross-contact") > labels.index("Other allergen updates"):
+    # a guide prints an allergen update only in the seasons it has one, so that label may be absent; when it's there,
+    # cross-contact still comes before it
+    later = [x for x in ("Other allergen updates", "Recipes and ingredients", "What the guide covers", "Nutrition") if x in labels]
+    if "Cross-contact" not in labels or not later or any(labels.index("Cross-contact") > labels.index(x) for x in later):
         problems.append(f"Starbucks warnings aren't cross-contact first: {labels}")
     lost = [n["text"] for n in sb["notices"] if norm_ws(n["text"]) not in sheet]
     if lost:
