@@ -89,13 +89,16 @@ def changed(pr, pages=30):
 
 
 def commits(pr, pages=3):
-    """The pull request's commits as GitHub lists them (it lists 250 at most)."""
+    """The pull request's commits as GitHub lists them. It lists 250 at most, so a pull request that long is refused
+    rather than judged on the part that can be seen."""
     out = []
     for page in range(1, pages + 1):
         batch = gh.request("GET", f"/pulls/{pr}/commits?per_page=100&page={page}")
         out += batch
         if len(batch) < 100:
             break
+    if len(out) >= 250:
+        raise SystemExit("ERROR: more commits than the guard can read (250); split the pull request")
     return out
 
 

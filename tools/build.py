@@ -189,7 +189,8 @@ def build_one(folder):
     return meta, data
 
 
-AVOID_FLOOR = 5  # fewer Avoid rows than this on the live menu is too few to judge a fall by
+AVOID_FLOOR = 5    # a live menu, or one guide of it, with this many Avoid rows is judged, however small their share
+AVOID_SHARE = 0.1  # and so is one whose Avoid rows are this share of it, however few they are
 
 
 def avoid_parts(menu):
@@ -209,13 +210,14 @@ def avoid_drop(prev, full, folder):
     """A reader that stops seeing a guide's gluten marks (a new font, a new tick) fails open: everything turns green.
     So a new guide whose share of Avoid rows falls below two thirds of the live menu's stops the build, unless
     restaurant.json's "avoidDropOk" names this very guide (the owner has checked the drop against it). A merged
-    restaurant is judged guide by guide as well as whole. Any live menu with AVOID_FLOOR Avoid rows or more is
-    judged, however small their share (Pho's is 8%)."""
+    restaurant is judged guide by guide as well as whole. A live menu is judged when it has AVOID_FLOOR Avoid rows or
+    more, however small their share (Pho's is 8%), or when they are AVOID_SHARE of it, however few."""
     if not prev:
         return
     was, now = avoid_parts(prev), avoid_parts(full)
     fell = [(part, a0 / n0, now[part][0] / now[part][1]) for part, (a0, n0) in sorted(was.items())
-            if a0 >= AVOID_FLOOR and now.get(part, [0, 0])[1] and now[part][0] / now[part][1] < a0 / n0 * 2 / 3]
+            if (a0 >= AVOID_FLOOR or a0 / n0 >= AVOID_SHARE) and now.get(part, [0, 0])[1]
+            and now[part][0] / now[part][1] < a0 / n0 * 2 / 3]
     if not fell:
         return
     part, before, after = fell[0]

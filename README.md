@@ -200,7 +200,7 @@ Detail that only one kind of task needs. `CLAUDE.md` holds the rules and points 
 - It also builds `site/data/r/<id>.json`: the menu and settings, with no build time in it, so an unchanged menu stays byte for byte the same and phones get "not modified".
 - `tools/check.py` validates. `site/data/` is generated, not committed.
 - `check.py` also fails anything listed with no gluten ingredients, or any option called fine, that names a gluten cereal, whatever reader or hand-kept `menu.csv` produced it. The one exception is the oat swap in `CLAUDE.md`.
-- `build.py` stops when a new guide's share of Avoid rows falls below two thirds of the live menu's (`avoid_drop`), which is what a reader that misses the guide's gluten marks looks like. A merged restaurant is judged guide by guide too, and any live menu with five Avoid rows or more is judged.
+- `build.py` stops when a new guide's share of Avoid rows falls below two thirds of the live menu's (`avoid_drop`), which is what a reader that misses the guide's gluten marks looks like. A merged restaurant is judged guide by guide too. A live menu is judged when it has five Avoid rows or more, or when they are a tenth of it.
 - If the fall is real, set `"avoidDropOk"` in that restaurant's `restaurant.json` to the new guide's source name, exactly as the error prints it. It applies to that guide only.
 - The Pret reader stops on any mark in a product row's allergen columns that isn't the guide's own tick (`odd_mark`).
 - `build.py` tidies item names by case only (`CAPS_WORDS` lists the real capitals), so a saved favourite still matches.

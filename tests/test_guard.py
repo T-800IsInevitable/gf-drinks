@@ -77,6 +77,14 @@ class Scope(unittest.TestCase):
         said = guard.scope("guide-watch/pret-uk-abcdef0123", ["restaurants/pret-uk/restaurant.json"])
         self.assertIn("pull request of your own", said[0])
 
+    def test_too_many_commits_to_read_is_refused(self):
+        pages = iter([[{}] * 100, [{}] * 100, [{}] * 50])
+        with mock.patch.object(guard.gh, "request", side_effect=lambda *a: next(pages)):
+            with self.assertRaises(SystemExit):
+                guard.commits(7)
+        with mock.patch.object(guard.gh, "request", return_value=[{}] * 3):
+            self.assertEqual(len(guard.commits(7)), 3)
+
     def test_a_rename_counts_both_names(self):
         answer = [{"filename": "restaurants/x/menu.csv", "previous_filename": "tools/check.py"}]
         with mock.patch.object(guard.gh, "request", return_value=answer):

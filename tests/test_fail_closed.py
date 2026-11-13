@@ -49,7 +49,11 @@ class AvoidDrop(unittest.TestCase):
     def test_a_steady_share_and_a_first_build_pass(self):
         self.run_drop(menu(15, 174), menu(14, 180, source="new.pdf"))
         self.run_drop(None, menu(0, 50))
-        self.run_drop(menu(3, 100), menu(0, 103, source="new.pdf"))  # under the floor: too few rows to judge by
+        self.run_drop(menu(3, 100), menu(0, 103, source="new.pdf"))  # 3 rows, 3% of the menu: too little to judge by
+
+    def test_a_few_avoid_rows_that_are_a_big_share_are_still_judged(self):
+        with self.assertRaises(SystemExit):
+            self.run_drop(menu(3, 12), menu(0, 15, source="new.pdf"))  # 3 rows, but a fifth of the menu
 
     def test_one_guide_of_a_merged_menu_failing_isnt_hidden_by_the_other(self):
         # drinks lose every Avoid row, food keeps its 90: the whole menu's share falls only from 50% to 45%
