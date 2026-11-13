@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 40;
+  const APP_VERSION = 41;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -315,7 +315,7 @@
 
   function rowHtml(r, i, showRestaurant) {
     const [cls, label] = tagFor(r, i);
-    const star = favs.has(favKey(r, i)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
+    const star = favs.has(favKey(r, i)) ? '<span class="star"><span aria-hidden="true">★</span><span class="vh">Favourite, </span></span>' : "";
     const subs = [];
     const c = changeOf(r, i);
     if (c) subs.push('<span class="chg">' + CHG_LABEL[c.kind] + "</span>");
@@ -646,9 +646,9 @@
     const both = showMine && showTheirs;
     $("changesTitle").textContent = r.name + ": what changed";
     $("changesBody").innerHTML =
-      (showMine ? (both ? '<h4 class="chg-part">Since you last looked</h4>' : "") +
+      (showMine ? (both ? '<h3 class="kicker chg-part">Since you last looked</h3>' : "") +
         part(mine, "Compared with the " + esc(mine.since) + " guide, the last one you looked at.") : "") +
-      (showTheirs ? (both ? '<h4 class="chg-part">This guide\'s own list</h4>' : "") +
+      (showTheirs ? (both ? '<h3 class="kicker chg-part">This guide\'s own list</h3>' : "") +
         part(theirs, "Compared with the " + esc(theirs.since) + " guide. Noticed " + esc(fmtDate(theirs.date)) + ".") : "");
     openDialog($("changes"));
   }
@@ -787,6 +787,7 @@
       (glutenHits ? " " + glutenHits + (glutenHits === 1 ? " match is" : " matches are") + " on the Avoid list" + (visible("gluten") ? " below." : ". Tap Avoid above to see " + (glutenHits === 1 ? "it." : "them.")) : "");
     if (!visible("straight") || !visible("change")) empty += " Some items are hidden by the buttons above.";
     $("list").innerHTML = (filter.kind === "fav" ? favShareBar() : "") + (html ? usuals + html : '<p class="empty">' + empty + "</p>" + emptyExtras($("q").value));
+    sayCount("list");
 
     let avoidHtml = "";
     if (filter.kind !== "fav" && visible("gluten")) {
@@ -817,7 +818,7 @@
         }).join("") + "</div>";
       }
     }
-    $("avoidWrap").hidden = !avoidHtml;
+    $("avoidWrap").hidden = $("avoidHead").hidden = !avoidHtml;
     $("avoid").innerHTML = avoidHtml;
     // folded until wanted: it opens by itself while searching or when the Avoid button is chosen, and a tap on it overrides that
     $("avoidTitle").textContent = "Avoid: contains gluten, or the restaurant says it isn't suitable for coeliacs" + (glutenHits ? " (" + glutenHits + ")" : "");
@@ -984,6 +985,11 @@
     $("tzOffer").hidden = true;
     if (b.dataset.tz === "yes") setRegion(to);
   });
+  // what a search found, said once for VoiceOver (the lists themselves aren't read out as they're redrawn)
+  function sayCount(listId) {
+    const n = $(listId).querySelectorAll(".row").length, none = $(listId).querySelector(".empty");
+    $("resultCount").textContent = !$("q").value.trim() ? "" : n ? n + (n === 1 ? " match" : " matches") : none ? none.textContent : "No matches";
+  }
   function render() {
     syncSearching();
     renderRegion();
@@ -1201,7 +1207,7 @@
     const cls = p.claim === "place-all" && !p.caution ? "t-asis" : p.caution ? "t-swap" : "t-info";
     // an amber tag says why it's amber: the claim, then that there's something to ask (the row's bold flag says what)
     const label = (p.claimLabel || CLAIM_TAGS[p.claim]) + (p.caution ? " · ask" : "");
-    const star = favs.has(placeFav(p)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
+    const star = favs.has(placeFav(p)) ? '<span class="star"><span aria-hidden="true">★</span><span class="vh">Favourite, </span></span>' : "";
     return '<details class="row" data-place="' + esc(p.name) + '"><summary><span class="nm">' + star + noteMark(placeFav(p)) + esc(p.name) + "<small>" + subs.join(" · ") + '</small><span class="tag ' + cls + '">' +
       esc(label) + "</span></span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
   }
@@ -1233,6 +1239,7 @@
       (offlineNow ? "The map needs signal for its background; the pins still show. " : "") + "Green: says all gluten free. Amber: something to ask about. Grey: the rest. Tap a pin, then Open.</p>" : "";
     $("cityList").innerHTML = mapHtml + (cityFilter === "fav" ? favShareBar() : "") + (html || '<p class="empty">' + empty + "</p>" + (cityFilter === "all" ? emptyExtras($("q").value) : "")) +
       (cityFilter === "open" && unknown ? '<p class="muted">' + unknown + " places with unknown hours aren't shown.</p>" : "");
+    sayCount("cityList");
     if (mapOn) drawMap(c, places); else dropMap();
   }
   // A UK city also holds the app's chains: one row each, with how many of its branches are in the city's area (the
@@ -1724,12 +1731,12 @@
     let html = "";
     if (selected === ALL) html += '<h3 class="w-rest">' + esc(r.name) + "</h3>";
     // a restaurant's own tips lead its page of the sheet, so they're one tap away once folded off the first screen
-    if (selected !== ALL && r.tips && r.tips.length) html += '<h4>How to order</h4><div class="rules w-tips">' + tipsHtml(r.tips) + "</div>";
+    if (selected !== ALL && r.tips && r.tips.length) html += '<h3 class="kicker">How to order</h3><div class="rules w-tips">' + tipsHtml(r.tips) + "</div>";
     html += '<p class="muted">From ' + esc(plainGuideName(r)) + (r.area ? ", which covers its " + esc(r.area) + " branches" : "") +
       ((sinceLooked(r) || r.changes) ? '. <button type="button" class="link-btn" data-whatchanged="' + esc(r.id) + '">What changed, noticed ' +
         esc(fmtDate((sinceLooked(r) || r.changes).date)) + " &rsaquo;</button>" : ".") + "</p>";
     if (groups.length) {
-      html += "<h4>What " + esc(possessive(r.name)) + " guide says</h4>";
+      html += "<h3 class=\"kicker\">What " + esc(possessive(r.name)) + " guide says</h3>";
       for (const g of groups) {
         html += '<div class="w-group"><div class="w-label">' + esc(g.label) + "</div>" + g.list.map((n) =>
           '<blockquote class="w-quote">' + esc(n.text) + "<cite>" + esc(n.pages && n.pages.length
@@ -1740,11 +1747,11 @@
       html += '<p class="muted">No warnings were found in this guide. That doesn\'t mean there aren\'t any risks.</p>';
     }
     if (r.gaps && r.gaps.length) {
-      html += "<h4>What the guide doesn't tell you</h4><ul class=\"w-gaps\">" + r.gaps.map((g) => "<li>" + esc(g) + "</li>").join("") + "</ul>";
+      html += "<h3 class=\"kicker\">What the guide doesn't tell you</h3><ul class=\"w-gaps\">" + r.gaps.map((g) => "<li>" + esc(g) + "</li>").join("") + "</ul>";
     }
     const decided = r.items.concat(r.avoid).filter((i) => i.decided);
     if (decided.length) {
-      html += "<h4>How the app decided some items</h4><ul class=\"notes\">" +
+      html += "<h3 class=\"kicker\">How the app decided some items</h3><ul class=\"notes\">" +
         decided.map((i) => "<li><b>" + esc(i.name) + ":</b> " + esc(i.decided) + "</li>").join("") + "</ul>";
     }
     if (isStale(r)) html += '<p class="w-stale">This guide covered up to ' + esc(fmtDate(r.guide.validUntil)) + ". A newer one may be out.</p>";
@@ -2607,10 +2614,15 @@
   let toastTimer;
   function toast(msg) {
     const t = $("toast");
-    t.textContent = msg;
-    t.hidden = false;
+    // the notice stays in the page and only its words change, which is what VoiceOver listens for (a notice that
+    // appears already holding its words often goes unread)
+    t.textContent = "";
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.hidden = true; }, 3400);
+    toastTimer = setTimeout(() => {
+      t.textContent = msg;
+      t.classList.add("show");
+      toastTimer = setTimeout(() => { t.classList.remove("show"); t.textContent = ""; }, 3400);
+    }, 30);
   }
 
   // ---------- loading ----------
@@ -2772,7 +2784,7 @@
       btn.textContent = on ? "★ Saved" : "☆ Save";
       const nm = btn.closest(".row").querySelector(".nm");
       const star = nm.querySelector(".star");
-      if (on && !star) nm.insertAdjacentHTML("afterbegin", '<span class="star" aria-label="Favourite">★</span>');
+      if (on && !star) nm.insertAdjacentHTML("afterbegin", '<span class="star"><span aria-hidden="true">★</span><span class="vh">Favourite, </span></span>');
       if (!on && star) star.remove();
     });
     toast(on ? "Saved to favourites" : "Removed from favourites");
@@ -2847,7 +2859,16 @@
 
   // Reserve space for the floating header at its full (expanded) height.
   const topEl = document.querySelector(".top");
-  const reserve = () => { if (!topEl.classList.contains("collapsed")) document.body.style.setProperty("--top-h", topEl.offsetHeight + "px"); };
+  // A header taller than half the screen (very large text) would leave no room for the list, so it stops floating
+  // and scrolls away with the page. While it floats, the page keeps what the keyboard reaches clear of it.
+  const reserve = () => {
+    if (topEl.classList.contains("collapsed")) return;
+    const h = topEl.offsetHeight, tall = h > window.innerHeight / 2;
+    topEl.classList.toggle("unpinned", tall);
+    document.documentElement.style.setProperty("--top-h", h + "px");
+    document.documentElement.style.setProperty("--scroll-pad", tall ? "0px" : h + "px");
+  };
+  window.addEventListener("resize", reserve);
   if (window.ResizeObserver) new ResizeObserver(reserve).observe(topEl);
   reserve();
   // Hide the filter rows while scrolling down the list; bring them back on scrolling up.
@@ -2858,7 +2879,8 @@
     ticking = true;
     requestAnimationFrame(() => {
       const y = window.scrollY;
-      if (y > 160 && y > lastY + 6) topEl.classList.add("collapsed");
+      if (topEl.classList.contains("unpinned")) topEl.classList.remove("collapsed");
+      else if (y > 160 && y > lastY + 6) topEl.classList.add("collapsed");
       else if (y < lastY - 6 || y < 160) topEl.classList.remove("collapsed");
       lastY = y;
       ticking = false;

@@ -58,7 +58,7 @@ CLAIM_TAGS = {"place-all": "Says all gluten free", "list-all": "Listed as all gl
 # visible buttons in the header and lists (and place links) smaller than Apple's 44pt minimum
 TAPS_JS = """() => {
     const out = [];
-    for (const el of document.querySelectorAll('.top button, main button, .place-links a')) {
+    for (const el of document.querySelectorAll('.top button, main button, .place-links a, .locs a')) {
         const r = el.getBoundingClientRect();
         if (!r.width || el.closest('[hidden]') || getComputedStyle(el).visibility === 'hidden') continue;
         if (r.height < 43.5 || r.width < 43.5) out.push((el.id || el.className || el.tagName) + ' ' + JSON.stringify(el.textContent.trim().slice(0, 20)) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height));
@@ -984,6 +984,175 @@ def check_accessibility(env):
         problems += [f"{url} with Larger Text: too wide: {w}" for w in page.evaluate(WIDE_JS)]
         print(f"accessibility {url}: {len(small)} small tap targets, text {before}px -> {after}px with Larger Text")
         ctx.close()
+    problems += accessibility_audit(env)
+    return problems
+
+
+# the edge of each text field (and the search field's inset edge) against what's behind it: lowest ratio and whose
+FIELD_EDGE_JS = r"""() => {
+    const rgba = (s) => s.match(/[\d.]+/g).map(Number);
+    const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; })
+        .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+    const bgOf = (el) => { for (let e = el; e; e = e.parentElement) { const v = rgba(getComputedStyle(e).backgroundColor); if (v.length < 4 || v[3] > 0.99) return v; } return [255, 255, 255]; };
+    const ratio = (a, b) => { const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+    let worst = 21, who = '', n = 0;
+    const scope = document.querySelector('dialog[open]') || document;
+    for (const el of scope.querySelectorAll('textarea, input:not([type=file]):not([type=checkbox]):not([type=search]), .search')) {
+        if (!el.getBoundingClientRect().width || el.closest('[hidden], details:not([open])')) continue;
+        const cs = getComputedStyle(el), search = el.classList.contains('search');
+        const edge = rgba(search ? (cs.boxShadow.match(/rgba?\([^)]+\)/) || ['rgb(0,0,0,0)'])[0] : cs.borderTopColor);
+        if (!search && parseFloat(cs.borderTopWidth) < 1) { worst = 1; who = el.id || el.tagName; continue; }
+        const r = Math.min(ratio(edge, bgOf(el.parentElement)), search ? ratio(edge, rgba(cs.backgroundColor)) : 21);
+        n++;
+        if (r < worst) { worst = r; who = el.id || el.className || el.tagName.toLowerCase(); }
+    }
+    return { worst, who, n };
+}"""
+# where the focused element sits against the floating header
+FOCUS_JS = """() => { const a = document.activeElement, r = a.getBoundingClientRect(), h = document.querySelector('.top').getBoundingClientRect();
+    return { name: (a.textContent || '').trim().slice(0, 20), top: r.top, under: r.top < h.bottom - 1 }; }"""
+
+
+def accessibility_audit(env):
+    """One assertion for each fix from the WCAG 2.2 AA audit (focus, fields, names, status messages, headings, very
+    large text). Nothing here names a place, an item or a season."""
+    base, ids, cid, browser = env.base, env.ids, env.cid, env.browser
+    problems = []
+    # the restaurant with the longest list, whichever that is: the focus check walks back up a long list
+    rid = max(ids, key=lambda i: len(menu_of(i)["items"]))
+
+    def themed(theme=None):
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        if theme:
+            ctx.add_init_script(f"try {{ localStorage.setItem('gf-theme', '{theme}'); }} catch (e) {{}}")
+        page = ctx.new_page()
+        page.goto(base + f"#{rid}")
+        page.wait_for_selector("#list .row")
+        return ctx, page
+
+    # 2.4.11: going back up the list with the keyboard, no row is left under the floating header (normal and Larger Text)
+    for px in (16, 22):
+        ctx, page = themed()
+        if px != 16:
+            add_css(page, f"html {{ font-size: {px}px !important; }}")
+            page.wait_for_timeout(300)
+        page.locator("#list .row summary").nth(min(30, page.locator("#list .row summary").count() - 1)).focus()
+        page.wait_for_timeout(900)
+        under = []
+        for _ in range(8):
+            page.keyboard.press("Shift+Tab")
+            page.wait_for_timeout(450)
+            at = page.evaluate(FOCUS_JS)
+            if at["under"]:
+                under.append(at["name"])
+        if under:
+            problems.append(f"focus at {px}px text: going up the list, {len(under)} of 8 rows sit under the header ({under[0]!r})")
+        ctx.close()
+
+    # 2.4.7 and 1.4.11: the search field shows the keyboard's focus; every field has an edge at 3:1, in every theme
+    edges = {}
+    for theme in ("light", "dark", "pink-light", "pink-dark"):
+        ctx, page = themed(theme)
+        page.locator("#q").focus()
+        ring = page.evaluate("(() => { const c = getComputedStyle(document.querySelector('.search')); return c.outlineStyle !== 'none' && parseFloat(c.outlineWidth) >= 2; })()")
+        if not ring:
+            problems.append(f"{theme}: the search field shows no outline when it has the keyboard's focus")
+        page.locator("#list .row summary").first.click()
+        worst = [page.evaluate(FIELD_EDGE_JS)]
+        page.evaluate("document.getElementById('upload').showModal()")
+        worst.append(page.evaluate(FIELD_EDGE_JS))
+        low = min(worst, key=lambda w: w["worst"])
+        edges[theme] = round(low["worst"], 2)
+        if low["worst"] < 3 or sum(w["n"] for w in worst) < 5:
+            problems.append(f"{theme}: a text field's edge ({low['who']}) has contrast {low['worst']:.2f}:1, under 3:1 ({sum(w['n'] for w in worst)} fields looked at)")
+        ctx.close()
+
+    ctx, page = themed()
+    # 4.1.2: a label VoiceOver never reads (aria-label on a plain span or div) is nowhere; a favourite says so in words
+    page.locator("#list .row summary").first.click()
+    page.locator("#list .row .fav-btn").first.click()
+    page.wait_for_selector("#toast.show")
+    lost = page.evaluate("[...document.querySelectorAll('span[aria-label], div[aria-label], p[aria-label], b[aria-label]')].filter((e) => !e.getAttribute('role')).map((e) => e.className + ' ' + e.getAttribute('aria-label'))")
+    if lost:
+        problems.append(f"aria-label on an element with no role, which VoiceOver doesn't read: {lost[:3]}")
+    if "Favourite" not in (page.locator("#list .row .nm").first.text_content() or ""):
+        problems.append("a favourite's row doesn't say Favourite in words for VoiceOver")
+    # 4.1.3: the notice is in the page from the start (never hidden), and its words arrive after it
+    said = page.locator("#toast").inner_text()
+    if page.locator("#toast[hidden]").count() or "favourites" not in said:
+        problems.append(f"the notice is hidden rather than emptied, or didn't say what happened ({said!r})")
+    # 4.1.3: the lists aren't read out as they're redrawn; a search says once how many it found
+    if page.locator("#list[aria-live], #cityList[aria-live]").count():
+        problems.append("a whole list is a live region, so VoiceOver reads it on every keystroke")
+    page.locator("#q").fill("a")
+    page.wait_for_timeout(300)
+    count = page.locator("#resultCount").text_content() or ""
+    if page.locator("#resultCount").get_attribute("role") != "status" or str(page.locator("#list .row").count()) not in count:
+        problems.append(f"a search doesn't tell VoiceOver how many it found ({count!r} for {page.locator('#list .row').count()} rows)")
+    page.locator("#q").fill("")
+    # the same on a city's page: the line that says it must be showing there too (a line inside a hidden view is silent)
+    page.goto(base + f"#{cid}")
+    page.wait_for_selector("#cityList .row")
+    page.locator("#q").fill("a")
+    page.wait_for_timeout(300)
+    heard = page.evaluate("(() => { const e = document.getElementById('resultCount'); return { hidden: !!e.closest('[hidden]') || getComputedStyle(e).display === 'none', text: e.textContent }; })()")
+    if heard["hidden"] or str(page.locator("#cityList .row").count()) not in heard["text"]:
+        problems.append(f"{cid}: a search doesn't tell VoiceOver how many it found ({heard['text']!r}, hidden: {heard['hidden']}, {page.locator('#cityList .row').count()} rows)")
+    page.locator("#q").fill("")
+    page.goto(base + f"#{rid}")
+    page.wait_for_selector("#list .row")
+    # 1.3.1: the title button's label doesn't hide the line under it (which guide, or that it's a saved copy)
+    line = page.evaluate("(() => { const d = document.getElementById(pickBtn.getAttribute('aria-describedby') || ''); return d ? d.textContent.trim() : ''; })()")
+    if not line:
+        problems.append("the title button doesn't describe itself with the guide line, so VoiceOver never reads it")
+    # 1.3.1: one h1, and no heading skips a level, on the page and in the warnings sheet
+    skips = "(root) => { let last = 0; const out = []; for (const h of root.querySelectorAll('h1,h2,h3,h4,h5')) { if (h.closest('[hidden]')) continue; const n = +h.tagName[1]; if (last && n > last + 1) out.push(h.tagName + ' ' + h.textContent.trim().slice(0, 24)); last = n; } return out; }"
+    if page.locator("h1").count() != 1:
+        problems.append(f"the page has {page.locator('h1').count()} h1 headings, not one")
+    jumped = page.evaluate(skips, page.locator("main").element_handle())
+    if page.locator("summary h1, summary h2, summary h3").count():
+        problems.append("a heading sits inside a summary, where VoiceOver reads it as a button, not a heading")
+    page.locator("#openWarnings:visible, #openStrip:visible").first.click()
+    page.wait_for_selector("#warnings[open]")
+    jumped += page.evaluate(skips, page.locator("#warnings").element_handle())
+    if jumped:
+        problems.append(f"headings skip a level: {jumped[:3]}")
+    page.locator("#warnings .link-btn").first.click()
+    # 1.4.1: Help says where a map pin's colour is given in words
+    page.locator("#infoBtn").click()
+    if "Nothing is told by colour alone" not in page.locator("#info").text_content():
+        problems.append("Help doesn't say that the map's colours are also given in words")
+    ctx.close()
+
+    # 1.4.10 and very large text: Help doesn't scroll sideways, and a header over half the screen stops floating
+    ctx, page = themed()
+    pinned = page.evaluate("getComputedStyle(document.querySelector('.top')).position")
+    add_css(page, "html { font-size: 40px !important; }")
+    page.wait_for_timeout(500)
+    share = page.evaluate("document.querySelector('.top').getBoundingClientRect().height / innerHeight")
+    floating = page.evaluate("getComputedStyle(document.querySelector('.top')).position")
+    if pinned != "fixed" or (share > 0.5 and floating == "fixed"):
+        problems.append(f"header: {pinned} at normal size; at 40px text it takes {share:.0%} of the screen and is {floating}")
+    for sheet, opener in (("info", "#infoBtn"), ("warnings", "#openWarnings:visible, #openStrip:visible"), ("picker", "#pickBtn")):
+        page.locator(opener).first.click()
+        page.wait_for_selector(f"#{sheet}[open]")
+        wide = page.evaluate("(id) => { const d = document.getElementById(id); return d.scrollWidth - d.clientWidth; }", sheet)
+        if wide > 1:
+            problems.append(f"the {sheet} sheet at 40px text scrolls sideways by {wide}px")
+        page.evaluate("(id) => document.getElementById(id).close()", sheet)
+    ctx.close()
+
+    # 2.5.8 and the app's own 44pt rule: a place's addresses are full-height taps (TAPS_JS covers them on the city page)
+    ctx = browser.new_context(color_scheme="light", **IPHONE)
+    page = ctx.new_page()
+    page.goto(base + f"#{cid}")
+    page.wait_for_selector("#cityList .row")
+    page.locator("#cityList .row summary").first.click()
+    short = page.evaluate("[...document.querySelectorAll('#cityList .row[open] .locs a')].filter((a) => a.getBoundingClientRect().height < 43.5).length")
+    if short or not page.locator("#cityList .row[open] .locs a").count():
+        problems.append(f"{cid}: {short} address links are under 44pt tall (or the open place lists none)")
+    ctx.close()
+    print(f"accessibility audit: focus clear of the header, field edges {edges}, names, notices, headings and very large text")
     return problems
 
 
@@ -1454,7 +1623,7 @@ def check_u4_and_u5(env):
         problems.append("the chooser has no Share button")
     else:
         page.locator("#shareBtn").click()
-        page.wait_for_selector("#toast:not([hidden])")  # no share sheet in the test browser: the link is copied or shown
+        page.wait_for_selector("#toast.show")  # no share sheet in the test browser: the link is copied or shown
     page.keyboard.press("Escape")
     page.locator("#infoBtn").click()
     page.wait_for_selector("#info[open]")
@@ -1872,7 +2041,7 @@ def check_f6(env):
     if not shared or not shared["url"].endswith(f"#starbucks-uk/{avoid_slug}"):
         problems.append(f"Share this item shared {shared}")
     page.goto(base + "#starbucks-uk/no-such-drink-any-more")
-    page.wait_for_selector("#toast:not([hidden])")
+    page.wait_for_selector("#toast.show")
     if "changed" not in page.locator("#toast").inner_text() or "Starbucks" not in page.locator("#pickName").inner_text():
         problems.append("a link to an item that has changed doesn't land on its restaurant with a note")
     print(f"item links: unique within every guide, open and scroll to the item, Avoid items too, shared from the row ({want})")
@@ -2110,7 +2279,7 @@ def check_f2(env):
     if page.locator("#favImport[open]").count():
         problems.append("favourites link: reloading asks again")
     page.goto(base + "#favs=not-a-real-link")
-    page.wait_for_selector("#toast:not([hidden])")
+    page.wait_for_selector("#toast.show")
     if "damaged" not in page.locator("#toast").inner_text():
         problems.append("favourites link: a damaged link doesn't say so")
     # V7: a note that comes with a link is shown in full before anything is added, and a note on an Avoid row is left out
@@ -2338,7 +2507,7 @@ def check_f12(env):
         problems.append(f"since you last looked (summer guide): the note says {news!r}, expected {count_text(want)!r} since {want['since']}")
     page.locator("#news [data-news]").click()
     page.wait_for_selector("#changes[open]")
-    parts = page.locator("#changesBody h4").all_text_contents()
+    parts = page.locator("#changesBody h3.chg-part").all_text_contents()
     if parts != ["Since you last looked", "This guide's own list"]:
         problems.append(f"since you last looked: What changed shows {parts}, expected both lists")
     page.keyboard.press("Escape")
@@ -2425,7 +2594,7 @@ def check_f12(env):
                 problems.append(f"since you last looked (same as the guide's list): the note says {news!r}")
             page.locator("#news [data-news]").first.click()
             page.wait_for_selector("#changes[open]")
-            if page.locator("#changesBody h4").count():
+            if page.locator("#changesBody h3.chg-part").count():
                 problems.append("since you last looked: the two lists agree but What changed shows both")
             ctx.close()
     print("since you last looked: a missed guide, a drink now on the Avoid list and a changed order are all shown and marked; "
@@ -2577,7 +2746,7 @@ def check_x11(env):
     page.goto(base + "#five-guys-uk")
     page.wait_for_selector("#list .row")
     page.evaluate("document.getElementById('toast').textContent = 'New guides: Pret, Starbucks';"
-                   "document.getElementById('toast').hidden = false;")
+                   "document.getElementById('toast').classList.add('show');")
     box = page.locator("#toast").bounding_box()
     vw = IPHONE["viewport"]["width"]
     if box["x"] < 8 or box["x"] + box["width"] > vw - 8:
