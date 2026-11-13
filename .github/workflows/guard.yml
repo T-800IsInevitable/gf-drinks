@@ -3,7 +3,8 @@ name: Guard pull request
 # Judges every pull request by main's own rules. pull_request_target runs this file and the tools as they are on
 # main, whatever the pull request changes, so a pull request can't loosen the checks that judge it (checks.yml runs
 # the pull request's own copy). Nothing from the pull request is run: only its menu and city files are read, as data.
-#  - A routine's pull request (branches scan/, city/, recheck/) may change only its own files (tools/guard.py).
+#  - A routine's or a workflow's pull request (branches scan/, city/, recheck/, guide-watch/) may change only its own
+#    files, and a pull request carrying one of their commits must be on such a branch (tools/guard.py).
 #  - Its menus and cities are built and checked with main's tools/build.py and tools/check.py.
 # The token reads only, and no secret is used here. main requires this check (job "guard") to pass.
 on:
@@ -23,7 +24,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
 

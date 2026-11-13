@@ -14,6 +14,44 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 import check  # noqa: E402
 
 
+class CerealBackstop(unittest.TestCase):
+    """Whatever a reader or a hand-kept menu.csv says, nothing that names a gluten cereal is published as fine."""
+
+    def errors_for(self, items):
+        with tempfile.TemporaryDirectory() as tmp:
+            site = Path(tmp)
+            (site / "data" / "r").mkdir(parents=True)
+            menu = {"items": items, "avoid": [], "hash": "abc", "guide": {"validUntil": "2027-01-01"}}
+            (site / "data" / "r" / "x.json").write_text(json.dumps(menu), encoding="utf-8")
+            errors = []
+            with mock.patch.object(check, "SITE", site):
+                check.check_restaurant({"id": "x", "file": "data/r/x.json", "hash": "abc"}, errors.append)
+        return [e for e in errors if "gluten cereal" in e]
+
+    def test_a_cereal_in_the_name_or_a_fine_option_fails(self):
+        errors = self.errors_for([
+            {"name": "Oat Milk Hot Chocolate", "section": "Drinks", "order": "asis"},
+            {"name": "Malted Wheat Toastie", "section": "Food", "order": "asis"},
+            {"name": "Latte", "section": "Drinks", "order": "any", "ok": ["whole", "oat"]},
+            {"name": "Oat Flat White", "section": "Drinks", "order": "swap", "ok": ["whole"], "not": ["almond"], "standard": "almond"}])
+        self.assertEqual(len(errors), 4, errors)
+
+    def test_only_oat_as_the_standard_milk_has_the_swap_exception(self):
+        errors = self.errors_for([
+            {"name": "Wheat Beer Float", "section": "Drinks", "order": "swap", "ok": ["cola"], "not": ["wheat"], "standard": "wheat"},
+            {"name": "Oat Cookie Latte", "section": "Drinks", "order": "swap", "ok": ["whole"], "not": ["oat"], "standard": "almond"},
+            {"name": "Maltesers Hot Chocolate", "section": "Drinks", "order": "asis"},
+            {"name": "Bulgar Salad", "section": "Food", "order": "asis"}])
+        self.assertEqual(len(errors), 4, errors)
+
+    def test_a_swap_away_from_the_named_cereal_passes(self):
+        self.assertEqual(self.errors_for([
+            {"name": "Iced Oat Shaken Espresso", "section": "Drinks", "order": "swap", "ok": ["whole", "soya"], "not": ["oat"],
+             "standard": "oat"},
+            {"name": "Gluten free brownie", "section": "Food", "order": "asis"},
+            {"name": "Latte", "section": "Drinks", "order": "except", "ok": ["whole"], "not": ["oat"]}]), [])
+
+
 class Urls(unittest.TestCase):
     def test_only_https_addresses_pass(self):
         errors = []

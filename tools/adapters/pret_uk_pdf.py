@@ -33,6 +33,19 @@ MILK = re.compile(r"^(.*?)\s+(?:-\s+)?((?:Semi Skimmed|Skimmed|Whole)(?: milk)?(
 MIN_ROWS = 100
 
 
+MARK_WORDS = {"yes", "y", "x", "may", "contains", "trace", "traces"}
+
+
+def odd_mark(text):
+    """Whether a word in a product row's allergen columns is a mark that isn't the guide's tick: a lone glyph or two, a
+    glyph the font gives no letter for (pdfplumber reads it as "(cid:3)"), a symbol, or a word such as Yes. Allergen
+    names repeated across a page are whole words of letters, so those are left alone."""
+    rest = text.replace(TICK, "")
+    if not rest:
+        return False
+    return len(text) <= 2 or "(cid:" in rest or not any(ch.isalnum() for ch in rest) or rest.lower() in MARK_WORDS
+
+
 def is_red(c):
     return isinstance(c, (tuple, list)) and len(c) == 3 and all(abs(a - b) < 0.05 for a, b in zip(c, RED))
 
@@ -128,6 +141,12 @@ def parse_rows(pdf, pdf_path):
                 if row_ticks:
                     raise SystemExit(f"ERROR: p.{pno}: ticks at y={top:.0f} with no product name. Menu not updated.")
                 continue
+            # a mark in a product row's allergen columns that isn't the tick (a new font, a ✓ instead of the guide's own
+            # glyph) would read as no mark at all and turn the item green: stop instead (odd_mark says what counts)
+            odd = [w for w in words if w["x0"] >= peanut["x0"] - 7 and top <= mid(w) <= bot and odd_mark(w["text"])]
+            if odd:
+                raise SystemExit(f"ERROR: p.{pno} {name}: {odd[0]['text']!r} in the allergen columns isn't the guide's tick. "
+                                 "Layout changed? Menu not updated.")
             gl = set()
             for t in row_ticks:
                 used.add(id(t))

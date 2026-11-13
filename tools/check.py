@@ -13,6 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build import CAPS_WORDS  # noqa: E402  (needs the path above)
+from adapters.common import CEREAL, cereal_code  # noqa: E402
 from check_release import app_number, cache_number  # noqa: E402
 
 SITE = Path(__file__).resolve().parent.parent / "site"
@@ -64,6 +65,19 @@ def check_restaurant(r, err):
             err(f"{where}: 'except' with nothing excluded")
         if i.get("order") == "modify" and not i.get("note"):
             err(f"{where}: 'modify' without a note")
+        # the last line of defence, whatever the reader: an item on the list, or an option it says is fine, that names a
+        # gluten cereal (oats included, CLAUDE.md) is wrong, so a hand-kept menu.csv or a reader's slip can't publish one.
+        # The one exception (CLAUDE.md) is a drink named for the oat drink it normally comes with, which the guide lists
+        # with other milks (an Oat Shaken Espresso, asked for with another milk): a swap, with oat as its standard
+        # option and on its "not" list. No other cereal has one, because no other cereal is an option to swap out.
+        nots = {cereal_code(m) for x in (i.get("not") or []) for m in CEREAL.findall(str(x))}
+        standard = {cereal_code(m) for m in CEREAL.findall(str(i.get("standard") or ""))}
+        swapped = {"OAT"} if i.get("order") == "swap" and "OAT" in nots and "OAT" in standard else set()
+        bad = sorted({cereal_code(m) for m in CEREAL.findall(i.get("name") or "")} - swapped)
+        bad += sorted({cereal_code(m) for x in (i.get("ok") or []) for m in CEREAL.findall(str(x))} - set(bad))
+        if bad:
+            err(f"{where}: names a gluten cereal ({', '.join(bad)}) in its name or its fine options, but is listed with "
+                "no gluten ingredients; put it on the Avoid list")
     for a in d["avoid"]:
         if not a.get("gluten") and not a.get("reason"):
             err(f"{rid}: avoid item {a.get('name')!r} has no reason")

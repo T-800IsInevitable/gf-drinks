@@ -189,6 +189,67 @@ def build_one(folder):
     return meta, data
 
 
+AVOID_FLOOR = 5    # a live menu, or one guide of it, with this many Avoid rows is judged, however small their share
+AVOID_SHARE = 0.1  # and so is one whose Avoid rows are this share of it, however few they are
+
+
+def avoid_parts(menu):
+    """The menu's rows by part: {part: (names on the Avoid list, names on the list)}. The parts are the whole menu
+    ("all") and each guide of a merged one (a row's "src"), so one guide's reader failing isn't hidden by the other
+    guide's rows. Names are compared without case or spacing, whatever section they sit in."""
+    parts = {}
+    for listed, rows in ((0, menu.get("avoid") or []), (1, menu.get("items") or [])):
+        for r in rows:
+            for part in {"all"} | ({f"guide {r['src'] + 1}"} if isinstance(r.get("src"), int) else set()):
+                parts.setdefault(part, (set(), set()))[listed].add(" ".join(str(r.get("name") or "").lower().split()))
+    return parts
+
+
+def avoid_drop(prev, full, folder):
+    """A reader that stops seeing a guide's gluten marks (a new font, a new tick) fails open: rows that were on the
+    Avoid list turn up on the list. A menu that changes with the season looks different: its Avoid rows leave the
+    menu altogether. So the build stops when, in the whole menu or in one guide of a merged one,
+      - more than a third of the live Avoid rows still on the menu are now listed with no gluten ingredients, or
+      - more than two thirds of the live Avoid rows have left the menu and the Avoid share fell by a third as well
+        (a guide that renamed everything and lost its marks at once),
+    unless restaurant.json's "avoidDropOk" names this very guide (the owner has checked the change against it). A part
+    is judged when it has AVOID_FLOOR live Avoid rows or more, or when they are AVOID_SHARE of it, however few; a
+    single row moving is a recipe change unless the part is one of those."""
+    if not prev:
+        return
+    was, now = avoid_parts(prev), avoid_parts(full)
+    found = None
+    for part, (avoid0, items0) in sorted(was.items()):
+        if part not in now or not avoid0:
+            continue
+        avoid1, items1 = now[part]
+        share0 = len(avoid0) / (len(avoid0) + len(items0))
+        share1 = len(avoid1) / max(1, len(avoid1) + len(items1))
+        judged = len(avoid0) >= AVOID_FLOOR or share0 >= AVOID_SHARE
+        moved = sorted(avoid0 & items1 - avoid1)
+        gone = avoid0 - avoid1 - items1
+        still = len(avoid0) - len(gone)
+        where = "" if part == "all" else f" ({part} of {len(was) - 1})"
+        if moved and len(moved) > still / 3 and (len(moved) >= 2 or judged):
+            found = (f"{len(moved)} of the {still} Avoid rows{where} still on the menu are now listed with no gluten ingredients "
+                     f"({', '.join(moved[:4])}{'...' if len(moved) > 4 else ''})")
+            break
+        if judged and len(gone) > len(avoid0) * 2 / 3 and share1 < share0 * 2 / 3:
+            found = (f"{len(gone)} of the {len(avoid0)} Avoid rows{where} have left the menu and the Avoid list fell from "
+                     f"{share0:.0%} to {share1:.0%} of it")
+            break
+    if not found:
+        return
+    config = json.loads((folder / "restaurant.json").read_text(encoding="utf-8"))
+    if config.get("avoidDropOk") and config["avoidDropOk"] == full.get("source"):
+        print(f"  {found}: accepted for this guide (avoidDropOk)")
+        return
+    raise SystemExit(f"ERROR: {folder.name}: {found}. A reader that misses the guide's gluten marks looks like this. Check the "
+                     f"guide; if the change is real, set \"avoidDropOk\" in restaurant.json to {full.get('source')!r}. On a "
+                     "guide-watch/ branch that goes in a pull request of your own, merged first: the guard lets that branch "
+                     "change only the guides.")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Build every restaurant's menu into site/data/.")
     ap.add_argument("ids", nargs="*", help="only these restaurants (for testing)")
@@ -210,6 +271,7 @@ def main():
         full = {**meta, **data}
         prev_path = args.previous / "r" / f"{meta['id']}.json"
         prev = json.loads(prev_path.read_text(encoding="utf-8")) if prev_path.exists() else None
+        avoid_drop(prev, full, folder)
         full["changes"] = changes.compare(prev, full)
         if prev and prev.get("source") == full["source"]:
             print("  same guide as the live menu" + (f"; keeping its changes {changes.summary(full['changes'])}" if full["changes"] else ""))

@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 38;
+  const APP_VERSION = 42;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -29,7 +29,8 @@
   // scheme (javascript:, data:) is dropped. tools/check.py refuses such an address at build time; this is the belt.
   // (control characters and spaces go first, since a browser drops them before it reads the scheme; a protocol-relative
   // address, //host, counts as another site's too)
-  const safeUrl = (u) => { u = String(u || "").replace(/[\u0000- ]/g, ""); return /^https?:\/\//i.test(u) || !/^([a-z][a-z0-9+.-]*:|\/\/)/i.test(u) ? u : ""; };
+  // (a browser reads a backslash as a slash in an address, so /\host is another site's too)
+  const safeUrl = (u) => { u = String(u || "").replace(/[\u0000- ]/g, ""); const s = u.replace(/\\/g, "/"); return /^https?:\/\//i.test(s) || !/^([a-z][a-z0-9+.-]*:|\/\/)/i.test(s) ? u : ""; };
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } },
@@ -314,7 +315,7 @@
 
   function rowHtml(r, i, showRestaurant) {
     const [cls, label] = tagFor(r, i);
-    const star = favs.has(favKey(r, i)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
+    const star = favs.has(favKey(r, i)) ? '<span class="star"><span aria-hidden="true">★</span><span class="vh">Favourite, </span></span>' : "";
     const subs = [];
     const c = changeOf(r, i);
     if (c) subs.push('<span class="chg">' + CHG_LABEL[c.kind] + "</span>");
@@ -645,9 +646,9 @@
     const both = showMine && showTheirs;
     $("changesTitle").textContent = r.name + ": what changed";
     $("changesBody").innerHTML =
-      (showMine ? (both ? '<h4 class="chg-part">Since you last looked</h4>' : "") +
+      (showMine ? (both ? '<h3 class="kicker chg-part">Since you last looked</h3>' : "") +
         part(mine, "Compared with the " + esc(mine.since) + " guide, the last one you looked at.") : "") +
-      (showTheirs ? (both ? '<h4 class="chg-part">This guide\'s own list</h4>' : "") +
+      (showTheirs ? (both ? '<h3 class="kicker chg-part">This guide\'s own list</h3>' : "") +
         part(theirs, "Compared with the " + esc(theirs.since) + " guide. Noticed " + esc(fmtDate(theirs.date)) + ".") : "");
     openDialog($("changes"));
   }
@@ -786,6 +787,7 @@
       (glutenHits ? " " + glutenHits + (glutenHits === 1 ? " match is" : " matches are") + " on the Avoid list" + (visible("gluten") ? " below." : ". Tap Avoid above to see " + (glutenHits === 1 ? "it." : "them.")) : "");
     if (!visible("straight") || !visible("change")) empty += " Some items are hidden by the buttons above.";
     $("list").innerHTML = (filter.kind === "fav" ? favShareBar() : "") + (html ? usuals + html : '<p class="empty">' + empty + "</p>" + emptyExtras($("q").value));
+    sayCount("list");
 
     let avoidHtml = "";
     if (filter.kind !== "fav" && visible("gluten")) {
@@ -816,10 +818,10 @@
         }).join("") + "</div>";
       }
     }
-    $("avoidWrap").hidden = !avoidHtml;
+    $("avoidWrap").hidden = $("avoidHead").hidden = !avoidHtml;
     $("avoid").innerHTML = avoidHtml;
     // folded until wanted: it opens by itself while searching or when the Avoid button is chosen, and a tap on it overrides that
-    $("avoidTitle").textContent = "Avoid: contains gluten or not suitable" + (glutenHits ? " (" + glutenHits + ")" : "");
+    $("avoidTitle").textContent = "Avoid: contains or may contain gluten, or not suitable for coeliacs" + (glutenHits ? " (" + glutenHits + ")" : "");
     $("avoidWrap").open = avoidUser !== null ? avoidUser : !!($("q").value.trim() || pick.gluten);
     return shown;
   }
@@ -894,7 +896,7 @@
     };
     $("sources").innerHTML = scope().map(lineShort).join("");
     $("infoSources").innerHTML = data.restaurants.map(lineFull).join("") + "<p>Rules: " + esc([...new Set(data.restaurants.map((r) => r.rule))].join(" ")) +
-      " If the allergen column and ingredients disagree, the item is left out.</p><p>Last built " + esc(fmtDate(data.built)) + ".</p>";
+      " If a guide's allergen column and ingredients disagree, the item is treated as containing gluten and goes on the Avoid list.</p><p>Last built " + esc(fmtDate(data.built)) + ".</p>";
   }
 
   // The chooser lists the restaurant used last first, then those with saved favourites, then the rest A to Z.
@@ -917,7 +919,7 @@
         const c = cities[cid], uk = s === UKC;
         return '<button type="button" class="pick-opt" data-region="' + esc(cid) + '" aria-pressed="' + (region === cid) + '">' +
           '<span class="logo-wrap flag" aria-hidden="true">' + esc(c.flag || "") + '</span><span class="po-main"><b>' + esc(uk ? c.name : c.country || c.name) + "</b><span>" +
-          (uk ? "Places" : esc(c.name) + ": places") + " that are all gluten free, by their own word or " + (uk ? "a listing" : "the coeliac society's list") +
+          (uk ? "Places" : esc(c.name) + ": places") + " that say everything they serve is gluten free, or that " + (uk ? "a coeliac listing calls" : "the coeliac society's list calls") + " all gluten free" +
           (c.places.some((p) => p.claim === "place-part") ? ", or that say part of what they serve is" : "") +
           (c.places.some((p) => p.claim === "separate") ? ", or that say they have a separate gluten free kitchen" : "") + "</span></span>" +
           '<span class="po-meta">' + c.places.length + (c.places.length === 1 ? " place" : " places") + "</span></button>";
@@ -950,7 +952,7 @@
     const all = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false, logoHtml("All restaurants", "icons/icon-192.png"));
     $("pickList").innerHTML = nearGroup + '<div class="sub-h">' + (welcomeNow ? "Choose where" : "Chains") + "</div>" + all +
       (welcomeNow ? '<div class="sub-h">Or one restaurant</div>' : "") + grouped +
-      '<p class="pick-note">More restaurants can be added by the app\'s owner from each restaurant\'s allergen guide.</p><p class="pick-share">' + addMenuLink + "</p>";
+      '<p class="pick-note">Missing a restaurant? Ask for it under Add a menu.</p><p class="pick-share">' + addMenuLink + "</p>";
   }
 
   // The phone's time zone says where it is without asking for its location. Offered once per trip, and UK again on the way home.
@@ -983,6 +985,11 @@
     $("tzOffer").hidden = true;
     if (b.dataset.tz === "yes") setRegion(to);
   });
+  // what a search found, said once for VoiceOver (the lists themselves aren't read out as they're redrawn)
+  function sayCount(listId) {
+    const n = $(listId).querySelectorAll(".row").length, none = $(listId).querySelector(".empty");
+    $("resultCount").textContent = !$("q").value.trim() ? "" : n ? n + (n === 1 ? " match" : " matches") : none ? none.textContent : "No matches";
+  }
   function render() {
     syncSearching();
     renderRegion();
@@ -1083,7 +1090,7 @@
     $("cityIntroLine").innerHTML = "<b>Tags say who calls a place gluten free</b>, not the app. Tell staff you're coeliac.";
     $("cityIntro").innerHTML = "<b>Each place's tag says who calls it gluten free.</b> " +
       [n("place-all") && n("place-all") + " say so themselves",
-        n("list-all") && n("list-all") + (uk ? " are listed as all gluten free by others and have only a social media page or a market's, so their own words weren't checked" : " are listed as all gluten free by the support groups but don't say so on their own websites"),
+        n("list-all") && n("list-all") + (uk ? " are called all gluten free by a coeliac listing. They have no website of their own, only social media or a market page, so the app couldn't check what they say themselves" : " are listed as all gluten free by the support groups but don't say so on their own websites"),
         n("place-part") && n("place-part") + " says only part of its range is", n("separate") && n("separate") + " says it makes gluten free food in a separate kitchen"]
         .filter(Boolean).join("; ") + ". That's their claim, not the app's. " + (uk ? "They were found through " : "They come from the list kept by ") +
       // who keeps a list is a name ("My Gluten Free Guide"), not the app's words, so it's marked as quoted
@@ -1200,7 +1207,7 @@
     const cls = p.claim === "place-all" && !p.caution ? "t-asis" : p.caution ? "t-swap" : "t-info";
     // an amber tag says why it's amber: the claim, then that there's something to ask (the row's bold flag says what)
     const label = (p.claimLabel || CLAIM_TAGS[p.claim]) + (p.caution ? " · ask" : "");
-    const star = favs.has(placeFav(p)) ? '<span class="star" aria-label="Favourite">★</span>' : "";
+    const star = favs.has(placeFav(p)) ? '<span class="star"><span aria-hidden="true">★</span><span class="vh">Favourite, </span></span>' : "";
     return '<details class="row" data-place="' + esc(p.name) + '"><summary><span class="nm">' + star + noteMark(placeFav(p)) + esc(p.name) + "<small>" + subs.join(" · ") + '</small><span class="tag ' + cls + '">' +
       esc(label) + "</span></span>" + chev + '</summary><div class="detail">' + out.join("") + "</div></details>";
   }
@@ -1232,6 +1239,7 @@
       (offlineNow ? "The map needs signal for its background; the pins still show. " : "") + "Green: says all gluten free. Amber: something to ask about. Grey: the rest. Tap a pin, then Open.</p>" : "";
     $("cityList").innerHTML = mapHtml + (cityFilter === "fav" ? favShareBar() : "") + (html || '<p class="empty">' + empty + "</p>" + (cityFilter === "all" ? emptyExtras($("q").value) : "")) +
       (cityFilter === "open" && unknown ? '<p class="muted">' + unknown + " places with unknown hours aren't shown.</p>" : "");
+    sayCount("cityList");
     if (mapOn) drawMap(c, places); else dropMap();
   }
   // A UK city also holds the app's chains: one row each, with how many of its branches are in the city's area (the
@@ -1315,7 +1323,7 @@
     if (cityFilter === "open") { nearSort = false; cityFilter = "all"; renderCity(); return; }
     cityFilter = "open";
     if (nearSort) { renderCity(); window.scrollTo({ top: 0 }); return; }
-    if (!navigator.geolocation) { renderCity(); toast("This phone can't share its location here"); return; }
+    if (!navigator.geolocation) { renderCity(); toast("This browser can't share a location with the app."); return; }
     navigator.geolocation.getCurrentPosition((pos) => {
       here = { lat: pos.coords.latitude, lon: pos.coords.longitude };
       nearSort = true;
@@ -1422,7 +1430,7 @@
       ? '<ul class="near-list">' + rows.map((x) => '<li><span class="nm"><b>' + esc(x.name) + "</b><small>" + esc([metres(x.km), openText(x.hours), x.where].filter(Boolean).join(" · ")) +
         (x.n > 1 ? " · " + x.n + " within 1 km" : "") + '</small></span><span class="near-btns"><button type="button" class="fav-btn" data-gonear="' + esc(x.rid) + '">Menu</button>' +
         '<a class="fav-btn" href="https://maps.apple.com/?ll=' + esc(x.lat + "," + x.lon) + "&q=" + encodeURIComponent(x.name) + '" target="_blank" rel="noopener">Directions</a></span></li>').join("") + "</ul>"
-      : '<p class="empty">None of the app\'s restaurants is listed within 1 km of here.</p>') +
+      : '<p class="empty">None of the app\'s chains is listed within 1 km of you.</p>') +
       '<p class="muted">Branches from OpenStreetMap, which doesn\'t list every one' + (fetched ? " (its list from " + esc(listDate(fetched)) + ")" : "") + ". Each chain's allergen guide covers all its branches." + hoursNote + "</p>" +
       // the opt-in, once, in context: the look-around each time the app opens
       (store.get(NEAR_AUTO_KEY) === null ? '<div class="chg-note" data-near-ask><b>Look around each time the app opens?</b> The nearest chain then shows on the chip row under the search box, with no tap. Your position stays on this phone.' +
@@ -1444,7 +1452,7 @@
   }
   async function nearMe() {
     if (!data) return;
-    if (!navigator.geolocation) { toast("This phone can't share its location here"); return; }
+    if (!navigator.geolocation) { toast("This browser can't share a location with the app."); return; }
     $("nearBody").innerHTML = '<p class="empty">Finding your location…</p>';
     openDialog($("near"));
     const saved = savedNear();
@@ -1549,7 +1557,7 @@
     if (!data) return;
     openDialog($("mapPage"));
     live.follow = true;
-    setMapStatus(navigator.geolocation ? "Finding where you are…" : "This phone can't share its location here.");
+    setMapStatus(navigator.geolocation ? "Finding where you are…" : "This browser can't share a location with the app.");
     $("mapOffline").hidden = !offlineNow;
     drawLiveMap();
   }
@@ -1723,12 +1731,12 @@
     let html = "";
     if (selected === ALL) html += '<h3 class="w-rest">' + esc(r.name) + "</h3>";
     // a restaurant's own tips lead its page of the sheet, so they're one tap away once folded off the first screen
-    if (selected !== ALL && r.tips && r.tips.length) html += '<h4>How to order</h4><div class="rules w-tips">' + tipsHtml(r.tips) + "</div>";
+    if (selected !== ALL && r.tips && r.tips.length) html += '<h3 class="kicker">How to order</h3><div class="rules w-tips">' + tipsHtml(r.tips) + "</div>";
     html += '<p class="muted">From ' + esc(plainGuideName(r)) + (r.area ? ", which covers its " + esc(r.area) + " branches" : "") +
       ((sinceLooked(r) || r.changes) ? '. <button type="button" class="link-btn" data-whatchanged="' + esc(r.id) + '">What changed, noticed ' +
         esc(fmtDate((sinceLooked(r) || r.changes).date)) + " &rsaquo;</button>" : ".") + "</p>";
     if (groups.length) {
-      html += "<h4>What " + esc(possessive(r.name)) + " guide says</h4>";
+      html += "<h3 class=\"kicker\">What " + esc(possessive(r.name)) + " guide says</h3>";
       for (const g of groups) {
         html += '<div class="w-group"><div class="w-label">' + esc(g.label) + "</div>" + g.list.map((n) =>
           '<blockquote class="w-quote">' + esc(n.text) + "<cite>" + esc(n.pages && n.pages.length
@@ -1739,11 +1747,11 @@
       html += '<p class="muted">No warnings were found in this guide. That doesn\'t mean there aren\'t any risks.</p>';
     }
     if (r.gaps && r.gaps.length) {
-      html += "<h4>What the guide doesn't tell you</h4><ul class=\"w-gaps\">" + r.gaps.map((g) => "<li>" + esc(g) + "</li>").join("") + "</ul>";
+      html += "<h3 class=\"kicker\">What the guide doesn't tell you</h3><ul class=\"w-gaps\">" + r.gaps.map((g) => "<li>" + esc(g) + "</li>").join("") + "</ul>";
     }
     const decided = r.items.concat(r.avoid).filter((i) => i.decided);
     if (decided.length) {
-      html += "<h4>How the app decided some items</h4><ul class=\"notes\">" +
+      html += "<h3 class=\"kicker\">How the app decided some items</h3><ul class=\"notes\">" +
         decided.map((i) => "<li><b>" + esc(i.name) + ":</b> " + esc(i.decided) + "</li>").join("") + "</ul>";
     }
     if (isStale(r)) html += '<p class="w-stale">This guide covered up to ' + esc(fmtDate(r.guide.validUntil)) + ". A newer one may be out.</p>";
@@ -1793,6 +1801,12 @@
     if (data) renderCardLaunch();
     if (city()) renderCity();
   }
+  // Help names the cities from the list itself, so a city added later is never missing from it
+  function helpCities() {
+    const named = (s) => { const n = citiesIn(s).map((id) => cities[id].name); return n.length ? " (" + (n.length > 1 ? n.slice(0, -1).join(", ") + " and " : "") + n[n.length - 1] + ")" : ""; };
+    $("helpUk").textContent = named(UKC);
+    $("helpAbroad").textContent = named(INTL);
+  }
   async function loadCities() {
     try {
       const res = await fetch("cities.json", { cache: "no-cache" });
@@ -1803,6 +1817,7 @@
       region = UK;
     }
     render();
+    helpCities();
     if (data && $("picker").open) renderPicker(); // the first-visit chooser may have opened before the cities arrived
     drawPlacePins(); // the map page may have opened before them too
     importReady.cities = true;
@@ -2319,7 +2334,7 @@
       const old = Date.now() - new Date(q.at || 0).getTime() > (isCityReq(q) ? 14 : 7) * 864e5; // a city takes longer to check
       return "<li>" + (isCityReq(q) ? "The city of " : "") + esc(q.name) + (q.area ? " (" + esc(q.area) + ")" : "") + ": " + (r || cid
         ? 'in the app <button type="button" class="link-btn" ' + (cid ? 'data-gotocity-req="' + esc(cid) : 'data-gotorest-req="' + esc(r.id)) + '">Open &rsaquo;</button>'
-        : (q.how === "filed" ? "asked " : "sent to the owner ") + esc(fmtDate(String(q.at || "").slice(0, 10))) + " · not in the app yet" + (old ? " · ask the owner whether it was found" : "")) + "</li>";
+        : (q.how === "filed" ? "asked " : "sent ") + esc(fmtDate(String(q.at || "").slice(0, 10))) + " · not in the app yet" + (old ? " · ask whoever looks after the app whether it was found" : "")) + "</li>";
     }).join("") + "</ul>" : "";
   }
   const requestLink = (q) => appUrl() + "#request=" + toB64url(JSON.stringify({ v: 1, name: q.name, area: q.area, url: q.url, ...(isCityReq(q) ? { kind: "city" } : {}) }));
@@ -2606,10 +2621,15 @@
   let toastTimer;
   function toast(msg) {
     const t = $("toast");
-    t.textContent = msg;
-    t.hidden = false;
+    // the notice stays in the page and only its words change, which is what VoiceOver listens for (a notice that
+    // appears already holding its words often goes unread)
+    t.textContent = "";
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.hidden = true; }, 3400);
+    toastTimer = setTimeout(() => {
+      t.textContent = msg;
+      t.classList.add("show");
+      toastTimer = setTimeout(() => { t.classList.remove("show"); t.textContent = ""; }, 3400);
+    }, 30);
   }
 
   // ---------- loading ----------
@@ -2771,7 +2791,7 @@
       btn.textContent = on ? "★ Saved" : "☆ Save";
       const nm = btn.closest(".row").querySelector(".nm");
       const star = nm.querySelector(".star");
-      if (on && !star) nm.insertAdjacentHTML("afterbegin", '<span class="star" aria-label="Favourite">★</span>');
+      if (on && !star) nm.insertAdjacentHTML("afterbegin", '<span class="star"><span aria-hidden="true">★</span><span class="vh">Favourite, </span></span>');
       if (!on && star) star.remove();
     });
     toast(on ? "Saved to favourites" : "Removed from favourites");
@@ -2816,7 +2836,7 @@
   renderErrors();
   $("copyDetails").addEventListener("click", async () => {
     const text = errorDetails();
-    try { await navigator.clipboard.writeText(text); toast("Details copied. Paste them into a message to the owner."); }
+    try { await navigator.clipboard.writeText(text); toast("Details copied. Paste them into a message to whoever looks after the app."); }
     catch (e) {
       if (navigator.share) { try { await navigator.share({ title: "Treat Temple details", text }); } catch (err) { /* share sheet closed */ } }
       else toast("Couldn't copy them.");
@@ -2846,7 +2866,16 @@
 
   // Reserve space for the floating header at its full (expanded) height.
   const topEl = document.querySelector(".top");
-  const reserve = () => { if (!topEl.classList.contains("collapsed")) document.body.style.setProperty("--top-h", topEl.offsetHeight + "px"); };
+  // A header taller than half the screen (very large text) would leave no room for the list, so it stops floating
+  // and scrolls away with the page. While it floats, the page keeps what the keyboard reaches clear of it.
+  const reserve = () => {
+    if (topEl.classList.contains("collapsed")) return;
+    const h = topEl.offsetHeight, tall = h > window.innerHeight / 2;
+    topEl.classList.toggle("unpinned", tall);
+    document.documentElement.style.setProperty("--top-h", h + "px");
+    document.documentElement.style.setProperty("--scroll-pad", tall ? "0px" : h + "px");
+  };
+  window.addEventListener("resize", reserve);
   if (window.ResizeObserver) new ResizeObserver(reserve).observe(topEl);
   reserve();
   // Hide the filter rows while scrolling down the list; bring them back on scrolling up.
@@ -2857,7 +2886,8 @@
     ticking = true;
     requestAnimationFrame(() => {
       const y = window.scrollY;
-      if (y > 160 && y > lastY + 6) topEl.classList.add("collapsed");
+      if (topEl.classList.contains("unpinned")) topEl.classList.remove("collapsed");
+      else if (y > 160 && y > lastY + 6) topEl.classList.add("collapsed");
       else if (y < lastY - 6 || y < 160) topEl.classList.remove("collapsed");
       lastY = y;
       ticking = false;
@@ -2913,7 +2943,7 @@
     if (sub) {
       const now = JSON.stringify(sub.toJSON());
       $("pushSub").value = now;
-      el.textContent = was && was !== now ? "This phone's address has changed, so send it again." : "On, once the owner has this phone's address.";
+      el.textContent = was && was !== now ? "This phone's address has changed, so send it again." : "On, once whoever looks after the app has this phone's address.";
       $("pushCode").textContent = await pushCode(sub.endpoint);
     } else el.textContent = rekeyed ? "The app's notifications have a new key. Tap to switch them on again, then send the new address."
       : was ? "Switched off, or the phone let it go. Tap to switch it on again, then send the new address." : "";
@@ -2927,17 +2957,17 @@
       store.set(PUSH_SAVED, JSON.stringify(sub.toJSON()));
       store.set(PUSH_KEY_SAVED, PUSH_KEY);
       await pushState();
-      toast("Now send the address to the app's owner");
+      toast("Now send the address to whoever looks after the app");
     } catch (e) { logError(e.message, "push"); toast("Couldn't switch notifications on: " + e.message); }
   });
   $("pushSend").addEventListener("click", () => shareOrCopy("Treat Temple notifications",
-    "My phone's notification address for Twoo's Treat Temple (add it as a line of the PUSH_SUBSCRIPTIONS secret):\n" + $("pushSub").value, "", "Copied. Paste it into a message to the owner."));
+    "My phone's notification address for Twoo's Treat Temple (add it as a line of the PUSH_SUBSCRIPTIONS secret):\n" + $("pushSub").value, "", "Copied. Paste it into a message to whoever looks after the app."));
   $("pushOff").addEventListener("click", async () => {
     try { const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription(); if (sub) await sub.unsubscribe(); } catch (e) { /* nothing to undo */ }
     store.remove(PUSH_SAVED);
     store.remove(PUSH_KEY_SAVED);
     pushState();
-    toast("Notifications off. Tell the owner to remove this phone's address.");
+    toast("Notifications off. Ask whoever looks after the app to remove this phone's address.");
   });
   pushState();
   // the icon's badge counts guides not yet looked at; opening the app clears it

@@ -22,12 +22,15 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
 
+      # by hash, as in every other job: this one holds a write token while it reads PDFs from other sites
       - name: Install PDF reader
-        run: pip install -r tools/requirements.txt
+        run: |
+          pip install --require-hashes -r tools/requirements-buildtools-lock.txt
+          pip install --require-hashes --no-build-isolation -r tools/requirements-lock.txt
 
       - name: Download the menus that are live now, to say what a new guide changes
         run: python tools/fetch_previous.py
