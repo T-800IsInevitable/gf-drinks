@@ -28,7 +28,7 @@
   <!-- The sections: Chains (the chains' menus), UK cities and Abroad; the chooser under it picks within one -->
   <div id="region" class="region" role="group" aria-label="Section"></div>
   <div class="titlebar">
-    <button type="button" id="pickBtn" class="picker" aria-haspopup="dialog" aria-label="Choose restaurant">
+    <button type="button" id="pickBtn" class="picker" aria-haspopup="dialog" aria-label="Choose restaurant" aria-describedby="guideLine">
       <span class="app-name">Treat Temple</span>
       <span id="pickName" class="pick-name">Treat Temple</span>
       <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -52,6 +52,7 @@
 </header>
 
 <main>
+  <h1 class="vh">Twoo's Treat Temple</h1>
   <div id="installTip" class="tip hide-searching" hidden>
     <p><b>Install on your iPhone:</b> in Safari, tap <b>•••</b> (or <b>Share</b>), then <b>Add to Home Screen</b>. Keep <b>Open as Web App</b> switched on.</p>
     <button type="button" id="installClose" class="link-btn">Got it</button>
@@ -78,10 +79,12 @@
   </div>
   <div id="cardLaunch" class="card-launch hide-searching" hidden></div>
   <div id="searchNote" class="search-note" role="status" hidden></div>
-  <div id="list" class="list" aria-live="polite"></div>
+  <p id="resultCount" class="vh" role="status"></p>
+  <div id="list" class="list"></div>
   <!-- Folded until it's wanted: opens by itself while searching, or when the Avoid button is chosen -->
+  <h2 id="avoidHead" class="vh">Avoid list</h2>
   <details id="avoidWrap" class="avoid">
-    <summary><h2 id="avoidTitle">Avoid: contains gluten, or the restaurant says it isn't suitable for coeliacs</h2></summary>
+    <summary><span id="avoidTitle" class="avoid-title">Avoid: contains gluten, or the restaurant says it isn't suitable for coeliacs</span></summary>
     <div id="avoid" class="list"></div>
   </details>
   <footer class="foot">
@@ -105,7 +108,7 @@
         <details class="more"><summary id="cityTipsLabel">Before you go</summary><section id="cityTips" class="rules" aria-label="Tips"></section></details>
       </div>
     </div>
-    <div id="cityList" class="list" aria-live="polite"></div>
+    <div id="cityList" class="list"></div>
     <footer class="foot" id="cityFoot"></footer>
   </div>
 </main>
@@ -179,7 +182,7 @@
     </details>
     <details class="more">
       <summary>Map</summary>
-      <p>The <b>globe</b> by the title opens a map with your position, which moves as you do, the branches of the app's chains around you, and every place on the city lists, in the UK and abroad, coloured as on their lists. Tap a pin for the distance, whether it's open today and directions, then <b>Menu</b> for a chain's menu or <b>Open</b> for a place's own words in its list. Drag the map anywhere in the UK and zoom in to a town to see the branches there; the round button brings it back to you.</p>
+      <p>The <b>globe</b> by the title opens a map with your position, which moves as you do, the branches of the app's chains around you, and every place on the city lists, in the UK and abroad, coloured as on their lists. Nothing is told by colour alone: each place is on its city's list with its tag in words, and a chain's branches near you are under Near me. Tap a pin for the distance, whether it's open today and directions, then <b>Menu</b> for a chain's menu or <b>Open</b> for a place's own words in its list. Drag the map anywhere in the UK and zoom in to a town to see the branches there; the round button brings it back to you.</p>
       <p>Your position is followed only while the map is open and the app is in front, and stays on this phone: the branches come from the app's own list (from OpenStreetMap, which doesn't list every one, refreshed each week), so the pins show without signal. The map's background comes from OpenStreetMap while you have signal, so it can tell roughly which area you're looking at.</p>
     </details>
     <details class="more" id="pushHelp" hidden>
@@ -425,7 +428,7 @@
 
 <!-- A new release has arrived but something is open, so the app waits to be asked before reloading -->
 <button type="button" id="updateBar" class="update-bar" hidden>Updated. Tap to reload</button>
-<div id="toast" class="toast" role="status" hidden></div>
+<div id="toast" class="toast" role="status"></div>
 <script src="compare.js"></script>
 <script src="app.js"></script>
 </body>
