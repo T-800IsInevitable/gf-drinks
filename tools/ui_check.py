@@ -1156,6 +1156,34 @@ def accessibility_audit(env):
     return problems
 
 
+def check_help_wording(env):
+    """Help and the Avoid heading say what's true of every row and every city, without a list kept by hand."""
+    base, ids, cities, browser = env.base, env.ids, env.cities, env.browser
+    problems = []
+    ctx = browser.new_context(color_scheme="light", **IPHONE)
+    page = ctx.new_page()
+    page.goto(base + f"#{ids[0]}")
+    page.wait_for_selector("#list .row")
+    page.wait_for_selector("#helpUk:not(:empty)", state="attached")
+    said = page.locator("#info").text_content()
+    missing = [c["name"] for c in cities.values() if c["name"] not in " ".join(page.locator("#helpUk, #helpAbroad").all_text_contents())]
+    if missing:
+        problems.append(f"Help's Chains, UK cities and Abroad doesn't name {missing}")
+    uk = [c["name"] for c in cities.values() if c.get("group") == "uk"]
+    if any(n not in (page.locator("#helpUk").text_content() or "") for n in uk) or any(n in (page.locator("#helpAbroad").text_content() or "") for n in uk):
+        problems.append(f"Help lists a UK city under the wrong section ({page.locator('#helpUk').text_content()!r}, {page.locator('#helpAbroad').text_content()!r})")
+    # the Avoid heading covers every reason a row is there (the app's own doubts and may-contain rows too), so it
+    # can't say the restaurant calls them all unsuitable
+    heading = page.locator("#avoidTitle").text_content() or ""
+    if "restaurant says" in heading or "may contain" not in heading:
+        problems.append(f"the Avoid heading {heading!r} speaks for the restaurant, or leaves out may-contain rows")
+    if "the app has a doubt of its own" not in said:
+        problems.append("Help's Show or hide doesn't say the Avoid list also holds the app's own doubts")
+    print(f"help wording: {len(cities)} cities named from the list ({page.locator('#helpUk').text_content().strip()}), Avoid heading {heading[:40]!r}")
+    ctx.close()
+    return problems
+
+
 def check_first_visit(env):
     base, ids, cid, browser = env.base, env.ids, env.cid, env.browser
     problems = []
@@ -3759,6 +3787,7 @@ CHECKS = [
     ("add_a_menu_without_a", check_add_a_menu_without_a),
     ("staff_card_wording_the_german", check_staff_card_wording_the_german),
     ("accessibility", check_accessibility),
+    ("help_wording", check_help_wording),
     ("first_visit", check_first_visit),
     ("search", check_search),
     ("food_safety", check_food_safety),

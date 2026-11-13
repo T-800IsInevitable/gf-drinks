@@ -36,6 +36,14 @@ class CerealBackstop(unittest.TestCase):
             {"name": "Oat Flat White", "section": "Drinks", "order": "swap", "ok": ["whole"], "not": ["almond"], "standard": "almond"}])
         self.assertEqual(len(errors), 4, errors)
 
+    def test_only_oat_as_the_standard_milk_has_the_swap_exception(self):
+        errors = self.errors_for([
+            {"name": "Wheat Beer Float", "section": "Drinks", "order": "swap", "ok": ["cola"], "not": ["wheat"], "standard": "wheat"},
+            {"name": "Oat Cookie Latte", "section": "Drinks", "order": "swap", "ok": ["whole"], "not": ["oat"], "standard": "almond"},
+            {"name": "Maltesers Hot Chocolate", "section": "Drinks", "order": "asis"},
+            {"name": "Bulgar Salad", "section": "Food", "order": "asis"}])
+        self.assertEqual(len(errors), 4, errors)
+
     def test_a_swap_away_from_the_named_cereal_passes(self):
         self.assertEqual(self.errors_for([
             {"name": "Iced Oat Shaken Espresso", "section": "Drinks", "order": "swap", "ok": ["whole", "soya"], "not": ["oat"],
