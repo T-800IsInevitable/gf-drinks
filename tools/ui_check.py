@@ -1016,15 +1016,17 @@ FOCUS_JS = """() => { const a = document.activeElement, r = a.getBoundingClientR
 def accessibility_audit(env):
     """One assertion for each fix from the WCAG 2.2 AA audit (focus, fields, names, status messages, headings, very
     large text). Nothing here names a place, an item or a season."""
-    base, cid, browser = env.base, env.cid, env.browser
+    base, ids, cid, browser = env.base, env.ids, env.cid, env.browser
     problems = []
+    # the restaurant with the longest list, whichever that is: the focus check walks back up a long list
+    rid = max(ids, key=lambda i: len(menu_of(i)["items"]))
 
     def themed(theme=None):
         ctx = browser.new_context(color_scheme="light", **IPHONE)
         if theme:
             ctx.add_init_script(f"try {{ localStorage.setItem('gf-theme', '{theme}'); }} catch (e) {{}}")
         page = ctx.new_page()
-        page.goto(base + "#starbucks-uk")
+        page.goto(base + f"#{rid}")
         page.wait_for_selector("#list .row")
         return ctx, page
 
@@ -1088,6 +1090,17 @@ def accessibility_audit(env):
     if page.locator("#resultCount").get_attribute("role") != "status" or str(page.locator("#list .row").count()) not in count:
         problems.append(f"a search doesn't tell VoiceOver how many it found ({count!r} for {page.locator('#list .row').count()} rows)")
     page.locator("#q").fill("")
+    # the same on a city's page: the line that says it must be showing there too (a line inside a hidden view is silent)
+    page.goto(base + f"#{cid}")
+    page.wait_for_selector("#cityList .row")
+    page.locator("#q").fill("a")
+    page.wait_for_timeout(300)
+    heard = page.evaluate("(() => { const e = document.getElementById('resultCount'); return { hidden: !!e.closest('[hidden]') || getComputedStyle(e).display === 'none', text: e.textContent }; })()")
+    if heard["hidden"] or str(page.locator("#cityList .row").count()) not in heard["text"]:
+        problems.append(f"{cid}: a search doesn't tell VoiceOver how many it found ({heard['text']!r}, hidden: {heard['hidden']}, {page.locator('#cityList .row').count()} rows)")
+    page.locator("#q").fill("")
+    page.goto(base + f"#{rid}")
+    page.wait_for_selector("#list .row")
     # 1.3.1: the title button's label doesn't hide the line under it (which guide, or that it's a saved copy)
     line = page.evaluate("(() => { const d = document.getElementById(pickBtn.getAttribute('aria-describedby') || ''); return d ? d.textContent.trim() : ''; })()")
     if not line:

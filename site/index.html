@@ -79,7 +79,6 @@
   </div>
   <div id="cardLaunch" class="card-launch hide-searching" hidden></div>
   <div id="searchNote" class="search-note" role="status" hidden></div>
-  <p id="resultCount" class="vh" role="status"></p>
   <div id="list" class="list"></div>
   <!-- Folded until it's wanted: opens by itself while searching, or when the Avoid button is chosen -->
   <h2 id="avoidHead" class="vh">Avoid list</h2>
@@ -93,6 +92,8 @@
     <p>Unofficial guide made from each restaurant's published allergen information. Not affiliated with any restaurant.</p>
   </footer>
   </div>
+  <!-- What a search found, said once for VoiceOver. Outside both views, so it's never hidden with one of them -->
+  <p id="resultCount" class="vh" role="status"></p>
   <div id="cityView" class="view" hidden>
     <div id="cityStale" class="stale hide-searching" hidden></div>
     <!-- One line on the first screen; how the tags work and the tips fold out, so the places start near the top -->
