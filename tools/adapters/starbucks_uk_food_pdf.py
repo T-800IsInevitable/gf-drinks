@@ -15,6 +15,7 @@ newest one whose cover says Food.
   * The build stops if the PDF doesn't look like a food guide.
 """
 import re
+from collections import Counter
 from pathlib import Path
 
 import pdfplumber
@@ -58,14 +59,20 @@ def parse_rows(pdf, pdf_path):
         # Section from the breadcrumb: "STARBUCKS | Nutrition & Allergen Guide | Food | <Section>"
         crumb = clean(page.crop((0, 0, page.width, 40)).extract_text() or "")
         if "| Food |" not in crumb:
-            raise SystemExit(f"ERROR: p.{pno}: no 'Food' breadcrumb ({crumb!r}). Layout changed? Menu not updated.")
+            # A table page whose breadcrumb is missing altogether (only the version is printed: p.15 of the Holiday
+            # 2026 guide, one "Hot Box" dish) carries on the section of the table page just before it. Anything else
+            # in that strip, or no page before to carry on from, is a layout this reader doesn't know.
+            if section and table[-2:-1] == [pno - 1] and not re.sub(r"Version:\s*[\d/]+", "", crumb).strip():
+                warnings.append(f"p.{pno}: no section printed at the top of the page; read as more of {section!r}")
+                crumb = f"| Food | {section}"
+            else:
+                raise SystemExit(f"ERROR: p.{pno}: no 'Food' breadcrumb ({crumb!r}). Layout changed? Menu not updated.")
         new = re.sub(r"\s*Version:.*$", "", crumb.split("| Food |")[-1]).strip()
         # "Bakery Menu" -> "Bakery"; "Seasonal Menu" -> "Seasonal food", so it isn't confused with seasonal drinks
         new = re.sub(r"\s+Menu$", "", new)
         new = "Seasonal food" if new == "Seasonal" else new
         if new != section:  # a page with no sub-heading bar continues the previous page's
             section, sub = new, None
-        allergen_x = page.width - 75
         head_bottom = hdr["Product"]["bottom"]
         # The navigation bar at the foot of each table page ends the rows.
         foot = min((r["top"] for r in page.rects if r["width"] > page.width * 0.9 and r["top"] > page.height * 0.75),
@@ -73,8 +80,24 @@ def parse_rows(pdf, pdf_path):
         # Green sub-heading bars ("Bakery") start at the left margin and run under the ingredients.
         bars = [r for r in page.rects if r["x0"] < 30 and r["width"] > page.width * 0.5 and 8 < r["height"] < 30
                 and head_bottom - 2 < r["top"] < foot]
-        bounds = {round(o["top"], 1) for o in page.lines + page.rects
-                  if o["height"] < 2 and o["width"] > 100 and abs(o["x0"] - INGREDIENTS_X) < 6 and head_bottom < o["top"] < foot}
+        # The columns are measured on each page, because an edition can move them (Holiday 2026 starts the
+        # ingredients 16pt further left and runs them 57pt wider than Autumn 2026 did):
+        #  - the rule under each row runs the width of the ingredients column;
+        #  - the Y/N dietary marks start just right of the product names;
+        #  - the allergen words start just right of the last nutrition figure.
+        rules = [o for o in page.lines + page.rects
+                 if o["height"] < 2 and o["width"] > 100 and head_bottom < o["top"] < foot and 100 < o["x0"] < 170]
+        ing_x = Counter(round(o["x0"]) for o in rules).most_common(1)[0][0] if rules else INGREDIENTS_X
+        ing_right = max((o["x1"] for o in rules if abs(o["x0"] - ing_x) < 6), default=523) + 2
+        body = [w for w in words if head_bottom < w["top"] < foot]
+        marks = [w["x0"] for w in body if w["text"] in ("Y", "N") and 60 < w["x0"] < ing_x - 3]
+        name_right = min(marks) - 4 if marks else ing_x - 41
+        figures = [w["x1"] for w in body if w["x0"] > ing_right and re.fullmatch(r"[\d.]+", w["text"])]
+        allergen_x = max(figures) + 2 if figures else page.width - 75
+        if not (60 < name_right < ing_x < ing_right < allergen_x < page.width - 20):
+            raise SystemExit(f"ERROR: p.{pno}: the columns don't line up (names end {name_right:.0f}, ingredients "
+                             f"{ing_x:.0f} to {ing_right:.0f}, allergens from {allergen_x:.0f}). Layout changed? Menu not updated.")
+        bounds = {round(o["top"], 1) for o in rules if abs(o["x0"] - ing_x) < 6}
         for b in bars:
             bounds |= {round(b["top"], 1), round(b["bottom"], 1)}
         bounds = sorted(bounds | {round(foot, 1)})
@@ -88,8 +111,8 @@ def parse_rows(pdf, pdf_path):
             if any(abs(b["top"] - top) < 2 and abs(b["bottom"] - bot) < 2 for b in bars):
                 sub = re.sub(r"\s*-{3,}.*$", "", txt(20, page.width / 2, tol=4)) or sub
                 continue
-            name = clean(txt(20, 95, tol=4).replace("�", "® "))  # the guide's font has no ® for some names
-            ingredients = txt(INGREDIENTS_X, 525)
+            name = clean(txt(20, name_right, tol=4).replace("�", "® "))  # the guide's font has no ® for some names
+            ingredients = txt(ing_x, ing_right)
             if not name and not ingredients:
                 continue
             if not name or not ingredients:
