@@ -44,6 +44,7 @@ body {
   font: 1rem/1.45 var(--body);
   padding-top: var(--top-h, 250px); /* room for the floating header at its full height (app.js measures it) */
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  overflow-wrap: break-word; /* very large text: a word too long for its line breaks, rather than pushing a sheet sideways */
 }
 button { font: inherit; color: inherit; }
 [hidden] { display: none !important; }
@@ -284,6 +285,7 @@ body.searching .hide-searching { display: none !important; }
 .city-intro { gap: 2px; padding-bottom: 2px; }
 .city-intro > p { margin-bottom: 6px; }
 .more summary { min-height: 44px; display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600; color: var(--accent); list-style: none; }
+.more summary { overflow-wrap: anywhere; } /* a one-word title at very large text breaks rather than widening the sheet */
 .more summary::-webkit-details-marker { display: none; }
 .more summary::after { content: "\203A"; font-size: 1.2em; line-height: 1; transition: transform 0.15s; }
 .more[open] summary::after { transform: rotate(90deg); }
