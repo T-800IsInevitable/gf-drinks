@@ -194,42 +194,60 @@ AVOID_SHARE = 0.1  # and so is one whose Avoid rows are this share of it, howeve
 
 
 def avoid_parts(menu):
-    """The menu's rows as [avoid, all] counts: for the whole menu ("all"), and for each guide of a merged one (a
-    row's "src"), so one guide's reader failing isn't hidden by the other guide's rows."""
+    """The menu's rows by part: {part: (names on the Avoid list, names on the list)}. The parts are the whole menu
+    ("all") and each guide of a merged one (a row's "src"), so one guide's reader failing isn't hidden by the other
+    guide's rows. Names are compared without case or spacing, whatever section they sit in."""
     parts = {}
-    for listed, rows in (("avoid", menu.get("avoid") or []), ("items", menu.get("items") or [])):
+    for listed, rows in ((0, menu.get("avoid") or []), (1, menu.get("items") or [])):
         for r in rows:
             for part in {"all"} | ({f"guide {r['src'] + 1}"} if isinstance(r.get("src"), int) else set()):
-                counts = parts.setdefault(part, [0, 0])
-                counts[0] += listed == "avoid"
-                counts[1] += 1
+                parts.setdefault(part, (set(), set()))[listed].add(" ".join(str(r.get("name") or "").lower().split()))
     return parts
 
 
 def avoid_drop(prev, full, folder):
-    """A reader that stops seeing a guide's gluten marks (a new font, a new tick) fails open: everything turns green.
-    So a new guide whose share of Avoid rows falls below two thirds of the live menu's stops the build, unless
-    restaurant.json's "avoidDropOk" names this very guide (the owner has checked the drop against it). A merged
-    restaurant is judged guide by guide as well as whole. A live menu is judged when it has AVOID_FLOOR Avoid rows or
-    more, however small their share (Pho's is 8%), or when they are AVOID_SHARE of it, however few."""
+    """A reader that stops seeing a guide's gluten marks (a new font, a new tick) fails open: rows that were on the
+    Avoid list turn up on the list. A menu that changes with the season looks different: its Avoid rows leave the
+    menu altogether. So the build stops when, in the whole menu or in one guide of a merged one,
+      - more than a third of the live Avoid rows still on the menu are now listed with no gluten ingredients, or
+      - more than two thirds of the live Avoid rows have left the menu and the Avoid share fell by a third as well
+        (a guide that renamed everything and lost its marks at once),
+    unless restaurant.json's "avoidDropOk" names this very guide (the owner has checked the change against it). A part
+    is judged when it has AVOID_FLOOR live Avoid rows or more, or when they are AVOID_SHARE of it, however few; a
+    single row moving is a recipe change unless the part is one of those."""
     if not prev:
         return
     was, now = avoid_parts(prev), avoid_parts(full)
-    fell = [(part, a0 / n0, now[part][0] / now[part][1]) for part, (a0, n0) in sorted(was.items())
-            if (a0 >= AVOID_FLOOR or a0 / n0 >= AVOID_SHARE) and now.get(part, [0, 0])[1]
-            and now[part][0] / now[part][1] < a0 / n0 * 2 / 3]
-    if not fell:
+    found = None
+    for part, (avoid0, items0) in sorted(was.items()):
+        if part not in now or not avoid0:
+            continue
+        avoid1, items1 = now[part]
+        share0 = len(avoid0) / (len(avoid0) + len(items0))
+        share1 = len(avoid1) / max(1, len(avoid1) + len(items1))
+        judged = len(avoid0) >= AVOID_FLOOR or share0 >= AVOID_SHARE
+        moved = sorted(avoid0 & items1 - avoid1)
+        gone = avoid0 - avoid1 - items1
+        still = len(avoid0) - len(gone)
+        where = "" if part == "all" else f" ({part} of {len(was) - 1})"
+        if moved and len(moved) > still / 3 and (len(moved) >= 2 or judged):
+            found = (f"{len(moved)} of the {still} Avoid rows{where} still on the menu are now listed with no gluten ingredients "
+                     f"({', '.join(moved[:4])}{'...' if len(moved) > 4 else ''})")
+            break
+        if judged and len(gone) > len(avoid0) * 2 / 3 and share1 < share0 * 2 / 3:
+            found = (f"{len(gone)} of the {len(avoid0)} Avoid rows{where} have left the menu and the Avoid list fell from "
+                     f"{share0:.0%} to {share1:.0%} of it")
+            break
+    if not found:
         return
-    part, before, after = fell[0]
-    where = "" if part == "all" else f" ({part} of {len(was) - 1})"
     config = json.loads((folder / "restaurant.json").read_text(encoding="utf-8"))
     if config.get("avoidDropOk") and config["avoidDropOk"] == full.get("source"):
-        print(f"  Avoid share{where} {before:.0%} -> {after:.0%}, accepted for this guide (avoidDropOk)")
+        print(f"  {found}: accepted for this guide (avoidDropOk)")
         return
-    raise SystemExit(f"ERROR: {folder.name}: the Avoid list{where} fell from {before:.0%} to {after:.0%} of the menu. A reader "
-                     "that misses the guide's gluten marks looks like this. Check the guide; if the drop is real, set "
-                     f"\"avoidDropOk\" in restaurant.json to {full.get('source')!r}. On a guide-watch/ branch that goes in a "
-                     "pull request of your own, merged first: the guard lets that branch change only the guides.")
+    raise SystemExit(f"ERROR: {folder.name}: {found}. A reader that misses the guide's gluten marks looks like this. Check the "
+                     f"guide; if the change is real, set \"avoidDropOk\" in restaurant.json to {full.get('source')!r}. On a "
+                     "guide-watch/ branch that goes in a pull request of your own, merged first: the guard lets that branch "
+                     "change only the guides.")
 
 
 def main():
