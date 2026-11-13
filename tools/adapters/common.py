@@ -14,11 +14,12 @@ from pathlib import Path
 import pdfplumber
 
 # each cereal with whatever is run on to it (OATMILK, RYEFLOUR, BARLEYMALT), plus wheat by its other names; malt only
-# as malt or malted, so maltodextrin and maltitol stay out, as before
-CEREALS = "wheat|rye|barley|oat|spelt|kamut|khorasan|durum|semolina|couscous|bulgur|bulghur|triticale|einkorn|emmer|farro|freekeh|seitan"
-CEREAL_WORDS = rf"(?:{CEREALS})\w*|malt(?:ed)?|gluten(?![\s-]*free)"
+# in the forms that mean the grain (malt, malts, malted, malty, malting, Maltesers), so maltodextrin, maltitol and
+# maltose stay out, as before
+CEREALS = "wheat|rye|barley|oat|spelt|kamut|khorasan|durum|semolina|couscous|bulgur|bulghur|bulgar|triticale|einkorn|emmer|farro|freekeh|seitan"
+CEREAL_WORDS = rf"(?:{CEREALS})\w*|malt(?:s|ed|y|ing|esers?)?|gluten(?![\s-]*free)"
 CEREAL = re.compile(rf"\b({CEREAL_WORDS})\b", re.I)
-CEREAL_CAPS = re.compile(rf"\b((?:{CEREALS.upper()})\w*|MALT(?:ED)?|GLUTEN(?![\s-]*FREE))\b")
+CEREAL_CAPS = re.compile(rf"\b((?:{CEREALS.upper()})\w*|MALT(?:S|ED|Y|ING|ESERS?)?|GLUTEN(?![\s-]*FREE))\b")
 MONTHS = {name: n for n, name in enumerate(calendar.month_name) if name}  # "January" -> 1
 INVISIBLE = re.compile("[​-‍﻿]")  # zero-width characters some guides carry
 
@@ -34,7 +35,7 @@ def cereal_code(word):
     # the codes stay the ones the app knows: wheat's other names are WHEAT, khorasan is KAMUT
     for head, code in (("OAT", "OAT"), ("WHEAT", "WHEAT"), ("MALT", "MALT"), ("RYE", "RYE"), ("BARLEY", "BARLEY"),
                        ("SPELT", "SPELT"), ("KAMUT", "KAMUT"), ("KHORASAN", "KAMUT"), ("GLUTEN", "GLUTEN"),
-                       *((h, "WHEAT") for h in ("DURUM", "SEMOLINA", "COUSCOUS", "BULGUR", "BULGHUR", "TRITICALE",
+                       *((h, "WHEAT") for h in ("DURUM", "SEMOLINA", "COUSCOUS", "BULGUR", "BULGHUR", "BULGAR", "TRITICALE",
                                                 "EINKORN", "EMMER", "FARRO", "FREEKEH", "SEITAN"))):
         if w.startswith(head):
             return code

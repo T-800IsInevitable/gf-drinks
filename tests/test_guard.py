@@ -52,6 +52,39 @@ class Scope(unittest.TestCase):
     def test_the_owners_branches_have_no_limit(self):
         self.assertEqual(guard.scope("safeguards", ["tools/check.py", ".github/workflows/guard.yml"]), [])
 
+    def test_a_routine_or_workflow_commit_must_be_on_its_own_kind_of_branch(self):
+        # the name is chosen by whoever opens the pull request, so a free-looking name doesn't free a routine's work
+        for ref in ("fix/anything", "safeguards", "scan-setup-note"):
+            self.assertTrue(guard.scope(ref, ["tools/check.py", ".github/workflows/guard.yml"], machine=True), ref)
+            self.assertTrue(guard.scope(ref, ["restaurants/x/menu.csv"], machine=True), ref)
+        # on its own branch it keeps that branch's limits, as before
+        self.assertEqual(guard.scope("scan/x-2026-10-26", ["restaurants/x/menu.csv"], machine=True), [])
+        self.assertTrue(guard.scope("scan/x-2026-10-26", ["tools/check.py"], machine=True))
+        self.assertEqual(guard.scope("guide-watch/x-abcdef0123", ["restaurants/x/guides/new.pdf"], machine=True), [])
+
+    def test_who_made_a_commit(self):
+        owner = {"commit": {"author": {"email": "someone@example.com"}, "committer": {"email": "someone@example.com"}}, "author": None, "committer": None}
+        routine = {"commit": {"author": {"email": "noreply@anthropic.com"}, "committer": {"email": "noreply@anthropic.com"}}, "author": {"login": "claude"}}
+        workflow = {"commit": {"author": {"email": "41898282+github-actions[bot]@users.noreply.github.com"}}, "author": {"login": "github-actions[bot]"}}
+        dependabot = {"commit": {"author": {"email": "49699333+dependabot[bot]@users.noreply.github.com"}, "committer": {"email": "noreply@github.com"}},
+                      "author": {"login": "dependabot[bot]"}, "committer": {"login": "web-flow"}}
+        self.assertFalse(guard.machine_made([owner, dependabot]))
+        self.assertTrue(guard.machine_made([owner, routine]))
+        self.assertTrue(guard.machine_made([workflow]))
+        self.assertTrue(guard.machine_made([{"commit": {"author": {"email": "NoReply@Anthropic.com"}}}]))
+
+    def test_the_guide_watch_refusal_says_where_the_fix_goes(self):
+        said = guard.scope("guide-watch/pret-uk-abcdef0123", ["restaurants/pret-uk/restaurant.json"])
+        self.assertIn("pull request of your own", said[0])
+
+    def test_too_many_commits_to_read_is_refused(self):
+        pages = iter([[{}] * 100, [{}] * 100, [{}] * 50])
+        with mock.patch.object(guard.gh, "request", side_effect=lambda *a: next(pages)):
+            with self.assertRaises(SystemExit):
+                guard.commits(7)
+        with mock.patch.object(guard.gh, "request", return_value=[{}] * 3):
+            self.assertEqual(len(guard.commits(7)), 3)
+
     def test_a_rename_counts_both_names(self):
         answer = [{"filename": "restaurants/x/menu.csv", "previous_filename": "tools/check.py"}]
         with mock.patch.object(guard.gh, "request", return_value=answer):

@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 41;
+  const APP_VERSION = 42;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -821,7 +821,7 @@
     $("avoidWrap").hidden = $("avoidHead").hidden = !avoidHtml;
     $("avoid").innerHTML = avoidHtml;
     // folded until wanted: it opens by itself while searching or when the Avoid button is chosen, and a tap on it overrides that
-    $("avoidTitle").textContent = "Avoid: contains gluten, or the restaurant says it isn't suitable for coeliacs" + (glutenHits ? " (" + glutenHits + ")" : "");
+    $("avoidTitle").textContent = "Avoid: contains or may contain gluten, or not suitable for coeliacs" + (glutenHits ? " (" + glutenHits + ")" : "");
     $("avoidWrap").open = avoidUser !== null ? avoidUser : !!($("q").value.trim() || pick.gluten);
     return shown;
   }
@@ -1323,7 +1323,7 @@
     if (cityFilter === "open") { nearSort = false; cityFilter = "all"; renderCity(); return; }
     cityFilter = "open";
     if (nearSort) { renderCity(); window.scrollTo({ top: 0 }); return; }
-    if (!navigator.geolocation) { renderCity(); toast("This phone can't share its location with the app. Check Location Services for Safari in Settings."); return; }
+    if (!navigator.geolocation) { renderCity(); toast("This browser can't share a location with the app."); return; }
     navigator.geolocation.getCurrentPosition((pos) => {
       here = { lat: pos.coords.latitude, lon: pos.coords.longitude };
       nearSort = true;
@@ -1452,7 +1452,7 @@
   }
   async function nearMe() {
     if (!data) return;
-    if (!navigator.geolocation) { toast("This phone can't share its location with the app. Check Location Services for Safari in Settings."); return; }
+    if (!navigator.geolocation) { toast("This browser can't share a location with the app."); return; }
     $("nearBody").innerHTML = '<p class="empty">Finding your location…</p>';
     openDialog($("near"));
     const saved = savedNear();
@@ -1557,7 +1557,7 @@
     if (!data) return;
     openDialog($("mapPage"));
     live.follow = true;
-    setMapStatus(navigator.geolocation ? "Finding where you are…" : "This phone can't share its location with the app. Check Location Services for Safari in Settings.");
+    setMapStatus(navigator.geolocation ? "Finding where you are…" : "This browser can't share a location with the app.");
     $("mapOffline").hidden = !offlineNow;
     drawLiveMap();
   }
@@ -1801,6 +1801,12 @@
     if (data) renderCardLaunch();
     if (city()) renderCity();
   }
+  // Help names the cities from the list itself, so a city added later is never missing from it
+  function helpCities() {
+    const named = (s) => { const n = citiesIn(s).map((id) => cities[id].name); return n.length ? " (" + (n.length > 1 ? n.slice(0, -1).join(", ") + " and " : "") + n[n.length - 1] + ")" : ""; };
+    $("helpUk").textContent = named(UKC);
+    $("helpAbroad").textContent = named(INTL);
+  }
   async function loadCities() {
     try {
       const res = await fetch("cities.json", { cache: "no-cache" });
@@ -1811,6 +1817,7 @@
       region = UK;
     }
     render();
+    helpCities();
     if (data && $("picker").open) renderPicker(); // the first-visit chooser may have opened before the cities arrived
     drawPlacePins(); // the map page may have opened before them too
     importReady.cities = true;

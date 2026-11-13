@@ -13,6 +13,7 @@ Detail that only one task needs is in the README's "Developer reference" section
 - Gluten free oats still count as oats.
 - Five Guys "1" (not suitable due to preparation) in the gluten column = Avoid, with the reason shown.
 - Anything named with oat (oat drink) is on the Avoid list whatever a guide's ticks say.
+  - The one exception: a drink named for the oat drink it normally comes with, which the guide lists with other milks (Starbucks' Oat Shaken Espresso). It is a Swap (amber, never green as it comes), with oat as its `standard` and on its `not` list. `check.py` allows only that.
 - When two sources in a guide disagree (for example allergen column vs ingredients), treat the item as containing gluten and record a warning.
 - Readers for guides with a second source cross-check them and treat a disagreement as gluten (Caffè Nero, Nando's, PizzaExpress). See "Cross-checks between a guide's sources".
 

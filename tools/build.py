@@ -189,27 +189,47 @@ def build_one(folder):
     return meta, data
 
 
-def avoid_share(menu):
-    rows = len(menu.get("items") or []) + len(menu.get("avoid") or [])
-    return len(menu.get("avoid") or []) / rows if rows else 0.0
+AVOID_FLOOR = 5    # a live menu, or one guide of it, with this many Avoid rows is judged, however small their share
+AVOID_SHARE = 0.1  # and so is one whose Avoid rows are this share of it, however few they are
+
+
+def avoid_parts(menu):
+    """The menu's rows as [avoid, all] counts: for the whole menu ("all"), and for each guide of a merged one (a
+    row's "src"), so one guide's reader failing isn't hidden by the other guide's rows."""
+    parts = {}
+    for listed, rows in (("avoid", menu.get("avoid") or []), ("items", menu.get("items") or [])):
+        for r in rows:
+            for part in {"all"} | ({f"guide {r['src'] + 1}"} if isinstance(r.get("src"), int) else set()):
+                counts = parts.setdefault(part, [0, 0])
+                counts[0] += listed == "avoid"
+                counts[1] += 1
+    return parts
 
 
 def avoid_drop(prev, full, folder):
     """A reader that stops seeing a guide's gluten marks (a new font, a new tick) fails open: everything turns green.
     So a new guide whose share of Avoid rows falls below two thirds of the live menu's stops the build, unless
-    restaurant.json's "avoidDropOk" names this very guide (the owner has checked the drop against it)."""
-    if not prev or avoid_share(prev) < 0.1:
+    restaurant.json's "avoidDropOk" names this very guide (the owner has checked the drop against it). A merged
+    restaurant is judged guide by guide as well as whole. A live menu is judged when it has AVOID_FLOOR Avoid rows or
+    more, however small their share (Pho's is 8%), or when they are AVOID_SHARE of it, however few."""
+    if not prev:
         return
-    before, after = avoid_share(prev), avoid_share(full)
-    if after >= before * 2 / 3:
+    was, now = avoid_parts(prev), avoid_parts(full)
+    fell = [(part, a0 / n0, now[part][0] / now[part][1]) for part, (a0, n0) in sorted(was.items())
+            if (a0 >= AVOID_FLOOR or a0 / n0 >= AVOID_SHARE) and now.get(part, [0, 0])[1]
+            and now[part][0] / now[part][1] < a0 / n0 * 2 / 3]
+    if not fell:
         return
+    part, before, after = fell[0]
+    where = "" if part == "all" else f" ({part} of {len(was) - 1})"
     config = json.loads((folder / "restaurant.json").read_text(encoding="utf-8"))
     if config.get("avoidDropOk") and config["avoidDropOk"] == full.get("source"):
-        print(f"  Avoid share {before:.0%} -> {after:.0%}, accepted for this guide (avoidDropOk)")
+        print(f"  Avoid share{where} {before:.0%} -> {after:.0%}, accepted for this guide (avoidDropOk)")
         return
-    raise SystemExit(f"ERROR: {folder.name}: the Avoid list fell from {before:.0%} to {after:.0%} of the menu. A reader that "
-                     "misses the guide's gluten marks looks like this. Check the guide; if the drop is real, set "
-                     f"\"avoidDropOk\" in restaurant.json to {full.get('source')!r}.")
+    raise SystemExit(f"ERROR: {folder.name}: the Avoid list{where} fell from {before:.0%} to {after:.0%} of the menu. A reader "
+                     "that misses the guide's gluten marks looks like this. Check the guide; if the drop is real, set "
+                     f"\"avoidDropOk\" in restaurant.json to {full.get('source')!r}. On a guide-watch/ branch that goes in a "
+                     "pull request of your own, merged first: the guard lets that branch change only the guides.")
 
 
 def main():

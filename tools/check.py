@@ -67,9 +67,12 @@ def check_restaurant(r, err):
             err(f"{where}: 'modify' without a note")
         # the last line of defence, whatever the reader: an item on the list, or an option it says is fine, that names a
         # gluten cereal (oats included, CLAUDE.md) is wrong, so a hand-kept menu.csv or a reader's slip can't publish one.
-        # The one exception is a swap whose name carries the very option to swap out (an Oat Shaken Espresso, asked for
-        # with another milk): that cereal must be in its "not" list.
-        swapped = {cereal_code(m) for x in (i.get("not") or []) for m in CEREAL.findall(str(x))} if i.get("order") == "swap" else set()
+        # The one exception (CLAUDE.md) is a drink named for the oat drink it normally comes with, which the guide lists
+        # with other milks (an Oat Shaken Espresso, asked for with another milk): a swap, with oat as its standard
+        # option and on its "not" list. No other cereal has one, because no other cereal is an option to swap out.
+        nots = {cereal_code(m) for x in (i.get("not") or []) for m in CEREAL.findall(str(x))}
+        standard = {cereal_code(m) for m in CEREAL.findall(str(i.get("standard") or ""))}
+        swapped = {"OAT"} if i.get("order") == "swap" and "OAT" in nots and "OAT" in standard else set()
         bad = sorted({cereal_code(m) for m in CEREAL.findall(i.get("name") or "")} - swapped)
         bad += sorted({cereal_code(m) for x in (i.get("ok") or []) for m in CEREAL.findall(str(x))} - set(bad))
         if bad:
