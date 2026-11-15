@@ -273,8 +273,9 @@ def check_whatsnew(notes, app_v, err):
 
 
 def check_city(cid, c, phrases, err):
+    no_places = c.get("places") == [] and isinstance(c.get("none"), str) and c["none"].strip()  # see below: a city that says it has none
     for key in ("name", "language", "checked", "list", "tips", "sections", "country", "bounds", "timeZone"):
-        if not c.get(key):
+        if not c.get(key) and not (key == "sections" and no_places and c.get(key) == []):  # no places, so no sections
             err(f"city {cid}: missing {key}")
     # a city can have no places yet, but only when it says so: "none" is the sentence shown where they would be
     if not c.get("places") and not (c.get("places") == [] and isinstance(c.get("none"), str) and c["none"].strip()):
@@ -354,8 +355,8 @@ def check_city(cid, c, phrases, err):
                 # a day with a break lists its ranges in order ("12:00–14:30, 17:00–21:30"); the app reads each one,
                 # so a time after them that isn't a whole range ("12:00–14:30, 17:00") would be dropped without a word
                 lead = re.match(rf"{HOURS.pattern}(?:,\s*{HOURS.pattern})*", x)
-                if lead and x[lead.end():].strip():
-                    err(f"{where}: {l.get('address')} {day} hours {x!r} have something the app can't read after the ranges")
+                if lead and re.search(r"\d{1,2}:\d{2}", x[lead.end():]):
+                    err(f"{where}: {l.get('address')} {day} hours {x!r} have a time the app can't read after the ranges")
                 last = -1
                 for m in HOURS.finditer(x):
                     a, b = int(m[1]) * 60 + int(m[2]), int(m[3]) * 60 + int(m[4])

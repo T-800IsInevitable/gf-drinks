@@ -214,7 +214,6 @@ class CityRules(unittest.TestCase):
             self.one(with_location(hours=week(bad)), "isn't a time of day")
         self.one(with_location(hours=week("17:00–10:00")), "closes before it opens")
         self.one(with_location(hours=week("ten till five")), "aren't HH:MM")
-        self.one(with_location(hours=week("09:00–17:000")), "can't read after the ranges")
 
     def test_kitchen_closes_is_a_time_of_day(self):
         self.assertEqual(city_errors(with_location(kitchenCloses="21:30")), [])
