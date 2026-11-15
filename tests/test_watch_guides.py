@@ -50,9 +50,10 @@ class Site(unittest.TestCase):
         self.web.mkdir()
         self.httpd, self.url = serve(functools.partial(Quiet, directory=str(self.web)))
         self.addCleanup(lambda: (self.httpd.shutdown(), self.httpd.server_close(), shutil.rmtree(self.tmp, ignore_errors=True)))
-        patcher = mock.patch.object(w, "RETRY_AFTER", 0)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        # the website served here is plain http, which the watch itself refuses (HttpsOnly below)
+        for patcher in (mock.patch.object(w, "RETRY_AFTER", 0), mock.patch.object(w, "SCHEMES", ("http", "https"))):
+            patcher.start()
+            self.addCleanup(patcher.stop)
 
     def restaurant(self, rid, guides, link, reader=None, base=None):
         folder = (base or self.tmp / "restaurants") / rid
@@ -112,6 +113,64 @@ class FindingLinks(unittest.TestCase):
             for reader in w.readers_of(config):  # the watch asks each reader which guide it would use
                 if reader != "manual_csv":
                     self.assertTrue(hasattr(w.importlib.import_module(f"adapters.{reader}"), "newest_pdf"), reader)
+
+
+class HttpsOnly(unittest.TestCase):
+    PAGE = ('<a href="http://cdn.example.com/allergen-guide.pdf">Guide</a>'
+            '<script>"https:\\/\\/cdn.example.com\\/allergen-guide-2.pdf" "http:\\/\\/cdn.example.com\\/allergen-guide-3.pdf"</script>')
+
+    def test_a_guide_linked_over_http_is_not_returned(self):
+        refused = []
+        got = w.guide_links(self.PAGE, "https://www.example.com/allergens", "allergen", refused)
+        self.assertEqual(got, ["https://cdn.example.com/allergen-guide-2.pdf"])
+        self.assertEqual(refused, ["http://cdn.example.com/allergen-guide.pdf", "http://cdn.example.com/allergen-guide-3.pdf"])
+        self.assertEqual(w.guide_links(self.PAGE, "https://www.example.com/allergens", "allergen"), got)
+        # a page that is itself http gives its relative links that scheme too
+        self.assertEqual(w.guide_links('<a href="/allergen.pdf">x</a>', "http://www.example.com/a", "allergen"), [])
+
+    def folder(self):
+        folder = Path(tempfile.mkdtemp()) / "test-cafe"
+        self.addCleanup(shutil.rmtree, folder.parent, True)
+        (folder / "guides").mkdir(parents=True)
+        (folder / "restaurant.json").write_text(json.dumps({"name": "Test Cafe", "reader": "manual_csv", "watch": {
+            "page": "https://www.example.com/allergens", "link": "allergen"}}), encoding="utf-8")
+        return folder
+
+    def test_it_is_reported_and_never_downloaded(self):
+        asked = []
+
+        def get(url, limit, retry=True):
+            asked.append(url)
+            if url.endswith("/allergens"):
+                return self.PAGE.split("<script>")[0].encode(), url
+            raise AssertionError(f"downloaded {url}")
+        with mock.patch.object(w, "get", get):
+            r = w.check(self.folder())
+        self.assertEqual(asked, ["https://www.example.com/allergens"])
+        self.assertEqual(r["new"], [])
+        self.assertEqual(len(r["problems"]), 1)
+        self.assertIn("http://cdn.example.com/allergen-guide.pdf is linked over http", r["problems"][0])
+        self.assertIn("- `http://cdn.example.com/allergen-guide.pdf is linked over http", w.problem_issue(r)[1])
+
+    def test_the_https_guides_beside_it_are_still_checked(self):
+        def get(url, limit, retry=True):
+            return (self.PAGE.encode(), url) if url.endswith("/allergens") else (b"%PDF-1.7 new", url)
+        with mock.patch.object(w, "get", get):
+            r = w.check(self.folder())
+        self.assertEqual([u["url"] for u in r["new"]], ["https://cdn.example.com/allergen-guide-2.pdf"])
+        self.assertEqual(len(r["problems"]), 2)
+
+    def test_an_answer_that_is_not_https_is_refused(self):
+        # asked over http, or sent there by a redirect: the address the answer came from is what counts
+        web = Path(tempfile.mkdtemp())
+        (web / "guide.pdf").write_bytes(b"%PDF-1.7")
+        httpd, url = serve(functools.partial(Quiet, directory=str(web)))
+        self.addCleanup(lambda: (httpd.shutdown(), httpd.server_close(), shutil.rmtree(web, ignore_errors=True)))
+        with mock.patch.object(w, "RETRY_AFTER", 0):
+            with self.assertRaises(ValueError):
+                w.get(f"{url}/guide.pdf", w.PDF_LIMIT)
+            with mock.patch.object(w, "SCHEMES", ("http", "https")):
+                self.assertEqual(w.get(f"{url}/guide.pdf", w.PDF_LIMIT)[0], b"%PDF-1.7")
 
 
 class Checking(Site):

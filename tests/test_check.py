@@ -75,7 +75,7 @@ class Urls(unittest.TestCase):
         self.assertIn("x: officialUrl 'javascript:alert(1)' isn't an https address", errors)
 
     def test_a_city_with_a_bad_list_address_fails_the_check(self):
-        c = {"name": "Testville", "language": "de", "checked": "2026-10-01", "country": "Testland", "sections": ["Cafés"],
+        c = {"name": "Testville", "language": "de", "checked": "2026-10-01", "country": "Testland", "timeZone": "Europe/Berlin", "sections": ["Cafés"],
              "bounds": {"lat": [0, 1], "lon": [0, 1]}, "tips": ["x"], "list": {"url": "http://example.de", "by": "someone"},
              "places": [{"name": "A", "section": "Cafés", "claim": "place-all", "says": {"lang": "en", "text": "all gf"}, "status": "confirmed",
                          "url": "https://a.example", "locations": [{"address": "1 Street", "area": "Mitte", "lat": 0.5, "lon": 0.5}]}]}

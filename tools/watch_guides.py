@@ -44,11 +44,13 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import changes  # noqa: E402
 import gh  # noqa: E402
+from gh import link, quoted  # noqa: E402
 
 UA = "Mozilla/5.0 (compatible; gf-drinks guide watch; +https://github.com/T-800IsInevitable/gf-drinks)"
 PAGE_LIMIT = 5_000_000
 PDF_LIMIT = 60_000_000
 RETRY_AFTER = 30
+SCHEMES = ("https",)  # a guide is downloaded over https only (the tests add http for the website they serve themselves)
 HREF = re.compile(r"""href\s*=\s*["']([^"']+)["']""", re.I)
 BARE_PDF = re.compile(r"""https?://[^\s"'<>\\]+?\.pdf\b""", re.I)
 WORKFLOW = "_Opened automatically by `.github/workflows/guide-watch.yml` (`tools/watch_guides.py`)._"
@@ -58,6 +60,8 @@ def get(url, limit, retry=True):
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "*/*"})
     try:
         with urllib.request.urlopen(req, timeout=60) as res:
+            if urllib.parse.urlsplit(res.geturl()).scheme not in SCHEMES:  # the address it ended at, redirects followed
+                raise ValueError("not an https address")
             body = res.read(limit + 1)
             if len(body) > limit:
                 raise ValueError(f"larger than {limit // 1_000_000} MB")
@@ -80,9 +84,10 @@ def why(e):
     return str(e) or e.__class__.__name__
 
 
-def guide_links(page_html, page_url, pattern):
+def guide_links(page_html, page_url, pattern, refused=None):
     """Every PDF the page links whose (decoded) address matches the pattern, in page order. Also PDF addresses written
-    anywhere in the page, for sites that build their links in JavaScript (PizzaExpress)."""
+    anywhere in the page, for sites that build their links in JavaScript (PizzaExpress). Only https ones (SCHEMES):
+    a matching link over plain http is left out, and added to the refused list when one is given."""
     out, seen = [], set()
     for h in HREF.findall(page_html) + BARE_PDF.findall(page_html.replace("\\/", "/")):
         url = urllib.parse.urljoin(page_url, html.unescape(h).strip())
@@ -92,19 +97,11 @@ def guide_links(page_html, page_url, pattern):
         if parts.scheme in ("http", "https") and parts.path.lower().endswith(".pdf") and re.search(pattern, decoded, re.I):
             if bare not in seen:
                 seen.add(bare)
-                out.append(url)
+                if parts.scheme in SCHEMES:
+                    out.append(url)
+                elif refused is not None:
+                    refused.append(url)
     return out
-
-
-def quoted(text):
-    """Text from another site (a reader's message, a dish's name, build output) as it goes into a pull request or an
-    issue: no backticks, so it can't end a code span or a code fence and turn into markdown, links or instructions."""
-    return str(text).replace("`", "'")
-
-
-def link(url):
-    """An address from another site as a plain autolink (<https://…>): nothing in it can become markdown."""
-    return "<" + re.sub(r"[\s<>`]", "", str(url)) + ">"
 
 
 def file_name(url):
@@ -159,7 +156,11 @@ def check(folder):
     except Exception as e:
         result["problems"].append(f"Couldn't open {watch['page']} ({why(e)}).")
         return result
-    links = guide_links(body.decode("utf-8", "replace"), page_url, watch["link"])
+    refused = []
+    links = guide_links(body.decode("utf-8", "replace"), page_url, watch["link"], refused)
+    result["problems"] += [f"{url} is linked over http, not https, so it wasn't downloaded. Fetch it by hand." for url in refused]
+    if not links and refused:
+        return result
     if not links:
         result["problems"].append(f"No link matching `{watch['link']}` on {watch['page']}. The page may have changed.")
         return result
