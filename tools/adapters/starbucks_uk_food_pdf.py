@@ -21,8 +21,8 @@ from pathlib import Path
 import pdfplumber
 
 from . import notices
-from .common import cereal_code, newest_by, result
-from .starbucks_uk_pdf import GLUTEN, clean, decided, is_food_guide
+from .common import newest_by, result
+from .starbucks_uk_pdf import clean, is_food_guide, read_gluten
 
 MIN_ROWS = 60  # a real guide has well over a hundred products
 INGREDIENTS_X = 136
@@ -38,7 +38,7 @@ def guide_info(pdf):
         vdate = f"{y:04d}-{m:02d}-{d:02d}"
     title = re.search(r"\b(Spring|Summer|Autumn|Winter|Holiday|Festive)\b[^\n]*\bFood\b", text)
     months = r"(January|February|March|April|May|June|July|August|September|October|November|December)"
-    span = re.search(months + r"\s*[-–]\s*" + months + r"\s+(\d{4})", text)
+    span = re.search(months + r"(?:\s+\d{4})?\s*[-–]\s*" + months + r"\s+(\d{4})", text)
     return {
         "title": clean(title.group(0)) if title else None,
         "runs": clean(span.group(0)).replace(" - ", " to ").replace(" – ", " to ") if span else None,
@@ -124,15 +124,7 @@ def parse_rows(pdf, pdf_path):
         raise SystemExit(f"ERROR: {Path(pdf_path).name} doesn't look like a Starbucks food guide "
                          f"({len(table)} table pages, {len(rows)} rows). Menu not updated.")
     for r in rows:
-        a = set(GLUTEN.findall(r["allergens"]))
-        i = set(GLUTEN.findall(r["ingredients"]))
-        r["gluten"] = sorted({cereal_code(g) for g in a | i})
-        if bool(a) != bool(i):
-            warnings.append(f"food p.{r['page']} {r['name']}: allergen column {sorted(a) or 'none'} vs "
-                            f"ingredients {sorted(i) or 'none'}; treated as containing gluten")
-        if not r["allergens"]:
-            warnings.append(f"food p.{r['page']} {r['name']}: allergen column empty; classified from ingredients")
-        r["decided"] = decided(r["allergens"], a, i)
+        read_gluten(r, warnings, f"food p.{r['page']} {r['name']}")
     return info, rows, warnings, table
 
 
@@ -156,8 +148,8 @@ def build(folder, config):
             prev = next(x for x in ok + avoid if (x["section"], x["name"]) == key)
             if r["gluten"] and prev in ok:
                 ok.remove(prev)
+                prev.pop("order", None)  # before the copy: an Avoid row carries no way to order it
                 avoid.append({**prev, "gluten": r["gluten"]})
-                prev.pop("order", None)
             continue
         seen.add(key)
         item = {"name": r["name"], "section": r["section"], "sub": r["sub"], "pages": [r["page"]]}

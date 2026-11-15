@@ -65,19 +65,19 @@ def issue_body(r, end, days):
         return (f"The **{r['name']}** list in the app was checked on {c['checked']}. It's re-checked every month, and after "
                 f"{end} the app warns that it may be out of date.\n\n"
                 "The scan follows the \"Re-checking a city\" section of `tools/SCAN_INSTRUCTIONS.md`: it goes through "
-                f"{c['list']['url']} and each place's own website, and opens a pull request for you to check, with any place "
+                f"{gh.link(c['list']['url'])} and each place's own website, and opens a pull request for you to check, with any place "
                 "that has closed or changed what it says, and the new check date. This issue closes once that pull request is open.\n\n"
                 "_Opened automatically by `.github/workflows/guide-reminders.yml`._")
     folder = f"restaurants/{r['id']}/"
     when = f"ended on {end}" if days < 0 else f"ends on {end} ({days} days)"
-    how = (f"Download the newest allergen guide from {r.get('officialUrl') or 'their website'} and upload the PDF to "
+    how = (f"Download the newest allergen guide from {gh.link(r['officialUrl']) if r.get('officialUrl') else 'their website'} and upload the PDF to "
            f"`{folder}guides/` (on GitHub: open the folder, then **Add file → Upload files → Commit changes**). "
            "The publish workflow builds it, and the app shows what changed.")
     config = json.loads((ROOT / folder / "restaurant.json").read_text(encoding="utf-8"))
     if config.get("reader") == "manual_csv":
         how = (f"Check the restaurant's allergen information, then update `{folder}menu.csv` and the dates in `{folder}restaurant.json`. "
                f"If there's nothing newer, record the check in `latestGuide` in `{folder}restaurant.json` so the app can say so.")
-    return (f"The **{r['name']}** guide in the app ({r.get('source')}) {when}. After that, the app warns that it may be out of date.\n\n"
+    return (f"The **{r['name']}** guide in the app (`{gh.quoted(r.get('source'))}`) {when}. After that, the app warns that it may be out of date.\n\n"
             f"**To update:** {how}\n\n"
             "If there's no newer guide yet, close this issue. You won't be reminded again until the end date changes.\n\n"
             "_Opened automatically by `.github/workflows/guide-reminders.yml`._")

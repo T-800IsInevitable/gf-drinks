@@ -56,6 +56,15 @@ def band_rows(page, top, bottom, left_max):
     return rows
 
 
+def odd_marks(chars, gx, half, bars):
+    """The characters in the gluten column (x centre gx, half a column either side) that aren't one of the guide's
+    marks (the dot, "1", "2"): a mark this reader doesn't know, which it would otherwise read as an empty cell.
+    A section bar's title can run across the column, so anything on a bar is left out."""
+    mid = lambda c: (c["top"] + c["bottom"]) / 2
+    return sorted({c["text"] for c in chars if c["text"].strip() and c["text"] not in ("•", "1", "2")
+                   and abs((c["x0"] + c["x1"]) / 2 - gx) < half and not any(b["top"] <= mid(c) <= b["bottom"] for b in bars)})
+
+
 def guide_version(pdf, pdf_path):
     """The date in the guide's own file name (FGUK_YYYYMMDD), printed on its page, else in the file's name here."""
     m = re.search(r"FGUK_(\d{4})(\d{2})(\d{2})", pdf.pages[0].extract_text() or "") or re.search(r"(\d{4})(\d{2})(\d{2})", Path(pdf_path).name)
@@ -84,6 +93,10 @@ def parse(pdf, pdf_path):
     rows_out, warnings = [], []
     marks = [c for c in page.chars if grid_top < c["top"] < grid_bottom and c["text"] in ("•", "1", "2")
              and abs((c["x0"] + c["x1"]) / 2 - gx) < col_w / 2]
+    odd = odd_marks([c for c in page.chars if grid_top < c["top"] < grid_bottom], gx, col_w / 2, bars)
+    if odd:
+        raise SystemExit(f"ERROR: {odd} in the gluten column isn't one of the guide's marks (a dot, 1 or 2). "
+                         "Layout changed? Menu not updated.")
     used = set()
     # each product row is the gap between consecutive horizontal rules in the name column
     rules = sorted({round(r["top"], 1) for r in page.rects if grid_top < r["top"] < grid_bottom and r["width"] > 1000} |

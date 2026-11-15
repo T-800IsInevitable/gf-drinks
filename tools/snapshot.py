@@ -8,6 +8,11 @@ guide they were made from. A snapshot is only compared when it was made from
 the same guide: a new guide is reported, not failed, because the menu is
 expected to change (the app shows what changed; see tools/changes.py).
 
+A snapshot nobody refreshed after a new guide went live would leave that guide
+unguarded for good. So when the snapshot is for another guide (or is missing)
+and the menu that is live now (.previous/, tools/fetch_previous.py) was built
+from the same guide as this build, the live menu stands in for the snapshot.
+
 Usage:
   python tools/snapshot.py           # check (fails if a reader's output changed)
   python tools/snapshot.py --update  # save the current menus as the snapshots
@@ -59,42 +64,54 @@ def order_lines(d):
     return out
 
 
-def compare(name, now, path, update, what):
-    """True if the saved snapshot differs from what's built now (same guide only)."""
+def compare(name, now, path, update, what, live=None):
+    """True if the saved snapshot differs from what's built now (same guide only). live is the same lines from the
+    menu that is live now, if there is one: it stands in for a snapshot that is missing or was made from another guide
+    when it was built from this guide, so a guide that went live without a snapshot update is still guarded."""
     if update:
         path.write_text("\n".join(now) + "\n", encoding="utf-8")
         print(f"{name}: snapshot saved ({len(now) - 1} {what})")
         return False
-    if not path.exists():
-        print(f"{name}: no snapshot yet. Check the {what}, then run: python tools/snapshot.py --update")
-        return False
-    saved = path.read_text(encoding="utf-8").splitlines()
-    if saved[0] != now[0]:
-        print(f"{name}: new guide ({now[0][10:]}), so not compared. Check the {what}, then run: python tools/snapshot.py --update")
-        return False
+    saved = path.read_text(encoding="utf-8").splitlines() if path.exists() else None
+    against = "snapshot"
+    if saved is None or saved[0] != now[0]:
+        if live and live[0] == now[0]:
+            print(f"{name}: the snapshot is {'missing' if saved is None else 'for another guide'}, so compared with the live "
+                  f"menu, built from this guide. To refresh it, check the {what}, then run: python tools/snapshot.py --update")
+            saved, against = live, "live menu"
+        elif saved is None:
+            print(f"::warning::{name}: no snapshot yet, so not compared. Check the {what}, then run: python tools/snapshot.py --update")
+            return False
+        else:
+            print(f"::warning::{name}: new guide ({now[0][10:]}), so not compared. Check the {what}, then run: python tools/snapshot.py --update")
+            return False
     if saved != now:
-        diff = list(difflib.unified_diff(saved, now, "snapshot", "built now", lineterm="", n=0))
+        diff = list(difflib.unified_diff(saved, now, against, "built now", lineterm="", n=0))
         print(f"{name}: the same guide now gives different {what}:")
         print("\n".join("   " + x for x in diff[:60]))
         if len(diff) > 60:
             print(f"   ... and {len(diff) - 60} more lines")
         return True
-    print(f"{name}: matches its snapshot")
+    print(f"{name}: matches {'its snapshot' if against == 'snapshot' else 'the live menu'}")
     return False
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--update", action="store_true", help="save the current menus as the snapshots")
+    ap.add_argument("--previous", type=Path, default=ROOT / ".previous", help="folder with the live menus (tools/fetch_previous.py)")
     args = ap.parse_args()
     index = json.loads((DATA / "restaurants.json").read_text(encoding="utf-8"))
     failed = False
     SNAPS.mkdir(parents=True, exist_ok=True)
     for r in index["restaurants"]:
         d = json.loads((DATA.parent / r["file"]).read_text(encoding="utf-8"))
-        failed |= compare(r["id"], lines(d), SNAPS / f"{r['id']}.txt", args.update, "items")
+        prev_path = args.previous / "r" / f"{r['id']}.json"
+        prev = json.loads(prev_path.read_text(encoding="utf-8")) if prev_path.exists() else None
+        failed |= compare(r["id"], lines(d), SNAPS / f"{r['id']}.txt", args.update, "items", lines(prev) if prev else None)
         if d.get("order"):
-            failed |= compare(f"{r['id']} order builder", order_lines(d), SNAPS / f"order-{r['id']}.txt", args.update, "order choices")
+            failed |= compare(f"{r['id']} order builder", order_lines(d), SNAPS / f"order-{r['id']}.txt", args.update, "order choices",
+                              order_lines(prev) if prev else None)
     if failed:
         print("\nSNAPSHOT CHECK FAILED: a reader's output changed for the same guide. If that's intended, check the "
               "differences above against the guide, then run: python tools/snapshot.py --update")

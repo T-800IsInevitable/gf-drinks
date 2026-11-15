@@ -3,7 +3,10 @@ tools/guard.py: a routine's pull request (scan/, city/, recheck/ branches) may c
 
 Run: python -m unittest discover -s tests
 """
+import copy
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -91,6 +94,146 @@ class Scope(unittest.TestCase):
             paths = guard.changed(7)
         self.assertEqual(paths, ["restaurants/x/menu.csv", "tools/check.py"])
         self.assertTrue(guard.scope("scan/x-2026-10-28", paths))
+
+    def test_a_scan_for_a_restaurant_a_reader_builds_adds_only_guides_and_sources(self):
+        ref, folder = "scan/starbucks-uk-2026-11-15", "restaurants/starbucks-uk/"
+        upload = [folder + "guides/WIN_26_UK_AllergenBook_CORE_BEVERAGE_v01.pdf", folder + "guides/archive/old.pdf",
+                  folder + "source/2026-11-15-starbucks/upload.json"]
+        self.assertEqual(guard.scope(ref, upload, True, reader_built=True), [])
+        for path in ("restaurant.json", "menu.csv", "logo.png", "guides.txt", "sourced/x.pdf"):
+            said = guard.scope(ref, upload + [folder + path], True, reader_built=True)
+            self.assertTrue(said, path)
+            self.assertIn(folder + path, said[0])
+            self.assertIn("pull request of your own", said[0])
+        # another restaurant's guides, and anything outside restaurants/, stay refused
+        self.assertTrue(guard.scope(ref, ["restaurants/pret-uk/guides/x.pdf"], True, reader_built=True))
+        self.assertTrue(guard.scope(ref, upload + ["tools/build.py"], True, reader_built=True))
+        # a new restaurant, or one whose menu is kept by hand, may still have its whole folder written
+        self.assertEqual(guard.scope(ref, upload + [folder + "restaurant.json", folder + "menu.csv"], True), [])
+
+    def test_which_restaurants_a_reader_builds_is_read_from_this_checkout(self):
+        root =Path(tempfile.mkdtemp())
+        for rid, config in (("by-reader", '{"reader": "pret_uk_pdf"}'), ("by-two", '{"readers": ["a_pdf", "b_pdf"]}'),
+                            ("by-hand", '{"reader": "manual_csv"}'), ("mixed", '{"reader": "manual_csv", "readers": ["a_pdf"]}'),
+                            ("no-reader", "{}"), ("broken", "{not json"), ("a-list", "[]")):
+            (root / "restaurants" / rid).mkdir(parents=True)
+            (root / "restaurants" / rid / "restaurant.json").write_text(config, encoding="utf-8")
+        for rid, expected in (("by-reader", True), ("by-two", True), ("mixed", True), ("no-reader", True), ("broken", True),
+                              ("a-list", True), ("by-hand", False), ("not-there", False)):
+            self.assertEqual(guard.reader_built(f"scan/{rid}-2026-11-15", root), expected, rid)
+            self.assertEqual(guard.reader_built(f"scan/{rid}-2026-11-15-b", root), expected, rid)
+        # only a scan/ branch is asked, and a name that isn't a scan's reads nothing
+        for ref in ("guide-watch/by-reader-abcdef0123", "safeguards", "scan/by-reader", "scan/../by-reader-2026-11-15"):
+            self.assertFalse(guard.reader_built(ref, root), ref)
+        # the real folders: every restaurant here but the ones kept by hand
+        for f in sorted((Path(guard.ROOT) / "restaurants").glob("*/restaurant.json")):
+            if f.parent.name.startswith(("_", ".")):
+                continue
+            c = json.loads(f.read_text(encoding="utf-8"))
+            by_hand = c.get("reader") == "manual_csv" and not c.get("readers")
+            self.assertEqual(guard.reader_built(f"scan/{f.parent.name}-2026-11-15"), not by_hand, f.parent.name)
+        self.assertTrue(guard.reader_built("scan/starbucks-uk-2026-11-15"))
+
+    def test_a_city_branch_is_named_for_its_city(self):
+        for ref in ("city/bath", "recheck/york", "city/2026-10-28", "recheck/York-2026-11-27", "city/bath-2026-10-28/x",
+                    "recheck/york-2026-11-27-toolongsuffix"):
+            self.assertTrue(guard.scope(ref, ["site/cities.json"]), ref)
+        self.assertEqual(guard.scope("recheck/milton-keynes-2026-11-27-b", ["site/cities.json"]), [])
+        self.assertEqual(guard.CITY_REF.fullmatch("recheck/milton-keynes-2026-11-27-b").groups(), ("recheck", "milton-keynes"))
+
+    def test_the_owners_own_branches_stay_unrestricted(self):
+        everything = ["tools/guard.py", ".github/workflows/guard.yml", "site/cities.json", "site/app.js", "restaurants/starbucks-uk/restaurant.json",
+                      "restaurants/pret-uk/menu.csv", "tests/snapshots/pret-uk.txt", "CLAUDE.md"]
+        for ref in ("audit-pipeline", "audit-enhance", "safeguards", "fix/reader", "city-requests", "scan-setup-note", "recheck-notes",
+                    "guide-watch-fix", "dependabot/pip/tools/pdfplumber-0.11.11", "starbucks-uk-2026-11-15"):
+            for flag in (False, True):  # whatever main's copy of a restaurant says
+                self.assertEqual(guard.scope(ref, everything, reader_built=flag), [], ref)
+            self.assertFalse(guard.reader_built(ref), ref)
+            self.assertIsNone(guard.CITY_REF.fullmatch(ref), ref)  # so main() asks nothing about cities for it
+
+
+class OneCity(unittest.TestCase):
+    BASE = {"york": {"name": "York", "checked": "2026-10-01", "places": [{"name": "A", "claim": "place-all"}]},
+            "london": {"name": "London", "checked": "2026-10-05", "places": [{"name": "B", "claim": "list-all", "caution": "Oats"}]}}
+
+    def head(self, **changes):
+        head =copy.deepcopy(self.BASE)
+        for cid, city in changes.items():
+            if city is None:
+                head.pop(cid)
+            else:
+                head[cid] = city
+        return head
+
+    def test_a_recheck_changes_only_its_city(self):
+        york = {"name": "York", "checked": "2026-11-15", "places": []}
+        self.assertEqual(guard.one_city("recheck", "york", self.BASE, self.head(york=york)), [])
+        self.assertEqual(guard.one_city("recheck", "york", self.BASE, self.head()), [])  # nothing changed at all
+        london = self.head()["london"]
+        london["places"][0].update(claim="place-all")
+        del london["places"][0]["caution"]
+        said = guard.one_city("recheck", "york", self.BASE, self.head(york=york, london=london))
+        self.assertEqual(len(said), 1)
+        self.assertIn("london", said[0])
+        self.assertTrue(guard.one_city("recheck", "york", self.BASE, self.head(york=york, london=None)))  # another city removed
+        self.assertTrue(guard.one_city("recheck", "york", self.BASE, self.head(york=york, bath={"name": "Bath"})))  # or added
+        self.assertTrue(guard.one_city("recheck", "york", self.BASE, self.head(york=None)))  # its own city removed
+        self.assertTrue(guard.one_city("recheck", "bath", self.BASE, self.head(bath={"name": "Bath"})))  # not there to re-check
+
+    def test_a_city_adds_only_its_city(self):
+        bath = {"name": "Bath", "checked": "2026-11-15", "places": []}
+        self.assertEqual(guard.one_city("city", "bath", self.BASE, self.head(bath=bath)), [])
+        self.assertTrue(guard.one_city("city", "bath", self.BASE, self.head()))  # nothing added
+        self.assertTrue(guard.one_city("city", "york", self.BASE, self.head(york=bath)))  # an existing city rewritten
+        said = guard.one_city("city", "bath", self.BASE, self.head(bath=bath, york={"name": "York"}))
+        self.assertEqual(len(said), 1)
+        self.assertIn("york", said[0])
+
+    def test_key_order_is_not_a_change_but_any_value_is(self):
+        reordered = {k: dict(reversed(list(v.items()))) for k, v in reversed(list(self.BASE.items()))}
+        self.assertEqual(guard.one_city("recheck", "york", self.BASE, reordered), [])
+        london = self.head()["london"]
+        london["places"].append(london["places"][0])
+        self.assertTrue(guard.one_city("recheck", "york", self.BASE, self.head(london=london)))
+
+    def test_a_file_that_is_not_a_list_of_cities_is_refused(self):
+        self.assertTrue(guard.one_city("recheck", "york", self.BASE, []))
+        self.assertTrue(guard.one_city("city", "bath", None, {"bath": {}}))
+
+    def test_the_cities_are_read_where_the_branch_left_main_and_at_its_head(self):
+        asked = []
+
+        def api(method, path, body=None, accept="application/vnd.github+json"):
+            asked.append((method, path, accept))
+            if path == "/pulls/7":
+                return {"head": {"sha": "h" * 40}, "base": {"ref": "main"}}
+            if path.startswith("/compare/"):
+                return {"merge_base_commit": {"sha": "b" * 40}}
+            return {"at": path.split("ref=")[1][0]}
+        with mock.patch.object(guard.gh, "request", side_effect=api):
+            self.assertEqual(guard.cities_of(7), ({"at": "b"}, {"at": "h"}))
+        self.assertEqual([a[0] for a in asked], ["GET"] * 4)  # the guard only reads
+        self.assertEqual(asked[1][1], f"/compare/main...{'h' * 40}?per_page=1")
+        self.assertEqual([a[2] for a in asked[2:]], ["application/vnd.github.raw+json"] * 2)
+
+    def test_main_holds_a_recheck_to_its_city_and_asks_nothing_for_other_branches(self):
+        london = {"name": "London", "checked": "2026-10-05", "places": []}
+        env = {"PR": "7", "HEAD_REF": "recheck/york-2026-11-15"}
+        with mock.patch.object(guard, "changed", return_value=["site/cities.json"]), mock.patch.object(guard, "commits", return_value=[]), \
+                mock.patch.object(guard, "cities_of", return_value=(self.BASE, self.head(london=london))) as cities, \
+                mock.patch("builtins.print"):
+            with mock.patch.dict("os.environ", env), self.assertRaises(SystemExit):
+                guard.main()
+            cities.return_value = (self.BASE, self.head(york={"name": "York", "checked": "2026-11-15"}))
+            with mock.patch.dict("os.environ", env):
+                guard.main()
+            cities.reset_mock()
+            with mock.patch.dict("os.environ", {"PR": "7", "HEAD_REF": "audit-pipeline"}):
+                guard.main()  # the owner's own branch, changing cities.json: no limit, and the cities aren't fetched
+            cities.assert_not_called()
+            with mock.patch.dict("os.environ", {"PR": "7", "HEAD_REF": "recheck/york"}), self.assertRaises(SystemExit):
+                guard.main()  # a badly named branch is refused before anything is fetched
+            cities.assert_not_called()
 
 
 if __name__ == "__main__":

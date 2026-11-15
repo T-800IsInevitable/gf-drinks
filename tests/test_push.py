@@ -80,6 +80,13 @@ class Release(unittest.TestCase):
         m = self.cities({"york": york}, {"york": york, "leeds": {"name": "Leeds", "places": [{}]}, "lyon": {"name": "Lyon", "places": [{}]}})
         self.assertEqual((m["title"], m["url"]), ("Leeds and Lyon are in the app", ""))
 
+    def test_a_new_city_with_no_places_isnt_announced_as_zero_places(self):
+        york = {"name": "York", "places": [{}]}
+        m = self.cities({"york": york}, {"york": york, "warwick": {"name": "Warwick", "places": [], "none": "None qualified."}})
+        self.assertEqual(m["title"], "Warwick is in the app")
+        self.assertNotIn("0 places", m["body"])
+        self.assertIn("shows the list it was checked against", m["body"])
+
     def test_no_new_city_or_no_live_list_announces_nothing(self):
         york = {"name": "York", "places": [{}]}
         self.assertIsNone(self.cities({"york": york}, {"york": york}))

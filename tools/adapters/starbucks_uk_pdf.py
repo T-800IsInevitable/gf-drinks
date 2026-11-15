@@ -20,7 +20,7 @@ from pathlib import Path
 import pdfplumber
 
 from . import notices
-from .common import CEREAL_CAPS as GLUTEN, cereal_code, newest_by, result
+from .common import CEREAL, CEREAL_CAPS as GLUTEN, cereal_code, cereal_word, newest_by, result
 from .common import clean as _clean
 
 MILK_SUFFIX = re.compile(r"^(.*?)\s+[-–]\s+(.*\b(?:milk|drink))\s*(\(standard build\))?$", re.I)
@@ -58,6 +58,27 @@ def decided(column, a, i):
     return None
 
 
+def read_gluten(r, warnings, where):
+    """Set a row's "gluten" and "decided" from its allergen column and its ingredient list (the food reader uses this
+    too). The guide writes allergens in capitals, so that is what both columns are read for; a cereal word in any
+    other case ("Oats", "Wheat flour") is the backstop: the row is treated as containing gluten, never listed."""
+    a = set(GLUTEN.findall(r["allergens"]))
+    i = set(GLUTEN.findall(r["ingredients"]))
+    r["gluten"] = sorted({cereal_code(g) for g in a | i})
+    if bool(a) != bool(i):
+        warnings.append(f"{where}: allergen column {sorted(a) or 'none'} vs "
+                        f"ingredients {sorted(i) or 'none'}; treated as containing gluten")
+    if not r["allergens"]:
+        warnings.append(f"{where}: allergen column empty; classified from ingredients")
+    r["decided"] = decided(r["allergens"], a, i)
+    loose = sorted({cereal_code(g) for g in CEREAL.findall(r["allergens"] + " " + r["ingredients"])})
+    if loose and not (a | i):
+        r["gluten"] = loose
+        named = " and ".join(cereal_word(g) for g in loose)
+        warnings.append(f"{where}: names {named} without the guide's usual capitals; treated as containing gluten")
+        r["decided"] = f"The guide names {named} without its usual capitals, so the app treats it as containing gluten."
+
+
 def guide_info(pdf):
     """Season title, date range and version date from the cover pages."""
     text = "\n".join((pdf.pages[i].extract_text() or "") for i in range(min(3, len(pdf.pages))))
@@ -69,7 +90,7 @@ def guide_info(pdf):
         vdate = f"{y:04d}-{m:02d}-{d:02d}"
     title = re.search(r"\b(Spring|Summer|Autumn|Winter|Holiday|Festive)\b[^\n]*Beverages", text)
     months = r"(January|February|March|April|May|June|July|August|September|October|November|December)"
-    span = re.search(months + r"\s*[-–]\s*" + months + r"\s+(\d{4})", text)
+    span = re.search(months + r"(?:\s+\d{4})?\s*[-–]\s*" + months + r"\s+(\d{4})", text)
     return {
         "title": clean(title.group(0)) if title else None,
         "runs": clean(span.group(0)).replace(" - ", " to ").replace(" – ", " to ") if span else None,
@@ -130,15 +151,7 @@ def parse_rows(pdf, pdf_path):
         raise SystemExit(f"ERROR: {pdf_path.name} doesn't look like an allergen guide "
                          f"({table_pages} table pages, {len(rows)} rows). Menu not updated.")
     for r in rows:
-        a = set(GLUTEN.findall(r["allergens"]))
-        i = set(GLUTEN.findall(r["ingredients"]))
-        r["gluten"] = sorted({cereal_code(g) for g in a | i})
-        if bool(a) != bool(i):
-            warnings.append(f"p.{r['page']} {r['name']}: allergen column {sorted(a) or 'none'} vs "
-                            f"ingredients {sorted(i) or 'none'}; treated as containing gluten")
-        if not r["allergens"]:
-            warnings.append(f"p.{r['page']} {r['name']}: allergen column empty; classified from ingredients")
-        r["decided"] = decided(r["allergens"], a, i)
+        read_gluten(r, warnings, f"p.{r['page']} {r['name']}")
     return info, rows, warnings
 
 

@@ -6,19 +6,32 @@ at a fake). Nothing here merges anything.
 """
 import json
 import os
+import re
 import urllib.request
 
 
-def request(method, path, body=None):
-    """One call to /repos/<repository><path>, answered as JSON (None for an empty answer)."""
+def request(method, path, body=None, accept="application/vnd.github+json"):
+    """One call to /repos/<repository><path>, answered as JSON (None for an empty answer). accept: GitHub's media
+    type; the raw one gives a JSON file's own contents instead of GitHub's wrapping of it."""
     api = os.environ.get("GITHUB_API_URL", "https://api.github.com")
     req = urllib.request.Request(
         f"{api}/repos/{os.environ['GITHUB_REPOSITORY']}{path}", method=method,
         data=json.dumps(body).encode() if body is not None else None,
-        headers={"Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}", "Accept": "application/vnd.github+json",
+        headers={"Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}", "Accept": accept,
                  "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=30) as res:
         return json.loads(res.read() or "null")
+
+
+def quoted(text):
+    """Text from another site (a reader's message, a dish's name, build output) as it goes into a pull request or an
+    issue: no backticks, so it can't end a code span or a code fence and turn into markdown, links or instructions."""
+    return str(text).replace("`", "'")
+
+
+def link(url):
+    """An address from another site as a plain autolink (<https://…>): nothing in it can become markdown."""
+    return "<" + re.sub(r"[\s<>`]", "", str(url)) + ">"
 
 
 BOT = "github-actions[bot]"

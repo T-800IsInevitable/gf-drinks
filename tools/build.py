@@ -209,7 +209,8 @@ def avoid_drop(prev, full, folder):
     """A reader that stops seeing a guide's gluten marks (a new font, a new tick) fails open: rows that were on the
     Avoid list turn up on the list. A menu that changes with the season looks different: its Avoid rows leave the
     menu altogether. So the build stops when, in the whole menu or in one guide of a merged one,
-      - more than a third of the live Avoid rows still on the menu are now listed with no gluten ingredients, or
+      - AVOID_FLOOR or more of the live Avoid rows still on the menu, or more than a third of them, are now listed
+        with no gluten ingredients, or
       - more than two thirds of the live Avoid rows have left the menu and the Avoid share fell by a third as well
         (a guide that renamed everything and lost its marks at once),
     unless restaurant.json's "avoidDropOk" names this very guide (the owner has checked the change against it). A part
@@ -230,7 +231,7 @@ def avoid_drop(prev, full, folder):
         gone = avoid0 - avoid1 - items1
         still = len(avoid0) - len(gone)
         where = "" if part == "all" else f" ({part} of {len(was) - 1})"
-        if moved and len(moved) > still / 3 and (len(moved) >= 2 or judged):
+        if moved and (len(moved) >= AVOID_FLOOR or len(moved) > still / 3) and (len(moved) >= 2 or judged):
             found = (f"{len(moved)} of the {still} Avoid rows{where} still on the menu are now listed with no gluten ingredients "
                      f"({', '.join(moved[:4])}{'...' if len(moved) > 4 else ''})")
             break

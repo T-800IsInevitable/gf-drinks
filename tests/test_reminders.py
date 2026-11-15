@@ -106,6 +106,20 @@ class Reminders(unittest.TestCase):
         fresh = newest.fromordinal(newest.toordinal() + reminders.CITY_EVERY - 1)
         self.assertNotIn(oldest[-1]["name"] + " places", [r["name"] for r, _, _ in reminders.due(fresh, self.index)])
 
+    def test_a_guides_source_and_addresses_cant_become_markdown(self):
+        # text a reader took from a PDF's title or file name sits in a code span; an address is a plain autolink
+        r = {"id": "pret-uk", "name": "Pret A Manger", "source": "Guide [click](https://evil.example) @someone `x`",
+             "officialUrl": "https://www.pret.co.uk/a b)[x](https://evil.example)"}
+        body = reminders.issue_body(r, "2026-11-10", 15)
+        self.assertIn("(`Guide [click](https://evil.example) @someone 'x'`) ends on 2026-11-10", body)
+        self.assertIn("from <https://www.pret.co.uk/ab)[x](https://evil.example)> and upload", body)
+        self.assertEqual(body.count("`") % 2, 0)
+        self.assertIn("from their website and upload", reminders.issue_body({**r, "officialUrl": ""}, "2026-11-10", 15))
+        city = {"id": "york", "name": "York places", "kind": "recheck",
+                "city": {"checked": "2026-10-01", "list": {"url": "https://list.example/york](https://evil.example)"}}}
+        self.assertIn("goes through <https://list.example/york](https://evil.example)> and each place's own website",
+                      reminders.issue_body(city, "2026-12-30", 45))
+
     def test_reads_the_index_it_is_given(self):
         items = reminders.due(date(2026, 10, 26), self.index)
         self.assertEqual([r["id"] for r, _, _ in items if "city" not in r], ["pret-uk"])

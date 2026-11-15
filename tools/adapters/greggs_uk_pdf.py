@@ -71,6 +71,13 @@ def columns(page):
     return out
 
 
+def odd_marks(chars, xs, half):
+    """The characters under the cereal columns (x centres xs, half a column either side) that are neither the tick
+    nor the bullet: a mark this reader doesn't know, which it would otherwise read as an empty cell."""
+    return sorted({c["text"] for c in chars if c["text"].strip() and c["text"] not in (TICK, BULLET)
+                   and any(abs((c["x0"] + c["x1"]) / 2 - x) < half for x in xs)})
+
+
 def rows(pdf, pages, warnings, notes=None):
     """Yield {page, section, name, marks: {header: tick|bullet}, gf} for each product row. The guide's own notes
     (italic rows with no marks) go in notes as {text, page}."""
@@ -128,6 +135,11 @@ def rows(pdf, pages, warnings, notes=None):
             name = clean(LABELS.sub(" ", text.strip("*")))
             if not name:
                 continue
+            # only inside a product's band: the rotated header letters sit under these columns above the rows
+            odd = odd_marks([c for c in page.chars if c["x0"] > grid_left and inside(c, band)], [cols[h] for h in CEREALS], gap / 2)
+            if odd:
+                raise SystemExit(f"ERROR: p.{pno} {name}: {odd} under the cereal columns isn't the guide's tick or bullet. "
+                                 "Layout changed? Menu not updated.")
             got = {}
             for m in row_marks:
                 x = (m["x0"] + m["x1"]) / 2
