@@ -1,5 +1,17 @@
 [
   {
+    "version": 43,
+    "date": "2026-11-15",
+    "title": "Warwick, and fixes for weak signal",
+    "items": [
+      "Warwick is under UK cities. No place there said everything it serves is gluten free when it was checked, so it shows the list it was checked against and the app's chains nearby.",
+      "On weak signal the app opens faster, says when the menus were last checked, and keeps the row you're reading open when you come back to it.",
+      "Messages now show on top of Help and the other sheets, and stay long enough to read.",
+      "If the menus can't load the first time, there's a Try again button.",
+      "Search hints are easier to read, and a city map's pins and buttons are easier to tap."
+    ]
+  },
+  {
     "version": 38,
     "date": "2026-10-28",
     "title": "Notifications need switching on again",

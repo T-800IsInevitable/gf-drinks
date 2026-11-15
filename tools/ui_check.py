@@ -144,6 +144,8 @@ SHARE_MOCK = "window.__shared = null; Object.defineProperty(navigator, 'share', 
 ALEX = {"latitude": 52.5219, "longitude": 13.4132}  # Alexanderplatz, Berlin
 WIDE_FONT = '* { font-family: Verdana, "DejaVu Sans", sans-serif !important; }'  # the test machine's fonts differ from the phone's
 norm_ws = lambda s: " ".join(s.split())  # noqa: E731
+# a city page has drawn: its places, or, for a city with none that meets the bar, the sentence that says so
+CITY_READY = "#cityList .row, #cityList .city-none"
 
 
 @functools.lru_cache(maxsize=None)
@@ -584,7 +586,7 @@ def check_uk_cities(env):
             rid = branches["chains"][x[0]]
             if rid in names and s < x[1] < n and w < x[2] < e:
                 want[rid] = want.get(rid, 0) + 1
-        ctx, page, errors = visit(browser, base + f"#{cid}", wait="#cityList .row")
+        ctx, page, errors = visit(browser, base + f"#{cid}", wait=CITY_READY)
         if want:
             page.wait_for_selector(".chains-here [data-chain]")
         else:
@@ -617,7 +619,7 @@ def check_the_berlin_page_in_light(env):
     for scheme in ("light", "dark"):
         for cid, c in cities.items():
             where = f"{cid} ({scheme})"
-            ctx, page, errors = visit(browser, base + f"#{cid}", scheme=scheme, wait="#cityList .row")
+            ctx, page, errors = visit(browser, base + f"#{cid}", scheme=scheme, wait=CITY_READY)
             for d in page.locator("#cityList details").all():  # open every place so its details are checked too
                 d.evaluate("el => el.open = true")
             page.wait_for_timeout(200)
@@ -691,7 +693,7 @@ def check_the_berlin_page_in_light(env):
         if not ids:
             continue
         page.locator(f'#region [data-region="{section}"]').click()
-        page.wait_for_selector("#cityList .row")
+        page.wait_for_selector(CITY_READY)
         page.locator("#pickBtn").click()
         page.wait_for_selector("#picker[open]")
         listed = page.evaluate("[...document.querySelectorAll('#pickList [data-region]')].map((b) => b.dataset.region)")
@@ -702,14 +704,14 @@ def check_the_berlin_page_in_light(env):
             if want not in page.locator(f'#pickList [data-region="{c}"] b').inner_text():
                 problems.append(f"the {section} chooser doesn't name {c} as {want}")
         page.locator(f'#pickList [data-region="{ids[-1]}"]').click()  # each section then remembers its own city
-        page.wait_for_selector("#cityList .row")
+        page.wait_for_selector(CITY_READY)
     for section, ids in (("intl", intl), ("ukcity", ukc)):
         if not ids:
             continue
         page.locator('#region [data-region="uk"]').click()
         page.wait_for_selector("#list .row")
         page.locator(f'#region [data-region="{section}"]').click()
-        page.wait_for_selector("#cityList .row")
+        page.wait_for_selector(CITY_READY)
         if page.locator("#pickName").inner_text().strip() != cities[ids[-1]]["name"]:
             problems.append(f"{section} went to {page.locator('#pickName').inner_text()!r}, not the city last looked at there ({cities[ids[-1]]['name']})")
         pressed = page.evaluate("[...document.querySelectorAll('#region [aria-pressed=\"true\"]')].map((b) => b.dataset.region)")
@@ -1424,7 +1426,7 @@ def check_wording(env):
     found = set()
     for url in [""] + [f"#{rid}" for rid in ids] + [f"#{c}" for c in cities]:
         page.goto(base + url)
-        page.wait_for_selector("#cityList .row" if url[1:] in cities else "#list .row")
+        page.wait_for_selector(CITY_READY if url[1:] in cities else "#list .row")
         if not url:  # the warnings and the chooser are only filled in once opened
             page.locator("#openWarnings").click()
             page.wait_for_selector("#warnings[open]")
@@ -1462,7 +1464,7 @@ def check_u1_content_first(env):
         page.goto(base + url)
         if in_city:
             page.reload()  # a hash change keeps the last city's folds open
-        page.wait_for_selector("#cityList .row" if in_city else "#list .row")
+        page.wait_for_selector(CITY_READY if in_city else "#list .row")
         if not in_city:
             if not url:  # the first menu page ever: the card in full, with at most one tip above it
                 if not page.locator("#certNote").is_visible() or page.locator("#openStrip").is_visible() or page.locator("#tips > div").count() > 1:
@@ -2160,7 +2162,7 @@ def check_s3(env):
     # the distance order doesn't follow you to another city (a small one has no chip to turn it off), and All clears it
     page.locator("#chips [data-nearopen]").click()
     page.wait_for_selector('#chips [data-nearopen][aria-pressed="true"]')
-    small = next((c for c, city in cities.items() if len(city["places"]) < 4), None)
+    small = next((c for c, city in cities.items() if 0 < len(city["places"]) < 4), None)
     if small:
         page.goto(base + f"#{small}")
         page.wait_for_selector("#cityList .row")
@@ -2417,6 +2419,9 @@ def check_o8(env):
     codes = [c for path, c in httpd3.answered if path.startswith("/data/restaurants.json")]
     if 304 not in codes:
         problems.append(f"weak signal: unchanged menus were downloaded again (answers {codes}, expected 304 not modified)")
+    menus_asked = lambda: sorted({path.split("?")[0].split("/")[-1][:-5] for path, _ in httpd3.answered if path.startswith("/data/r/")})
+    if menus_asked():  # the index's fingerprints say nothing changed: that one request is the whole check
+        problems.append(f"weak signal: with nothing changed the app still asked for menu files: {menus_asked()}")
     # 2. a slow signal: the app is on screen before anything arrives, then the newer menus replace the saved ones
     rf = tmp / "data" / "r" / f"{ids[0]}.json"
     d = json.loads(rf.read_text(encoding="utf-8"))
@@ -2430,6 +2435,7 @@ def check_o8(env):
     # 1.2s a file: slower than the app may take to appear, but every menu still answers within the 4s wait,
     # even though the browser fetches only six at a time
     lag["s"] = 1.2
+    httpd3.answered.clear()
     t0 = time.monotonic()
     page.reload(wait_until="commit")
     page.wait_for_selector("#list .row", timeout=15000)
@@ -2444,7 +2450,16 @@ def check_o8(env):
         problems.append("weak signal: the newer menus weren't kept on the phone")
     if "offline" in page.locator("#guideLine").inner_text().lower():
         problems.append("weak signal: a slow answer that came in time was called offline")
-    # 3. too slow to answer in time: still on screen at once, and the header says these are the saved menus
+    if menus_asked() != [ids[0]]:
+        problems.append(f"weak signal: one menu's fingerprint changed and the app asked for {menus_asked()}, expected only {ids[0]}")
+    # 3. too slow to answer in time: still on screen at once, and the header says these are the saved menus. A newer
+    # menu is out meanwhile: each answer comes too late to show, but is kept, so the phone catches up over the next opens
+    d["tips"] = d["tips"] + ["Very weak signal check: a newer menu still."]
+    d["hash"] = "later-" + d["hash"]
+    rf.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+    ix["built"] = "2099-02-01T00:00:00Z"
+    next(r for r in ix["restaurants"] if r["id"] == ids[0])["hash"] = d["hash"]
+    (tmp / "data" / "restaurants.json").write_text(json.dumps(ix, ensure_ascii=False), encoding="utf-8")
     lag["s"] = 6
     t0 = time.monotonic()
     page.reload(wait_until="commit")
@@ -2454,9 +2469,19 @@ def check_o8(env):
     line = page.locator("#guideLine").inner_text()
     if shown2 > 1.5 or "offline" not in line.lower():
         problems.append(f"very weak signal: the app took {shown2:.1f}s to appear and the header says {line!r}")
+    # the same 6s signal on the next opens: the index that came late is on the phone now, then the menu it names
+    opens = 0
+    for opens in range(1, 4):
+        page.reload(wait_until="commit")
+        page.wait_for_selector("#list .row", timeout=15000)
+        page.wait_for_timeout(11500)  # 4s for the index, 4s for the menu, and the late answers land by 10s
+        if "Very weak signal check" in (page.evaluate("localStorage.getItem('gf-data-v2')") or ""):
+            break
+    else:
+        problems.append("very weak signal: answers that came after the 4s wait were thrown away, so three more opens on a 6s signal never showed the newer menu")
     lag["s"] = 0
-    print(f"weak signal: unchanged menus answered {sorted(set(codes))}; on screen in {shown:.1f}s with a 1.2s network, then "
-          f"'Menus updated'; in {shown2:.1f}s with a 6s one, then {line!r}")
+    print(f"weak signal: unchanged menus answered {sorted(set(codes))} and no menu file was asked for; on screen in {shown:.1f}s with a 1.2s network, then "
+          f"'Menus updated'; in {shown2:.1f}s with a 6s one, then {line!r}, and the newer menu after {opens} more opens")
     ctx.close()
     httpd3.shutdown()
     shutil.rmtree(tmp.parent, ignore_errors=True)
@@ -2921,6 +2946,12 @@ def check_f7_map(env):
     # a pin's popup opens the place's row
     page.locator("#cityMap path.leaflet-interactive").first.click(force=True)
     page.wait_for_selector("#cityMap .leaflet-popup [data-place-open]", timeout=5000)
+    # the pins, the zoom buttons and a popup's close button are each a fingertip wide (44pt), as on the map page
+    small = page.evaluate("""() => [...document.querySelectorAll('#cityMap path.leaflet-interactive, #cityMap .leaflet-bar a, #cityMap a.leaflet-popup-close-button')]
+        .map((e) => [e.getBoundingClientRect(), e]).filter(([r]) => r.width < 43.5 || r.height < 43.5)
+        .map(([r, e]) => (e.getAttribute('class') || e.tagName) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height)).slice(0, 4)""")
+    if small or not page.locator("#cityMap a.leaflet-popup-close-button").count() or page.locator("#cityMap .leaflet-bar a").count() < 2:
+        problems.append(f"map: on the city map these are smaller than a fingertip (or missing): {small}")
     name = page.locator("#cityMap .leaflet-popup [data-place-open]").get_attribute("data-place-open")
     page.locator("#cityMap .leaflet-popup [data-place-open]").click()
     page.wait_for_timeout(300)
@@ -3780,7 +3811,565 @@ def check_f5_push(env):
     return problems
 
 
+def check_c1_mixed_load(env):
+    base, browser, ids, index = env.base, env.browser, env.ids, env.index
+    problems = []
+    # C1: a new guide arrives on a weak signal: the index is new, but one menu file is still the copy saved on the phone
+    # (what the service worker hands back when the network is slow, marked X-GF-Offline). The next opens, with everything
+    # new, must take the new menu: an item the guide moved to Avoid mustn't stay green, and "New guides" is said once.
+    # Along the way: only a menu whose fingerprint changed is asked for, and a file that doesn't match the index's
+    # fingerprint counts as not checked.
+    rid = ids[0]
+    old = menu_of(rid)
+    names = [i["name"] for i in old["items"]]
+    item = next(i for i in old["items"] if i["order"] == "asis" and not i.get("role") and names.count(i["name"]) == 1)
+    new = json.loads(json.dumps(old))
+    new["items"] = [i for i in new["items"] if i["name"] != item["name"]]
+    new["avoid"].append(dict(old["avoid"][0], name=item["name"], section=item["section"]))
+    new["source"], new["hash"] = "newer-" + old["source"], "newer-" + old["hash"]
+    new_index = json.loads(json.dumps(index))
+    new_index["built"] = "2099-01-01T00:00:00Z"
+    next(r for r in new_index["restaurants"] if r["id"] == rid).update(source=new["source"], hash=new["hash"])
+    state = {"index": index, "file": old, "saved": False}
+    asked = []
+
+    def answer(route, body, saved=False):
+        route.fulfill(status=200, content_type="application/json", body=json.dumps(body), headers={"X-GF-Offline": "1"} if saved else {})
+
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+    ctx.route("**/data/restaurants.json", lambda route: answer(route, state["index"]))
+    ctx.route(f"**/data/r/{rid}.json", lambda route: answer(route, state["file"], state["saved"]))
+    ctx.on("request", lambda r: asked.append(r.url.split("/data/r/")[1].split(".json")[0]) if "/data/r/" in r.url else None)
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(f"page error: {e}"))
+    green = lambda: page.evaluate("""(name) => [...document.querySelectorAll('#list details.row')].filter((d) => {
+        const nm = d.querySelector('.nm'), t = [...nm.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim();
+        return t === name && d.querySelector('summary .tag.t-asis, summary .tag.t-any'); }).length""", item["name"])
+    kept = lambda: next(r for r in json.loads(page.evaluate("localStorage.getItem('gf-data-v2')"))["restaurants"] if r["id"] == rid)
+
+    def open_app(first=False):
+        asked.clear()
+        toasts = set()
+        page.goto(base + f"#{rid}") if first else page.reload()
+        page.wait_for_selector("#list .row")
+        for _ in range(12):
+            page.wait_for_timeout(100)
+            toasts.add(norm_ws(page.locator("#toast").inner_text()))
+        return toasts
+
+    open_app(first=True)  # 1. the old guide
+    if green() != 1:
+        problems.append(f"mixed load: the check's own item {item['name']!r} isn't on the green list to start with ({green()} rows)")
+    state.update(index=new_index, saved=True)
+    open_app()  # 2. the new index, with this restaurant's file still the saved copy
+    line = page.locator("#guideLine").inner_text()
+    if "offline" not in line.lower():
+        problems.append(f"mixed load: a menu answered from the saved copy isn't called offline ({line!r})")
+    page.evaluate("localStorage.removeItem('gf-last-checked')")
+    state.update(saved=False)
+    open_app()  # 2b. the same older file without the mark (a server halfway through a publish): still not a full check
+    line = page.locator("#guideLine").inner_text()
+    checked = page.evaluate("localStorage.getItem('gf-last-checked')")
+    if "offline" not in line.lower() or checked:
+        problems.append(f"mixed load: a menu file older than the index counted as a full check (header {line!r}, last checked {checked!r})")
+    state.update(file=new)
+    toasts3 = open_app()  # 3. everything new
+    if asked != [rid]:
+        problems.append(f"mixed load: with one menu's fingerprint changed the app asked for {asked}, expected only {rid}")
+    if kept()["hash"] != new["hash"] or green() or not any(a["name"] == item["name"] for a in kept()["avoid"]):
+        problems.append(f"mixed load: after a full load the phone still holds the old guide ({kept()['source']}): "
+                        f"{item['name']!r} is green in {green()} rows though the new guide says Avoid")
+    if "offline" in page.locator("#guideLine").inner_text().lower():
+        problems.append("mixed load: a full load is still called offline")
+    toasts4 = open_app()  # 4. and again: nothing new now
+    if asked:
+        problems.append(f"mixed load: an open with nothing changed asked for menu files again: {asked}")
+    if kept()["hash"] != new["hash"] or green() or any("New guides" in t for t in toasts4):
+        problems.append(f"mixed load: on the next open the phone holds {kept()['source']}, {green()} green rows for the Avoid item, and said {sorted(t for t in toasts4 if t)}")
+    problems += [f"mixed load: {e}" for e in errors]
+    print(f"mixed load: {rid} with one file from the saved copy, then a full load: the new guide is kept ({item['name']!r} off the green list), "
+          f"said {sorted(t for t in toasts3 if t)} once, and an unchanged open asks for no menu file")
+    ctx.close()
+    return problems
+
+
+def check_c2_odd_links(env):
+    base, browser = env.base, env.browser
+    problems = []
+    # C2: a link ending in a word every JavaScript object answers to (#constructor, #__proto__) is not a city: the menus
+    # show, nothing is saved as the section, and a phone already stuck on one recovers on its next open
+    for word in ("constructor", "__proto__"):
+        for how in ("opened at the link", "the link followed while open", "saved by an older release"):
+            ctx = browser.new_context(color_scheme="light", **IPHONE)
+            ctx.add_init_script("localStorage.setItem('gf-selected', 'all');" + (
+                f"if (!sessionStorage.getItem('once')) {{ sessionStorage.setItem('once', '1'); localStorage.setItem('gf-region', '{word}'); }}" if how.startswith("saved") else ""))
+            page = ctx.new_page()
+            errors = []
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            try:
+                page.goto(base + (f"#{word}" if how.startswith("opened") else ""))
+                page.wait_for_selector("#list .row", timeout=8000)
+                if how.startswith("the link"):
+                    page.evaluate("(w) => { location.hash = '#' + w; }", word)
+                    page.wait_for_timeout(400)
+                page.wait_for_timeout(300)
+                page.reload()
+                page.wait_for_selector("#list .row", timeout=8000)
+            except Exception as e:
+                problems.append(f"#{word} ({how}): the menus don't show ({e.__class__.__name__})")
+            saved = page.evaluate("localStorage.getItem('gf-region')")
+            if saved == word or errors:
+                problems.append(f"#{word} ({how}): saved section {saved!r}, errors {errors[:2]}")
+            ctx.close()
+    print("odd links: #constructor and #__proto__ show the menus, opened, followed or already saved")
+    return problems
+
+
+def check_c3_coming_back(env):
+    base, browser, ids, cid = env.base, env.browser, env.ids, env.cid
+    problems = []
+    # C3: coming back to the app doesn't shut the row being read. On a city page the open lines move on in place; on the
+    # menus a lost signal changes the header line only. And once a check has failed with the last good one over a week
+    # ago, a line says how old the menus are, with Check now; a good check takes it away.
+    back = "document.dispatchEvent(new Event('visibilitychange'))"
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(f"page error: {e}"))
+    page.goto(base + f"#{cid}")
+    page.wait_for_selector("#cityList .row")
+    row = page.locator("#cityList details.row").first
+    row.locator("summary").click()
+    row.locator("textarea[data-note]").fill("Coming back check")
+    page.wait_for_timeout(700)
+    page.evaluate(back)
+    page.wait_for_timeout(700)
+    if page.locator("#cityList details.row[open]").count() != 1:
+        problems.append(f"coming back: the open place on {cid} was shut")
+    page.evaluate("localStorage.removeItem('gf-notes')")
+    # the menus: an item open, the signal gone, the last good check ten days ago
+    page.goto(base + f"#{ids[0]}")
+    page.reload()
+    page.wait_for_selector("#list .row")
+    page.wait_for_timeout(700)
+    if page.locator("#age:not([hidden])").count():
+        problems.append("coming back: the how-old line shows with the menus just checked")
+    page.locator("#list details.row").first.locator("summary").click()
+    page.evaluate("localStorage.setItem('gf-last-checked', new Date(Date.now() - 10 * 864e5).toISOString())")
+    cut = lambda route: route.abort()
+    ctx.route("**/data/restaurants.json", cut)
+    page.evaluate(back)
+    for _ in range(40):
+        if "offline" in page.locator("#guideLine").inner_text().lower():
+            break
+        page.wait_for_timeout(100)
+    else:
+        problems.append("coming back: with the signal gone the header doesn't say offline")
+    if not re.search(r"Offline, checked \d{1,2} \w{3}$", page.locator("#guideLine").inner_text().strip()):
+        problems.append(f"coming back: offline, the header doesn't say when the menus were last checked ({page.locator('#guideLine').inner_text()!r})")
+    if page.locator("#list details.row[open]").count() != 1:
+        problems.append("coming back: the open item was shut when the signal went")
+    age = norm_ws(page.locator("#age").inner_text()) if page.locator("#age:not([hidden])").count() else ""
+    if not re.search(r"Menus last checked on \d{1,2} \w{3} \d{4}\. Check in store before ordering\.", age):
+        problems.append(f"coming back: no line saying how old the menus are after a failed check ten days on ({age!r})")
+    btn = page.locator("#age [data-checknow]")
+    if not btn.count() or btn.bounding_box()["height"] < 43.5:
+        problems.append("coming back: the how-old line has no Check now button of tap size")
+    else:
+        ctx.unroute("**/data/restaurants.json", cut)
+        btn.click()
+        for _ in range(40):
+            if not page.locator("#age:not([hidden])").count():
+                break
+            page.wait_for_timeout(100)
+        else:
+            problems.append("coming back: the how-old line stays after a good check")
+        if "offline" in page.locator("#guideLine").inner_text().lower() or page.locator("#list details.row[open]").count() != 1:
+            problems.append("coming back: after Check now the header still says offline, or the open item was shut")
+    problems += [f"coming back: {e}" for e in errors]
+    print(f"coming back: an open place and an open item stay open; offline after ten days says {age!r}, gone after Check now")
+    ctx.close()
+    return problems
+
+
+def check_c4_city_cold_start(env):
+    base, browser, cid, cities = env.base, env.browser, env.cid, env.cities
+    problems = []
+    # C4: a cold start on a city page shows the list kept on the phone at once, with the sections and the card chip,
+    # while the network is still silent; a newer list replaces it when it arrives
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(f"page error: {e}"))
+    page.goto(base + f"#{cid}")
+    page.wait_for_selector("#cityList .row")
+    page.wait_for_timeout(500)
+    rows = page.locator("#cityList .row").count()
+    card = page.locator("#chips [data-card]").count()
+    held = []
+    hold = lambda route: held.append(route)
+    ctx.route("**/cities.json", hold)
+    ctx.route("**/phrases.json", hold)
+    page.reload(wait_until="commit")
+    try:
+        page.wait_for_selector("#cityList .row", timeout=3000)
+    except Exception:
+        problems.append(f"city cold start: {cid} waits on the network with nothing on screen")
+    if page.locator("#cityList .row").count() != rows or page.locator("#region").is_hidden() or page.locator("#chips [data-card]").count() != card:
+        problems.append(f"city cold start: before the network answers {page.locator('#cityList .row').count()} of {rows} places show, "
+                        f"sections hidden: {page.locator('#region').is_hidden()}, card chips {page.locator('#chips [data-card]').count()} of {card}")
+    newer = json.loads(json.dumps(cities))
+    newer[cid]["places"][0]["name"] += " (cold start check)"
+    for route in held:
+        if "cities.json" in route.request.url:
+            route.fulfill(status=200, content_type="application/json", body=json.dumps(newer, ensure_ascii=False))
+        else:
+            route.continue_()
+    try:
+        page.locator("#cityList .row", has_text="(cold start check)").first.wait_for(timeout=5000)
+    except Exception:
+        problems.append("city cold start: the newer list didn't replace the saved one when it arrived")
+    problems += [f"city cold start: {e}" for e in errors]
+    print(f"city cold start: {rows} {cid} places on screen before the network answers, then the newer list")
+    ctx.close()
+    return problems
+
+
+def check_c5_fields_and_saves(env):
+    base, browser, ids, cid, index = env.base, env.browser, env.ids, env.cid, env.index
+    problems = []
+    # C5: every field is at least 16px (below that an iPhone zooms the page when it's tapped); a menu that can't be saved
+    # on the phone is logged once; sharing favourites says when notes go with them; a UK branch's hours are read in UK
+    # time wherever the phone's clock is
+    small_js = """() => [...new Set([...document.querySelectorAll('input, textarea, select')].filter((e) => e.offsetParent && parseFloat(getComputedStyle(e).fontSize) < 16)
+        .map((e) => (e.id || e.className || e.tagName) + ' ' + getComputedStyle(e).fontSize))]"""
+    for where, sel in ((ids[0], "#list"), (cid, "#cityList")):
+        ctx, page, _ = visit(browser, base + f"#{where}", wait=f"{sel} .row")
+        page.locator(f"{sel} details.row").first.locator("summary").click()
+        page.wait_for_timeout(200)
+        if not page.locator(f"{sel} textarea").count():
+            problems.append(f"fields: no note box in an opened row on {where} to measure")
+        small = page.evaluate(small_js)
+        if small:
+            problems.append(f"fields: under 16px on {where}, so an iPhone zooms in on a tap: {small}")
+        ctx.close()
+    # the phone's storage refuses the menus
+    full = ("const set = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) {"
+            " if (k === 'gf-data-v2') throw new DOMException('full', 'QuotaExceededError'); return set.call(this, k, v); };")
+    ctx, page, _ = visit(browser, base, init="localStorage.setItem('gf-selected', 'all');" + full)
+    page.wait_for_timeout(800)
+    page.evaluate("document.dispatchEvent(new Event('visibilitychange'))")
+    page.wait_for_timeout(500)
+    logged = [e for e in json.loads(page.evaluate("localStorage.getItem('gf-errors')") or "[]") if "save the menus" in e.get("msg", "")]
+    if len(logged) != 1:
+        problems.append(f"saves: menus that couldn't be saved on the phone were logged {len(logged)} times, expected once")
+    ctx.close()
+    # favourites with a note: the button and the message say the notes go too
+    first = next(i for i in menu_of(ids[0])["items"] if not i.get("role"))
+    key = f"{ids[0]}|{first['section']}|{first['name']}"
+    for notes in ({key: "Ask for a clean jug"}, {}):
+        ctx, page, _ = visit(browser, base, init=SHARE_MOCK + "localStorage.setItem('gf-selected', 'all');"
+                             f"localStorage.setItem('gf-favourites', JSON.stringify({json.dumps([key])}));"
+                             f"localStorage.setItem('gf-notes', JSON.stringify({json.dumps(notes)}));")
+        page.locator('#chips [data-kind="fav"]').click()
+        btn = page.locator("#list [data-sharefavs]")
+        label = norm_ws(btn.inner_text())
+        page.evaluate("document.documentElement.style.setProperty('font-size', '22px', 'important')")  # Larger Text
+        lines = page.evaluate("""() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('#list [data-sharefavs]'));
+            return new Set([...r.getClientRects()].map((x) => Math.round(x.top))).size; }""")
+        btn.click()
+        page.wait_for_timeout(150)
+        text = (page.evaluate("window.__shared") or {}).get("text", "")
+        if notes and ("and notes (1)" not in label or "with my notes" not in text or lines != 1):
+            problems.append(f"sharing with a note: button {label!r} on {lines} lines, message {text!r}")
+        if not notes and ("notes" in label or "notes" in text):
+            problems.append(f"sharing without notes: button {label!r}, message {text!r}")
+        ctx.close()
+    # a branch that shuts at 19:00, looked at at 18:30 UK time from a phone on Berlin time (19:30 there)
+    chain = next(r for r in index["restaurants"] if r.get("osm"))
+    at = {"latitude": 51.5308, "longitude": -0.1238}
+    ctx, _ = with_branches(browser, at, branch_list(index, at, [(chain["id"], 0.3, "Euston Road", "Mo-Su 07:00-19:00")]), timezone_id="Europe/Berlin")
+    page = ctx.new_page()
+    page.clock.set_fixed_time("2026-11-03T18:30:00Z")
+    page.goto(base)
+    page.wait_for_selector("#list .row")
+    page.locator("#chips [data-near-uk]").click()
+    page.wait_for_selector("#near[open] .near-list li", timeout=15000)
+    body = norm_ws(page.locator("#nearBody").inner_text())
+    if "open until 19:00" not in body:
+        problems.append(f"UK hours on a phone abroad: 18:30 in the UK, a branch open to 19:00 reads {body[:140]!r}")
+    ctx.close()
+    print("fields and saves: every field 16px or more; a failed save logged once; sharing names the notes; UK branch hours in UK time")
+    return problems
+
+
+def check_city_with_no_places(env):
+    """A city may have no place that meets the app's bar (cities.json: an empty "places" with a sentence in "none").
+    Its page says so where the places would be, links the list it was checked against, keeps its tips and footnotes,
+    and has no tags introduction, no filters and no map chip; the chooser, search, the look-around, the map page,
+    sharing and asking for the city again all work, with no errors. A city with places is drawn as before."""
+    base, browser, cities, index = env.base, env.browser, env.cities, env.index
+    problems = []
+    empty = [c for c, city in cities.items() if not city["places"]]
+    if not empty:
+        print("city with no places: none in cities.json, nothing to check")
+        return problems
+    all_pins = sum(1 for c in cities.values() for p in c["places"] for l in p["locations"] if l.get("lat") is not None)
+    chain = next((r for r in index["restaurants"] if r.get("osm")), None)
+    for cid in empty:
+        c = cities[cid]
+        if not (c.get("none") or "").strip():
+            problems.append(f"{cid}: no places and no 'none' sentence to show instead")
+            continue
+        # the phone stands in the middle of the city with the look-around on, and one chain's branch 300 m north
+        at = {"latitude": sum(c["bounds"]["lat"]) / 2, "longitude": sum(c["bounds"]["lon"]) / 2}
+        listing = branch_list(index, at, [(chain["id"], 0.3, "High Street", "")] if chain else [])
+        ctx, _ = with_branches(browser, at, listing, init=SHARE_MOCK + "localStorage.setItem('gf-near-auto', 'on'); localStorage.setItem('gf-near-granted', '1');")
+        page = ctx.new_page()
+        errors = []
+        page.on("pageerror", lambda e, errors=errors: errors.append(f"page error: {e}"))
+        page.on("console", lambda m, errors=errors: errors.append(f"console {m.type}: {m.text}") if m.type == "error" else None)
+        page.goto(base + f"#{cid}")
+        page.wait_for_selector("#cityList .city-none")
+        page.wait_for_timeout(800)  # the look-around has answered and the page has been drawn again
+
+        def shown(when):
+            out = []
+            if norm_ws(page.locator("#cityList .city-none").inner_text()) != norm_ws(c["none"]):
+                out.append("the 'none' sentence isn't shown where the places would be")
+            link = page.locator("#cityList .empty-links a")
+            if link.count() != 1 or link.get_attribute("href") != c["list"]["url"] or norm_ws(link.inner_text()) != c["list"]["name"]:
+                out.append("no link to the list it was checked against")
+            if page.locator("#cityList .row").count():
+                out.append("rows are listed")
+            heads = [norm_ws(h).lower() for h in page.locator("#cityList h2.group-h").all_inner_texts()]
+            if any(not h.startswith("the app's chains here") for h in heads):
+                out.append(f"headings with nothing under them: {heads}")
+            if not page.locator("#guideLine").inner_text().startswith("No places · checked "):
+                out.append(f"the header line reads {page.locator('#guideLine').inner_text()!r}")
+            if page.locator("#cityTagsMore").is_visible() or page.locator("#cityIntroLine").is_visible() or page.locator("#cityStrip").is_visible():
+                out.append("the tags introduction shows, with no tags to explain")
+            if page.locator("#chips [data-map], #chips [data-nearopen], #chips [data-kind], #cityMap").count():
+                out.append("filters or a map are offered for no places")
+            if re.search(r"\b0 (places?|say|are|is)\b", page.locator("#cityView").inner_text()):
+                out.append("the page counts zero places")
+            if page.locator("#pickName").inner_text().strip() != c["name"]:
+                out.append(f"the title reads {page.locator('#pickName').inner_text()!r}")
+            return [f"{cid} ({when}): {x}" for x in out]
+
+        problems += shown("first visit")
+        if chain and page.locator(".chains-here [data-chain]").count() != 1:
+            problems.append(f"{cid}: the app's chain with a branch there isn't listed under the sentence")
+        if page.evaluate(WIDE_JS):
+            problems.append(f"{cid}: too wide: {page.evaluate(WIDE_JS)}")
+        # the tips and the footnotes are all there
+        page.locator("#cityTipsLabel").click()
+        if page.locator("#cityTips > div").count() != len(c["tips"]) or not page.locator("#cityTips").is_visible() or f"({len(c['tips'])})" not in page.locator("#cityTipsLabel").inner_text():
+            problems.append(f"{cid}: Before you go doesn't open to its {len(c['tips'])} tips")
+        foot = norm_ws(page.locator("#cityFoot").inner_text())
+        if any(norm_ws(n) not in foot for n in c.get("footNotes", [])) or c["list"]["name"] not in foot or "each place's own website" in foot:
+            problems.append(f"{cid}: the footnotes read {foot!r}")
+        # a search that finds nothing says so in the usual way, and clearing it brings the sentence back
+        page.locator("#q").fill("zzqqzz")
+        page.wait_for_timeout(300)
+        if page.locator("#cityList .city-none").count() or "No places match" not in page.locator("#cityList").inner_text():
+            problems.append(f"{cid}: a search that finds nothing reads {norm_ws(page.locator('#cityList').inner_text())[:80]!r}")
+        page.locator("#q").fill("")
+        page.wait_for_timeout(300)
+        # coming back to the app runs the opening-hours timer and the look-around again
+        page.evaluate("document.dispatchEvent(new Event('visibilitychange'))")
+        page.wait_for_timeout(700)
+        problems += shown("after a search and coming back")
+        # the chooser lists it, saying it has no places, and the share text doesn't promise any
+        page.locator("#pickBtn").click()
+        page.wait_for_selector("#picker[open]")
+        opt = page.locator(f'#pickList [data-region="{cid}"]')
+        said = norm_ws(opt.inner_text()) if opt.count() else ""
+        if not said.endswith("No places") or "Places that say" in said or re.search(r"\b0 places?\b", said):
+            problems.append(f"{cid}: the chooser's row reads {said!r}")
+        page.locator("#shareBtn").click()
+        page.wait_for_timeout(300)
+        shared = page.evaluate("window.__shared") or {}
+        if not str(shared.get("url", "")).endswith("#" + cid) or "Places in" in shared.get("text", "") or c["name"] not in shared.get("text", ""):
+            problems.append(f"{cid}: sharing it gives {shared}")
+        # asking for it again says it's already there
+        page.locator("#picker [data-askcity]").click()
+        page.wait_for_selector("#upload[open]")
+        page.locator("#cityName").fill(c["name"].lower())
+        page.locator("#cityCountry").fill(c["country"])
+        page.locator("#citySend").click()
+        page.wait_for_timeout(300)
+        if "already in the app" not in norm_ws(page.locator("#cityStatus").inner_text()):
+            problems.append(f"{cid}: asking for it again said {norm_ws(page.locator('#cityStatus').inner_text())!r}")
+        else:
+            page.locator("#cityStatus [data-gotocity-req]").click()
+            page.wait_for_timeout(300)
+        if page.locator("dialog[open]").count() or not page.url.endswith("#" + cid):
+            problems.append(f"{cid}: Open it didn't go back to its page: {page.url}")
+        # the map page opens there with every other city's pins and none of its own
+        page.locator("#mapBtn").click()
+        page.wait_for_selector("#mapPage[open]")
+        page.wait_for_selector("#liveMap path.you-dot", state="attached", timeout=15000)
+        page.wait_for_timeout(500)
+        if page.locator("#liveMap path.pin-place").count() != all_pins:
+            problems.append(f"{cid}: the map page has {page.locator('#liveMap path.pin-place').count()} place pins, expected {all_pins}")
+        page.keyboard.press("Escape")
+        # the second visit is the same: there's no introduction to fold away
+        page.reload()
+        page.wait_for_selector("#cityList .city-none")
+        page.wait_for_timeout(500)
+        problems += shown("second visit")
+        problems += [f"{cid}: {e}" for e in errors]
+        print(f"city with no places: {cid} says so, links {c['list']['by']}'s list, {len(c['tips'])} tips, no tags, filters or map; chooser, search, share, map page and asking again work; {len(errors)} errors")
+        ctx.close()
+    # and a city with places is drawn as before: every place a row, with the tags introduction and its count
+    full = next(c for c, city in cities.items() if city["places"] and city.get("group") == cities[empty[0]].get("group"))
+    ctx, page, errors = visit(browser, base + f"#{full}", wait="#cityList .row")
+    n = len(cities[full]["places"])
+    line = page.locator("#guideLine").inner_text()
+    if page.locator("#cityList .row").count() != n or page.locator("#cityList .city-none").count() or not line.startswith(f"{n} place"):
+        problems.append(f"{full}: with places, {page.locator('#cityList .row').count()} of {n} rows show and the header reads {line!r}")
+    if not page.locator("#cityIntroLine").is_visible() or not page.locator("#cityTagsMore").is_visible() or "own website" not in norm_ws(page.locator("#cityFoot").inner_text()):
+        problems.append(f"{full}: with places, the tags introduction or the sources line is missing")
+    problems += [f"{full}: {e}" for e in errors]
+    ctx.close()
+    return problems
+
+
+def check_ux_review(env):
+    """Fixes from the UX review: a notice shows above an open sheet; a first load that fails offers Try again; a city's
+    tags introduction agrees with its count; placeholders are readable in every theme; closing Near me returns to its
+    chip; a row's buttons keep their labels inside at the largest text sizes; an English line under a list's name
+    abroad is marked as the app's."""
+    base, browser, ids, cities, index = env.base, env.browser, env.ids, env.cities, env.index
+    problems = []
+    # 1. a notice raised from a sheet is drawn on top of it (inside it), and goes back to the page when the sheet closes
+    ctx, page, errors = visit(browser, base, init="localStorage.setItem('gf-selected', 'all')")
+    page.locator("#infoBtn").click()
+    page.wait_for_selector("#info[open]")
+    page.locator("#info summary", has_text="Staying up to date").click()
+    page.locator("#refreshBtn").click()
+    page.wait_for_selector("#toast.show")
+    top = page.evaluate("""() => { const t = document.getElementById('toast'), r = t.getBoundingClientRect();
+        return [document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === t, t.parentElement.id, r.top >= 0 && r.bottom <= innerHeight]; }""")
+    if top != [True, "info", True]:
+        problems.append(f"notices: with Help open the notice isn't on top of the sheet (on top, inside, on screen: {top})")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(200)
+    if page.evaluate("document.getElementById('toast').parentElement.tagName") != "BODY":
+        problems.append("notices: after the sheet closed the notice stayed inside it")
+    # 2. placeholders (the only sign of what the search covers) reach 4.5:1 in every theme
+    ratio_js = r"""(sel) => {
+        const el = document.querySelector(sel);
+        const rgba = (s) => s.match(/[\d.]+/g).map(Number);
+        const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+        const bgOf = (e0) => { for (let e = e0; e; e = e.parentElement) { const v = rgba(getComputedStyle(e).backgroundColor); if (v.length < 4 || v[3] > 0.99) return v; } return [255, 255, 255]; };
+        const [hi, lo] = [lum(rgba(getComputedStyle(el, '::placeholder').color)), lum(bgOf(el))].sort((x, y) => y - x);
+        return (hi + 0.05) / (lo + 0.05);
+    }"""
+    worst = 21
+    for theme in ("light", "dark", "pink-light", "pink-dark"):
+        page.evaluate("(t) => document.documentElement.setAttribute('data-theme', t)", theme)
+        for sel in ("#q", ".field input"):
+            r = page.evaluate(ratio_js, sel)
+            worst = min(worst, r)
+            if r < 4.5:
+                problems.append(f"placeholders: {sel} is {r:.2f}:1 in {theme}")
+    page.evaluate("document.documentElement.removeAttribute('data-theme')")
+    problems += [f"notices: {e}" for e in errors]
+    ctx.close()
+    # 3. the first load fails: the page says so with Try again, the title explains itself, and a retry that works
+    # starts as a first visit does (the chooser, when there are several restaurants)
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+    page = ctx.new_page()
+    cut = lambda route: route.abort()  # noqa: E731
+    ctx.route("**/data/restaurants.json", cut)
+    page.goto(base)
+    page.wait_for_selector("#list [data-retry]")
+    said = norm_ws(page.locator("#list").inner_text())
+    if "Check your signal, then try again." not in said or page.locator("#list [data-retry]").bounding_box()["height"] < 43.5:
+        problems.append(f"first load: after it failed the page reads {said!r}, or Try again is under tap size")
+    page.locator("#pickBtn").click()
+    page.wait_for_selector("#toast.show")
+    if "haven't loaded yet" not in page.locator("#toast").inner_text() or page.locator("dialog[open]").count():
+        problems.append(f"first load: tapping the title with no menus said {page.locator('#toast').inner_text()!r}")
+    page.locator("#list [data-retry]").click()  # still no signal: the button comes back
+    page.wait_for_timeout(500)
+    if not page.locator("#list [data-retry]:not([disabled])").count() or page.locator("#guideLine").inner_text() != "Couldn't load menus":
+        problems.append("first load: a second failure doesn't leave Try again ready")
+    ctx.unroute("**/data/restaurants.json", cut)
+    page.locator("#list [data-retry]").click()
+    page.wait_for_selector("#list .row")
+    page.wait_for_timeout(300)
+    if len(ids) > 1 and not page.locator("#picker[open]").count():
+        problems.append("first load: after Try again worked, the first visit's chooser didn't open")
+    ctx.close()
+    # 4. each city's tags introduction agrees with its counts, an abroad list's English line says it's the app's, and
+    # the app's own "Its website" under a quote is in English whatever the quote's language
+    ctx, page, errors = visit(browser, base, init="localStorage.setItem('gf-selected', 'all')")
+    for cid, c in cities.items():
+        if not c["places"]:
+            continue
+        page.goto(base + f"#{cid}")
+        page.reload()
+        page.wait_for_selector("#cityList .row")
+        intro = norm_ws(page.locator("#cityIntro").text_content())
+        counts = {k: sum(1 for p in c["places"] if p["claim"] == k) for k in ("place-all", "list-all", "place-part", "separate")}
+        if re.search(r"\b1 (say|are|have)\b", intro) or re.search(r"\b([2-9]|\d\d+) (says|is)\b", intro):
+            problems.append(f"{cid}: About the tags doesn't agree with its counts: {intro!r}")
+        if counts["place-all"] and f"{counts['place-all']} {'says so itself' if counts['place-all'] == 1 else 'say so themselves'}" not in intro:
+            problems.append(f"{cid}: About the tags doesn't count its {counts['place-all']} own claims: {intro!r}")
+        if ("That's its claim" in intro) != (len(c["places"]) == 1):
+            problems.append(f"{cid}: About the tags speaks of {'several places' if len(c['places']) == 1 else 'one place'}: {intro!r}")
+        abroad = c.get("language", "en") != "en"
+        marked = page.evaluate("""() => [...document.querySelectorAll('#cityList .detail > div[data-quote]')].filter((d) => /^From /.test(d.textContent))
+            .map((d) => /\\(in English, by the app\\)$/.test(d.textContent.trim()))""")
+        if any(m != abroad for m in marked):
+            problems.append(f"{cid}: " + ("an English line from a list abroad isn't marked as the app's" if abroad else "a UK listing is marked as the app's English"))
+        if page.evaluate("[...document.querySelectorAll('#cityList blockquote cite')].filter((e) => e.lang !== 'en-GB').length"):
+            problems.append(f"{cid}: 'Its website' under a quote isn't marked as English")
+    problems += [f"tags introduction: {e}" for e in errors]
+    ctx.close()
+    # 5. closing Near me puts the focus back on its chip
+    chain = next((r for r in index["restaurants"] if r.get("osm")), None)
+    if chain:
+        at = {"latitude": 51.5308, "longitude": -0.1238}
+        ctx, _ = with_branches(browser, at, branch_list(index, at, [(chain["id"], 0.3, "Euston Road", "")]))
+        page = ctx.new_page()
+        page.goto(base)
+        page.wait_for_selector("#list .row")
+        page.locator("#chips [data-near-uk]").focus()
+        page.keyboard.press("Enter")
+        page.wait_for_selector("#near[open] .near-list li", timeout=15000)
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(300)
+        if not page.evaluate("!!document.activeElement && document.activeElement.hasAttribute('data-near-uk')"):
+            problems.append(f"near me: closing the sheet left the focus on {page.evaluate('document.activeElement.tagName')}, not its chip")
+        ctx.close()
+    # 6. at the largest text sizes a row's buttons keep their labels inside
+    ctx, page, _ = visit(browser, base + f"#{ids[0]}")
+    page.evaluate("document.documentElement.style.setProperty('font-size', '32px', 'important')")
+    page.locator("#list details.row").first.locator("summary").click()
+    page.wait_for_timeout(300)
+    spilt = page.evaluate("""() => [...document.querySelectorAll('#list details.row[open] .foot-btns > *')].filter((b) => b.scrollWidth > b.clientWidth + 1)
+        .map((b) => b.textContent.trim() + ' ' + b.scrollWidth + '>' + b.clientWidth)""")
+    if spilt or not page.locator("#list details.row[open] .foot-btns > *").count():
+        problems.append(f"larger text: at 32px these buttons spill out of their pills (or none was found): {spilt}")
+    ctx.close()
+    print(f"ux review: notices show above a sheet; placeholders at least {worst:.1f}:1; a failed first load offers Try again; "
+          f"tags introductions agree with their counts; Near me returns the focus; buttons hold their labels at 32px")
+    return problems
+
+
 CHECKS = [
+    ("city_with_no_places", check_city_with_no_places),
+    ("ux_review", check_ux_review),
+    ("c1_mixed_load", check_c1_mixed_load),
+    ("c2_odd_links", check_c2_odd_links),
+    ("c3_coming_back", check_c3_coming_back),
+    ("c4_city_cold_start", check_c4_city_cold_start),
+    ("c5_fields_and_saves", check_c5_fields_and_saves),
     ("every_page", check_every_page),
     ("e_review", check_e_review),
     ("the_berlin_page_in_light", check_the_berlin_page_in_light),
