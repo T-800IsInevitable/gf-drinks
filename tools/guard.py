@@ -165,8 +165,23 @@ def commits(pr, pages=3):
     return out
 
 
+def from_other_repo(pull, repo):
+    """A pull request from someone else's copy of the repository (a fork): checks.yml runs its own copy of the tools, so
+    it could loosen them, and it isn't the owner's work whatever its commits say. A deleted fork has no head repo."""
+    head = (pull.get("head") or {}).get("repo") or {}
+    if head.get("full_name") == repo:
+        return []
+    return [f"this pull request comes from {head.get('full_name') or 'a deleted copy'}, not from {repo}. Only branches "
+            "of this repository are merged here; copy a change you want onto a branch of your own"]
+
+
 def main():
     ref = os.environ["HEAD_REF"]
+    problems = from_other_repo(gh.request("GET", f"/pulls/{os.environ['PR']}"), os.environ["GITHUB_REPOSITORY"])
+    for p in problems:
+        print("GUARD:", p)
+    if problems:
+        sys.exit(1)
     problems = scope(ref, changed(os.environ["PR"]), machine_made(commits(os.environ["PR"])), reader_built(ref))
     city = CITY_REF.fullmatch(ref)
     if city and not problems:

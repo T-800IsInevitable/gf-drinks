@@ -15,6 +15,26 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 import guard  # noqa: E402
 
 
+class OtherRepository(unittest.TestCase):
+    """A pull request from someone else's copy (a fork) isn't the owner's, whatever its commits say."""
+
+    def pull(self, head_repo):
+        return {"head": {"repo": {"full_name": head_repo} if head_repo else None}}
+
+    def test_only_this_repository_passes(self):
+        self.assertEqual(guard.from_other_repo(self.pull("o/r"), "o/r"), [])
+        self.assertTrue(guard.from_other_repo(self.pull("stranger/r"), "o/r"))
+        self.assertTrue(guard.from_other_repo(self.pull(None), "o/r"))  # a deleted fork
+
+    def test_main_refuses_a_fork_before_anything_else(self):
+        with mock.patch.object(guard.gh, "request", return_value=self.pull("stranger/r")), \
+                mock.patch.dict(guard.os.environ, {"HEAD_REF": "patch-1", "PR": "9", "GITHUB_REPOSITORY": "o/r"}), \
+                mock.patch.object(guard, "changed", side_effect=AssertionError("judged a fork's files")):
+            with self.assertRaises(SystemExit) as stop:
+                guard.main()
+        self.assertEqual(stop.exception.code, 1)
+
+
 class Scope(unittest.TestCase):
     def test_a_scan_changes_one_restaurant(self):
         self.assertEqual(guard.scope("scan/test-cafe-2026-10-26", ["restaurants/test-cafe/menu.csv", "restaurants/test-cafe/source/x/menu.pdf"]), [])
@@ -221,7 +241,8 @@ class OneCity(unittest.TestCase):
         env = {"PR": "7", "HEAD_REF": "recheck/york-2026-11-15"}
         with mock.patch.object(guard, "changed", return_value=["site/cities.json"]), mock.patch.object(guard, "commits", return_value=[]), \
                 mock.patch.object(guard, "cities_of", return_value=(self.BASE, self.head(london=london))) as cities, \
-                mock.patch("builtins.print"):
+                mock.patch.object(guard.gh, "request", return_value={"head": {"repo": {"full_name": "o/r"}}}), \
+                mock.patch.dict("os.environ", {"GITHUB_REPOSITORY": "o/r"}), mock.patch("builtins.print"):
             with mock.patch.dict("os.environ", env), self.assertRaises(SystemExit):
                 guard.main()
             cities.return_value = (self.BASE, self.head(york={"name": "York", "checked": "2026-11-15"}))
