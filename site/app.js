@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 44;
+  const APP_VERSION = 45;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -117,8 +117,21 @@
   const visible = (k) => !picking() || pick[k];
   // "straight" = no gluten ingredients as served: asis/any/except (fine as served, or with any milk but the ones named); change = swap/modify;
   // "info" = an ingredient listed on its own (not something to order), which none of the status buttons count
-  // an order this app doesn't know (a newer menu on an older app) counts with the Avoid list, never as fine
-  const kindOf = (i) => (!i.order || !["asis", "any", "except", "swap", "modify"].includes(i.order) ? "gluten" : i.role === "ingredient" ? "info" : (i.order === "swap" || i.order === "modify") ? "change" : "straight");
+  // the ways of ordering this app knows; an item with any other (a newer menu on an older app) counts with the Avoid list
+  const ORDERS = ["asis", "any", "except", "swap", "modify"];
+  const kindOf = (i) => (!i.order || !ORDERS.includes(i.order) ? "gluten" : i.role === "ingredient" ? "info" : (i.order === "swap" || i.order === "modify") ? "change" : "straight");
+  // a listed item whose order this app doesn't know goes to the Avoid list as "Check in store", once, as a menu comes in,
+  // so the list, the order builder, staff cards, Your usuals and the counts all agree. Shaped like a hand-kept doubt row.
+  function safeMenu(r) {
+    const odd = (r.items || []).filter((i) => !ORDERS.includes(i.order));
+    if (!odd.length) return r;
+    const ingredients = odd.filter((i) => i.role === "ingredient").length;
+    const stats = { ...(r.stats || {}), items: ((r.stats || {}).items || 0) - (odd.length - ingredients), avoid: ((r.stats || {}).avoid || 0) + odd.length };
+    if (ingredients) stats.ingredients = ((r.stats || {}).ingredients || 0) - ingredients;
+    const asAvoid = ({ order, ok, not, standard, standardFrom, note, ...i }) =>
+      ({ ...i, gluten: [], tag: "Check in store", reason: "Note from this app: it doesn't know how this menu says to order it, so check in store." });
+    return { ...r, stats, items: r.items.filter((i) => ORDERS.includes(i.order)), avoid: (r.avoid || []).concat(odd.map(asAvoid)) };
+  }
 
   // ---------- helpers ----------
   const byId = (id) => data && data.restaurants.find((r) => r.id === id);
@@ -2749,7 +2762,7 @@
       const mixed = full.some((f, n) => idx.json.restaurants[n].hash && f.json.hash !== idx.json.restaurants[n].hash);
       const offline = idx.offline || mixed || full.some((f) => f.offline);
       if (!offline) { store.set(CHECKED_KEY, new Date().toISOString()); renderLastChecked(); }
-      const fresh = { built: idx.json.built, restaurants: full.map((f) => f.json) };
+      const fresh = { built: idx.json.built, restaurants: full.map((f) => safeMenu(f.json)) };
       // every release rebuilds the menus, so compare what they say, not when they were built
       const changed = !prev || menusOf(prev) !== menusOf(fresh);
       const wasOffline = offlineNow;
@@ -3116,7 +3129,7 @@
   const [hashRid, hashItem] = hashId.split("/");
   const saved = store.get(DATA_KEY);
   if (saved) {
-    try { data = JSON.parse(saved); } catch (e) { data = null; }
+    try { data = JSON.parse(saved); data.restaurants = data.restaurants.map(safeMenu); } catch (e) { data = null; }
   }
   if (data) { setLooked(data.restaurants, true); noteNewRestaurants(data.restaurants); } // the menus saved on this phone are the ones you last saw
   // a link to a restaurant opens the UK menus; any other link (#berlin) is taken as a city until cities.json says otherwise

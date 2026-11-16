@@ -27,7 +27,7 @@ def source(name):
 @unittest.skipUnless(NODE, "needs Node.js")
 class UnknownOrder(unittest.TestCase):
     def run_js(self, items):
-        code = "\n".join(source(n) for n in ("listOr", "kindOf", "tagFor", "orderLine")) + """
+        code = "\n".join(source(n) for n in ("ORDERS", "listOr", "kindOf", "tagFor", "orderLine")) + """
 const r = { optionLabel: "milk" };
 const items = JSON.parse(process.argv[1]);
 process.stdout.write(JSON.stringify(items.map((i) => [kindOf(i), tagFor(r, i), orderLine(r, i)])));
@@ -41,6 +41,32 @@ process.stdout.write(JSON.stringify(items.map((i) => [kindOf(i), tagFor(r, i), o
             self.assertEqual(kind, "gluten", item)  # counted and filtered with the Avoid list, not as fine
             self.assertEqual(tag, ["t-bad", "Check in store"], item)
             self.assertEqual(line, "Please check this with staff.", item)
+
+    def test_safe_menu_moves_an_unknown_order_to_the_avoid_list(self):
+        # every screen (list, order builder, staff cards, Your usuals, counts) reads items and avoid, so the move is made
+        # once, as the menu comes in
+        code = source("ORDERS") + "\n" + source("safeMenu") + """
+const menus = JSON.parse(process.argv[1]);
+process.stdout.write(JSON.stringify(menus.map((r) => [safeMenu(r), safeMenu(r) === r])));
+"""
+        menu = {"id": "x", "stats": {"rows": 4, "items": 2, "ingredients": 1, "avoid": 1},
+                "items": [{"name": "Latte", "section": "S", "order": "asis"},
+                          {"name": "Mystery", "section": "S", "order": "ask", "ok": ["soya"], "not": ["oat"]},
+                          {"name": "Odd milk", "section": "S", "order": "ask", "role": "ingredient"}],
+                "avoid": [{"name": "Bun", "section": "S", "gluten": ["WHEAT"]}]}
+        plain = {"id": "y", "stats": {"items": 1, "avoid": 0}, "items": [{"name": "Tea", "order": "asis"}], "avoid": []}
+        out = subprocess.run([NODE, "-e", code, json.dumps([menu, plain])], capture_output=True, text=True, encoding="utf-8", check=True)
+        (moved, same), (_, untouched) = json.loads(out.stdout)
+        self.assertFalse(same)
+        self.assertEqual([i["name"] for i in moved["items"]], ["Latte"])
+        odd = {a["name"]: a for a in moved["avoid"]}
+        self.assertEqual(sorted(odd), ["Bun", "Mystery", "Odd milk"])
+        for name in ("Mystery", "Odd milk"):
+            self.assertEqual((odd[name]["tag"], odd[name]["gluten"]), ("Check in store", []))
+            self.assertNotIn("order", odd[name])
+            self.assertNotIn("ok", odd[name])
+        self.assertEqual(moved["stats"], {"rows": 4, "items": 1, "ingredients": 0, "avoid": 3})
+        self.assertTrue(untouched)  # a menu with nothing unknown is passed through as it is
 
     def test_the_known_orders_read_as_before(self):
         out = self.run_js([{"order": "asis"}, {"order": "except", "ok": ["soya"], "not": ["oat"]},
