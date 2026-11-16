@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # not ubuntu-latest: Playwright's WebKit needs Ubuntu 24.04's libraries (ubuntu-latest is now 26.04)
     timeout-minutes: 45 # the checks (with a slow package mirror) and the branch list's twelve minutes
     permissions:
       contents: read
