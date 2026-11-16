@@ -26,7 +26,7 @@ from pathlib import Path
 import pdfplumber
 
 from . import notices
-from .common import CEREAL_CAPS as GLUTEN_WORDS, cereal_code, clean, newest_by, result
+from .common import CEREAL_CAPS as GLUTEN_WORDS, cereal_code, clean, newest_by, one_of_each, result
 
 GLUTEN_COL = 7  # 0-based position of "Cereals containing gluten" among the 14 allergen icons
 LEGEND = {
@@ -198,12 +198,7 @@ def build(folder, config):
     stars_note = {1: "Available at participating locations only.", 2: "Available in non-halal stores only.",
                   3: "Not available at the Heathrow Airport location."}
     items, avoid = [], []
-    seen = set()
-    for r in rows:
-        key = (r["section"], r["name"].lower())
-        if key in seen:
-            continue
-        seen.add(key)
+    for r in rows:  # an item listed twice is sorted out after the loop (one_of_each), so no copy hides gluten
         # same name can appear in two sections (the Meat "Hot Dog" sausage vs the Hot Dogs "Hot Dog" in a bun)
         cands = ing.get(norm_name(r["name"]), [])
         first = r["section"].split(" ")[0].upper()
@@ -253,6 +248,7 @@ def build(folder, config):
         else:
             item["order"] = "asis"
             items.append(item)
+    items, avoid = one_of_each(items, avoid, warnings)
     return result(pdf_path.name, {"title": "Allergen guide", "runs": None, "version": version},
                   "Excludes anything Five Guys marks for cereals containing gluten, either as an ingredient (dot) or as not suitable because of preparation (1).",
                   items, avoid, warnings, guide_notices, rows=len(rows))

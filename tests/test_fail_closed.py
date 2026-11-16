@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 import build  # noqa: E402
-from adapters import five_guys_uk_pdf, greggs_uk_pdf  # noqa: E402
+from adapters import common, five_guys_uk_pdf, greggs_uk_pdf, pret_uk_pdf, starbucks_uk_pdf  # noqa: E402
 from adapters.common import CEREAL, CEREAL_CAPS, cereal_code  # noqa: E402
 from adapters.pret_uk_pdf import TICK, odd_mark  # noqa: E402
 
@@ -144,6 +144,29 @@ class UnknownMarks(unittest.TestCase):
             self.assertEqual(five_guys_uk_pdf.odd_marks(marks + [char(text, 503, 180)], 500, 12, bars), [text])
         # a section bar's title runs across the column; the next column's marks are its own
         self.assertEqual(five_guys_uk_pdf.odd_marks(marks + [char("S", 500, 200), char("x", 530, 120)], 500, 12, bars), [])
+
+
+class Repeats(unittest.TestCase):
+    """The same item twice: a clean copy never hides a copy that names gluten."""
+    row = {"section": "Hot", "sub": None, "page": 1}
+
+    def test_starbucks_a_gluten_row_with_no_milk_is_avoid(self):
+        for second in ("Toffee Nut Latte", "Toffee Nut Latte - skimmed milk"):
+            ok, avoid = starbucks_uk_pdf.group([{**self.row, "name": "Toffee Nut Latte", "gluten": ["WHEAT"]},
+                                                {**self.row, "name": second, "gluten": []}])
+            self.assertEqual((ok, [a["name"] for a in avoid]), ([], ["Toffee Nut Latte"]), second)
+
+    def test_pret_a_gluten_row_with_no_milk_is_avoid(self):
+        ok, avoid = pret_uk_pdf.group([{**self.row, "name": "Mocha", "gluten": []}, {**self.row, "name": "Mocha", "gluten": ["WHEAT"]}])
+        self.assertEqual((ok, [a["name"] for a in avoid]), ([], ["Mocha"]))
+
+    def test_one_of_each_moves_a_clean_copy_off_the_list(self):
+        ok = [{"section": "Shakes", "name": "Shake"}, {"section": "Shakes", "name": "Malt"}, {"section": "Shakes", "name": "malt"}]
+        avoid = [{"section": "Shakes", "name": "Shake", "gluten": ["GLUTEN"]}]
+        warnings = []
+        ok, avoid = common.one_of_each(ok, avoid, warnings)
+        self.assertEqual(([i["name"] for i in ok], [a["name"] for a in avoid]), (["Malt"], ["Shake"]))
+        self.assertEqual(len(warnings), 2)
 
 
 class Cereals(unittest.TestCase):

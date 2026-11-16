@@ -83,6 +83,27 @@ def newest_by(folder, version_of, keep=None, what="version", pattern="*.pdf"):
     return dated[-1][2]
 
 
+def one_of_each(ok, avoid, warnings):
+    """The same item twice in a section (name in any case): keep the first copy, and never let a copy with no gluten
+    hide one that names it."""
+    key = lambda i: (i["section"], i["name"].lower())
+    gluten = {key(a) for a in avoid}
+    out = []
+    for rows in (ok, avoid):
+        seen, kept = set(), []
+        for i in rows:
+            k = key(i)
+            if rows is ok and k in gluten:
+                warnings.append(f"{i['name']}: listed twice in {i['section']}, once naming gluten; put on the Avoid list")
+            elif k in seen:
+                warnings.append(f"{i['name']}: listed twice in {i['section']}; kept the first")
+            else:
+                seen.add(k)
+                kept.append(i)
+        out.append(kept)
+    return out
+
+
 def result(source, guide, rule, items, avoid, warnings, notices=(), rows=None, sections=None):
     """A built menu, as build.py expects it from every reader."""
     return {
