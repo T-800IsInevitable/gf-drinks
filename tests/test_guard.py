@@ -58,6 +58,31 @@ class HandKeptAvoidSetting(unittest.TestCase):
         # a new source that the existing avoidDropOk doesn't name is fine
         self.assertEqual(guard.avoid_ok_changed("knoops-uk", main_cfg, {**main_cfg, "guide": {"source": "c.pdf"}}), [])
 
+    def run_main(self, paths, on_main):
+        """guard.main() for scan/new-cafe-2026-11-20 changing paths, with main holding restaurant.json or not."""
+        rj = "restaurants/new-cafe/restaurant.json"
+        answers = {"/pulls/9": {"head": {"sha": "abc", "repo": {"full_name": "o/r"}}},
+                   f"/contents/{rj}?ref=abc": {"reader": "manual_csv", "guide": {"source": "menu.csv"}}}
+        env = {"HEAD_REF": "scan/new-cafe-2026-11-20", "PR": "9", "GITHUB_REPOSITORY": "o/r"}
+        with tempfile.TemporaryDirectory() as tmp:
+            if on_main:
+                (Path(tmp) / "restaurants" / "new-cafe").mkdir(parents=True)
+                # the same as the pull request's copy, so only the paths can be wrong
+                (Path(tmp) / rj).write_text('{"reader": "manual_csv", "guide": {"source": "menu.csv"}}', encoding="utf-8")
+            with mock.patch.object(guard, "ROOT", Path(tmp)), mock.patch.dict(guard.os.environ, env), \
+                    mock.patch.object(guard.gh, "request", side_effect=lambda m, path, **k: answers[path]), \
+                    mock.patch.object(guard, "changed", return_value=paths), \
+                    mock.patch.object(guard, "commits", return_value=[]), mock.patch("builtins.print"):
+                guard.main()
+
+    def test_a_new_restaurant_from_a_scan_passes(self):
+        # main has no copy yet, so there's no live menu for the Avoid guard to protect
+        self.run_main(["restaurants/new-cafe/menu.csv", "restaurants/new-cafe/restaurant.json"], on_main=False)
+
+    def test_the_avoid_check_never_clears_a_problem_found_before_it(self):
+        with self.assertRaises(SystemExit):
+            self.run_main(["restaurants/new-cafe/restaurant.json", "tools/check.py"], on_main=True)
+
     def test_main_reads_both_copies_for_a_hand_kept_scan(self):
         rj = "restaurants/knoops-uk/restaurant.json"
         answers = {"/pulls/9": {"head": {"sha": "abc", "repo": {"full_name": "o/r"}}},
