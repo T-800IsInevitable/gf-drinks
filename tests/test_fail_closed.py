@@ -1,6 +1,7 @@
 """
 The backstops that stop a build rather than publish a menu a reader has misread: build.py's Avoid-share guard
-(avoid_drop), the Pret reader's unknown-mark test (odd_mark) and the shared cereal pattern.
+(avoid_drop), the readers' unknown-mark tests (Pret's odd_mark, Greggs' and Five Guys' odd_marks) and the shared
+cereal pattern.
 
 Run: python -m unittest discover -s tests
 """
@@ -12,6 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 import build  # noqa: E402
+from adapters import five_guys_uk_pdf, greggs_uk_pdf  # noqa: E402
 from adapters.common import CEREAL, CEREAL_CAPS, cereal_code  # noqa: E402
 from adapters.pret_uk_pdf import TICK, odd_mark  # noqa: E402
 
@@ -74,6 +76,17 @@ class AvoidDrop(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self.run_drop(live, {"source": "new.pdf", "avoid": live["avoid"][3:], "items": live["items"] + live["avoid"][:3]})
 
+    def test_five_avoid_rows_turning_green_stop_it_however_many_stay(self):
+        live = menu(60, 100)
+        moved = lambda k: {"source": "new.pdf", "avoid": live["avoid"][k:], "items": live["items"] + live["avoid"][:k]}
+        for k in (5, 6, 19):  # a twelfth to a third of the Avoid rows: under the share test, over the floor
+            with self.assertRaises(SystemExit) as stop:
+                self.run_drop(live, moved(k))
+            self.assertIn(f"{k} of the 60 Avoid rows", str(stop.exception))
+        for k in (1, 4):  # a recipe change or a few
+            self.run_drop(live, moved(k))
+        self.run_drop(live, moved(6), {"avoidDropOk": "new.pdf"})  # still the owner's to accept, for that guide
+
     def test_renamed_and_blind_at_once_stops_it(self):
         # every Avoid row gone under its old name and nothing to avoid under the new ones
         with self.assertRaises(SystemExit) as stop:
@@ -81,7 +94,8 @@ class AvoidDrop(unittest.TestCase):
         self.assertIn("left the menu", str(stop.exception))
 
     def test_one_guide_of_a_merged_menu_failing_isnt_hidden_by_the_other(self):
-        drinks, food = menu(6, 133), menu(90, 10)
+        # four drinks rows: under the whole menu's stop at five, so only the drinks guide's own share can stop it
+        drinks, food = menu(4, 133), menu(90, 10)
         with self.assertRaises(SystemExit) as stop:
             self.run_drop(merged(drinks, food), merged(blind(drinks), food))
         self.assertIn("guide 1 of 2", str(stop.exception))
@@ -102,6 +116,34 @@ class Marks(unittest.TestCase):
     def test_ticks_and_allergen_names_are_not(self):
         for text in (TICK, TICK + TICK, "Almond", "Nuts", "(Wheat)", "Kamut", "Sesame"):
             self.assertFalse(odd_mark(text), text)
+
+
+def char(text, x, y=100):
+    """A character as pdfplumber gives it, 4pt square, centred on (x, y)."""
+    return {"text": text, "x0": x - 2, "x1": x + 2, "top": y - 2, "bottom": y + 2}
+
+
+class UnknownMarks(unittest.TestCase):
+    """Greggs and Five Guys: a character in the gluten columns that isn't one of the guide's marks stops the build,
+    where it used to be read as an empty cell (and the row listed)."""
+
+    def test_greggs_only_the_tick_and_the_bullet_are_marks(self):
+        xs = [300, 320, 340]  # three cereal columns, 20pt apart
+        marks = [char(greggs_uk_pdf.TICK, 300), char(greggs_uk_pdf.BULLET, 341), char(" ", 320)]
+        self.assertEqual(greggs_uk_pdf.odd_marks(marks, xs, 10), [])
+        for text in ("†", "*", "x", "Y", "✔", "●", "1"):
+            self.assertEqual(greggs_uk_pdf.odd_marks(marks + [char(text, 322)], xs, 10), [text])
+        # the same character under another allergen's column (the GF column's own letters) isn't this test's to judge
+        self.assertEqual(greggs_uk_pdf.odd_marks(marks + [char("G", 360), char("F", 364)], xs, 10), [])
+
+    def test_five_guys_only_the_dot_and_the_two_numbers_are_marks(self):
+        bars = [{"top": 190, "bottom": 215}]
+        marks = [char("•", 500, 120), char("1", 501, 140), char("2", 499, 160)]
+        self.assertEqual(five_guys_uk_pdf.odd_marks(marks, 500, 12, bars), [])
+        for text in ("3", "†", "*", "x", "●"):
+            self.assertEqual(five_guys_uk_pdf.odd_marks(marks + [char(text, 503, 180)], 500, 12, bars), [text])
+        # a section bar's title runs across the column; the next column's marks are its own
+        self.assertEqual(five_guys_uk_pdf.odd_marks(marks + [char("S", 500, 200), char("x", 530, 120)], 500, 12, bars), [])
 
 
 class Cereals(unittest.TestCase):

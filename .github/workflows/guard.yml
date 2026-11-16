@@ -4,8 +4,11 @@ name: Guard pull request
 # main, whatever the pull request changes, so a pull request can't loosen the checks that judge it (checks.yml runs
 # the pull request's own copy). Nothing from the pull request is run: only its menu and city files are read, as data.
 #  - A routine's or a workflow's pull request (branches scan/, city/, recheck/, guide-watch/) may change only its own
-#    files, and a pull request carrying one of their commits must be on such a branch (tools/guard.py).
-#  - Its menus and cities are built and checked with main's tools/build.py and tools/check.py.
+#    files, and a pull request carrying one of their commits must be on such a branch (tools/guard.py). A scan/ branch
+#    for a restaurant a reader already builds may add only guides and source files; a city/ or recheck/ branch may
+#    change only the city it names.
+#  - Its menus and cities are built and checked with main's tools/build.py and tools/check.py, and none of those
+#    files may be a symbolic link or a submodule.
 # The token reads only, and no secret is used here. main requires this check (job "guard") to pass.
 on:
   pull_request_target:
@@ -46,6 +49,12 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           git fetch --no-tags --depth=1 origin "refs/pull/$PR/head"
+          # files only: the build copies logos and guides into the site, and would follow a link to wherever it points
+          modes="$(git ls-tree -r FETCH_HEAD -- restaurants site/cities.json)"
+          if grep -E '^(120000|160000) ' <<<"$modes"; then
+            echo "GUARD: symbolic links and submodules aren't allowed in restaurants/ or as site/cities.json"
+            exit 1
+          fi
           rm -rf restaurants
           git checkout FETCH_HEAD -- restaurants site/cities.json
           python tools/build.py

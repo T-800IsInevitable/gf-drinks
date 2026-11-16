@@ -9,6 +9,8 @@ Usage:
 import json
 import re
 import sys
+import zoneinfo
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -27,6 +29,68 @@ HOURS = re.compile(r"(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})")
 # the keys that hold a web address, anywhere in the data (plus any key ending in Url)
 URL_KEYS = {"url", "officialUrl", "listPage", "logoUrl"}
 SAFE_URL = re.compile(r"https://\S+")
+UK_BOX = {"lat": (49, 61), "lon": (-9, 2)}  # the same box check_branches holds the chains' branches to
+CITY_SPAN = 1  # degrees: a city's bounds are never wider or taller than this (London, the widest, is 0.86)
+
+
+def real_date(v):
+    """True for a real calendar date written YYYY-MM-DD."""
+    if not (isinstance(v, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", v)):
+        return False
+    try:
+        date.fromisoformat(v)
+    except ValueError:
+        return False
+    return True
+
+
+def clock(h, m, closing=False):
+    """True for a time of day; 24:00 only as a closing time."""
+    h, m = int(h), int(m)
+    return (h < 24 and m < 60) or (closing and h == 24 and m == 0)
+
+
+def number(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def zone_known(tz):
+    """True or False for a time zone name; None when this computer has no time zone list to ask (a Windows Python
+    without the tzdata package), so the test is skipped there instead of failing every city."""
+    try:
+        zoneinfo.ZoneInfo("Europe/London")
+    except zoneinfo.ZoneInfoNotFoundError:
+        return None
+    try:
+        zoneinfo.ZoneInfo(tz)
+    except (zoneinfo.ZoneInfoNotFoundError, ValueError, TypeError, OSError):
+        return False
+    return True
+
+
+def check_bounds(cid, c, err):
+    """A city's hand-typed bounds, which every place's coordinates are held to: {"lat": [low, high], "lon": [low,
+    high]}, a box no bigger than a city, and inside the UK for a UK city. Returns the box, or None if it's no good."""
+    box = c.get("bounds")
+    ok = isinstance(box, dict) and all(isinstance(box.get(k), list) and len(box[k]) == 2 and all(number(v) for v in box[k])
+                                       for k in ("lat", "lon"))
+    if not ok:
+        if box:  # a missing one is already reported
+            err(f"city {cid}: bounds must be {{\"lat\": [low, high], \"lon\": [low, high]}}, in numbers")
+        return None
+    good = True
+    for k in ("lat", "lon"):
+        low, high = box[k]
+        if not low < high:
+            err(f"city {cid}: bounds {k} {box[k]} must run from low to high")
+            good = False
+        elif high - low > CITY_SPAN:
+            err(f"city {cid}: bounds {k} {box[k]} span more than {CITY_SPAN} degree, too wide for one city")
+            good = False
+        elif c.get("group") == "uk" and not (UK_BOX[k][0] < low and high < UK_BOX[k][1]):
+            err(f"city {cid}: bounds {k} {box[k]} aren't in the UK")
+            good = False
+    return box if good else None
 
 
 def check_urls(obj, where, err, path=""):
@@ -53,6 +117,19 @@ def check_restaurant(r, err):
     d = json.loads(path.read_text(encoding="utf-8"))
     if not d["items"]:
         err(f"{rid}: no items without gluten ingredients")
+    # every guide so far has rows to avoid, so an empty Avoid list is a reader that has stopped seeing the gluten marks
+    if not d["avoid"]:
+        err(f"{rid}: nothing on the Avoid list")
+    # a guide with no end date would never show as out of date and never get a reminder
+    for n, g in enumerate([d["guide"]] + list(d.get("guides") or [])):
+        if not real_date(g.get("validUntil")):
+            err(f"{rid}: {'the guide' if n == 0 else f'guide {n}'} has no end date (validUntil {g.get('validUntil')!r}); "
+                "the reader couldn't read its date")
+    # the counts shown in the app must be the lists' own (an ingredient listed on its own is counted apart)
+    stats = d.get("stats")
+    if stats is not None and (stats.get("items", 0) + stats.get("ingredients", 0) != len(d["items"])
+                              or stats.get("avoid") != len(d["avoid"])):
+        err(f"{rid}: stats {stats} don't match the lists ({len(d['items'])} listed, {len(d['avoid'])} to avoid)")
     for i in d["items"]:
         where = f"{rid}: {i.get('name')!r}"
         if not i.get("name") or not i.get("section"):
@@ -65,6 +142,14 @@ def check_restaurant(r, err):
             err(f"{where}: 'except' with nothing excluded")
         if i.get("order") == "modify" and not i.get("note"):
             err(f"{where}: 'modify' without a note")
+        # a row a reader marked as gluten and then filed in the wrong list: what only an Avoid row carries
+        if i.get("gluten") or i.get("tag") or str(i.get("reason") or "").startswith("Contains"):
+            err(f"{where}: listed with no gluten ingredients, but carries an Avoid row's gluten, tag or reason")
+        both = sorted(set(i.get("ok") or []) & set(i.get("not") or []))
+        if both:
+            err(f"{where}: {both} are among both its fine options and the ones to avoid")
+        if i.get("order") == "swap" and i.get("standard") in (i.get("ok") or []):
+            err(f"{where}: a swap whose standard option {i.get('standard')!r} is one of its fine options")
         # the last line of defence, whatever the reader: an item on the list, or an option it says is fine, that names a
         # gluten cereal (oats included, CLAUDE.md) is wrong, so a hand-kept menu.csv or a reader's slip can't publish one.
         # The one exception (CLAUDE.md) is a drink named for the oat drink it normally comes with, which the guide lists
@@ -81,6 +166,8 @@ def check_restaurant(r, err):
     for a in d["avoid"]:
         if not a.get("gluten") and not a.get("reason"):
             err(f"{rid}: avoid item {a.get('name')!r} has no reason")
+        if a.get("order"):
+            err(f"{rid}: avoid item {a.get('name')!r} carries a way to order it ({a['order']!r})")
     # the same words in another order ("Pistachio Iced Latte" / "Iced Pistachio Latte") is one drink split in two
     seen_words = {}
     for i in d["items"] + d["avoid"]:
@@ -186,9 +273,21 @@ def check_whatsnew(notes, app_v, err):
 
 
 def check_city(cid, c, phrases, err):
-    for key in ("name", "language", "checked", "list", "tips", "sections", "places", "country", "bounds"):
-        if not c.get(key):
+    no_places = c.get("places") == [] and isinstance(c.get("none"), str) and c["none"].strip()  # see below: a city that says it has none
+    for key in ("name", "language", "checked", "list", "tips", "sections", "country", "bounds", "timeZone"):
+        if not c.get(key) and not (key == "sections" and no_places and c.get(key) == []):  # no places, so no sections
             err(f"city {cid}: missing {key}")
+    # a city can have no places yet, but only when it says so: "none" is the sentence shown where they would be
+    if not c.get("places") and not (c.get("places") == [] and isinstance(c.get("none"), str) and c["none"].strip()):
+        err(f"city {cid}: missing places (an empty list needs \"none\", a sentence to show in their place)")
+    # the dates drive "checked N days ago", the stale banner and the reminders: real, and not in the future
+    # (a day's grace, because the check runs on UTC and the date was typed somewhere else)
+    latest = (datetime.now(timezone.utc) + timedelta(days=1)).date().isoformat()
+    if c.get("checked") and (not real_date(c["checked"]) or c["checked"] > latest):
+        err(f"city {cid}: checked {c['checked']!r} must be a real date (YYYY-MM-DD), not after today")
+    if "recheckDays" in c and not (isinstance(c["recheckDays"], int) and not isinstance(c["recheckDays"], bool)
+                                   and 0 < c["recheckDays"] <= 180):
+        err(f"city {cid}: recheckDays {c['recheckDays']!r} must be a whole number of days, 1 to 180")
     # "uk": listed under UK cities, and needs no coeliac card in another language; any other city is International
     if c.get("group") not in (None, "uk"):
         err(f"city {cid}: group {c.get('group')!r} must be 'uk' or left out")
@@ -196,7 +295,13 @@ def check_city(cid, c, phrases, err):
         err(f"city {cid}: no coeliac card for language {c.get('language')!r}")
     if c.get("group") == "uk" and c.get("timeZone") != "Europe/London":
         err(f"city {cid}: a UK city's timeZone must be Europe/London")
-    box = c.get("bounds") or {"lat": [0, 0], "lon": [0, 0]}
+    elif c.get("timeZone"):  # the app asks the phone for the time there; a name it doesn't know stops the page
+        known = zone_known(c["timeZone"])
+        if known is None:
+            print(f"city {cid}: no time zone list on this computer, so timeZone {c['timeZone']!r} wasn't checked")
+        elif not known:
+            err(f"city {cid}: timeZone {c['timeZone']!r} isn't a time zone name (such as Europe/Berlin)")
+    box = check_bounds(cid, c, err)
     for p in c.get("places", []):
         where = f"city {cid}: {p.get('name')!r}"
         if p.get("section") not in c.get("sections", []):
@@ -211,6 +316,9 @@ def check_city(cid, c, phrases, err):
             err(f"{where}: a caution needs a short flag to show on the row")
         if not p.get("says") and not p.get("listed"):
             err(f"{where}: no words from the place or the list")
+        if p.get("says") and not (isinstance(p["says"], dict) and isinstance(p["says"].get("text"), str) and p["says"]["text"].strip()):
+            err(f"{where}: says has no text, so there are no words from the place to quote")
+            continue
         if p.get("listedBy") and not p.get("listed"):
             err(f"{where}: listedBy names who listed it, so it needs their words in listed")
         if c.get("group") == "uk" and p.get("listed") and not p.get("listedBy"):  # else the app credits a support group
@@ -220,19 +328,25 @@ def check_city(cid, c, phrases, err):
         if p.get("status") not in ("confirmed", "unconfirmed") or (p.get("status") == "unconfirmed" and not p.get("statusNote")):
             err(f"{where}: status must be confirmed, or unconfirmed with a statusNote")
         # a place re-checked on its own carries its own date, never earlier than the city's
-        if "checked" in p and (not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(p["checked"])) or p["checked"] < c.get("checked", "")):
+        if "checked" in p and (not real_date(p["checked"]) or p["checked"] < str(c.get("checked") or "")):
             err(f"{where}: checked {p['checked']!r} isn't a date on or after the city's {c.get('checked')}")
+        elif "checked" in p and p["checked"] > latest:
+            err(f"{where}: checked {p['checked']!r} is after today")
         if not p.get("locations") or any(not l.get("address") or not l.get("area") for l in p["locations"]):
             err(f"{where}: every location needs an address and area")
         for l in p.get("locations", []):
             # coordinates for "Near me": must fall inside the city's own bounds (catches swapped or mistyped numbers)
-            if not (box["lat"][0] < l.get("lat", 0) < box["lat"][1] and box["lon"][0] < l.get("lon", 0) < box["lon"][1]):
+            lat, lon = l.get("lat", 0), l.get("lon", 0)
+            if not (number(lat) and number(lon)):
+                err(f"{where}: {l.get('address')} lat and lon must be numbers, not {lat!r} and {lon!r}")
+            elif box and not (box["lat"][0] < lat < box["lat"][1] and box["lon"][0] < lon < box["lon"][1]):
                 err(f"{where}: {l.get('address')} has no coordinates inside {cid}")
             h = l.get("hours")
             if h is not None and (len(h) != 7 or not all(x is None or isinstance(x, str) for x in h)):
                 err(f"{where}: {l.get('address')} hours must be 7 entries, Monday to Sunday ('' = closed, null = not known)")
-            if l.get("kitchenCloses") and not re.fullmatch(r"\d{2}:\d{2}", l["kitchenCloses"]):
-                err(f"{where}: {l.get('address')} kitchenCloses {l['kitchenCloses']!r} isn't HH:MM")
+            if l.get("kitchenCloses") and not (isinstance(l["kitchenCloses"], str) and re.fullmatch(r"\d{2}:\d{2}", l["kitchenCloses"])
+                                               and clock(*l["kitchenCloses"].split(":"), closing=True)):
+                err(f"{where}: {l.get('address')} kitchenCloses {l['kitchenCloses']!r} isn't a time of day, HH:MM")
             for day, x in zip("Mon Tue Wed Thu Fri Sat Sun".split(), h or []):
                 x = x or ""
                 if x and not HOURS.match(x):  # a time the app can't read would show the place as closed
@@ -246,7 +360,9 @@ def check_city(cid, c, phrases, err):
                 last = -1
                 for m in HOURS.finditer(x):
                     a, b = int(m[1]) * 60 + int(m[2]), int(m[3]) * 60 + int(m[4])
-                    if b <= a:
+                    if not (clock(m[1], m[2]) and clock(m[3], m[4], closing=True)):
+                        err(f"{where}: {l.get('address')} {day} hours {x!r} have a time that isn't a time of day")
+                    elif b <= a:
                         err(f"{where}: {l.get('address')} {day} closes before it opens ({x!r}); past midnight isn't supported")
                     elif a <= last:
                         err(f"{where}: {l.get('address')} {day} ranges overlap or are out of order ({x!r})")
