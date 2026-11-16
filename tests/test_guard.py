@@ -88,7 +88,16 @@ class HandKeptAvoidSetting(unittest.TestCase):
     def test_the_advice_is_a_pull_request_of_your_own(self):
         why = " ".join(guard.avoid_ok_changed("knoops-uk", {}, {"avoidDropOk": "b.pdf"}))
         self.assertIn("pull request of your own", why)
-        self.assertNotIn("merged first", why)  # setting avoidDropOk on main first still leaves the scan refused
+        self.assertIn("remove avoidDropOk", why)  # a hand-kept menu's source rarely changes, so it would stay switched off
+        self.assertNotIn("merged first", why)
+
+    def test_a_scan_is_refused_while_main_still_switches_the_guard_off(self):
+        # main's avoidDropOk already names the menu's source (menu.csv when the guide names none): a scan that changes
+        # nothing in restaurant.json would drop Avoid rows unchecked
+        for main_cfg in ({"avoidDropOk": "menu.csv"}, {"avoidDropOk": "a.pdf", "guide": {"source": "a.pdf"}}):
+            why = guard.avoid_ok_changed("knoops-uk", main_cfg, dict(main_cfg))
+            self.assertTrue(why, main_cfg)
+            self.assertIn("remove avoidDropOk", " ".join(why))
 
     def test_the_avoid_check_never_clears_a_problem_found_before_it(self):
         with self.assertRaises(SystemExit):

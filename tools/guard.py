@@ -187,12 +187,18 @@ def avoid_ok_changed(rid, base, head):
         return [f"a scan/ pull request for {rid} may not change which reader builds it (reader or readers in "
                 f"restaurants/{rid}/restaurant.json): that goes in a pull request of your own"]
     source = lambda c: (c.get("guide") or {}).get("source") or "menu.csv"
+    if base.get("avoidDropOk") and base["avoidDropOk"] == source(base):
+        # left on main after an accepted drop: a hand-kept menu keeps its source, so the guard stays off for every scan
+        return [f"main's restaurants/{rid}/restaurant.json still has avoidDropOk set to the menu's own source, so the "
+                "build's Avoid guard is switched off for it: remove avoidDropOk in a pull request of your own, then re-run "
+                "this one"]
     ok = head.get("avoidDropOk")
     if ok == base.get("avoidDropOk") and not (ok and source(head) != source(base) and ok == source(head)):
         return []
     return [f"a scan/ pull request for {rid} may not change avoidDropOk in restaurants/{rid}/restaurant.json, or rename "
             "the menu's source to the one avoidDropOk names. If the change to the Avoid list is real, check it against "
-            "the menu, then make the whole change (the menu and avoidDropOk) in a pull request of your own and close this one"]
+            "the menu, then make the whole change (the menu and avoidDropOk) in a pull request of your own and close this one; "
+            "once that has published, remove avoidDropOk again, or the guard stays off for every later scan of this menu"]
 
 
 def main():
