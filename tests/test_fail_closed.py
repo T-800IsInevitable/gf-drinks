@@ -149,12 +149,14 @@ class UnknownMarks(unittest.TestCase):
 class Cereals(unittest.TestCase):
     def test_malt_in_the_forms_that_mean_the_grain(self):
         for text, code in (("Maltesers Hot Chocolate", "MALT"), ("Malty Biscuit Latte", "MALT"), ("malt vinegar", "MALT"),
-                           ("Malted milk", "MALT"), ("Bulgar Salad", "WHEAT"), ("Bulgur", "WHEAT"), ("OATMILK", "OAT")):
+                           ("Malted milk", "MALT"), ("Bulgar Salad", "WHEAT"), ("Bulgur", "WHEAT"), ("OATMILK", "OAT"),
+                           ("Wholewheat Pasta", "WHEAT"), ("WHOLEWHEAT flour", "WHEAT"), ("wholeoats", "OAT")):
             self.assertEqual([cereal_code(m) for m in CEREAL.findall(text)], [code], text)
             self.assertTrue(CEREAL_CAPS.search(text.upper()), text)
 
     def test_sweeteners_and_other_words_stay_out(self):
-        for text in ("maltodextrin", "maltitol", "Maltose syrup", "Malta", "goat cheese", "Emmental", "gluten free bread"):
+        for text in ("maltodextrin", "maltitol", "Maltose syrup", "Malta", "goat cheese", "Emmental", "gluten free bread", "Buckwheat",
+                     "wholemeal rice", "whole milk"):
             self.assertEqual(CEREAL.findall(text), [], text)
 
 

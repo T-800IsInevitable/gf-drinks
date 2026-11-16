@@ -17,9 +17,10 @@ import pdfplumber
 # in the forms that mean the grain (malt, malts, malted, malty, malting, Maltesers), so maltodextrin, maltitol and
 # maltose stay out, as before
 CEREALS = "wheat|rye|barley|oat|spelt|kamut|khorasan|durum|semolina|couscous|bulgur|bulghur|bulgar|triticale|einkorn|emmer|farro|freekeh|seitan"
-CEREAL_WORDS = rf"(?:{CEREALS})\w*|malt(?:s|ed|y|ing|esers?)?|gluten(?![\s-]*free)"
+# "whole" can run on in front ("Wholewheat"); the cereal must start the word otherwise, so buckwheat and goat stay out
+CEREAL_WORDS = rf"(?:whole)?(?:{CEREALS})\w*|malt(?:s|ed|y|ing|esers?)?|gluten(?![\s-]*free)"
 CEREAL = re.compile(rf"\b({CEREAL_WORDS})\b", re.I)
-CEREAL_CAPS = re.compile(rf"\b((?:{CEREALS.upper()})\w*|MALT(?:S|ED|Y|ING|ESERS?)?|GLUTEN(?![\s-]*FREE))\b")
+CEREAL_CAPS = re.compile(rf"\b((?:WHOLE)?(?:{CEREALS.upper()})\w*|MALT(?:S|ED|Y|ING|ESERS?)?|GLUTEN(?![\s-]*FREE))\b")
 MONTHS = {name: n for n, name in enumerate(calendar.month_name) if name}  # "January" -> 1
 INVISIBLE = re.compile("[​-‍﻿]")  # zero-width characters some guides carry
 
@@ -31,7 +32,7 @@ def clean(s):
 
 def cereal_code(word):
     """A cereal as the app records it: 'oats', 'OATMEAL' and 'Oatly' are OAT; 'WHEATFLOUR' is WHEAT; 'malted' is MALT."""
-    w = word.upper()
+    w = re.sub(r"^WHOLE(?=[A-Z])", "", word.upper())  # 'Wholewheat' is WHEAT
     # the codes stay the ones the app knows: wheat's other names are WHEAT, khorasan is KAMUT
     for head, code in (("OAT", "OAT"), ("WHEAT", "WHEAT"), ("MALT", "MALT"), ("RYE", "RYE"), ("BARLEY", "BARLEY"),
                        ("SPELT", "SPELT"), ("KAMUT", "KAMUT"), ("KHORASAN", "KAMUT"), ("GLUTEN", "GLUTEN"),
