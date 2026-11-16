@@ -79,16 +79,16 @@ def read_gluten(r, warnings, where):
         r["decided"] = f"The guide names {named} without its usual capitals, so the app treats it as containing gluten."
 
 
-def guide_info(pdf):
-    """Season title, date range and version date from the cover pages."""
-    text = "\n".join((pdf.pages[i].extract_text() or "") for i in range(min(3, len(pdf.pages))))
+def guide_info(pdf, kind="Beverages", pages=3):
+    """Season title, date range and version date from the cover pages. The food reader asks for kind="Food"."""
+    text = "\n".join((pdf.pages[i].extract_text() or "") for i in range(min(pages, len(pdf.pages))))
     version = re.search(r"Version:\s*(\d{1,2})/(\d{1,2})/(\d{2,4})", text)
     vdate = None
     if version:
         d, m, y = (int(x) for x in version.groups())
         y = y + 2000 if y < 100 else y
         vdate = f"{y:04d}-{m:02d}-{d:02d}"
-    title = re.search(r"\b(Spring|Summer|Autumn|Winter|Holiday|Festive)\b[^\n]*Beverages", text)
+    title = re.search(rf"\b(Spring|Summer|Autumn|Winter|Holiday|Festive)\b[^\n]*\b{kind}\b", text)
     months = r"(January|February|March|April|May|June|July|August|September|October|November|December)"
     span = re.search(months + r"(?:\s+\d{4})?\s*[-–]\s*" + months + r"\s+(\d{4})", text)
     return {

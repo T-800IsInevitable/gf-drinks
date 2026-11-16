@@ -16,6 +16,7 @@ newest one whose cover says Food.
 """
 import re
 from collections import Counter
+from functools import partial
 from pathlib import Path
 
 import pdfplumber
@@ -23,27 +24,13 @@ import pdfplumber
 from . import notices
 from .common import newest_by, result
 from .starbucks_uk_pdf import clean, is_food_guide, read_gluten
+from .starbucks_uk_pdf import guide_info as drinks_guide_info
 
 MIN_ROWS = 60  # a real guide has well over a hundred products
 INGREDIENTS_X = 136
 
 
-def guide_info(pdf):
-    text = "\n".join((pdf.pages[i].extract_text() or "") for i in range(min(2, len(pdf.pages))))
-    version = re.search(r"Version:\s*(\d{1,2})/(\d{1,2})/(\d{2,4})", text)
-    vdate = None
-    if version:
-        d, m, y = (int(x) for x in version.groups())
-        y = y + 2000 if y < 100 else y
-        vdate = f"{y:04d}-{m:02d}-{d:02d}"
-    title = re.search(r"\b(Spring|Summer|Autumn|Winter|Holiday|Festive)\b[^\n]*\bFood\b", text)
-    months = r"(January|February|March|April|May|June|July|August|September|October|November|December)"
-    span = re.search(months + r"(?:\s+\d{4})?\s*[-–]\s*" + months + r"\s+(\d{4})", text)
-    return {
-        "title": clean(title.group(0)) if title else None,
-        "runs": clean(span.group(0)).replace(" - ", " to ").replace(" – ", " to ") if span else None,
-        "version": vdate,
-    }
+guide_info = partial(drinks_guide_info, kind="Food", pages=2)  # the drinks reader's, for a cover that says Food
 
 
 def parse_rows(pdf, pdf_path):
