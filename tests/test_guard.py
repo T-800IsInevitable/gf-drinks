@@ -35,6 +35,46 @@ class OtherRepository(unittest.TestCase):
         self.assertEqual(stop.exception.code, 1)
 
 
+class HandKeptAvoidSetting(unittest.TestCase):
+    """A scan/ branch for a menu kept by hand may change its restaurant.json (the guide's dates live there), but not
+    avoidDropOk, which would let it switch off the build's Avoid guard for its own new menu."""
+
+    def test_avoid_drop_ok_may_not_change(self):
+        same = guard.avoid_ok_changed("knoops-uk", {"avoidDropOk": "a.pdf", "guide": {"version": "1"}},
+                                      {"avoidDropOk": "a.pdf", "guide": {"version": "2"}})
+        self.assertEqual(same, [])
+        self.assertTrue(guard.avoid_ok_changed("knoops-uk", {}, {"avoidDropOk": "new.pdf"}))
+        self.assertTrue(guard.avoid_ok_changed("knoops-uk", {"avoidDropOk": "a.pdf"}, {"avoidDropOk": "b.pdf"}))
+        self.assertTrue(guard.avoid_ok_changed("knoops-uk", {"avoidDropOk": "a.pdf"}, {}))
+        # avoidDropOk left alone, but the source renamed to match it: the build would accept the drop for this menu
+        main_cfg = {"avoidDropOk": "b.pdf", "guide": {"source": "a.pdf"}}
+        self.assertTrue(guard.avoid_ok_changed("knoops-uk", main_cfg, {**main_cfg, "guide": {"source": "b.pdf"}}))
+        self.assertTrue(guard.avoid_ok_changed("knoops-uk", {"avoidDropOk": "menu.csv", "guide": {"source": "a.pdf"}},
+                                               {"avoidDropOk": "menu.csv", "guide": {}}))  # the menu's own name
+        # changing which reader builds it changes what its source is, so that's refused too
+        hand = {"reader": "manual_csv", "guide": {"source": "a.pdf"}}
+        self.assertTrue(guard.avoid_ok_changed("knoops-uk", hand, {**hand, "reader": "pret_uk_pdf"}))
+        self.assertTrue(guard.avoid_ok_changed("knoops-uk", hand, {**hand, "readers": ["pret_uk_pdf"]}))
+        # a new source that the existing avoidDropOk doesn't name is fine
+        self.assertEqual(guard.avoid_ok_changed("knoops-uk", main_cfg, {**main_cfg, "guide": {"source": "c.pdf"}}), [])
+
+    def test_main_reads_both_copies_for_a_hand_kept_scan(self):
+        rj = "restaurants/knoops-uk/restaurant.json"
+        answers = {"/pulls/9": {"head": {"sha": "abc", "repo": {"full_name": "o/r"}}},
+                   f"/contents/{rj}?ref=abc": {"reader": "manual_csv", "avoidDropOk": "new.pdf"}}
+        env = {"HEAD_REF": "scan/knoops-uk-2026-11-20", "PR": "9", "GITHUB_REPOSITORY": "o/r"}
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "restaurants" / "knoops-uk").mkdir(parents=True)
+            (Path(tmp) / rj).write_text('{"reader": "manual_csv"}', encoding="utf-8")
+            with mock.patch.object(guard, "ROOT", Path(tmp)), mock.patch.dict(guard.os.environ, env), \
+                    mock.patch.object(guard.gh, "request", side_effect=lambda m, path, **k: answers[path]), \
+                    mock.patch.object(guard, "changed", return_value=["restaurants/knoops-uk/menu.csv", rj]), \
+                    mock.patch.object(guard, "commits", return_value=[]), mock.patch("builtins.print") as out:
+                with self.assertRaises(SystemExit):
+                    guard.main()
+        self.assertIn("avoidDropOk", " ".join(str(c) for c in out.call_args_list))
+
+
 class Scope(unittest.TestCase):
     def test_a_scan_changes_one_restaurant(self):
         self.assertEqual(guard.scope("scan/test-cafe-2026-10-26", ["restaurants/test-cafe/menu.csv", "restaurants/test-cafe/source/x/menu.pdf"]), [])

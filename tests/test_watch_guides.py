@@ -366,5 +366,31 @@ class Proposing(Site):
             "restaurants/x-uk/guides/a.pdf", "restaurants/x-uk/guides/archive/old.pdf", "restaurants/x-uk/guides/b.pdf"])
 
 
+class OneFailureDoesntStopTheRest(unittest.TestCase):
+    def test_the_next_restaurant_is_still_checked_and_the_failure_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for rid in ("a-uk", "b-uk"):
+                (Path(tmp) / "restaurants" / rid).mkdir(parents=True)
+                (Path(tmp) / "restaurants" / rid / "restaurant.json").write_text(
+                    json.dumps({"name": rid.upper(), "watch": {"page": f"https://{rid}.test/p", "link": "pdf"}}), encoding="utf-8")
+            checked, opened = [], []
+
+            def check(folder):
+                checked.append(folder.name)
+                if folder.name == "a-uk":
+                    raise RuntimeError("broken")
+                return {"id": folder.name, "name": "B-UK", "page": "p", "new": [], "ignored": [], "problems": [], "manual": False}
+
+            with mock.patch.object(w, "ROOT", Path(tmp)), mock.patch.object(w, "check", check), \
+                    mock.patch.object(w, "open_issues", lambda: set()), \
+                    mock.patch.object(w, "issue", lambda title, body, existing: opened.append(title)), \
+                    mock.patch.object(sys, "argv", ["watch_guides.py", "--github"]), mock.patch("builtins.print"):
+                with self.assertRaises(SystemExit) as stop:
+                    w.main()
+        self.assertEqual(checked, ["a-uk", "b-uk"])
+        self.assertEqual(opened, ["Guide watch: couldn't check A-UK"])
+        self.assertIn("a-uk", str(stop.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

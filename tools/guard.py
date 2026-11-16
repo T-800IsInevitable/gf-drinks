@@ -175,14 +175,43 @@ def from_other_repo(pull, repo):
             "of this repository are merged here; copy a change you want onto a branch of your own"]
 
 
+def avoid_ok_changed(rid, base, head):
+    """What's wrong with a scan/ pull request for a menu kept by hand, given its restaurant.json on main (base) and at
+    the pull request's head, both parsed: it may change the guide's dates, but not avoidDropOk, which switches off the
+    build's Avoid guard (tools/build.py avoid_drop) for the very menu it brings. The build accepts a drop when
+    avoidDropOk equals the menu's source (adapters/manual_csv.py: guide.source, else the file's name, menu.csv), so
+    renaming the source to match an avoidDropOk already on main counts as switching the guard off too."""
+    base, head = base or {}, head or {}
+    # the source rule below is manual_csv's, so which reader builds it may not change here either
+    if any(base.get(k) != head.get(k) for k in ("reader", "readers")):
+        return [f"a scan/ pull request for {rid} may not change which reader builds it (reader or readers in "
+                f"restaurants/{rid}/restaurant.json): that goes in a pull request of your own"]
+    source = lambda c: (c.get("guide") or {}).get("source") or "menu.csv"
+    ok = head.get("avoidDropOk")
+    if ok == base.get("avoidDropOk") and not (ok and source(head) != source(base) and ok == source(head)):
+        return []
+    return [f"a scan/ pull request for {rid} may not change avoidDropOk in restaurants/{rid}/restaurant.json, or rename "
+            "the menu's source to the one avoidDropOk names: if the change to the Avoid list is real, set it in a pull "
+            "request of your own, merged first"]
+
+
 def main():
     ref = os.environ["HEAD_REF"]
-    problems = from_other_repo(gh.request("GET", f"/pulls/{os.environ['PR']}"), os.environ["GITHUB_REPOSITORY"])
+    pull = gh.request("GET", f"/pulls/{os.environ['PR']}")
+    problems = from_other_repo(pull, os.environ["GITHUB_REPOSITORY"])
     for p in problems:
         print("GUARD:", p)
     if problems:
         sys.exit(1)
-    problems = scope(ref, changed(os.environ["PR"]), machine_made(commits(os.environ["PR"])), reader_built(ref))
+    paths, built = changed(os.environ["PR"]), reader_built(ref)
+    problems = scope(ref, paths, machine_made(commits(os.environ["PR"])), built)
+    scan = SCAN_REF.fullmatch(ref)
+    rj = f"restaurants/{scan[1]}/restaurant.json" if scan else None
+    if scan and not built and not problems and rj in paths:
+        # main's copy is this checkout's (the guard runs from main); the pull request's is read through the API
+        base = json.loads((ROOT / rj).read_text(encoding="utf-8")) if (ROOT / rj).is_file() else {}
+        head = gh.request("GET", f"/contents/{rj}?ref={pull['head']['sha']}", accept="application/vnd.github.raw+json")
+        problems = avoid_ok_changed(scan[1], base, head)
     city = CITY_REF.fullmatch(ref)
     if city and not problems:
         problems = one_city(city[1], city[2], *cities_of(os.environ["PR"]))
