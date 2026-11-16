@@ -5,6 +5,7 @@ the app's own code, so a phone on an older app.js can meet an order value added 
 Runs kindOf, tagFor and orderLine taken from site/app.js in Node. Needs Node.js (it's on GitHub's runners).
 """
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -88,6 +89,25 @@ process.stdout.write(JSON.stringify(menus.map((r) => [safeMenu(r), safeMenu(r) =
         self.assertIn("const prev = raw;", load)  # reused by fingerprint from the published copy
         self.assertIn("raw = JSON.parse(saved); data = shown(raw);", app)
         self.assertEqual(len(re.findall(r"(?<![.\w])data = (?!null)", app)), 2, "data is set only from shown(...)")
+
+    def test_an_avoid_row_without_a_gluten_list_still_reads(self):
+        # check.py allows an Avoid row with a reason and no gluten list; it mustn't blank the page or read "contains ."
+        code = source("cap") + "\n" + source("avoidTag") + "\n" + source("avoidWhy") + """
+const rows = JSON.parse(process.argv[1]);
+process.stdout.write(JSON.stringify(rows.map((a) => [avoidTag(a), avoidWhy(a)])));
+"""
+        rows = [{"reason": "Made with beer batter."}, {"gluten": []}, {"gluten": ["WHEAT", "OAT"]}, {"tag": "Check in store", "gluten": []}]
+        out = subprocess.run([NODE, "-e", code, json.dumps(rows)], capture_output=True, text=True, encoding="utf-8", check=True)
+        self.assertEqual(json.loads(out.stdout), [
+            ["Avoid", "Made with beer batter."], ["Avoid", "The guide lists gluten."],
+            ["Wheat & Oat", "Every version contains wheat and oat."], ["Check in store", "The guide lists gluten."]])
+
+    def test_today_is_the_phones_own_date(self):
+        # 23:30 UTC on 1 July is 00:30 on 2 July in the UK: a guide valid until 1 July is out of date by then
+        code = source("today") + "\nprocess.stdout.write(today(new Date(Date.UTC(2026, 6, 1, 23, 30))));"
+        out = subprocess.run([NODE, "-e", code], capture_output=True, text=True, encoding="utf-8", check=True,
+                             env={**os.environ, "TZ": "Europe/London"})
+        self.assertEqual(out.stdout, "2026-07-02")
 
     def test_the_known_orders_read_as_before(self):
         out = self.run_js([{"order": "asis"}, {"order": "except", "ok": ["soya"], "not": ["oat"]},

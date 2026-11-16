@@ -226,9 +226,8 @@ def build(folder, config):
     with pdfplumber.open(pdf_path) as pdf:
         info = guide_info(pdf)
         table = [n for n, pg in enumerate(pdf.pages, start=1) if "Cereals Containing Gluten" in (pg.extract_text() or "")]
-        skip = set(config.get("skipPages") or [])
         table_notes = []
-        found = [r for r in rows(pdf, [n for n in table if n not in skip], warnings, table_notes)]
+        found = [r for r in rows(pdf, table, warnings, table_notes)]
         changed = updates(pdf)
         # the introduction's paragraphs; not the Product Updates table, which is read item by item above
         intro = [n for n in range(1, (table[0] if table else 4)) if n not in table

@@ -46,5 +46,36 @@ class NoProductHeading(unittest.TestCase):
             list(nero.drink_rows(Page([("PRODUCT", 100), ("DIETARY", 380)], 180), 24))
 
 
+class AllergenTableCrossCheck(unittest.TestCase):
+    """The allergen table is a second source for some food: where it marks gluten and the ingredients name none, the
+    item goes on the Avoid list; an item only the table lists is placed by the table alone."""
+
+    def build(self, food, grid):
+        from unittest import mock
+        pdf = mock.MagicMock()
+        pdf.__enter__.return_value.pages = [object(), object()]
+        with mock.patch.object(nero, "newest_pdf", lambda folder: Path("g.pdf")), \
+                mock.patch.object(nero.pdfplumber, "open", lambda p: pdf), \
+                mock.patch.object(nero, "kind_of", lambda page: "food" if page is pdf.__enter__.return_value.pages[0] else "grid"), \
+                mock.patch.object(nero, "food_rows", lambda page, n, section: iter(food)), \
+                mock.patch.object(nero, "grid_rows", lambda page, n: grid), \
+                mock.patch.object(nero, "page_notices", lambda pdf, pages: []), \
+                mock.patch.object(nero, "guide_info", lambda pdf: {"title": "x", "runs": None, "version": "2026-01-01"}), \
+                mock.patch.multiple(nero, MIN_FOOD=0, MIN_DRINKS=0):
+            out = nero.build("x", {})
+        return {i["name"]: i for i in out["items"]}, {a["name"]: a for a in out["avoid"]}, out["warnings"]
+
+    def test_the_table_marking_gluten_moves_food_to_avoid(self):
+        food = [(1, "Cakes", "Lemon Slice", "sugar, butter (MILK)"), (1, "Cakes", "Apple Pie", "WHEAT flour, apples")]
+        ok, avoid, warnings = self.build(food, [("CAKES", "Lemon Slice", True, 2), ("CAKES", "Apple Pie", False, 2),
+                                                ("SAUCES", "Caramel Sauce", True, 2), ("SAUCES", "Vanilla Syrup", False, 2)])
+        self.assertEqual(sorted(ok), ["Vanilla Syrup"])
+        self.assertEqual(avoid["Lemon Slice"]["gluten"], ["GLUTEN"])  # the table wins over clean ingredients
+        self.assertIn("treats it as containing gluten", avoid["Lemon Slice"]["decided"])
+        self.assertEqual(avoid["Apple Pie"]["gluten"], ["WHEAT"])  # clean in the table, but the ingredients name wheat
+        self.assertEqual(avoid["Caramel Sauce"]["gluten"], ["GLUTEN"])  # only in the table: placed by it alone
+        self.assertTrue(any("Lemon Slice" in w for w in warnings) and any("Apple Pie" in w for w in warnings))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -45,16 +45,6 @@ def find_heading(words, text):
     return next((w for w in words if w["text"] == text), None)
 
 
-def band_rows(page, top, bottom, left_max):
-    """Row bands from the table's horizontal rules between top and bottom."""
-    ys = sorted({round(l["top"], 1) for l in page.lines
-                 if top <= l["top"] <= bottom and l["x0"] < left_max and (l["x1"] - l["x0"]) > 150 and abs(l["top"] - l["bottom"]) < 1.5})
-    rows = []
-    for a, b in zip(ys, ys[1:]):
-        if b - a >= 12:
-            rows.append((a, b))
-    return rows
-
 
 def odd_marks(chars, gx, half, bars):
     """The characters in the gluten column (x centre gx, half a column either side) that aren't one of the guide's

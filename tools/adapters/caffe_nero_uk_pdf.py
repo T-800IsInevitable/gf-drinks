@@ -56,17 +56,6 @@ def lines_of(words, tol=2.0):
     return [sorted(ws, key=lambda w: w["x0"]) for _, ws in out]
 
 
-def segments(line, gap=6):
-    """Split a line where the space between words is wider than a word gap (two columns side by side)."""
-    out = [[line[0]]]
-    for a, b in zip(line, line[1:]):
-        if b["x0"] - a["x1"] > gap:
-            out.append([b])
-        else:
-            out[-1].append(b)
-    return out
-
-
 def kind_of(page):
     text = page.extract_text() or ""
     if re.search(r"HOW TO USE THIS GUIDE|Within this guide you will find", text):
