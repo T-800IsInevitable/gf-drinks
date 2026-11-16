@@ -185,7 +185,8 @@ def group(rows):
             item["decided"] = " ".join(d["decided"])
         good = [v for v in vs if not v["gluten"]]
         bad = [v for v in vs if v["gluten"]]
-        if not good:
+        # gluten in a row that names no milk can't be ordered away with another milk
+        if not good or any(not v["milk"] for v in bad):
             # Report what every version shares (e.g. wheat), not the oat milk option.
             common = set.intersection(*(set(v["gluten"]) for v in bad))
             item["gluten"] = sorted(common or {g for v in bad for g in v["gluten"]})

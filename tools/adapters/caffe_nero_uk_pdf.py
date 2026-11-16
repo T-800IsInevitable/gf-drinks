@@ -22,7 +22,7 @@ from pathlib import Path
 import pdfplumber
 
 from . import notices
-from .common import CEREAL, cereal_code, cereal_word, clean, newest_by, result
+from .common import CEREAL, cereal_code, cereal_word, clean, newest_by, one_of_each, result
 
 DRINK_GLUTEN = re.compile(r"^(WHEAT|RYE|BARLEY|OATS?|SPELT|KAMUT|MALT|GLUTEN|CEREALS?)$")
 ALLERGENS = {"MILK", "SOYA", "ALMONDS", "NUTS", "NONE", "EGG", "EGGS", "PEANUTS", "FISH", "CELERY", "MUSTARD", "LUPIN",
@@ -317,16 +317,10 @@ def build(folder, config):
     if len(food) < MIN_FOOD or len(drinks) < MIN_DRINKS:
         raise SystemExit(f"ERROR: {pdf_path.name} doesn't look like Caffè Nero's guide ({len(food)} foods, {len(drinks)} drinks). Menu not updated.")
 
-    seen = set()
-    for pno, section, raw, ingredients in food:
+    for pno, section, raw, ingredients in food:  # a food listed twice is sorted out after the loop (one_of_each)
         name, notes, gf = tidy_food_name(raw)
         if not name or not ingredients:
             raise SystemExit(f"ERROR: p.{pno}: a food block with no name or no ingredients ({raw!r}). Layout changed? Menu not updated.")
-        key = (section, name.lower())
-        if key in seen:
-            warnings.append(f"p.{pno} {name}: listed twice in {section}; kept the first")
-            continue
-        seen.add(key)
         item = {"name": name, "section": section, "sub": None, "pages": [pno]}
         cereals = sorted({cereal_code(c) for c in CEREAL.findall(ingredients)})
         if gf:
@@ -339,6 +333,7 @@ def build(folder, config):
             avoid.append({**item, "gluten": cereals, "reason": "The ingredients list " + " and ".join(cereal_word(c) for c in cereals) + "."})
         else:
             ok.append({**item, "order": "asis"})
+    ok, avoid = one_of_each(ok, avoid, warnings)
 
     # the allergen table: a second source for some food (where the two disagree, it contains gluten), and the only one
     # for some extras, sauces and syrups

@@ -192,7 +192,7 @@ def group(rows, warnings=None):
         vs = d.pop("versions")
         good = [v for v in vs if not v["gluten"]]
         bad = [v for v in vs if v["gluten"]]
-        if not good:
+        if not good or any(not v["milk"] for v in bad):  # gluten in a row with no milk can't be ordered away
             common = set.intersection(*(set(v["gluten"]) for v in bad))
             d["gluten"] = sorted(common or {g for v in bad for g in v["gluten"]})
             avoid.append(d)

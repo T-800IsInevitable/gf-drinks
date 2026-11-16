@@ -10,10 +10,11 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 import build  # noqa: E402
-from adapters import five_guys_uk_pdf, greggs_uk_pdf  # noqa: E402
+from adapters import blank_street_uk_pdf, caffe_nero_uk_pdf, common, five_guys_uk_pdf, greggs_uk_pdf, pret_uk_pdf, starbucks_uk_pdf  # noqa: E402
 from adapters.common import CEREAL, CEREAL_CAPS, cereal_code  # noqa: E402
 from adapters.pret_uk_pdf import TICK, odd_mark  # noqa: E402
 
@@ -146,15 +147,100 @@ class UnknownMarks(unittest.TestCase):
         self.assertEqual(five_guys_uk_pdf.odd_marks(marks + [char("S", 500, 200), char("x", 530, 120)], 500, 12, bars), [])
 
 
+class Repeats(unittest.TestCase):
+    """The same item twice: a clean copy never hides a copy that names gluten."""
+    row = {"section": "Hot", "sub": None, "page": 1}
+
+    def test_starbucks_a_gluten_row_with_no_milk_is_avoid(self):
+        for second in ("Toffee Nut Latte", "Toffee Nut Latte - skimmed milk"):
+            ok, avoid = starbucks_uk_pdf.group([{**self.row, "name": "Toffee Nut Latte", "gluten": ["WHEAT"]},
+                                                {**self.row, "name": second, "gluten": []}])
+            self.assertEqual((ok, [a["name"] for a in avoid]), ([], ["Toffee Nut Latte"]), second)
+
+    def test_pret_a_gluten_row_with_no_milk_is_avoid(self):
+        ok, avoid = pret_uk_pdf.group([{**self.row, "name": "Mocha", "gluten": []}, {**self.row, "name": "Mocha", "gluten": ["WHEAT"]}])
+        self.assertEqual((ok, [a["name"] for a in avoid]), ([], ["Mocha"]))
+
+    def test_a_gluten_base_row_wins_over_milk_rows_that_differ(self):
+        # one milk-less row with wheat, an oat row and a clean row: the wheat can't be ordered away, whatever the oat row says
+        for reader, oat, skimmed in ((starbucks_uk_pdf, "Latte - oat drink", "Latte - skimmed milk"),
+                                     (pret_uk_pdf, "Latte - Oat", "Latte - Skimmed milk")):  # each guide's own wording
+            ok, avoid = reader.group([{**self.row, "name": "Latte", "gluten": ["WHEAT"]},
+                                      {**self.row, "name": oat, "gluten": ["OAT"]},
+                                      {**self.row, "name": skimmed, "gluten": []}])
+            self.assertEqual((ok, [a["name"] for a in avoid]), ([], ["Latte"]), reader.__name__)
+
+    def test_one_of_each_keeps_the_same_name_in_two_sections(self):
+        ok, avoid = common.one_of_each([{"section": "Meat", "name": "Hot Dog"}],
+                                       [{"section": "Hot Dogs", "name": "Hot Dog", "gluten": ["WHEAT"]}], [])
+        self.assertEqual((len(ok), len(avoid)), (1, 1))
+
+    def test_one_of_each_keeps_every_cereal_of_two_avoid_copies(self):
+        _, avoid = common.one_of_each([], [{"section": "S", "name": "Bun", "gluten": ["PREPARATION"]},
+                                           {"section": "S", "name": "Bun", "gluten": ["WHEAT"]}], [])
+        self.assertEqual([a["gluten"] for a in avoid], [["PREPARATION", "WHEAT"]])
+
+    def test_five_guys_and_caffe_nero_use_one_of_each(self):
+        # the readers themselves, fed a clean copy and a gluten copy of one item, list it only under Avoid
+        fg_rows = [{"section": "SHAKES", "name": "Shake", "marks": [], "info": "", "stars": 0},
+                   {"section": "SHAKES", "name": "Shake", "marks": ["dot"], "info": "", "stars": 0}]
+        with mock.patch.object(five_guys_uk_pdf, "newest_pdf", lambda folder: Path("g.pdf")), \
+                mock.patch.object(five_guys_uk_pdf.pdfplumber, "open", mock.MagicMock()), \
+                mock.patch.object(five_guys_uk_pdf, "parse", lambda pdf, path: (fg_rows, {}, "2026-01-01", [], [])):
+            out = five_guys_uk_pdf.build("x", {})
+        self.assertEqual(([i["name"] for i in out["items"]], [a["name"] for a in out["avoid"]]), ([], ["Shake"]))
+
+        food = [(1, "Cakes", "Lemon Slice", "sugar, butter (MILK)"), (1, "Cakes", "Lemon Slice", "WHEAT flour, sugar")]
+        pdf = mock.MagicMock()
+        pdf.__enter__.return_value.pages = [object()]
+        with mock.patch.object(caffe_nero_uk_pdf, "newest_pdf", lambda folder: Path("g.pdf")), \
+                mock.patch.object(caffe_nero_uk_pdf.pdfplumber, "open", lambda p: pdf), \
+                mock.patch.object(caffe_nero_uk_pdf, "kind_of", lambda page: "food"), \
+                mock.patch.object(caffe_nero_uk_pdf, "food_rows", lambda page, n, section: iter(food)), \
+                mock.patch.object(caffe_nero_uk_pdf, "page_notices", lambda pdf, pages: []), \
+                mock.patch.object(caffe_nero_uk_pdf, "guide_info", lambda pdf: {"title": "x", "runs": None, "version": "2026-01-01"}), \
+                mock.patch.multiple(caffe_nero_uk_pdf, MIN_FOOD=0, MIN_DRINKS=0):
+            out = caffe_nero_uk_pdf.build("x", {})
+        self.assertEqual(([i["name"] for i in out["items"]], [a["name"] for a in out["avoid"]]), ([], ["Lemon Slice"]))
+
+    def test_one_of_each_moves_a_clean_copy_off_the_list(self):
+        ok = [{"section": "Shakes", "name": "Shake"}, {"section": "Shakes", "name": "Malt"}, {"section": "Shakes", "name": "malt"}]
+        avoid = [{"section": "Shakes", "name": "Shake", "gluten": ["GLUTEN"]}]
+        warnings = []
+        ok, avoid = common.one_of_each(ok, avoid, warnings)
+        self.assertEqual(([i["name"] for i in ok], [a["name"] for a in avoid]), (["Malt"], ["Shake"]))
+        self.assertEqual(len(warnings), 2)
+
+
+class BlankStreetLowerCase(unittest.TestCase):
+    """Blank Street writes allergens in capitals, but a cereal in ordinary case is still a cereal."""
+
+    def classify(self, text):
+        return blank_street_uk_pdf.classify({"name": "X", "section": "Bakes", "page": 1, "text": text}, [])
+
+    def test_a_cereal_not_in_capitals_is_avoid(self):
+        kind, item = self.classify("Rolled oats, butter, golden syrup. May Contain - MILK")
+        self.assertEqual((kind, item["gluten"]), ("avoid", ["OAT"]))
+
+    def test_may_contain_with_a_colon(self):
+        kind, item = self.classify("With DAIRY: MILK, coffee. May Contain: Oat (Gluten)")
+        self.assertEqual((kind, item.get("tag")), ("avoid", "May contain gluten"))
+
+    def test_capitals_alone_still_read_as_before(self):
+        self.assertEqual(self.classify("MILK, coffee, sugar. May Contain - SOYA")[1].get("order"), "asis")
+
+
 class Cereals(unittest.TestCase):
     def test_malt_in_the_forms_that_mean_the_grain(self):
         for text, code in (("Maltesers Hot Chocolate", "MALT"), ("Malty Biscuit Latte", "MALT"), ("malt vinegar", "MALT"),
-                           ("Malted milk", "MALT"), ("Bulgar Salad", "WHEAT"), ("Bulgur", "WHEAT"), ("OATMILK", "OAT")):
+                           ("Malted milk", "MALT"), ("Bulgar Salad", "WHEAT"), ("Bulgur", "WHEAT"), ("OATMILK", "OAT"),
+                           ("Wholewheat Pasta", "WHEAT"), ("WHOLEWHEAT flour", "WHEAT"), ("wholeoats", "OAT")):
             self.assertEqual([cereal_code(m) for m in CEREAL.findall(text)], [code], text)
             self.assertTrue(CEREAL_CAPS.search(text.upper()), text)
 
     def test_sweeteners_and_other_words_stay_out(self):
-        for text in ("maltodextrin", "maltitol", "Maltose syrup", "Malta", "goat cheese", "Emmental", "gluten free bread"):
+        for text in ("maltodextrin", "maltitol", "Maltose syrup", "Malta", "goat cheese", "Emmental", "gluten free bread", "Buckwheat",
+                     "wholemeal rice", "whole milk"):
             self.assertEqual(CEREAL.findall(text), [], text)
 
 
