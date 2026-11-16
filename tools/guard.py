@@ -207,9 +207,10 @@ def main():
     problems = scope(ref, paths, machine_made(commits(os.environ["PR"])), built)
     scan = SCAN_REF.fullmatch(ref)
     rj = f"restaurants/{scan[1]}/restaurant.json" if scan else None
-    if scan and not built and not problems and rj in paths:
+    # only for a restaurant main already has: a new one has no live menu for the Avoid guard to protect
+    if scan and not built and not problems and rj in paths and (ROOT / rj).is_file():
         # main's copy is this checkout's (the guard runs from main); the pull request's is read through the API
-        base = json.loads((ROOT / rj).read_text(encoding="utf-8")) if (ROOT / rj).is_file() else {}
+        base = json.loads((ROOT / rj).read_text(encoding="utf-8"))
         head = gh.request("GET", f"/contents/{rj}?ref={pull['head']['sha']}", accept="application/vnd.github.raw+json")
         problems = avoid_ok_changed(scan[1], base, head)
     city = CITY_REF.fullmatch(ref)
