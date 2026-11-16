@@ -263,10 +263,11 @@ def propose(r):
         git("switch", "-c", branch)
         try:
             guides = ROOT / "restaurants" / r["id"] / "guides"
+            # each new guide is tried on its own, so two can replace the same old one: move each old guide once
+            for old in sorted({old for u in r["new"] for old in u.get("replaces", [])}):
+                (guides / "archive").mkdir(exist_ok=True)
+                git("mv", str(guides / old), str(guides / "archive" / old))
             for u in r["new"]:
-                for old in u.get("replaces", []):
-                    (guides / "archive").mkdir(exist_ok=True)
-                    git("mv", str(guides / old), str(guides / "archive" / old))
                 (guides / u["name"]).write_bytes(u["body"])
             changed = what_changed(r["id"])
             git("add", "-A", str(guides))
