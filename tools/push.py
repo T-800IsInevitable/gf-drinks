@@ -128,9 +128,14 @@ def city_plan(previous=ROOT / ".previous", site=SITE):
     names = [now[cid]["name"] for cid in new]
     places = sum(len(now[cid].get("places") or []) for cid in new)
     who = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+    if not places:  # a city with no qualifying place (it has a "none" sentence): say what it shows, not "0 places"
+        body = ("No place there says everything it serves is gluten free, so it shows the list it was checked against. Tap to see "
+                + ("it." if len(names) == 1 else "them."))
+    else:
+        body = (f"{places} {'place' if places == 1 else 'places'} to eat, from coeliac guides, each checked against its own website where it has one. Tap to see "
+                + ("it." if len(names) == 1 else "them."))
     return {"title": f"{who} {'is' if len(names) == 1 else 'are'} in the app"[:120],
-            "body": f"{places} {'place' if places == 1 else 'places'} to eat, from coeliac guides, each checked against its own website where it has one. Tap to see "
-                    + ("it." if len(names) == 1 else "them."),
+            "body": body,
             "tag": "gf-cities-" + "-".join(new), "url": "#" + new[0] if len(new) == 1 else ""}
 
 

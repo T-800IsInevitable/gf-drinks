@@ -55,20 +55,30 @@ def valid_until(version, config, default_days=91):
 
 
 def newest_by(folder, version_of, keep=None, what="version", pattern="*.pdf"):
-    """The guide in folder to build from: the newest by the version its own text gives (version_of(pdf, path)),
-    then by file time. keep(pdf) can rule a file out (another guide that shares the folder)."""
+    """The guide in folder to build from: the newest by the version its own text gives (version_of(pdf, path)).
+    keep(pdf) can rule a file out (another guide that shares the folder). Never decided by file time or by guessing:
+    with more than one guide to choose from, the build stops when one has no readable version (it would silently lose
+    to an older guide) or when two share the newest version."""
     dated = []
     for p in sorted(Path(folder).glob(pattern)):
         with pdfplumber.open(p) as pdf:
             if keep is not None and not keep(pdf):
                 continue
             v = version_of(pdf, p) or "0000-00-00"
-        dated.append((v, p.stat().st_mtime, p))
+        dated.append((v, p.name, p))
     if not dated:
         raise SystemExit(f"ERROR: no guide PDF found in {folder}")
     dated.sort()
     for v, _, p in dated:
         print(f"  found {p.name} ({what} {v})")
+    if len(dated) > 1:
+        unread = [name for v, name, _ in dated if v == "0000-00-00"]
+        if unread:
+            raise SystemExit(f"ERROR: {', '.join(unread)}: couldn't read its date, so the newest guide in {folder} can't be "
+                             "told. Remove the old guide or fix the reader. Menu not updated.")
+        if dated[-1][0] == dated[-2][0]:
+            raise SystemExit(f"ERROR: {dated[-2][1]} and {dated[-1][1]} both read as {what} {dated[-1][0]}, so the newest "
+                             f"guide in {folder} can't be told. Remove the older one. Menu not updated.")
     return dated[-1][2]
 
 

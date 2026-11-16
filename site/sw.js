@@ -5,7 +5,7 @@
 // Nothing waits for them: the app shows the menus saved on the phone meanwhile. They're checked, not downloaded afresh,
 // so a file that hasn't changed comes back as "not modified". The guides (PDFs) and map tiles are never saved here:
 // a guide is fetched when it's opened, and the tile provider's rules forbid keeping tiles.
-const CACHE = "gf-menus-v42";
+const CACHE = "gf-menus-v43";
 const SHELL = ["./", "index.html", "styles.css", "theme.js", "compare.js", "app.js", "manifest.webmanifest",
   "vendor/leaflet/leaflet.js", "vendor/leaflet/leaflet.css",
   "data/restaurants.json", "phrases.json", "cities.json", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/favicon.png"];
@@ -47,7 +47,7 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
   if (req.method !== "GET" || url.origin !== self.location.origin || isGuide(url)) return;
   url.search = "";
-  e.respondWith(isData(url) ? newest(url) : saved(req, url));
+  e.respondWith(isData(url) ? newest(url, e) : saved(req, url));
 });
 
 // the app's own files: this release's copy at once
@@ -62,7 +62,18 @@ async function saved(req, url) {
 
 // menus, phrases, cities and the branch list: the network if it answers in time, else the saved copy. An answer that
 // isn't a file (a 404 after a publish that went out without the branch list, or a server error) counts as no answer.
-async function newest(url) {
+// "Answers" means the whole file: one whose start arrives and whose rest stalls is too slow as well. An answer that
+// comes after the wait is still saved (the worker is kept going for it), so the next look finds it.
+function newest(url, e) {
+  const net = fetch(url.href, { cache: "no-cache" }).then(async (res) => {
+    if (!res.ok) return res;
+    const body = await res.blob();
+    return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers });
+  });
+  e.waitUntil(net.then((res) => (res.ok ? caches.open(CACHE).then((c) => c.put(url.href, res.clone())) : null)).catch(() => {}));
+  return inTime(url, net);
+}
+async function inTime(url, net) {
   const cache = await caches.open(CACHE);
   let timer;
   const fallback = async () => {
@@ -75,10 +86,10 @@ async function newest(url) {
   };
   try {
     const res = await Promise.race([
-      fetch(url.href, { cache: "no-cache" }),
+      net,
       new Promise((_, reject) => { timer = setTimeout(() => reject(new Error("timeout")), TIMEOUT_MS); }),
     ]);
-    if (res.ok) { cache.put(url.href, res.clone()); return res; }
+    if (res.ok) return res.clone(); // the copy being saved (above) is another clone of the same answer
     return (await fallback()) || res;
   } catch (err) {
     const hit = await fallback();

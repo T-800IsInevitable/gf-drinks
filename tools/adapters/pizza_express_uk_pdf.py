@@ -215,8 +215,17 @@ def classify(r, extra, warnings):
     return "ok", out
 
 
+def edition(pdf):
+    """The guide's month with its V number ('2026-09-01.02' for September 2026 V2), so a corrected edition issued in
+    the same month counts as newer. Only for choosing the guide: the published version stays guide_info's date."""
+    version = guide_info(pdf)["version"]
+    text = " ".join(pdf.pages[n].extract_text() or "" for n in range(min(2, len(pdf.pages))))
+    m = re.search(r"(?:" + "|".join(MONTHS) + r")\s+\d{4}\s+V(\d+)", text)
+    return f"{version}.{int(m.group(1)):02d}" if version and m else version
+
+
 def newest_pdf(folder):
-    return newest_by(folder, lambda pdf, p: guide_info(pdf)["version"], keep=is_england_guide)
+    return newest_by(folder, lambda pdf, p: edition(pdf), keep=is_england_guide)
 
 
 def build(folder, config):

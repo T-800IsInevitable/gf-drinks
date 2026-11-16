@@ -61,6 +61,8 @@
   <div id="tzOffer" class="stale hide-searching" hidden></div>
   <div id="ukView" class="view">
   <div id="stale" class="stale hide-searching" hidden></div>
+  <!-- After a failed check, when the last good one was over a week ago: how old the menus on the phone are -->
+  <div id="age" class="stale hide-searching" hidden></div>
   <div id="favAlert" class="fav-alert" role="alert" hidden></div>
   <div id="news" class="news hide-searching" hidden></div>
   <!-- Except on the first menu page ever opened, the tips and the certified-or-not card are this one line; all of
@@ -105,7 +107,7 @@
     <div class="certnote city-intro hide-searching" id="cityIntroBox">
       <p id="cityIntroLine"></p>
       <div class="more-row">
-        <details class="more"><summary>About the tags</summary><p id="cityIntro"></p></details>
+        <details class="more" id="cityTagsMore"><summary>About the tags</summary><p id="cityIntro"></p></details>
         <details class="more"><summary id="cityTipsLabel">Before you go</summary><section id="cityTips" class="rules" aria-label="Tips"></section></details>
       </div>
     </div>

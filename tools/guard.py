@@ -5,9 +5,10 @@ comes from main whatever the pull request changes, so a pull request can't loose
 
 The scan routine and the guide watch name their branches by what they do (tools/SCAN_INSTRUCTIONS.md,
 tools/watch_guides.py):
-  scan/<id>-<date>          one restaurant: files under restaurants/<id>/ only
-  city/<id>-<date>          one city added: site/cities.json only
-  recheck/<id>-<date>       one city re-checked: site/cities.json only
+  scan/<id>-<date>          one restaurant: files under restaurants/<id>/ only. When main already has that restaurant
+                            and a reader builds it, only its guides/ and source/ (as for guide-watch/ below)
+  city/<id>-<date>          one city added: site/cities.json only, and in it only the new entry <id>
+  recheck/<id>-<date>       one city re-checked: site/cities.json only, and in it only the entry <id>
   guide-watch/<id>-<hash>   a new guide: files under restaurants/<id>/guides/ only (so a reader fix, a snapshot or
                             avoidDropOk for that guide goes in a pull request of the owner's own, merged first)
 A branch's name is chosen by whoever opens the pull request, so the name alone isn't trusted: a pull request that
@@ -17,6 +18,7 @@ workflow then builds and checks every pull request's menus and cities with main'
 
 Usage (in guard.yml): PR=<number> HEAD_REF=<branch> python tools/guard.py   (GITHUB_TOKEN, GITHUB_REPOSITORY set)
 """
+import json
 import os
 import re
 import sys
@@ -25,7 +27,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gh  # noqa: E402
 
+ROOT = Path(__file__).resolve().parent.parent
 CITY_FILES = {"site/cities.json"}
+# scan/<id>-<YYYY-MM-DD>, perhaps with a retry's suffix (-b); city/ and recheck/ branches are named the same way
+SCAN_REF = re.compile(r"scan/([a-z0-9][a-z0-9-]*?)-\d{4}-\d{2}-\d{2}(?:-[a-z0-9]{1,8})?")
+CITY_REF = re.compile(r"(city|recheck)/([a-z0-9][a-z0-9-]*?)-\d{4}-\d{2}-\d{2}(?:-[a-z0-9]{1,8})?")
 
 
 AUTOMATED = ("scan", "city", "recheck", "guide-watch")
@@ -44,19 +50,43 @@ def machine_made(commits):
     return False
 
 
-def scope(ref, paths, machine=False):
+def reader_built(ref, root=None):
+    """Whether a scan/ branch names a restaurant that main already has and a reader builds (anything but a menu kept
+    by hand, manual_csv). The guard runs in main's checkout, so the restaurant.json read here is main's copy, not the
+    pull request's. One that can't be read counts as reader-built: the narrower limit."""
+    m = SCAN_REF.fullmatch(ref)
+    config = (root or ROOT) / "restaurants" / (m[1] if m else "") / "restaurant.json"
+    if not m or not config.is_file():
+        return False
+    try:
+        c = json.loads(config.read_text(encoding="utf-8"))
+        return bool(c.get("readers")) or c.get("reader") != "manual_csv"
+    except (ValueError, AttributeError):
+        return True
+
+
+def scope(ref, paths, machine=False, reader_built=False):
     """What's wrong with a pull request from branch ref changing these paths: a list of problems, empty if fine.
-    machine: one of its commits was made by the routine or a workflow."""
+    machine: one of its commits was made by the routine or a workflow.
+    reader_built: main already has the restaurant a scan/ branch names, built by a reader."""
     # the prefix is read whatever its case, so "Scan/x" can't step round the limits below (the owner's own branches,
     # such as city-requests, have no slash after the word)
     kind = next((k for k in AUTOMATED if re.match(rf"{k}/", ref, re.I)), None)
     if kind and not ref.startswith(kind + "/"):
         return [f"branch {ref!r} looks like a {kind}/ branch but isn't named exactly {kind}/<id>-...; rename it"]
     if kind == "scan":
-        # scan/<id>-<YYYY-MM-DD>, perhaps with a retry's suffix (-b): the restaurant the branch names, and only that one
-        m = re.fullmatch(r"scan/([a-z0-9][a-z0-9-]*?)-\d{4}-\d{2}-\d{2}(?:-[a-z0-9]{1,8})?", ref)
+        # the restaurant the branch names, and only that one
+        m = SCAN_REF.fullmatch(ref)
         if not m:
             return [f"a scan/ branch is named scan/<id>-<YYYY-MM-DD>, not {ref!r}"]
+        if reader_built:
+            # a restaurant a reader already builds: a new guide and the upload it came from, nothing else. Its
+            # restaurant.json holds the reader's name and avoidDropOk, which switches off the build's Avoid guard
+            inside = (f"restaurants/{m[1]}/guides/", f"restaurants/{m[1]}/source/")
+            outside = sorted(p for p in paths if not p.startswith(inside))
+            return [f"a scan/ pull request for {m[1]}, which a reader builds, may change only restaurants/{m[1]}/guides/ and "
+                    f"restaurants/{m[1]}/source/, not {', '.join(outside)}. A reader fix, a snapshot, restaurant.json or "
+                    "avoidDropOk goes in a pull request of your own, merged first"] if outside else []
         outside = sorted(p for p in paths if not p.startswith(f"restaurants/{m[1]}/"))
         return [f"a scan/ pull request for {m[1]} may change only restaurants/{m[1]}/, not {', '.join(outside)}"] if outside else []
     if kind == "guide-watch":
@@ -68,12 +98,45 @@ def scope(ref, paths, machine=False):
         return [f"a guide-watch/ pull request may change only restaurants/{m[1]}/guides/, not {', '.join(outside)}. A reader fix, "
                 "a snapshot or avoidDropOk goes in a pull request of your own, merged first"] if outside else []
     if kind in ("city", "recheck"):
+        # which city is read from the name too: one_city() holds the pull request to that entry
+        if not CITY_REF.fullmatch(ref):
+            return [f"a {kind}/ branch is named {kind}/<id>-<YYYY-MM-DD>, not {ref!r}"]
         outside = sorted(set(paths) - CITY_FILES)
         return [f"a {kind}/ pull request may change only site/cities.json, not {', '.join(outside)}"] if outside else []
     if machine:
         return [f"branch {ref!r} carries a commit made by the routine or a workflow, so it must be a scan/, city/, recheck/ or "
                 "guide-watch/ branch and keep to that branch's files. If the work is your own, make the commits yourself"]
     return []
+
+
+def one_city(kind, cid, base, head):
+    """What's wrong with a city/ or recheck/ pull request for city cid, given site/cities.json where the branch left
+    main (base) and at the pull request's head, both parsed: a list of problems, empty if fine. Every other city must
+    be as it was; a city/ branch adds cid, a recheck/ branch changes one that's already there."""
+    if not isinstance(base, dict) or not isinstance(head, dict):
+        return ["site/cities.json isn't a list of cities by id"]
+    problems = []
+    others = sorted(k for k in set(base) | set(head) if k != cid and (k not in base or k not in head or base[k] != head[k]))
+    if others:
+        problems.append(f"a {kind}/ pull request for {cid} may change only that city's entry in site/cities.json, not "
+                        + ", ".join(others))
+    if cid not in head:
+        problems.append(f"a {kind}/ pull request for {cid} has no {cid} in site/cities.json (the branch is named for the city's id)")
+    elif kind == "city" and cid in base:
+        problems.append(f"{cid} is already in site/cities.json: a city/ branch adds a new city, and a recheck/ branch changes one")
+    elif kind == "recheck" and cid not in base:
+        problems.append(f"{cid} isn't in site/cities.json yet: a recheck/ branch changes a city that's there, and a city/ branch adds one")
+    return problems
+
+
+def cities_of(pr):
+    """site/cities.json where the pull request's branch left its base branch (the merge base, so a city merged to main
+    since then doesn't count against it) and at the pull request's head: (base, head), parsed. Read through the API."""
+    pull = gh.request("GET", f"/pulls/{pr}")
+    head, base_ref = pull["head"]["sha"], pull["base"]["ref"]
+    fork = gh.request("GET", f"/compare/{base_ref}...{head}?per_page=1")["merge_base_commit"]["sha"]
+    return tuple(gh.request("GET", f"/contents/site/cities.json?ref={sha}", accept="application/vnd.github.raw+json")
+                 for sha in (fork, head))
 
 
 def changed(pr, pages=30):
@@ -104,7 +167,10 @@ def commits(pr, pages=3):
 
 def main():
     ref = os.environ["HEAD_REF"]
-    problems = scope(ref, changed(os.environ["PR"]), machine_made(commits(os.environ["PR"])))
+    problems = scope(ref, changed(os.environ["PR"]), machine_made(commits(os.environ["PR"])), reader_built(ref))
+    city = CITY_REF.fullmatch(ref)
+    if city and not problems:
+        problems = one_city(city[1], city[2], *cities_of(os.environ["PR"]))
     for p in problems:
         print("GUARD:", p)
     if problems:

@@ -102,6 +102,8 @@ html { scroll-padding-top: var(--scroll-pad, 0px); }
   flex: 1; min-width: 0; border: 0; background: transparent; color: var(--fg);
   font: inherit; font-size: 1rem; padding: 9px 0; outline: none;
 }
+/* the browser's own placeholder grey is too faint to read on the search box and the form fields */
+::placeholder { color: var(--muted); opacity: 1; }
 .chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 2px; }
 .chips::-webkit-scrollbar { display: none; }
 .chips button {
@@ -131,7 +133,6 @@ html { scroll-padding-top: var(--scroll-pad, 0px); }
 @media (max-width: 380px) {
   .actions { gap: 2px; }
   .status button { font-size: 0.75rem; }
-  .foot-btns { flex-direction: column; align-items: flex-end; }
 }
 
 /* ---- the page ---- */
@@ -246,7 +247,7 @@ body.searching .hide-searching { display: none !important; }
 .detail-foot { display: flex; align-items: center; gap: 10px; }
 /* Show staff, the one that matters at a counter, has a full-width row of its own; Add to order and Save share the one under it */
 .foot-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1 1 auto; min-width: 0; }
-.foot-btns > * { min-width: 0; white-space: nowrap; }
+.foot-btns > * { min-width: 0; white-space: normal; overflow-wrap: anywhere; } /* a label wraps inside its button at the largest text sizes */
 .foot-btns > .staff-btn { grid-column: 1 / -1; order: -1; font-size: 0.9375rem; }
 .detail-more { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; }
 .detail-more > span:empty { display: none; }
@@ -296,9 +297,10 @@ body.searching .hide-searching { display: none !important; }
 /* ---- sheets (dialogs) ---- */
 dialog {
   border: 0; padding: 0; background: var(--surface); color: var(--fg); width: min(560px, 100%);
-  max-height: 88vh; border-radius: 16px; margin: auto auto 0;
+  max-height: 88vh; max-height: 88dvh; border-radius: 16px; margin: auto auto 0;
 }
-dialog.full { max-height: 94vh; height: 94vh; }
+/* dvh: the screen as it is with Safari's bars showing (vh is taller there); vh stays for browsers without it */
+dialog.full { max-height: 94vh; height: 94vh; max-height: 94dvh; height: 94dvh; }
 dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 .sheet { padding: 16px 18px calc(18px + env(safe-area-inset-bottom, 0px)); font-size: 0.9375rem; }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
@@ -470,9 +472,9 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 .news-items li + li { margin-top: 4px; }
 .pop-btns a { text-decoration: none; }
 /* full-size tap targets: the zoom buttons and a popup's close button */
-.live-map.leaflet-touch .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; }
-.live-map.leaflet-container a.leaflet-popup-close-button { width: 44px; height: 44px; font: 1.5rem/44px var(--body); }
-.live-map .leaflet-popup-content { margin-right: 40px; }
+.city-map.leaflet-touch .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; }
+.city-map.leaflet-container a.leaflet-popup-close-button { width: 44px; height: 44px; font: 1.5rem/44px var(--body); }
+.city-map .leaflet-popup-content { margin-right: 40px; }
 /* ---- Near me on the UK menus: the chains within a kilometre ---- */
 .near-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; }
 /* the name and its line take the full width, the buttons under them, so the line doesn't wrap into three */
@@ -485,7 +487,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 .say-btn { margin-top: 8px; border: 1px solid var(--line); background: var(--bg); border-radius: 999px; padding: 8px 14px; min-height: 44px; font-size: 0.8438rem; font-weight: 600; color: var(--accent); cursor: pointer; }
 /* ---- personal notes on items and places ---- */
 .note-box { display: flex; flex-direction: column; gap: 4px; font-size: 0.8125rem; font-weight: 600; color: var(--fg); }
-.note-box textarea { font: inherit; font-weight: 400; font-size: 0.9375rem; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--field); background: var(--bg); color: var(--fg); resize: vertical; min-height: 44px; }
+.note-box textarea { font: inherit; font-weight: 400; font-size: 1rem; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--field); background: var(--bg); color: var(--fg); resize: vertical; min-height: 44px; }
 .note-mark { color: var(--accent); margin-right: 5px; }
 /* ---- "Guide page 7" opens the guide ---- */
 .guide-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent); font-weight: 600; text-decoration: none; }
