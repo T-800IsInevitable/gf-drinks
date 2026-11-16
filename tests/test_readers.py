@@ -89,6 +89,17 @@ class NewestGuide(unittest.TestCase):
         # the published version is still the month alone, so the menu file and its fingerprint don't change
         self.assertEqual(pizza_express_uk_pdf.guide_info(v2), {"title": "Allergen guide", "runs": None, "version": "2026-09-01"})
 
+    def test_pizza_express_drops_a_dash_that_ends_a_name(self):
+        for raw, name in (("Dr Pepper -", "Dr Pepper"), ("Blue Cheese Dip Pot – [Dine-Out Exclusive]", "Blue Cheese Dip Pot"),
+                          ("Caviar Dough Balls- NEW", "Caviar Dough Balls"), ("Half-Baked", "Half-Baked")):
+            self.assertEqual(pizza_express_uk_pdf.tidy_name(raw)[0], name, raw)
+
+    def test_pizza_express_skips_the_ingredients_list(self):
+        # published on the same page, it names the allergen guide in its own introduction and has a newer V number
+        keep = pizza_express_uk_pdf.is_england_guide
+        self.assertTrue(keep(fake_pdf("Allergen Information\nEngland, Scotland, Wales and Jersey")))
+        self.assertFalse(keep(fake_pdf("INGREDIENTS LIST\nEngland, Scotland, Wales & Jersey\nOur Allergen Information Sheets list")))
+
 
 class EndDates(unittest.TestCase):
     def test_a_season_ends_on_the_last_day_of_its_last_month(self):
