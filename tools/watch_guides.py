@@ -331,26 +331,49 @@ def main():
                      if (p / "restaurant.json").exists() and not p.name.startswith(("_", "."))
                      and (not args.ids or p.name in args.ids))
     existing = open_issues() if args.github else set()
+    failed = []
     for folder in folders:
-        if "watch" not in json.loads((folder / "restaurant.json").read_text(encoding="utf-8")):
-            print(f"{folder.name}: not watched")
-            continue
-        r = check(folder)
-        new = ", ".join(u["name"] + (" (the reader stopped on it)" if u.get("unreadable") else "") for u in r["new"])
-        print(f"{r['name']}: " + (f"new guide {new}" if new else "nothing new"))
-        for line in r["ignored"]:
-            print(f"  left alone: {line}")
-        for p in r["problems"]:
-            print(f"  PROBLEM: {p}")
-        if not args.github:
-            continue
-        if r["new"]:
-            if r["manual"]:
-                issue(*manual_issue(r), existing)
-            else:
-                propose(r)
-        if r["problems"]:
-            issue(*problem_issue(r), existing)
+        # one restaurant's failure (a broken page, a reader that stops, a refused pull request) mustn't leave the
+        # restaurants after it unchecked: say so in an issue, carry on, and fail the run at the end
+        try:
+            watch_one(folder, args.github, existing)
+        except (Exception, SystemExit) as e:
+            failed.append(folder.name)
+            what = why(e) if isinstance(e, Exception) else str(e)
+            print(f"{folder.name}: FAILED ({what})")
+            if args.github:
+                try:
+                    config = json.loads((folder / "restaurant.json").read_text(encoding="utf-8"))
+                    issue(*problem_issue({"id": folder.name, "name": config.get("name", folder.name),
+                                          "page": (config.get("watch") or {}).get("page", ""),
+                                          "problems": [f"The guide watch stopped on it: {what}"]}), existing)
+                except Exception as e2:  # the issue itself failed: the run's own failure still reports it
+                    print(f"  couldn't open an issue for it ({why(e2)})")
+    if failed:
+        raise SystemExit(f"ERROR: the guide watch stopped on {', '.join(failed)}; the other restaurants were checked")
+
+
+def watch_one(folder, github, existing):
+    """Check one restaurant's page, and with github open its pull request or issues."""
+    if "watch" not in json.loads((folder / "restaurant.json").read_text(encoding="utf-8")):
+        print(f"{folder.name}: not watched")
+        return
+    r = check(folder)
+    new = ", ".join(u["name"] + (" (the reader stopped on it)" if u.get("unreadable") else "") for u in r["new"])
+    print(f"{r['name']}: " + (f"new guide {new}" if new else "nothing new"))
+    for line in r["ignored"]:
+        print(f"  left alone: {line}")
+    for p in r["problems"]:
+        print(f"  PROBLEM: {p}")
+    if not github:
+        return
+    if r["new"]:
+        if r["manual"]:
+            issue(*manual_issue(r), existing)
+        else:
+            propose(r)
+    if r["problems"]:
+        issue(*problem_issue(r), existing)
 
 
 if __name__ == "__main__":
