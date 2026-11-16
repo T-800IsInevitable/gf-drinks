@@ -51,6 +51,10 @@ class HandKeptAvoidSetting(unittest.TestCase):
         self.assertTrue(guard.avoid_ok_changed("knoops-uk", main_cfg, {**main_cfg, "guide": {"source": "b.pdf"}}))
         self.assertTrue(guard.avoid_ok_changed("knoops-uk", {"avoidDropOk": "menu.csv", "guide": {"source": "a.pdf"}},
                                                {"avoidDropOk": "menu.csv", "guide": {}}))  # the menu's own name
+        # changing which reader builds it changes what its source is, so that's refused too
+        hand = {"reader": "manual_csv", "guide": {"source": "a.pdf"}}
+        self.assertTrue(guard.avoid_ok_changed("knoops-uk", hand, {**hand, "reader": "pret_uk_pdf"}))
+        self.assertTrue(guard.avoid_ok_changed("knoops-uk", hand, {**hand, "readers": ["pret_uk_pdf"]}))
         # a new source that the existing avoidDropOk doesn't name is fine
         self.assertEqual(guard.avoid_ok_changed("knoops-uk", main_cfg, {**main_cfg, "guide": {"source": "c.pdf"}}), [])
 

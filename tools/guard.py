@@ -182,6 +182,10 @@ def avoid_ok_changed(rid, base, head):
     avoidDropOk equals the menu's source (adapters/manual_csv.py: guide.source, else the file's name, menu.csv), so
     renaming the source to match an avoidDropOk already on main counts as switching the guard off too."""
     base, head = base or {}, head or {}
+    # the source rule below is manual_csv's, so which reader builds it may not change here either
+    if any(base.get(k) != head.get(k) for k in ("reader", "readers")):
+        return [f"a scan/ pull request for {rid} may not change which reader builds it (reader or readers in "
+                f"restaurants/{rid}/restaurant.json): that goes in a pull request of your own"]
     source = lambda c: (c.get("guide") or {}).get("source") or "menu.csv"
     ok = head.get("avoidDropOk")
     if ok == base.get("avoidDropOk") and not (ok and source(head) != source(base) and ok == source(head)):
