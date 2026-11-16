@@ -58,11 +58,11 @@ class HandKeptAvoidSetting(unittest.TestCase):
         # a new source that the existing avoidDropOk doesn't name is fine
         self.assertEqual(guard.avoid_ok_changed("knoops-uk", main_cfg, {**main_cfg, "guide": {"source": "c.pdf"}}), [])
 
-    def run_main(self, paths, on_main):
+    def run_main(self, paths, on_main, **head_more):
         """guard.main() for scan/new-cafe-2026-11-20 changing paths, with main holding restaurant.json or not."""
         rj = "restaurants/new-cafe/restaurant.json"
         answers = {"/pulls/9": {"head": {"sha": "abc", "repo": {"full_name": "o/r"}}},
-                   f"/contents/{rj}?ref=abc": {"reader": "manual_csv", "guide": {"source": "menu.csv"}}}
+                   f"/contents/{rj}?ref=abc": {"reader": "manual_csv", "guide": {"source": "menu.csv"}, **head_more}}
         env = {"HEAD_REF": "scan/new-cafe-2026-11-20", "PR": "9", "GITHUB_REPOSITORY": "o/r"}
         with tempfile.TemporaryDirectory() as tmp:
             if on_main:
@@ -78,6 +78,17 @@ class HandKeptAvoidSetting(unittest.TestCase):
     def test_a_new_restaurant_from_a_scan_passes(self):
         # main has no copy yet, so there's no live menu for the Avoid guard to protect
         self.run_main(["restaurants/new-cafe/menu.csv", "restaurants/new-cafe/restaurant.json"], on_main=False)
+
+    def test_a_new_restaurant_may_not_arrive_with_avoid_drop_ok(self):
+        # it would sit on main already matching its own source, so a later scan could drop Avoid rows unchecked
+        with self.assertRaises(SystemExit):
+            self.run_main(["restaurants/new-cafe/menu.csv", "restaurants/new-cafe/restaurant.json"], on_main=False,
+                          avoidDropOk="menu.csv")
+
+    def test_the_advice_is_a_pull_request_of_your_own(self):
+        why = " ".join(guard.avoid_ok_changed("knoops-uk", {}, {"avoidDropOk": "b.pdf"}))
+        self.assertIn("pull request of your own", why)
+        self.assertNotIn("merged first", why)  # setting avoidDropOk on main first still leaves the scan refused
 
     def test_the_avoid_check_never_clears_a_problem_found_before_it(self):
         with self.assertRaises(SystemExit):
