@@ -1532,5 +1532,41 @@
         "status": "confirmed"
       }
     ]
+  },
+  "warwick": {
+    "name": "Warwick",
+    "country": "United Kingdom",
+    "flag": "🇬🇧",
+    "group": "uk",
+    "language": "en",
+    "timeZone": "Europe/London",
+    "checked": "2026-11-15",
+    "recheckDays": 90,
+    "bounds": {
+      "lat": [
+        52.26,
+        52.31
+      ],
+      "lon": [
+        -1.63,
+        -1.555
+      ]
+    },
+    "list": {
+      "name": "Gluten free places to eat in Warwick",
+      "by": "Coeliac Sanctuary",
+      "url": "https://www.coeliacsanctuary.co.uk/wheretoeat/warwickshire/warwick"
+    },
+    "tips": [
+      "Oats: food labelled gluten free in the UK can contain oats, and many cafés offer oat milk. This app counts oats as gluten, so ask whether anything has oats in it.",
+      "Beer: ordinary beer and lager contain gluten. If a place sells a beer labelled gluten free, ask which one it is."
+    ],
+    "sections": [],
+    "footNotes": [
+      "Coeliac Sanctuary lists Warwick places with gluten free options. They're left out here because their kitchens also use gluten.",
+      "Unofficial guide. Not affiliated with any of these places or the guides named here."
+    ],
+    "none": "When this was checked, no place in Warwick said everything it serves is gluten free, or had a separate gluten free kitchen, so none is shown here. Coeliac Sanctuary's list, linked below, names places with gluten free options whose kitchens also use gluten. The menus of the app's chains are under Chains.",
+    "places": []
   }
 }
