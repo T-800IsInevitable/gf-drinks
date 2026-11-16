@@ -35,9 +35,10 @@ def guide_info(pdf):
 
 
 def is_england_guide(pdf):
-    """The England, Scotland, Wales and Jersey guide; not the ingredients list or another region's guide in the same folder."""
-    first = pdf.pages[0].extract_text() or ""
-    return "Allergen Information" in first and "England" in first
+    """The England, Scotland, Wales and Jersey guide; not the ingredients list or another region's guide in the same folder.
+    The guide's title opens its first page: the ingredients list also names "Allergen Information", in its introduction."""
+    first = (pdf.pages[0].extract_text() or "").lstrip()
+    return first.startswith("Allergen Information") and "England" in first
 
 
 def text_in(chars, box):
@@ -153,6 +154,7 @@ def tidy_name(raw):
     notes = [f'The guide says: "{m.strip()}"' for m in re.findall(r"\[([^\]]+)\]", raw)]
     name = clean(re.sub(r"\[[^\]]*\]", " ", raw))
     name = clean(re.sub(r"\s*[-–]?\s*NEW(?:\s+RECIPE)?$", "", name))
+    name = clean(re.sub(r"\s*[-–]$", "", name))  # 'Dr Pepper -': the November 2026 guide ends some names with a dash
     return name, notes
 
 
