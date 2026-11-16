@@ -187,12 +187,18 @@ def avoid_ok_changed(rid, base, head):
         return [f"a scan/ pull request for {rid} may not change which reader builds it (reader or readers in "
                 f"restaurants/{rid}/restaurant.json): that goes in a pull request of your own"]
     source = lambda c: (c.get("guide") or {}).get("source") or "menu.csv"
+    if base.get("avoidDropOk") and base["avoidDropOk"] == source(base):
+        # left on main after an accepted drop: a hand-kept menu keeps its source, so the guard stays off for every scan
+        return [f"main's restaurants/{rid}/restaurant.json still has avoidDropOk set to the menu's own source, so the "
+                "build's Avoid guard is switched off for it: remove avoidDropOk in a pull request of your own, then re-run "
+                "this one"]
     ok = head.get("avoidDropOk")
     if ok == base.get("avoidDropOk") and not (ok and source(head) != source(base) and ok == source(head)):
         return []
     return [f"a scan/ pull request for {rid} may not change avoidDropOk in restaurants/{rid}/restaurant.json, or rename "
-            "the menu's source to the one avoidDropOk names: if the change to the Avoid list is real, set it in a pull "
-            "request of your own, merged first"]
+            "the menu's source to the one avoidDropOk names. If the change to the Avoid list is real, check it against "
+            "the menu, then make the whole change (the menu and avoidDropOk) in a pull request of your own and close this one; "
+            "once that has published, remove avoidDropOk again, or the guard stays off for every later scan of this menu"]
 
 
 def main():
@@ -207,12 +213,17 @@ def main():
     problems = scope(ref, paths, machine_made(commits(os.environ["PR"])), built)
     scan = SCAN_REF.fullmatch(ref)
     rj = f"restaurants/{scan[1]}/restaurant.json" if scan else None
-    # only for a restaurant main already has: a new one has no live menu for the Avoid guard to protect
-    if scan and not built and not problems and rj in paths and (ROOT / rj).is_file():
-        # main's copy is this checkout's (the guard runs from main); the pull request's is read through the API
-        base = json.loads((ROOT / rj).read_text(encoding="utf-8"))
-        head = gh.request("GET", f"/contents/{rj}?ref={pull['head']['sha']}", accept="application/vnd.github.raw+json")
-        problems = avoid_ok_changed(scan[1], base, head)
+    if scan and not built and not problems and ((ROOT / rj).is_file() or rj in paths):
+        # main's copy is this checkout's (the guard runs from main); the pull request's is read through the API, or is
+        # main's own when the scan leaves it alone (the build then uses main's avoidDropOk, so it's judged all the same)
+        read_head = lambda: gh.request("GET", f"/contents/{rj}?ref={pull['head']['sha']}", accept="application/vnd.github.raw+json")
+        if (ROOT / rj).is_file():
+            base = json.loads((ROOT / rj).read_text(encoding="utf-8"))
+            problems = avoid_ok_changed(scan[1], base, read_head() if rj in paths else base)
+        elif isinstance(head := read_head(), dict) and head.get("avoidDropOk"):
+            # a new restaurant has no live menu to protect yet, but one arriving with avoidDropOk would have the guard
+            # switched off for every later scan whose source matches it
+            problems = [f"a scan/ pull request that adds {scan[1]} may not set avoidDropOk: a new menu has nothing to drop"]
     city = CITY_REF.fullmatch(ref)
     if city and not problems:
         problems = one_city(city[1], city[2], *cities_of(os.environ["PR"]))

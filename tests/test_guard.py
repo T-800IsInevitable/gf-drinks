@@ -58,17 +58,24 @@ class HandKeptAvoidSetting(unittest.TestCase):
         # a new source that the existing avoidDropOk doesn't name is fine
         self.assertEqual(guard.avoid_ok_changed("knoops-uk", main_cfg, {**main_cfg, "guide": {"source": "c.pdf"}}), [])
 
-    def run_main(self, paths, on_main):
+    def test_a_scan_that_leaves_restaurant_json_alone_is_still_checked(self):
+        # only menu.csv changes, while main's avoidDropOk still names the source: the build would accept the drop
+        with self.assertRaises(SystemExit):
+            self.run_main(["restaurants/new-cafe/menu.csv"], on_main=True, main_more={"avoidDropOk": "menu.csv"})
+        self.run_main(["restaurants/new-cafe/menu.csv"], on_main=True)  # and with no avoidDropOk it passes
+
+    def run_main(self, paths, on_main, main_more=None, **head_more):
         """guard.main() for scan/new-cafe-2026-11-20 changing paths, with main holding restaurant.json or not."""
         rj = "restaurants/new-cafe/restaurant.json"
         answers = {"/pulls/9": {"head": {"sha": "abc", "repo": {"full_name": "o/r"}}},
-                   f"/contents/{rj}?ref=abc": {"reader": "manual_csv", "guide": {"source": "menu.csv"}}}
+                   f"/contents/{rj}?ref=abc": {"reader": "manual_csv", "guide": {"source": "menu.csv"}, **head_more}}
         env = {"HEAD_REF": "scan/new-cafe-2026-11-20", "PR": "9", "GITHUB_REPOSITORY": "o/r"}
         with tempfile.TemporaryDirectory() as tmp:
             if on_main:
                 (Path(tmp) / "restaurants" / "new-cafe").mkdir(parents=True)
                 # the same as the pull request's copy, so only the paths can be wrong
-                (Path(tmp) / rj).write_text('{"reader": "manual_csv", "guide": {"source": "menu.csv"}}', encoding="utf-8")
+                (Path(tmp) / rj).write_text(json.dumps({"reader": "manual_csv", "guide": {"source": "menu.csv"}, **(main_more or {})}),
+                                            encoding="utf-8")
             with mock.patch.object(guard, "ROOT", Path(tmp)), mock.patch.dict(guard.os.environ, env), \
                     mock.patch.object(guard.gh, "request", side_effect=lambda m, path, **k: answers[path]), \
                     mock.patch.object(guard, "changed", return_value=paths), \
@@ -78,6 +85,26 @@ class HandKeptAvoidSetting(unittest.TestCase):
     def test_a_new_restaurant_from_a_scan_passes(self):
         # main has no copy yet, so there's no live menu for the Avoid guard to protect
         self.run_main(["restaurants/new-cafe/menu.csv", "restaurants/new-cafe/restaurant.json"], on_main=False)
+
+    def test_a_new_restaurant_may_not_arrive_with_avoid_drop_ok(self):
+        # it would sit on main already matching its own source, so a later scan could drop Avoid rows unchecked
+        with self.assertRaises(SystemExit):
+            self.run_main(["restaurants/new-cafe/menu.csv", "restaurants/new-cafe/restaurant.json"], on_main=False,
+                          avoidDropOk="menu.csv")
+
+    def test_the_advice_is_a_pull_request_of_your_own(self):
+        why = " ".join(guard.avoid_ok_changed("knoops-uk", {}, {"avoidDropOk": "b.pdf"}))
+        self.assertIn("pull request of your own", why)
+        self.assertIn("remove avoidDropOk", why)  # a hand-kept menu's source rarely changes, so it would stay switched off
+        self.assertNotIn("merged first", why)
+
+    def test_a_scan_is_refused_while_main_still_switches_the_guard_off(self):
+        # main's avoidDropOk already names the menu's source (menu.csv when the guide names none): a scan that changes
+        # nothing in restaurant.json would drop Avoid rows unchecked
+        for main_cfg in ({"avoidDropOk": "menu.csv"}, {"avoidDropOk": "a.pdf", "guide": {"source": "a.pdf"}}):
+            why = guard.avoid_ok_changed("knoops-uk", main_cfg, dict(main_cfg))
+            self.assertTrue(why, main_cfg)
+            self.assertIn("remove avoidDropOk", " ".join(why))
 
     def test_the_avoid_check_never_clears_a_problem_found_before_it(self):
         with self.assertRaises(SystemExit):

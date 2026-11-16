@@ -27,7 +27,7 @@ def source(name):
 @unittest.skipUnless(NODE, "needs Node.js")
 class UnknownOrder(unittest.TestCase):
     def run_js(self, items):
-        code = "\n".join(source(n) for n in ("listOr", "kindOf", "tagFor", "orderLine")) + """
+        code = "\n".join(source(n) for n in ("ORDERS", "listOr", "kindOf", "tagFor", "orderLine")) + """
 const r = { optionLabel: "milk" };
 const items = JSON.parse(process.argv[1]);
 process.stdout.write(JSON.stringify(items.map((i) => [kindOf(i), tagFor(r, i), orderLine(r, i)])));
@@ -41,6 +41,53 @@ process.stdout.write(JSON.stringify(items.map((i) => [kindOf(i), tagFor(r, i), o
             self.assertEqual(kind, "gluten", item)  # counted and filtered with the Avoid list, not as fine
             self.assertEqual(tag, ["t-bad", "Check in store"], item)
             self.assertEqual(line, "Please check this with staff.", item)
+
+    def test_safe_menu_moves_an_unknown_order_to_the_avoid_list(self):
+        # every screen (list, order builder, staff cards, Your usuals, counts) reads items and avoid, so the move is made
+        # once, as the menu comes in
+        code = source("ORDERS") + "\n" + source("safeMenu") + """
+const menus = JSON.parse(process.argv[1]);
+process.stdout.write(JSON.stringify(menus.map((r) => [safeMenu(r), safeMenu(r) === r])));
+"""
+        menu = {"id": "x", "stats": {"rows": 4, "items": 2, "ingredients": 1, "avoid": 1},
+                "items": [{"name": "Latte", "section": "S", "order": "asis"},
+                          {"name": "Mystery", "section": "S", "order": "ask", "ok": ["soya"], "not": ["oat"],
+                           "decided": "Listed because…", "info": "Fine with any milk."},
+                          {"name": "Odd milk", "section": "S", "order": "ask", "role": "ingredient"}],
+                "avoid": [{"name": "Bun", "section": "S", "gluten": ["WHEAT"]}],
+                # the build's What changed, worked out from the menu as published
+                "changes": {"nowOk": [{"name": "Mystery", "section": "S"}], "added": [{"name": "Odd milk", "section": "S"}],
+                            "changed": [{"name": "Mystery", "section": "S"}, {"name": "Latte", "section": "S"}],
+                            "nowAvoid": [], "removed": []}}
+        plain = {"id": "y", "stats": {"items": 1, "avoid": 0}, "items": [{"name": "Tea", "order": "asis"}], "avoid": []}
+        out = subprocess.run([NODE, "-e", code, json.dumps([menu, plain])], capture_output=True, text=True, encoding="utf-8", check=True)
+        (moved, same), (_, untouched) = json.loads(out.stdout)
+        self.assertFalse(same)
+        self.assertEqual([i["name"] for i in moved["items"]], ["Latte"])
+        odd = {a["name"]: a for a in moved["avoid"]}
+        self.assertEqual(sorted(odd), ["Bun", "Mystery", "Odd milk"])
+        for name in ("Mystery", "Odd milk"):
+            self.assertEqual((odd[name]["tag"], odd[name]["gluten"]), ("Check in store", []))
+            self.assertTrue(odd[name]["reason"].startswith("Note from this app"))
+            for key in ("order", "ok", "note", "decided", "info", "role"):  # nothing that explained it as fine
+                self.assertNotIn(key, odd[name])
+        self.assertEqual(moved["stats"], {"rows": 4, "items": 1, "ingredients": 0, "avoid": 3})
+        # nothing in What changed may still call a moved item fine, new or ordered differently
+        self.assertEqual((moved["changes"]["nowOk"], moved["changes"]["added"]), ([], []))
+        self.assertEqual(moved["changes"]["changed"], [{"name": "Latte", "section": "S"}])
+        self.assertTrue(untouched)  # a menu with nothing unknown is passed through as it is
+
+    def test_every_menu_is_shown_through_safe_menu_and_saved_as_published(self):
+        # both ways a menu comes in: the copy saved on the phone at startup, and a fresh load
+        app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+        load = re.search(r"^  async function loadNow\(.*?^  }$", app, re.M | re.S).group(0)
+        self.assertIn("const show = shown(fresh);", load)
+        self.assertIn("data = show;", load)
+        self.assertIn("setLooked(show.restaurants", load)  # what you last looked at is what was shown, moves included
+        self.assertIn("saveMenus(DATA_KEY, JSON.stringify(fresh));", load)  # the published copy, not the moved one
+        self.assertIn("const prev = raw;", load)  # reused by fingerprint from the published copy
+        self.assertIn("raw = JSON.parse(saved); data = shown(raw);", app)
+        self.assertEqual(len(re.findall(r"(?<![.\w])data = (?!null)", app)), 2, "data is set only from shown(...)")
 
     def test_the_known_orders_read_as_before(self):
         out = self.run_js([{"order": "asis"}, {"order": "except", "ok": ["soya"], "not": ["oat"]},

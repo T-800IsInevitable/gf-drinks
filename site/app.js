@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 44;
+  const APP_VERSION = 45;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -65,7 +65,8 @@
   }
 
   // state
-  let data = null;               // { built, restaurants: [ full restaurant objects ] }
+  let data = null;               // { built, restaurants: [ full restaurant objects ] }, after safeMenu
+  let raw = null;                // the same menus as published: what's saved and compared by fingerprint
   let selected = ALL;            // restaurant id or ALL
   // the chip under the search box: everything, favourites, one section of a restaurant, or (on All) one restaurant or area
   let filter = { kind: "all" };  // { kind: "all" | "fav" | "section" | "restaurant" | "area", value }
@@ -117,8 +118,28 @@
   const visible = (k) => !picking() || pick[k];
   // "straight" = no gluten ingredients as served: asis/any/except (fine as served, or with any milk but the ones named); change = swap/modify;
   // "info" = an ingredient listed on its own (not something to order), which none of the status buttons count
-  // an order this app doesn't know (a newer menu on an older app) counts with the Avoid list, never as fine
-  const kindOf = (i) => (!i.order || !["asis", "any", "except", "swap", "modify"].includes(i.order) ? "gluten" : i.role === "ingredient" ? "info" : (i.order === "swap" || i.order === "modify") ? "change" : "straight");
+  // the ways of ordering this app knows; an item with any other (a newer menu on an older app) counts with the Avoid list
+  const ORDERS = ["asis", "any", "except", "swap", "modify"];
+  const kindOf = (i) => (!i.order || !ORDERS.includes(i.order) ? "gluten" : i.role === "ingredient" ? "info" : (i.order === "swap" || i.order === "modify") ? "change" : "straight");
+  // a listed item whose order this app doesn't know goes to the Avoid list as "Check in store", once, as a menu comes in,
+  // so the list, the order builder, staff cards, Your usuals and the counts all agree. Shaped like a hand-kept doubt row.
+  function safeMenu(r) {
+    const odd = (r.items || []).filter((i) => !ORDERS.includes(i.order));
+    if (!odd.length) return r;
+    const ingredients = odd.filter((i) => i.role === "ingredient").length;
+    const stats = { ...(r.stats || {}), items: ((r.stats || {}).items || 0) - (odd.length - ingredients), avoid: ((r.stats || {}).avoid || 0) + odd.length };
+    if (ingredients) stats.ingredients = ((r.stats || {}).ingredients || 0) - ingredients;
+    const asAvoid = ({ order, ok, not, standard, standardFrom, note, decided, info, role, ...i }) =>
+      ({ ...i, gluten: [], tag: "Check in store", reason: "Note from this app: it doesn't know how this menu says to order it, so check in store." });
+    // the build's What changed was worked out from the menu as published: nothing may still call a moved item fine or new
+    const moved = new Set(odd.map((i) => i.section + "|" + i.name));
+    const keep = (list) => (list || []).filter((c) => !moved.has(c.section + "|" + c.name));
+    const changes = r.changes && { ...r.changes, nowOk: keep(r.changes.nowOk), changed: keep(r.changes.changed), added: keep(r.changes.added) };
+    return { ...r, stats, ...(changes ? { changes } : {}), items: r.items.filter((i) => ORDERS.includes(i.order)), avoid: (r.avoid || []).concat(odd.map(asAvoid)) };
+  }
+  // the menus as the app shows them; the published copy (raw) is what's saved, so a later release that knows the order
+  // starts again from the real menu rather than from this app's move
+  const shown = (menus) => menus && { ...menus, restaurants: menus.restaurants.map(safeMenu) };
 
   // ---------- helpers ----------
   const byId = (id) => data && data.restaurants.find((r) => r.id === id);
@@ -2739,7 +2760,7 @@
     btn.textContent = "Checking…";
     try {
       const idx = await getJSON("data/restaurants.json");
-      const prev = data;
+      const prev = raw;
       // a menu whose fingerprint in the index is the one on this phone is the same menu (the fingerprint covers all of
       // it), so only the others are fetched. Menus saved by an older release carry none: those are fetched.
       const same = (r) => (r.hash && prev && prev.restaurants.find((o) => o.id === r.id && o.hash === r.hash)) || null;
@@ -2750,19 +2771,21 @@
       const offline = idx.offline || mixed || full.some((f) => f.offline);
       if (!offline) { store.set(CHECKED_KEY, new Date().toISOString()); renderLastChecked(); }
       const fresh = { built: idx.json.built, restaurants: full.map((f) => f.json) };
+      const show = shown(fresh);
       // every release rebuilds the menus, so compare what they say, not when they were built
       const changed = !prev || menusOf(prev) !== menusOf(fresh);
       const wasOffline = offlineNow;
       offlineNow = offline;
       if (changed) {
         if (!prev && firstVisit && !store.get(SEEN_KEY)) store.set(SEEN_KEY, JSON.stringify(fresh.restaurants.map((r) => r.id + "@" + r.source)));
-        setLooked(fresh.restaurants, true); // a restaurant new to this phone starts from what it shows now
-        noteNewRestaurants(fresh.restaurants); // and is marked New until it's opened
+        setLooked(show.restaurants, true); // a restaurant new to this phone starts from what it shows now
+        noteNewRestaurants(show.restaurants); // and is marked New until it's opened
       }
       // whenever what the menus say differs, not only when the build time does: a load that mixed a new index with an
       // older file has stored the new build time already
       if (!prev || changed || prev.built !== fresh.built) {
-        data = fresh;
+        raw = fresh;
+        data = show;
         saveMenus(DATA_KEY, JSON.stringify(fresh));
       }
       if (changed) render();
@@ -3116,7 +3139,7 @@
   const [hashRid, hashItem] = hashId.split("/");
   const saved = store.get(DATA_KEY);
   if (saved) {
-    try { data = JSON.parse(saved); } catch (e) { data = null; }
+    try { raw = JSON.parse(saved); data = shown(raw); } catch (e) { raw = data = null; }
   }
   if (data) { setLooked(data.restaurants, true); noteNewRestaurants(data.restaurants); } // the menus saved on this phone are the ones you last saw
   // a link to a restaurant opens the UK menus; any other link (#berlin) is taken as a city until cities.json says otherwise
