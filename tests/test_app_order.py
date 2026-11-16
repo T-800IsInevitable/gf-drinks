@@ -83,6 +83,7 @@ process.stdout.write(JSON.stringify(menus.map((r) => [safeMenu(r), safeMenu(r) =
         load = re.search(r"^  async function loadNow\(.*?^  }$", app, re.M | re.S).group(0)
         self.assertIn("const show = shown(fresh);", load)
         self.assertIn("data = show;", load)
+        self.assertIn("setLooked(show.restaurants", load)  # what you last looked at is what was shown, moves included
         self.assertIn("saveMenus(DATA_KEY, JSON.stringify(fresh));", load)  # the published copy, not the moved one
         self.assertIn("const prev = raw;", load)  # reused by fingerprint from the published copy
         self.assertIn("raw = JSON.parse(saved); data = shown(raw);", app)

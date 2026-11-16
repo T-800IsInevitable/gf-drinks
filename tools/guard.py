@@ -213,12 +213,14 @@ def main():
     problems = scope(ref, paths, machine_made(commits(os.environ["PR"])), built)
     scan = SCAN_REF.fullmatch(ref)
     rj = f"restaurants/{scan[1]}/restaurant.json" if scan else None
-    if scan and not built and not problems and rj in paths:
-        # main's copy is this checkout's (the guard runs from main); the pull request's is read through the API
-        head = gh.request("GET", f"/contents/{rj}?ref={pull['head']['sha']}", accept="application/vnd.github.raw+json")
+    if scan and not built and not problems and ((ROOT / rj).is_file() or rj in paths):
+        # main's copy is this checkout's (the guard runs from main); the pull request's is read through the API, or is
+        # main's own when the scan leaves it alone (the build then uses main's avoidDropOk, so it's judged all the same)
+        read_head = lambda: gh.request("GET", f"/contents/{rj}?ref={pull['head']['sha']}", accept="application/vnd.github.raw+json")
         if (ROOT / rj).is_file():
-            problems = avoid_ok_changed(scan[1], json.loads((ROOT / rj).read_text(encoding="utf-8")), head)
-        elif isinstance(head, dict) and head.get("avoidDropOk"):
+            base = json.loads((ROOT / rj).read_text(encoding="utf-8"))
+            problems = avoid_ok_changed(scan[1], base, read_head() if rj in paths else base)
+        elif isinstance(head := read_head(), dict) and head.get("avoidDropOk"):
             # a new restaurant has no live menu to protect yet, but one arriving with avoidDropOk would have the guard
             # switched off for every later scan whose source matches it
             problems = [f"a scan/ pull request that adds {scan[1]} may not set avoidDropOk: a new menu has nothing to drop"]
