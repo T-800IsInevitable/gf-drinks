@@ -178,11 +178,17 @@ def from_other_repo(pull, repo):
 def avoid_ok_changed(rid, base, head):
     """What's wrong with a scan/ pull request for a menu kept by hand, given its restaurant.json on main (base) and at
     the pull request's head, both parsed: it may change the guide's dates, but not avoidDropOk, which switches off the
-    build's Avoid guard (tools/build.py avoid_drop) for the very menu it brings."""
-    if (base or {}).get("avoidDropOk") == (head or {}).get("avoidDropOk"):
+    build's Avoid guard (tools/build.py avoid_drop) for the very menu it brings. The build accepts a drop when
+    avoidDropOk equals the menu's source (adapters/manual_csv.py: guide.source, else the file's name, menu.csv), so
+    renaming the source to match an avoidDropOk already on main counts as switching the guard off too."""
+    base, head = base or {}, head or {}
+    source = lambda c: (c.get("guide") or {}).get("source") or "menu.csv"
+    ok = head.get("avoidDropOk")
+    if ok == base.get("avoidDropOk") and not (ok and source(head) != source(base) and ok == source(head)):
         return []
-    return [f"a scan/ pull request for {rid} may not change avoidDropOk in restaurants/{rid}/restaurant.json: if the "
-            "change to the Avoid list is real, set it in a pull request of your own, merged first"]
+    return [f"a scan/ pull request for {rid} may not change avoidDropOk in restaurants/{rid}/restaurant.json, or rename "
+            "the menu's source to the one avoidDropOk names: if the change to the Avoid list is real, set it in a pull "
+            "request of your own, merged first"]
 
 
 def main():

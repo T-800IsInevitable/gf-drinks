@@ -46,6 +46,13 @@ class HandKeptAvoidSetting(unittest.TestCase):
         self.assertTrue(guard.avoid_ok_changed("knoops-uk", {}, {"avoidDropOk": "new.pdf"}))
         self.assertTrue(guard.avoid_ok_changed("knoops-uk", {"avoidDropOk": "a.pdf"}, {"avoidDropOk": "b.pdf"}))
         self.assertTrue(guard.avoid_ok_changed("knoops-uk", {"avoidDropOk": "a.pdf"}, {}))
+        # avoidDropOk left alone, but the source renamed to match it: the build would accept the drop for this menu
+        main_cfg = {"avoidDropOk": "b.pdf", "guide": {"source": "a.pdf"}}
+        self.assertTrue(guard.avoid_ok_changed("knoops-uk", main_cfg, {**main_cfg, "guide": {"source": "b.pdf"}}))
+        self.assertTrue(guard.avoid_ok_changed("knoops-uk", {"avoidDropOk": "menu.csv", "guide": {"source": "a.pdf"}},
+                                               {"avoidDropOk": "menu.csv", "guide": {}}))  # the menu's own name
+        # a new source that the existing avoidDropOk doesn't name is fine
+        self.assertEqual(guard.avoid_ok_changed("knoops-uk", main_cfg, {**main_cfg, "guide": {"source": "c.pdf"}}), [])
 
     def test_main_reads_both_copies_for_a_hand_kept_scan(self):
         rj = "restaurants/knoops-uk/restaurant.json"
