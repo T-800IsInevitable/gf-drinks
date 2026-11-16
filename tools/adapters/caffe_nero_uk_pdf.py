@@ -229,8 +229,9 @@ def drink_rows(page, pno):
             start = bar["bottom"]
             inbar = [w for w in words if bar["top"] - 2 <= w["top"] <= bar["bottom"] + 2]
             cols = {w["text"]: w for w in inbar if w["text"] in ("PRODUCT", "ALLERGENS", "DIETARY", "SIZE")}
-            if "PRODUCT" not in cols or "ALLERGENS" not in cols:
-                raise SystemExit(f"ERROR: p.{pno}: a drinks table without PRODUCT and ALLERGENS. Layout changed? Menu not updated.")
+            # some tables leave PRODUCT out of the header (the Festive Gingerbread Latte): names are then checked against ALLERGENS
+            if "ALLERGENS" not in cols:
+                raise SystemExit(f"ERROR: p.{pno}: a drinks table without ALLERGENS. Layout changed? Menu not updated.")
             continue
         if start is None or top - start < 6:
             start = top if start is not None else None
@@ -257,6 +258,9 @@ def drink_rows(page, pno):
                 raise SystemExit(f"ERROR: p.{pno}: allergens {found} on a row with no drink. Layout changed? Menu not updated.")
             continue
         name = clean(" ".join(w["text"] for line in lines_of(name_words) for w in line))
+        if "PRODUCT" not in cols and max(w["x1"] for w in name_words) >= cols["ALLERGENS"]["x0"]:
+            raise SystemExit(f"ERROR: p.{pno} {name}: a drink's name reaches the ALLERGENS column in a table with no PRODUCT "
+                             "heading. Layout changed? Menu not updated.")
         unknown = [t for t in found if not DRINK_GLUTEN.match(t) and t not in ALLERGENS]
         if unknown:
             raise SystemExit(f"ERROR: p.{pno} {name}: unknown allergen words {unknown}. Layout changed? Menu not updated.")
