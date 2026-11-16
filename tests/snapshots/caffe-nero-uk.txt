@@ -1,4 +1,4 @@
-# source: caffenero_nutrition_allergens-en_GB.pdf
+# source: caffenero_nutrition_allergens-en_GB_c523534b.pdf
 OK    | Extras | Raspberry Jam | asis
 OK    | Extras | Strawberry Jam | asis
 OK    | Extras | Lakeland Butter | asis
@@ -30,6 +30,10 @@ OK    | Extras | Whipped Cream | asis
 OK    | Syrups | All Caffè Nero Syrups | asis
 OK    | Syrups | Caramel Sauce | asis
 OK    | Syrups | White Chocolate Sauce | asis
+OK    | Festive | Gingerbread Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Festive | Praline Flat White | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Festive | Salted Caramel and Orange Hot Chocolate | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
+OK    | Festive | Festive Spiced Hot Chocolate | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
 OK    | Hot Coffee | Espresso | asis
 OK    | Hot Coffee | Ristretto Espresso | asis
 OK    | Hot Coffee | Espresso Con Panna | asis
@@ -41,8 +45,6 @@ OK    | Hot Coffee | Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;a
 OK    | Hot Coffee | Flat White | except ok=whole;semi-skimmed;skimmed;soya;coconut;almond not=oat
 OK    | Hot Coffee | Mocha | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
 OK    | Hot Coffee | Pistachio Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
-OK    | Hot Coffee | Spiced Pecan Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
-OK    | Hot Coffee | Cinnamon Roll Latte | swap ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
 OK    | Iced Coffee | Iced Americano | asis
 OK    | Iced Coffee | Iced Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
 OK    | Iced Coffee | Iced Flat White | asis
@@ -71,7 +73,6 @@ OK    | Flavoured Iced Latte | Vanilla Iced Latte | except ok=semi-skimmed;skimm
 OK    | Flavoured Iced Latte | Caramel Iced Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
 OK    | Flavoured Iced Latte | Pistachio Iced Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
 OK    | Flavoured Iced Latte | Iced Brown Sugar Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
-OK    | Flavoured Iced Latte | Iced Spiced Pecan Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
 OK    | Flavoured Iced Latte | Iced Vanilla Protein Latte | except ok=semi-skimmed;skimmed;whole;soya;coconut;almond not=oat
 OK    | Luxury Frappe | Espresso & Caramel Luxury Frappe | except ok=whole;semi-skimmed;skimmed;soya;coconut;almond not=oat
 OK    | Luxury Frappe | Strawberry & White Chocolate Luxury Frappe | except ok=whole;semi-skimmed;skimmed;soya;coconut;almond not=oat
@@ -85,6 +86,17 @@ OK    | Milkshakes | Strawberry Milkshake | except ok=whole;semi-skimmed;skimmed
 OK    | Boosters & Over Ice | Mango & Passionfruit | asis
 OK    | Boosters & Over Ice | Strawberry Lemonade Spritz | asis
 OK    | Boosters & Over Ice | Sicilian Lemon | asis
+AVOID | Pastries | Zesty Orange and Chocolate Cheesecake | WHEAT
+AVOID | Pastries | Morello Cherry and Pistachio Cake | GLUTEN;WHEAT
+AVOID | Pastries | Billionaires Snowflake | WHEAT
+AVOID | Pastries | Classic Mince Pie | WHEAT
+AVOID | Pastries | Luxury Amaretto Mince Pie | OAT;WHEAT
+AVOID | Pastries | Porchetta and Balsamic Onion Chutney Flatbread | WHEAT
+AVOID | Pastries | Festive Pork, Turkey and Cranberry Sausage Roll | WHEAT
+AVOID | Pastries | Pigs Under Blankets Panini | GLUTEN;MALT;WHEAT
+AVOID | Pastries | Festive Feast Panini | BARLEY;GLUTEN;MALT;WHEAT
+AVOID | Pastries | Brie, Bacon and Cranberry Panini | GLUTEN;MALT;WHEAT
+AVOID | Pastries | Veggie Festive Feast Panini | BARLEY;MALT;WHEAT
 AVOID | Pastries | Pastel De Nata | GLUTEN;WHEAT
 AVOID | Pastries | Almond Croissant | GLUTEN;WHEAT
 AVOID | Pastries | Apricot Croissant | GLUTEN;WHEAT
@@ -95,7 +107,7 @@ AVOID | Pastries | Pain aux Raisins | GLUTEN;WHEAT
 AVOID | Pastries | Raspberry Croissant | GLUTEN;SPELT;WHEAT
 AVOID | Pastries | Pistachio Croissant | GLUTEN;WHEAT
 AVOID | Pastries | Chocolate and Hazelnut Croissant | GLUTEN;WHEAT
-AVOID | Buns | Cinnamon Bun | WHEAT
+AVOID | Buns | Cinnamon Bun | GLUTEN;WHEAT
 AVOID | Muffins & Scones | Sticky Toffee Muffin | GLUTEN;WHEAT
 AVOID | Muffins & Scones | Ultimate Chocolate Muffin | WHEAT
 AVOID | Muffins & Scones | Blueberry Muffin | GLUTEN;WHEAT
@@ -113,7 +125,7 @@ AVOID | Cakes & Slices | Lemon and Blueberry Cake | GLUTEN;WHEAT
 AVOID | Cakes & Slices | Belgian Chocolate Fudge Cake | WHEAT
 AVOID | Cakes & Slices | Cappuccino Cake | WHEAT
 AVOID | Cakes & Slices | Carrot Cake | WHEAT
-AVOID | Loaf Cakes | Lemon Drizzle Loaf Cake | WHEAT
+AVOID | Loaf Cakes | Lemon Drizzle Loaf Cake | GLUTEN;WHEAT
 AVOID | Loaf Cakes | Banana & Walnut Loaf Cake | GLUTEN;WHEAT
 AVOID | Traybakes | Caramel Shortbread | WHEAT
 AVOID | Traybakes | Rocky Road | WHEAT
@@ -127,12 +139,12 @@ AVOID | Desserts | Apple Crumble & Custard Tart | WHEAT
 AVOID | Desserts | Sicilian Lemon Meringue Cheesecake | WHEAT
 AVOID | Desserts | Italian Cream Bun 'Maritozzo' | WHEAT
 AVOID | Desserts | Italian Tiramisu | WHEAT
-AVOID | Desserts | Pistachio & Chocolate Mousse Cake | MALT;WHEAT
+AVOID | Desserts | Pistachio & Chocolate Mousse Cake | WHEAT
 AVOID | Savoury Pastries & Rolls | Pork & Pancetta Sausage Roll | WHEAT
 AVOID | Savoury Pastries & Rolls | Sourdough Bread Roll | GLUTEN;MALT;WHEAT
 AVOID | Savoury Pastries & Rolls | Roasted Vegetable Plant Based Savoury Roll | WHEAT
 AVOID | Savoury Pastries & Rolls | Ham & Cheese Croissant | WHEAT
-AVOID | Nero Deli | Italian Prosciutto & Yellow Datterini Tomato Flatbread | MALT;WHEAT
+AVOID | Nero Deli | Italian Prosciutto & Yellow Datterini Tomato Flatbread | WHEAT
 AVOID | Nero Deli | Italian Mozzarella, Pesto & Tomato Pizzetta | MALT;WHEAT
 AVOID | Panini | Butternut Squash & Pesto Seeded Panini | BARLEY;MALT;WHEAT
 AVOID | Panini | Ham & Mozzarella Panini | GLUTEN;MALT;WHEAT
@@ -164,3 +176,4 @@ AVOID | Biscuits & Snacks | Loacker Vanille | BARLEY;MALT;WHEAT
 AVOID | Biscuits & Snacks | Panettone | WHEAT
 AVOID | Yogurts & Granola Pot | Berry Granola | OAT
 AVOID | Extras | HP Sauce | GLUTEN
+AVOID | Festive | Tiramisu Latte | OAT;WHEAT

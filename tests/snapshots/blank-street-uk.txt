@@ -1,4 +1,4 @@
-# source: BlankStreetUKAllergenGuideAutumn26.pdf
+# source: BlankStreetUKAllergenGuideWinter26.pdf
 OK    | Coffee | Americano (Black) | asis
 OK    | Coffee | Double Espresso (Black) | asis
 OK    | Not Coffee & Teas | Earl Grey - Hot | asis
@@ -6,9 +6,17 @@ OK    | Not Coffee & Teas | Chamomile - Hot | asis
 OK    | Not Coffee & Teas | Green Tea - Hot | asis
 OK    | Not Coffee & Teas | English Breakfast - Hot | asis
 OK    | Not Coffee & Teas | Matcha Tea | asis
+OK    | Not Coffee & Teas | Hojicha Tea | asis
 OK    | Not Coffee & Teas | Iced Lemon Tea | asis
 OK    | Not Coffee & Teas | Iced Peach Tea | asis
 OK    | Cold Brew | Original Cold Brew (Default Black) | asis
+OK    | Custom | Milk Chocolate Shell | asis
+OK    | Custom | White Chocolate Shell | asis
+OK    | Custom | Matcha Shell | asis
+OK    | Custom | Coffee Shell | asis
+OK    | Custom | Vanilla Bean Dusting | asis
+OK    | Custom | Matcha Dusting | asis
+OK    | Custom | Coffee Bean Dusting | asis
 OK    | Ingredients | Milk (whole and semi-skimmed) | asis role=ingredient
 OK    | Ingredients | Coconut Drink | asis role=ingredient
 OK    | Ingredients | Espresso Double Shot | asis role=ingredient
@@ -20,23 +28,18 @@ OK    | Ingredients | Chai Concetrated | asis role=ingredient
 OK    | Ingredients | Matcha Mix (Batcha) | asis role=ingredient
 OK    | Ingredients | Dark Brown Sugar | asis role=ingredient
 OK    | Ingredients | Cinnamon Powder | asis role=ingredient
-OK    | Ingredients | Bloomin Vanilla Bean Syrup | asis role=ingredient
+OK    | Ingredients | Vanilla Bean Syrup | asis role=ingredient
 OK    | Ingredients | 1883 Madeline Syrup | asis role=ingredient
-OK    | Ingredients | Bloomin Pistachio Syrup | asis role=ingredient
+OK    | Ingredients | Pistachio Syrup | asis role=ingredient
+OK    | Ingredients | Strawberry Syrup | asis role=ingredient
 OK    | Ingredients | Blueberry Syrup | asis role=ingredient
 OK    | Ingredients | Dark Brown Sugar Syrup | asis role=ingredient
 OK    | Ingredients | Iced Lemon Tea Syrup | asis role=ingredient
 OK    | Ingredients | Iced Peach Tea Syrup | asis role=ingredient
-OK    | Ingredients | Bloomin Ube Concentrate | asis role=ingredient
+OK    | Ingredients | Ube Concentrate | asis role=ingredient
 OK    | Ingredients | Vanilla Bean Paste | asis role=ingredient
-OK    | Ingredients | Bloomin Salted Brown Sugar Syrup | asis role=ingredient
-OK    | Custom | Milk Chocolate Shell | asis
-OK    | Custom | White Chocolate Shell | asis
-OK    | Custom | Matcha Shell | asis
-OK    | Custom | Coffee Shell | asis
-OK    | Custom | Vanilla Bean Dusting | asis
-OK    | Custom | Matcha Dusting | asis
-OK    | Custom | Coffee Bean Dusting | asis
+OK    | Ingredients | Miso Powder | asis role=ingredient
+OK    | Ingredients | Salted Brown Sugar Syrup | asis role=ingredient
 AVOID | Coffee | Flat White | OAT tag=May contain gluten
 AVOID | Coffee | Latte | OAT tag=May contain gluten
 AVOID | Coffee | Cappuccino | OAT tag=May contain gluten
@@ -51,20 +54,26 @@ AVOID | Not Coffee & Teas | Hot/Iced Chocolate | OAT tag=May contain gluten
 AVOID | Cold Brew | Cold Brew Latte | OAT tag=May contain gluten
 AVOID | Cold Brew | Mocha Cold Brew | OAT tag=May contain gluten
 AVOID | Cold Brew | Shaken Vanilla Bean Cold Brew Latte | OAT tag=May contain gluten
-AVOID | Matchas | Matcha Latte | OAT tag=May contain gluten
-AVOID | Matchas | Iced Matcha Cortado | OAT tag=May contain gluten
-AVOID | Matchas | Iced Blueberry Matcha | OAT tag=May contain gluten
-AVOID | Matchas | Hot Blueberry Matcha | OAT tag=May contain gluten
-AVOID | Matchas | White Chocolate Matcha | OAT tag=May contain gluten
-AVOID | Matchas | DayDream Matcha | OAT tag=May contain gluten
-AVOID | Matchas | Iced Blondie Matcha | OAT;WHEAT
-AVOID | Matchas | Hot Blondie Matcha | OAT;WHEAT tag=May contain gluten
-AVOID | Matchas | Shaken Vanilla Bean Matcha | OAT tag=May contain gluten
-AVOID | Matchas | Strawberry Shortcake Matcha | OAT tag=May contain gluten
-AVOID | Matchas | Hot Cinnamon Bun Matcha | OAT tag=May contain gluten
-AVOID | Matchas | Iced Cinnamon Bun Matcha | OAT tag=May contain gluten
-AVOID | Matchas | Hot Harvest Chai Matcha | GLUTEN;OAT tag=May contain gluten
-AVOID | Matchas | Iced Harvest Chai Matcha | GLUTEN;OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Matcha Latte | OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Hojicha Latte | OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Iced Blueberry Matcha | OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Hot Blueberry Matcha | OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | White Chocolate Matcha | OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | DayDream Matcha | OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Iced Blondie Matcha | OAT;WHEAT
+AVOID | Matchas / Hojichas | Hot Blondie Matcha | OAT;WHEAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Shaken Vanilla Bean Matcha | OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Strawberry Shortcake Matcha | OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Hot Cinnamon Bun Matcha | OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Iced Cinnamon Bun Matcha | OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Hot Harvest Chai Matcha | GLUTEN;OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Iced Harvest Chai Matcha | GLUTEN;OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Hot Toasted S'mores Matcha | OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Iced Toasted S'mores Matcha | OAT;WHEAT
+AVOID | Matchas / Hojichas | Hot Toasted S'mores Hojicha | OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Iced Toasted S'mores Hojicha | OAT;WHEAT
+AVOID | Matchas / Hojichas | Hot Sticky Toffee Matcha | OAT tag=May contain gluten
+AVOID | Matchas / Hojichas | Iced Sticky Toffee Matcha | OAT tag=May contain gluten
 AVOID | House Lattes | Pistachio Latte | OAT tag=May contain gluten
 AVOID | House Lattes | DayDream Latte | OAT tag=May contain gluten
 AVOID | House Lattes | Iced Blondie Latte | OAT;WHEAT
@@ -73,8 +82,10 @@ AVOID | House Lattes | Hot Cinnamon Bun Latte | OAT tag=May contain gluten
 AVOID | House Lattes | Iced Cinnamon Bun Latte | OAT tag=May contain gluten
 AVOID | House Lattes | Hot Harvest Chai Latte | GLUTEN;OAT tag=May contain gluten
 AVOID | House Lattes | Iced Harvest Chai Latte | GLUTEN;OAT tag=May contain gluten
-AVOID | Ingredients | Oat Drink | OAT role=ingredient
-AVOID | Ingredients | Cookie Butter (Biscoff) | WHEAT role=ingredient
+AVOID | House Lattes | Hot Toasted S'mores Latte | OAT tag=May contain gluten
+AVOID | House Lattes | Iced Toasted S'mores Latte | OAT;WHEAT
+AVOID | House Lattes | Hot Sticky Toffee Latte | OAT tag=May contain gluten
+AVOID | House Lattes | Iced Sticky Toffee Latte | OAT tag=May contain gluten
 AVOID | Signature Ice Cream | Vanilla Bean Affogato | GLUTEN tag=May contain gluten
 AVOID | Signature Ice Cream | White Chocolate Matcha | GLUTEN tag=May contain gluten
 AVOID | Signature Ice Cream | Strawberry Shortcake Matcha | GLUTEN;WHEAT
@@ -84,6 +95,8 @@ AVOID | Custom | Matcha Ice Cream | GLUTEN tag=May contain gluten
 AVOID | Custom | Strawberry Ice Cream | GLUTEN tag=May contain gluten
 AVOID | Custom | Coffee Ice Cream | GLUTEN tag=May contain gluten
 AVOID | Custom | Shortcake Dusting | WHEAT
+AVOID | Ingredients | Oat Drink | OAT role=ingredient
+AVOID | Ingredients | Cookie Butter (Biscoff) | WHEAT role=ingredient
 AVOID | Pastries: London Stores | Plain Croissant | BARLEY;OAT;WHEAT
 AVOID | Pastries: London Stores | Almond Croissant | BARLEY;WHEAT
 AVOID | Pastries: London Stores | Pain au Chocolat | BARLEY;OAT;WHEAT
@@ -149,3 +162,11 @@ AVOID | Brighton Pastries & Sweets | Blueberry & Custard Brioche | WHEAT
 AVOID | Brighton Pastries & Sweets | Pistachio Cream Cookie | WHEAT
 AVOID | Brighton Pastries & Sweets | Milk Chocolate & Sea Salt Cookie | WHEAT
 AVOID | Brighton Pastries & Sweets | Vegan Chocolate Banana Bread | WHEAT
+AVOID | Liverpool Pastries & Sweets | Plain Croissant | BARLEY;OAT;RYE;WHEAT
+AVOID | Liverpool Pastries & Sweets | Pain au Chocolat | BARLEY;OAT;RYE;WHEAT
+AVOID | Liverpool Pastries & Sweets | Almond Croissant | BARLEY;OAT;RYE;WHEAT
+AVOID | Liverpool Pastries & Sweets | Pain Suisse | BARLEY;OAT;RYE;WHEAT
+AVOID | Liverpool Pastries & Sweets | Cinnamon Bun | GLUTEN;WHEAT
+AVOID | Liverpool Pastries & Sweets | Pistachio Cream Cookie | WHEAT
+AVOID | Liverpool Pastries & Sweets | Milk Chocolate & Sea Salt Cookie | WHEAT
+AVOID | Liverpool Pastries & Sweets | Vegan Chocolate Banana Bread | WHEAT
