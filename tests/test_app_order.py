@@ -51,9 +51,14 @@ process.stdout.write(JSON.stringify(menus.map((r) => [safeMenu(r), safeMenu(r) =
 """
         menu = {"id": "x", "stats": {"rows": 4, "items": 2, "ingredients": 1, "avoid": 1},
                 "items": [{"name": "Latte", "section": "S", "order": "asis"},
-                          {"name": "Mystery", "section": "S", "order": "ask", "ok": ["soya"], "not": ["oat"]},
+                          {"name": "Mystery", "section": "S", "order": "ask", "ok": ["soya"], "not": ["oat"],
+                           "decided": "Listed because…", "info": "Fine with any milk."},
                           {"name": "Odd milk", "section": "S", "order": "ask", "role": "ingredient"}],
-                "avoid": [{"name": "Bun", "section": "S", "gluten": ["WHEAT"]}]}
+                "avoid": [{"name": "Bun", "section": "S", "gluten": ["WHEAT"]}],
+                # the build's What changed, worked out from the menu as published
+                "changes": {"nowOk": [{"name": "Mystery", "section": "S"}], "added": [{"name": "Odd milk", "section": "S"}],
+                            "changed": [{"name": "Mystery", "section": "S"}, {"name": "Latte", "section": "S"}],
+                            "nowAvoid": [], "removed": []}}
         plain = {"id": "y", "stats": {"items": 1, "avoid": 0}, "items": [{"name": "Tea", "order": "asis"}], "avoid": []}
         out = subprocess.run([NODE, "-e", code, json.dumps([menu, plain])], capture_output=True, text=True, encoding="utf-8", check=True)
         (moved, same), (_, untouched) = json.loads(out.stdout)
@@ -63,10 +68,25 @@ process.stdout.write(JSON.stringify(menus.map((r) => [safeMenu(r), safeMenu(r) =
         self.assertEqual(sorted(odd), ["Bun", "Mystery", "Odd milk"])
         for name in ("Mystery", "Odd milk"):
             self.assertEqual((odd[name]["tag"], odd[name]["gluten"]), ("Check in store", []))
-            self.assertNotIn("order", odd[name])
-            self.assertNotIn("ok", odd[name])
+            self.assertTrue(odd[name]["reason"].startswith("Note from this app"))
+            for key in ("order", "ok", "note", "decided", "info", "role"):  # nothing that explained it as fine
+                self.assertNotIn(key, odd[name])
         self.assertEqual(moved["stats"], {"rows": 4, "items": 1, "ingredients": 0, "avoid": 3})
+        # nothing in What changed may still call a moved item fine, new or ordered differently
+        self.assertEqual((moved["changes"]["nowOk"], moved["changes"]["added"]), ([], []))
+        self.assertEqual(moved["changes"]["changed"], [{"name": "Latte", "section": "S"}])
         self.assertTrue(untouched)  # a menu with nothing unknown is passed through as it is
+
+    def test_every_menu_is_shown_through_safe_menu_and_saved_as_published(self):
+        # both ways a menu comes in: the copy saved on the phone at startup, and a fresh load
+        app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+        load = re.search(r"^  async function loadNow\(.*?^  }$", app, re.M | re.S).group(0)
+        self.assertIn("const show = shown(fresh);", load)
+        self.assertIn("data = show;", load)
+        self.assertIn("saveMenus(DATA_KEY, JSON.stringify(fresh));", load)  # the published copy, not the moved one
+        self.assertIn("const prev = raw;", load)  # reused by fingerprint from the published copy
+        self.assertIn("raw = JSON.parse(saved); data = shown(raw);", app)
+        self.assertEqual(len(re.findall(r"(?<![.\w])data = (?!null)", app)), 2, "data is set only from shown(...)")
 
     def test_the_known_orders_read_as_before(self):
         out = self.run_js([{"order": "asis"}, {"order": "except", "ok": ["soya"], "not": ["oat"]},
