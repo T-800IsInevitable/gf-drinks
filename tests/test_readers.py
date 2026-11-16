@@ -166,14 +166,14 @@ class HandKeptMenu(unittest.TestCase):
         out = self.build("Drinks,Hot Chocolate,asis,,,,,,1\n"
                          "Drinks,Latte,except,whole;soya,oat,,,,1\n"
                          "Drinks,Oat Flat White,swap,whole,oat,,,,1\n"
-                         "Food,Soup,modify,,,,,No croutons,2\n"
+                         "Food,Soup,modify,,,,,No wheat croutons,2\n"
                          "Food,Brownie,avoid,,,,wheat;barley,,2\n"
                          "Food,Flapjack,avoid,,,,,,2\n"
                          "Food,Cannoli,doubt,,,,,The shell is usually wheat.,2\n")
         self.assertEqual([(i["name"], i["order"]) for i in out["items"]],
                          [("Hot Chocolate", "asis"), ("Latte", "except"), ("Oat Flat White", "swap"), ("Soup", "modify")])
         self.assertEqual(out["items"][2]["standard"], "oat")
-        self.assertEqual(out["items"][3]["note"], "No croutons")
+        self.assertEqual(out["items"][3]["note"], "No wheat croutons")  # a change to ask for may name the cereal it leaves out
         avoid = {a["name"]: a for a in out["avoid"]}
         self.assertEqual(avoid["Brownie"]["gluten"], ["WHEAT", "BARLEY"])
         self.assertEqual(avoid["Flapjack"]["gluten"], ["GLUTEN"])  # an Avoid row with nothing named still says why
@@ -190,6 +190,8 @@ class HandKeptMenu(unittest.TestCase):
                      "Drinks,Latte,any,,,,,,1\n",
                      "Food,Soup,modify,,,,,,2\n",           # a change with no words for it
                      "Food,Cannoli,doubt,,,,,,2\n",         # a doubt with no reason
+                     "Food,Lemon drizzle,asis,,,,wheat,,2\n",            # what it contains, on a row listed as fine
+                     "Food,Flapjack,asis,,,,,Made with rolled oats,2\n",  # a note naming a cereal on a listed row
                      ""):                                   # nothing at all
             with self.assertRaises(SystemExit, msg=rows):
                 self.build(rows)

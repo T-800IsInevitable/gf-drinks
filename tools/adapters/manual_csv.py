@@ -32,7 +32,7 @@ recipe changes, nutrition notes) go in restaurant.json under "notices" as
 import csv
 from pathlib import Path
 
-from .common import result
+from .common import CEREAL, result
 
 ORDERS = {"asis", "any", "except", "swap", "modify", "avoid", "doubt"}
 
@@ -68,6 +68,12 @@ def build(folder, config):
                 continue
             if row.get("note") and order != "modify":
                 item["info"] = row["note"]
+            if order != "avoid":  # a slip in the order column mustn't list something the row says has gluten
+                if row.get("contains"):
+                    raise SystemExit(f"ERROR: {path.name} line {n} ({name}): 'contains' is for avoid rows, but this is '{order}'")
+                if order != "modify" and CEREAL.search(row.get("note") or ""):
+                    raise SystemExit(f"ERROR: {path.name} line {n} ({name}): its note names a gluten cereal, but it's listed "
+                                     f"as '{order}'. Make it 'avoid', or 'modify' with the change to ask for")
             if order == "avoid":
                 item["gluten"] = [g.upper() for g in _split(row.get("contains"))] or ["GLUTEN"]
                 avoid.append(item)
