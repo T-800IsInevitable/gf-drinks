@@ -385,6 +385,14 @@ class Nandos(unittest.TestCase):
         self.assertEqual(len(out["warnings"]), 2)  # the disagreeing summary, and the unmarked ingredients
         self.assertEqual(out["guide"]["version"], "2026-10-26")
 
+    def test_a_gluten_note_naming_a_cereal_is_enough(self):
+        # nothing ticked and nothing in the ingredients, but Nando's own note names the cereal
+        ok, avoid, _ = self.build({"notes": {"gluten": "Seasoning contains barley malt vinegar."}},
+                                  {"notes": {"gluten": "Made in a kitchen that is gluten-free."}})
+        self.assertEqual(sorted(avoid), ["Dish x0"])
+        self.assertEqual(avoid["Dish x0"]["gluten"], ["BARLEY", "MALT"])
+        self.assertEqual(sorted(ok), ["Dish x1"])
+
     def test_too_few_dishes_or_a_dish_listed_twice_stops_the_build(self):
         with self.assertRaises(SystemExit):
             self.build(plain=nandos_uk_json.MIN_DISHES - 1)
