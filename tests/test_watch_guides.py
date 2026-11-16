@@ -337,6 +337,34 @@ class Proposing(Site):
         self.assertEqual(self.git("status", "--porcelain"), "")
         self.assertEqual(self.git("branch", "--list", "guide-watch/*"), "")
 
+    def test_two_new_guides_that_replace_the_same_one(self):
+        # each new guide is tried on its own against the one in use, so both can name it: it moves to the archive once
+        self.repo = self.tmp / "repo"
+        guides = self.repo / "restaurants" / "x-uk" / "guides"
+        guides.mkdir(parents=True)
+        (guides / "old.pdf").write_bytes(b"%PDF-old")
+        subprocess.run(["git", "init", "-q", "-b", "main", str(self.repo)], check=True)
+        subprocess.run(["git", "init", "-q", "--bare", str(self.tmp / "remote.git")], check=True)
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "start")
+        self.git("remote", "add", "origin", str(self.tmp / "remote.git"))
+        self.git("push", "-q", "origin", "main")
+        FakeGitHub.calls, FakeGitHub.pulls, FakeGitHub.issues = [], [], []
+        api, api_url = serve(FakeGitHub)
+        self.addCleanup(lambda: (api.shutdown(), api.server_close()))
+        new = [{"name": n, "url": f"https://x.test/{n}", "sha": c * 64, "body": b"%PDF-" + n.encode(), "replaces": ["old.pdf"]}
+               for n, c in (("a.pdf", "1"), ("b.pdf", "2"))]
+        r = {"id": "x-uk", "name": "X", "page": "https://x.test/p", "new": new}
+        env = {"GITHUB_API_URL": api_url, "GITHUB_REPOSITORY": "o/r", "GITHUB_TOKEN": "t"}
+        with mock.patch.object(w, "ROOT", self.repo), mock.patch.object(w, "what_changed", lambda rid: "stub"), \
+                mock.patch.dict(os.environ, env):
+            w.propose(r)
+
+        self.assertEqual(len(FakeGitHub.pulls), 1)
+        files = self.git("ls-tree", "-r", "--name-only", FakeGitHub.pulls[0]["head"], cwd=self.tmp / "remote.git")
+        self.assertEqual(sorted(files.splitlines()), [
+            "restaurants/x-uk/guides/a.pdf", "restaurants/x-uk/guides/archive/old.pdf", "restaurants/x-uk/guides/b.pdf"])
+
 
 if __name__ == "__main__":
     unittest.main()
