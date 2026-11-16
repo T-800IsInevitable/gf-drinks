@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 import build  # noqa: E402
-from adapters import common, five_guys_uk_pdf, greggs_uk_pdf, pret_uk_pdf, starbucks_uk_pdf  # noqa: E402
+from adapters import blank_street_uk_pdf, common, five_guys_uk_pdf, greggs_uk_pdf, pret_uk_pdf, starbucks_uk_pdf  # noqa: E402
 from adapters.common import CEREAL, CEREAL_CAPS, cereal_code  # noqa: E402
 from adapters.pret_uk_pdf import TICK, odd_mark  # noqa: E402
 
@@ -167,6 +167,24 @@ class Repeats(unittest.TestCase):
         ok, avoid = common.one_of_each(ok, avoid, warnings)
         self.assertEqual(([i["name"] for i in ok], [a["name"] for a in avoid]), (["Malt"], ["Shake"]))
         self.assertEqual(len(warnings), 2)
+
+
+class BlankStreetLowerCase(unittest.TestCase):
+    """Blank Street writes allergens in capitals, but a cereal in ordinary case is still a cereal."""
+
+    def classify(self, text):
+        return blank_street_uk_pdf.classify({"name": "X", "section": "Bakes", "page": 1, "text": text}, [])
+
+    def test_a_cereal_not_in_capitals_is_avoid(self):
+        kind, item = self.classify("Rolled oats, butter, golden syrup. May Contain - MILK")
+        self.assertEqual((kind, item["gluten"]), ("avoid", ["OAT"]))
+
+    def test_may_contain_with_a_colon(self):
+        kind, item = self.classify("With DAIRY: MILK, coffee. May Contain: Oat (Gluten)")
+        self.assertEqual((kind, item.get("tag")), ("avoid", "May contain gluten"))
+
+    def test_capitals_alone_still_read_as_before(self):
+        self.assertEqual(self.classify("MILK, coffee, sugar. May Contain - SOYA")[1].get("order"), "asis")
 
 
 class Cereals(unittest.TestCase):

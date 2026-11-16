@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pdfplumber
 
-from .common import CEREAL_CAPS as CONTAINS, CEREAL_WORDS, cereal_code as cereal, clean, newest_by, result
+from .common import CEREAL, CEREAL_CAPS as CONTAINS, CEREAL_WORDS, cereal_code as cereal, clean, newest_by, result
 
 MAY = re.compile(rf"\b({CEREAL_WORDS}|cereals)\b", re.I)
 VERSION = re.compile(r"With\s+(\w+)\s*:", re.I)
@@ -97,7 +97,7 @@ def versions(text):
     chunks += [(parts[i].lower(), parts[i + 1]) for i in range(1, len(parts) - 1, 2)]
     out = []
     for milk, chunk in chunks:
-        m = re.search(r"May Contain\s*-\s*([^|]*)", chunk, re.I)
+        m = re.search(r"May Contain\s*[-:]\s*([^|]*)", chunk, re.I)
         ingredients = chunk[:m.start()] if m else chunk
         out.append((milk, ingredients, m.group(1) if m else ""))
     return out
@@ -109,6 +109,10 @@ def classify(p, warnings):
     for milk, ingredients, may in versions(p["text"]):
         has = sorted({cereal(g) for g in CONTAINS.findall(ingredients)} - {"GLUTEN"} or
                      ({"GLUTEN"} if CONTAINS.search(ingredients) else set()))
+        loose = sorted({cereal(g) for g in CEREAL.findall(ingredients)})
+        if loose and not has:  # the guide writes allergens in capitals, but a cereal in ordinary case is still one
+            warnings.append(f"p.{p['page']} {p['name']}: ingredients name {loose} not in capitals; treated as containing them")
+            has = loose
         # "Oat (Gluten)" means oats: name the cereal, and only say "gluten" when no cereal is named
         maybe = sorted({cereal(g) for g in MAY.findall(may)} - {"CEREALS", "GLUTEN"} or ({"GLUTEN"} if MAY.search(may) else set()))
         vs.append({"milk": milk, "has": has, "may": maybe})
