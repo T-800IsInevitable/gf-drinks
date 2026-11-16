@@ -90,15 +90,17 @@ def one_of_each(ok, avoid, warnings):
     gluten = {key(a) for a in avoid}
     out = []
     for rows in (ok, avoid):
-        seen, kept = set(), []
+        seen, kept = {}, []
         for i in rows:
             k = key(i)
             if rows is ok and k in gluten:
                 warnings.append(f"{i['name']}: listed twice in {i['section']}, once naming gluten; put on the Avoid list")
             elif k in seen:
                 warnings.append(f"{i['name']}: listed twice in {i['section']}; kept the first")
+                if rows is avoid:  # the copy kept says every cereal either copy names
+                    seen[k]["gluten"] = sorted(set(seen[k].get("gluten") or []) | set(i.get("gluten") or []))
             else:
-                seen.add(k)
+                seen[k] = i
                 kept.append(i)
         out.append(kept)
     return out
