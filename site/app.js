@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 43;
+  const APP_VERSION = 44;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -117,7 +117,8 @@
   const visible = (k) => !picking() || pick[k];
   // "straight" = no gluten ingredients as served: asis/any/except (fine as served, or with any milk but the ones named); change = swap/modify;
   // "info" = an ingredient listed on its own (not something to order), which none of the status buttons count
-  const kindOf = (i) => (!i.order ? "gluten" : i.role === "ingredient" ? "info" : (i.order === "swap" || i.order === "modify") ? "change" : "straight");
+  // an order this app doesn't know (a newer menu on an older app) counts with the Avoid list, never as fine
+  const kindOf = (i) => (!i.order || !["asis", "any", "except", "swap", "modify"].includes(i.order) ? "gluten" : i.role === "ingredient" ? "info" : (i.order === "swap" || i.order === "modify") ? "change" : "straight");
 
   // ---------- helpers ----------
   const byId = (id) => data && data.restaurants.find((r) => r.id === id);
@@ -177,7 +178,8 @@
       case "any": return ["t-any", "Any " + label];
       case "swap": return ["t-swap", "Swap " + label];
       case "modify": return ["t-swap", "Ask"];
-      default: return ["t-any", "Any " + label + " except " + i.not.join(", ")];
+      case "except": return ["t-any", "Any " + label + " except " + (i.not || []).join(", ")];
+      default: return ["t-bad", "Check in store"];
     }
   }
   const pageText = (p) => (!p || !p.length ? "" : (p.length > 1 ? "Guide pages " : "Guide page ") + p.join(", "));
@@ -1963,7 +1965,8 @@
         const also = i.not.filter((n) => n !== std);
         return "Any other " + label + " instead of " + opt(std) + (also.length ? " (not " + listOr(also.map(opt)) + ")" : "") + ", please.";
       }
-      default: return i.note.replace(/[.!]?$/, ".");
+      case "modify": return (i.note || "").replace(/[.!]?$/, ".");
+      default: return "Please check this with staff.";
     }
   }
   function openStaff(r, i) {
