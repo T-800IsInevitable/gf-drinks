@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 45;
+  const APP_VERSION = 46;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -144,7 +144,8 @@
   // ---------- helpers ----------
   const byId = (id) => data && data.restaurants.find((r) => r.id === id);
   const favKey = (r, i) => r.id + "|" + i.section + "|" + i.name;
-  const today = () => new Date().toISOString().slice(0, 10);
+  // the phone's own date, not UTC's: in summer the UK is an hour ahead
+  const today = (d = new Date()) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   const isStale = (r) => !!(r.guide && r.guide.validUntil && r.guide.validUntil < today());
   function shortSection(s) {
     const map = {
@@ -203,6 +204,9 @@
       default: return ["t-bad", "Check in store"];
     }
   }
+  // an Avoid row's tag and sentence; a row with a reason but no gluten list (check.py allows one) still reads
+  const avoidTag = (a) => a.tag || (a.gluten || []).map(cap).join(" & ") || "Avoid";
+  const avoidWhy = (a) => a.reason || ((a.gluten || []).length ? "Every version contains " + a.gluten.join(" and ").toLowerCase() + "." : "The guide lists gluten.");
   const pageText = (p) => (!p || !p.length ? "" : (p.length > 1 ? "Guide pages " : "Guide page ") + p.join(", "));
   // a restaurant's own mark (restaurants/<id>/logo.png, the icon its site publishes) or, without one, a lettered badge
   const logoHtml = (name, src, cls) => '<span class="logo-wrap' + (safeUrl(src) ? "" : " none") + (cls ? " " + cls : "") + '" aria-hidden="true">' +
@@ -581,7 +585,7 @@
     const elsewhere = all.filter((p) => !ids.has(p.r.id));
     $("favAlert").hidden = !all.length;
     let html = here.map((p) => "<div class=\"fa-row\"><p>★ <b>" + esc(p.name) + "</b> (" + esc(shortSection(p.section)) + ") at " + esc(p.r.name) + (p.avoid
-      ? " is now on the Avoid list: " + esc((p.avoid.reason || "contains " + p.avoid.gluten.join(" and ").toLowerCase()).replace(/\.$/, "")) + "."
+      ? " is now on the Avoid list: " + esc((p.avoid.reason || ((p.avoid.gluten || []).length ? "contains " + p.avoid.gluten.join(" and ").toLowerCase() : "the guide lists gluten")).replace(/\.$/, "")) + "."
       : " isn't in the latest guide. Check in store before ordering it.") +
       '</p><button type="button" class="link-btn" data-unfav="' + esc(p.k) + '">Remove from favourites</button></div>').join("");
     // On other pages, just a line pointing to where the full warning is (All, or that restaurant's page)
@@ -856,8 +860,8 @@
           if (a.original) subs.push('<span lang="' + esc(r.language || "") + '">' + esc(a.original) + "</span>");
           return '<details class="row" data-slug="' + esc(itemSlug(r, a)) + '"><summary><span class="nm">' + esc(a.name) +
             (subs.length ? "<small>" + subs.join(" · ") + "</small>" : "") + '<span class="tag t-bad">' +
-            esc(a.tag || a.gluten.map(cap).join(" & ")) + "</span></span>" + chev + '</summary><div class="detail">' + (c ? changeNote(r, c) : "") + "<div>" +
-            (a.reason ? esc(a.reason) : "Every version contains " + esc(a.gluten.join(" and ").toLowerCase()) + ".") + "</div>" +
+            esc(avoidTag(a)) + "</span></span>" + chev + '</summary><div class="detail">' + (c ? changeNote(r, c) : "") + "<div>" +
+            esc(avoidWhy(a)) + "</div>" +
             (a.info ? "<div>" + esc(a.info) + "</div>" : "") + (a.decided && a.decided !== a.reason ? decidedNote(a) : "") +
             moreLinks(r, a) + "</div></details>";
         }).join("") + "</div>";
@@ -2094,7 +2098,7 @@
       }
       if (av.length) {
         html += '<details class="o-avoid"><summary>' + av.length + (av.length === 1 ? " item" : " items") + " on the Avoid list: can't be added</summary>" +
-          av.map((a) => '<div class="o-row off"><span class="nm">' + esc(a.name) + '</span><span class="tag t-bad">' + esc(a.tag || a.gluten.map(cap).join(" & ")) + "</span></div>").join("") +
+          av.map((a) => '<div class="o-row off"><span class="nm">' + esc(a.name) + '</span><span class="tag t-bad">' + esc(avoidTag(a)) + "</span></div>").join("") +
           "</details>";
       }
     }
