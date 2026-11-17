@@ -1940,9 +1940,10 @@ def check_food_and_drinks(env):
     base, browser = env.base, env.browser
     problems = []
     menu = menu_of("pizza-express-uk")
-    listed = {k: sum(1 for i in menu["items"] if i["course"] == k and i.get("role") != "ingredient") for k in ("food", "drink")}
-    avoided = {k: sum(1 for a in menu["avoid"] if a["course"] == k) for k in ("food", "drink")}
-    sections = {k: {i["section"] for i in menu["items"] if i["course"] == k} for k in ("food", "drink")}
+    half = lambda row, k: row["course"] in (k, "both")  # a row in neither list shows under both halves
+    listed = {k: sum(1 for i in menu["items"] if half(i, k) and i.get("role") != "ingredient") for k in ("food", "drink")}
+    avoided = {k: sum(1 for a in menu["avoid"] if half(a, k)) for k in ("food", "drink")}
+    sections = {k: {i["section"] for i in menu["items"] if half(i, k)} for k in ("food", "drink")}
     ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
     ctx.add_init_script("localStorage.setItem('gf-intro-seen', JSON.stringify(['all', 'pizza-express-uk', 'blank-street-uk', 'greggs-uk']));")
     page = ctx.new_page()
@@ -2011,6 +2012,19 @@ def check_food_and_drinks(env):
         return h && h.nextElementSibling ? h.nextElementSibling.querySelectorAll('.row').length : 0; }""")
     if greggs_avoid != len(old["avoid"]):
         problems.append(f"Greggs from an older saved copy: {greggs_avoid} of its {len(old['avoid'])} Avoid rows show with Drinks chosen")
+    ctx.close()
+    # a menu whose rows all show under both (a new restaurant not yet sorted): no choice offered, nothing said to be "only"
+    unsorted = menu_of("pizza-express-uk")
+    for row in unsorted["items"] + unsorted["avoid"]:
+        row["course"] = "both"
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-intro-seen', JSON.stringify(['all', 'pizza-express-uk'])); localStorage.setItem('gf-course', 'food');")
+    ctx.route("**/data/r/pizza-express-uk.json", lambda route: route.fulfill(content_type="application/json", body=json.dumps(unsorted)))
+    page = ctx.new_page()
+    page.goto(base + "#pizza-express-uk")
+    page.wait_for_selector("#list .row")
+    if page.locator('#chips [data-kind="course"]').count() or "only" in page.locator("#avoidTitle").inner_text():
+        problems.append("PizzaExpress with every row under both: it should offer no Food and Drinks chips and say nothing is 'only'")
     print(f"food and drinks: PizzaExpress {listed['food']} food and {listed['drink']} drinks listed, Avoid split too; "
           "links, search, one-sided and older menus show everything")
     ctx.close()

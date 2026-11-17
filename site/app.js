@@ -445,8 +445,10 @@
   // (Five Guys) shows everything
   const COURSE_KEY = "gf-course";
   let course = ["food", "drink"].includes(store.get(COURSE_KEY)) ? store.get(COURSE_KEY) : "all"; // anything else shows all
-  const courseCount = (rs, k) => rs.reduce((n, r) => n + ((r.stats || {})[k === "food" ? "food" : "drinks"] || 0), 0);
-  const effCourse = () => (course === "all" || !data || !courseCount(scope(), "food") || !courseCount(scope(), "drink") ? "all" : course);
+  // the choice only applies where it narrows something: some listed items purely food and some purely drinks (a menu
+  // whose rows all show under both, such as a new restaurant not yet sorted, or an older saved copy, offers no choice)
+  const hasOnly = (rs, k) => rs.some((r) => r.items.some((i) => i.course === k));
+  const effCourse = () => (course === "all" || !data || !hasOnly(scope(), "food") || !hasOnly(scope(), "drink") ? "all" : course);
   // while searching, everything is searched: the switch hides with the tips
   // a row with no course (a menu saved by an older release) shows whichever half is chosen: it's never hidden
   const inCourse = (i) => effCourse() === "all" || !!$("q").value.trim() || !i.course || i.course === "both" || i.course === effCourse();
@@ -498,7 +500,7 @@
     // Food and Drinks follow All; the one chosen stays marked while a section of it is picked. No numbers on them: the
     // status buttons below give the counts for what's shown, add-ons included (the chooser's headline counts leave those out)
     const on = effCourse();
-    const courseChips = courseCount(scope(), "food") && courseCount(scope(), "drink") ? [["food", "Food"], ["drink", "Drinks"]].map(([k, label]) =>
+    const courseChips = hasOnly(scope(), "food") && hasOnly(scope(), "drink") ? [["food", "Food"], ["drink", "Drinks"]].map(([k, label]) =>
       '<button type="button" class="hide-searching" data-kind="course" data-value="' + k + '" aria-pressed="' + (on === k) + '">' + label + "</button>").join("") : "";
     // on a restaurant's page the order builder is a chip after Favourites: it costs no height above the menu
     const r = byId(selected);
