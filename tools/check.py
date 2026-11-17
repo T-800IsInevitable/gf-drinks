@@ -187,6 +187,8 @@ def check_restaurant(r, err):
     if same:
         err(f"{rid}: {same} named the same on the list and on the Avoid list. Rename one with \"rename\" in restaurant.json")
     for i in d["items"] + d["avoid"]:
+        if i.get("course") not in ("food", "drink", "both"):  # the app's Food and Drinks switch shows every row in one or the other
+            err(f"{rid}: {i['name']!r} is neither food nor a drink (course {i.get('course')!r})")
         if i.get("role") not in (None, "part", "ingredient"):
             err(f"{rid}: {i['name']!r} has an unknown role {i['role']!r}")
         shout = [w for w in re.findall(r"\b[A-Z]{3,}\b", i["name"]) if w not in CAPS_WORDS]

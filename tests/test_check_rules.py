@@ -33,7 +33,10 @@ def menu(**changes):
     return m
 
 
-def menu_errors(m):
+def menu_errors(m, courses=True):
+    if courses:  # the build gives every row food or drink (build.set_courses); these rules are about other things
+        for r in m.get("items", []) + m.get("avoid", []):
+            r.setdefault("course", "food")
     with tempfile.TemporaryDirectory() as tmp:
         site = Path(tmp)
         (site / "data" / "r").mkdir(parents=True)
@@ -47,6 +50,11 @@ def menu_errors(m):
 class MenuRules(unittest.TestCase):
     def test_the_small_menu_passes(self):
         self.assertEqual(menu_errors(menu()), [])
+
+    def test_every_row_is_food_or_a_drink(self):
+        errors = menu_errors(menu(), courses=False)
+        self.assertEqual(len(errors), 2, errors)
+        self.assertTrue(all("neither food nor a drink" in e for e in errors))
 
     def test_a_guide_with_no_readable_end_date_fails(self):
         for bad in (None, "", "27 October 2026", "2026-02-30", "0000-00-00"):

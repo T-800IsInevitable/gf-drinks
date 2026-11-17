@@ -1917,7 +1917,7 @@ def check_s1(env):
     if any(h.startswith("Your usuals") for h in page.locator("#list .group-h").all_inner_texts()):
         problems.append("Starbucks: Your usuals still shows while searching")
     page.locator("#q").fill("")
-    page.locator("#chips [data-kind]").nth(2).click()  # a section chip
+    page.locator('#chips [data-kind="section"]').first.click()  # a section chip (Food and Drinks come before them)
     if any(h.startswith("Your usuals") for h in page.locator("#list .group-h").all_inner_texts()):
         problems.append("Starbucks: Your usuals shows on a section chip")
     page.goto(base)
@@ -1928,6 +1928,91 @@ def check_s1(env):
     if not page.locator("#list .group-h").first.inner_text().startswith("Your usuals") or names != ["Pret A Manger", "Starbucks"]:
         problems.append(f"All: Your usuals should list favourites first, grouped by restaurant ({names}, {subs})")
     print(f"your usuals: {len(favs)} favourites first on a restaurant and on All, hidden while searching")
+    ctx.close()
+    return problems
+
+
+def check_food_and_drinks(env):
+    """Food and Drinks chips: each shows only its half of the menu (list, sections, status counts and Avoid rows); All
+    shows both; a search covers everything; a restaurant with only one half shows everything whatever was chosen; a shared
+    link to an item in the other half still opens it; a menu with no food or drink data (an older saved copy) is never
+    hidden. Expected numbers come from the built menus."""
+    base, browser = env.base, env.browser
+    problems = []
+    menu = menu_of("pizza-express-uk")
+    listed = {k: sum(1 for i in menu["items"] if i["course"] == k and i.get("role") != "ingredient") for k in ("food", "drink")}
+    avoided = {k: sum(1 for a in menu["avoid"] if a["course"] == k) for k in ("food", "drink")}
+    sections = {k: {i["section"] for i in menu["items"] if i["course"] == k} for k in ("food", "drink")}
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-intro-seen', JSON.stringify(['all', 'pizza-express-uk', 'blank-street-uk', 'greggs-uk']));")
+    page = ctx.new_page()
+    page.goto(base + "#pizza-express-uk")
+    page.wait_for_selector("#list .row")
+    labels = page.locator("#chips button").all_inner_texts()[:3]
+    if labels != ["All", "Food", "Drinks"]:
+        problems.append(f"PizzaExpress: the chips start {labels}, expected All, Food, Drinks")
+    count = lambda k: int(page.locator(f'#status [data-k="{k}"] .cnt').inner_text()) if page.locator(f'#status [data-k="{k}"]').count() else 0
+    slugs = {}
+    for k in ("food", "drink"):
+        page.locator(f'#chips [data-kind="course"][data-value="{k}"]').click()
+        heads = {h.split("\n")[0].strip() for h in page.locator("#list .group-h").all_inner_texts()} - {"Your usuals"}
+        wrong = sorted(h for h in heads if h not in sections[k])
+        shown, avoid = count("straight") + count("change"), count("gluten")
+        if wrong or shown != listed[k] or avoid != avoided[k]:
+            problems.append(f"PizzaExpress {k}: sections {wrong} don't belong, or {shown} listed and {avoid} to avoid "
+                            f"(expected {listed[k]} and {avoided[k]})")
+        if "only" not in page.locator("#avoidTitle").inner_text():
+            problems.append(f"PizzaExpress {k}: the Avoid heading should say it shows {k} only")
+        slugs[k] = page.locator("#avoid .row").first.get_attribute("data-slug")
+    # a shared link to a food Avoid row, on a phone showing drinks: the row still opens
+    page.goto(base + "#pizza-express-uk/" + slugs["food"])
+    page.wait_for_timeout(500)
+    row = page.locator(f'#avoid .row[data-slug="{slugs["food"]}"]')
+    if not row.count() or not row.first.evaluate("el => el.open"):
+        problems.append("PizzaExpress: a link to a food Avoid row didn't open it while Drinks was chosen")
+    page.locator("#q").fill("pizza")
+    if page.locator('#chips [data-kind="course"]').first.is_visible() or page.locator("#list .row").count() <= 20:
+        problems.append("PizzaExpress: a search should hide the chips and cover food and drinks")
+    page.locator("#q").fill("")
+    page.locator('#chips [data-kind="all"]').click()
+    if page.locator("#list .row").count() < listed["food"] + listed["drink"]:
+        problems.append("PizzaExpress: All should show food and drinks together")
+    # Blank Street lists drinks only: with Food remembered it shows everything, and offers no chips
+    page.evaluate("localStorage.setItem('gf-course', 'food')")
+    page.goto(base + "#blank-street-uk")
+    page.reload()  # a hash change alone keeps the choice in memory; opening the app reads the remembered one
+    page.wait_for_selector("#list .row, #avoid .row")
+    bs = menu_of("blank-street-uk")
+    if page.locator('#chips [data-kind="course"]').count() or count("gluten") != len(bs["avoid"]):
+        problems.append("Blank Street lists drinks only, so it should offer no chips and show its whole Avoid list")
+    # a remembered value that isn't food or drink (a corrupted or renamed one) shows everything
+    page.evaluate("localStorage.setItem('gf-course', 'drinks')")
+    page.goto(base + "#pizza-express-uk")
+    page.reload()
+    page.wait_for_selector("#list .row")
+    if count("gluten") != len(menu["avoid"]):
+        problems.append(f"PizzaExpress: with a stored choice of 'drinks' (not one the app knows), {count('gluten')} of its "
+                        f"{len(menu['avoid'])} Avoid rows show")
+    ctx.close()
+    # a menu with no food or drink data (an older saved copy): All with Drinks chosen still shows all of it
+    old = {k: v for k, v in menu_of("greggs-uk").items() if k != "stats"}
+    old["stats"] = {k: v for k, v in menu_of("greggs-uk")["stats"].items() if k not in ("food", "drinks")}
+    for row in old["items"] + old["avoid"]:
+        row.pop("course", None)
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-intro-seen', JSON.stringify(['all'])); localStorage.setItem('gf-course', 'drink');"
+                        "localStorage.setItem('gf-selected', 'all');")
+    ctx.route("**/data/r/greggs-uk.json", lambda route: route.fulfill(content_type="application/json", body=json.dumps(old)))
+    page = ctx.new_page()
+    page.goto(base)
+    page.wait_for_selector("#list .row")
+    # on All, Drinks narrows the other restaurants, but every Greggs row (food ones included) has no course, so all show
+    greggs_avoid = page.evaluate("""() => { const h = [...document.querySelectorAll('#avoid .sub-h')].find((e) => e.textContent.trim() === 'Greggs');
+        return h && h.nextElementSibling ? h.nextElementSibling.querySelectorAll('.row').length : 0; }""")
+    if greggs_avoid != len(old["avoid"]):
+        problems.append(f"Greggs from an older saved copy: {greggs_avoid} of its {len(old['avoid'])} Avoid rows show with Drinks chosen")
+    print(f"food and drinks: PizzaExpress {listed['food']} food and {listed['drink']} drinks listed, Avoid split too; "
+          "links, search, one-sided and older menus show everything")
     ctx.close()
     return problems
 
@@ -4398,6 +4483,7 @@ CHECKS = [
     ("u12", check_u12),
     ("u13", check_u13),
     ("s1", check_s1),
+    ("food_and_drinks", check_food_and_drinks),
     ("f1", check_f1),
     ("f4", check_f4),
     ("f6", check_f6),

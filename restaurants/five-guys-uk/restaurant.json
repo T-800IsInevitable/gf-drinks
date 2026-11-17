@@ -41,5 +41,6 @@
   "gaps": [
     "Five Guys doesn't call any item gluten free. Its own legend says it can't guarantee the absence of allergens.",
     "The guide shows gluten as one column, so it doesn't say which cereal an item contains (the ingredient list does)."
-  ]
+  ],
+  "courses": {"drinks": ["Milkshakes + Mix-ins"], "food": ["Meat", "Fries Cooked in Peanut Oil", "Toppings", "Other Items", "Bun", "Burgers", "Hot Dogs", "Sandwiches"], "addons": ["Toppings"], "mixed": ["Breakfast"]}
 }

@@ -33,5 +33,6 @@
     "The guide shows allergens per dish, not per ingredient, so it doesn't say which part of a dish contains gluten.",
     "Daura Damm is a beer made from barley malt with the gluten removed. The guide names barley without its usual mark, so it's on the Avoid list here.",
     "Pho says staff can make mistakes and that all allergens are present in its kitchens."
-  ]
+  ],
+  "courses": {"drinks": ["Beer & Cider", "Wine & Sparkling", "Cocktails", "Spirits & Mixers", "Booze-Free", "TRIP Functional drinks", "Fresh juices & Soft drinks", "Teas & Coffees"], "food": ["Table sauces", "Starters & Sides", "Vietnamese salads", "Vietnamese noodle soup", "Curry noodle soup", "Curry", "Rice bowls", "Wok fried rice", "Wok fried noodles", "Vermicelli noodles", "Desserts", "Kids Noodles", "Kids Noodle soup", "Kids Rice", "Kids Skewers"], "addons": ["Table sauces"]}
 }

@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 46;
+  const APP_VERSION = 47;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -440,6 +440,20 @@
   const itemUrl = (r, i) => appUrl() + "#" + itemRef(r, i);
   const areas = () => [...new Set(data.restaurants.map((r) => r.area).filter(Boolean))];
   const scope = () => (selected === ALL ? data.restaurants : [byId(selected)].filter(Boolean));
+  // Food or drinks: two chips after All (in the chips row, so they cost no height above the menu). "all" until chosen,
+  // remembered on this phone; menus saved by an older release carry no course, and a restaurant with only one of the two
+  // (Five Guys) shows everything
+  const COURSE_KEY = "gf-course";
+  let course = ["food", "drink"].includes(store.get(COURSE_KEY)) ? store.get(COURSE_KEY) : "all"; // anything else shows all
+  const courseCount = (rs, k) => rs.reduce((n, r) => n + ((r.stats || {})[k === "food" ? "food" : "drinks"] || 0), 0);
+  const effCourse = () => (course === "all" || !data || !courseCount(scope(), "food") || !courseCount(scope(), "drink") ? "all" : course);
+  // while searching, everything is searched: the switch hides with the tips
+  // a row with no course (a menu saved by an older release) shows whichever half is chosen: it's never hidden
+  const inCourse = (i) => effCourse() === "all" || !!$("q").value.trim() || !i.course || i.course === "both" || i.course === effCourse();
+  const courseNote = () => (effCourse() === "all" || $("q").value.trim() ? "" : effCourse() === "food" ? " (food only)" : " (drinks only)");
+  // the chooser's count for a restaurant: food and drinks apart, from menus that say which is which
+  const countText = (r) => (r.stats.food == null ? r.stats.items + " items"
+    : [r.stats.food ? "Food " + r.stats.food : "", r.stats.drinks ? "Drinks " + r.stats.drinks : ""].filter(Boolean).join(" · ") || r.stats.items + " items");
 
   // ---------- rendering ----------
   // The Avoid list opens by itself while searching (or when its status button is chosen). A tap on its heading wins
@@ -477,17 +491,22 @@
       if (data.restaurants.length > 1) data.restaurants.forEach((r) => chips.push({ kind: "restaurant", value: r.id, label: r.name }));
     } else {
       const r = byId(selected);
-      r.sections.filter((s) => r.items.some((i) => i.section === s) || r.avoid.some((a) => a.section === s))
+      r.sections.filter((s) => r.items.some((i) => i.section === s && inCourse(i)) || r.avoid.some((a) => a.section === s && inCourse(a)))
         .forEach((s) => chips.push({ kind: "section", value: s, label: shortSection(s) }));
     }
     if (!chips.some((c) => sameFilter(c, filter))) filter = { kind: "all" };
+    // Food and Drinks follow All; the one chosen stays marked while a section of it is picked. No numbers on them: the
+    // status buttons below give the counts for what's shown, add-ons included (the chooser's headline counts leave those out)
+    const on = effCourse();
+    const courseChips = courseCount(scope(), "food") && courseCount(scope(), "drink") ? [["food", "Food"], ["drink", "Drinks"]].map(([k, label]) =>
+      '<button type="button" class="hide-searching" data-kind="course" data-value="' + k + '" aria-pressed="' + (on === k) + '">' + label + "</button>").join("") : "";
     // on a restaurant's page the order builder is a chip after Favourites: it costs no height above the menu
     const r = byId(selected);
     // "Near me" (which chains are within a kilometre) sits after Favourites on every page; with the look-around switched
     // on it reads off the nearest chain, where it costs no height above the menu
     const nearChip = osmChains().length ? '<button type="button" data-near-uk>' + esc(nearChipText(r)) + "</button>" : "";
-    $("chips").innerHTML = chips.map((c) => chipHtml(c.kind, c.value, c.label, sameFilter(c, filter)) +
-      (c.kind === "fav" ? (r ? '<button type="button" data-order-open>' + orderChipText(r) + "</button>" : "") + nearChip : "")).join("");
+    $("chips").innerHTML = chips.map((c) => chipHtml(c.kind, c.value, c.label, sameFilter(c, filter) && (c.kind !== "all" || on === "all")) +
+      (c.kind === "all" ? courseChips : "") + (c.kind === "fav" ? (r ? '<button type="button" data-order-open>' + orderChipText(r) + "</button>" : "") + nearChip : "")).join("");
     $("chips").hidden = false; // a city with a few places hides the row
   }
   const orderChipText = (r) => { const n = orderItems(r).length; return n ? "Your order (" + n + ") &rsaquo;" : "Build an order"; };
@@ -787,8 +806,8 @@
     ({ rs, q } = withNameFilter(rs, q));
     const { ts, note } = searchTerms(rs, q);
     const inFilter = (r, i) => (filter.kind === "fav" ? favs.has(favKey(r, i)) : filter.kind !== "section" || multi || i.section === filter.value);
-    const items = new Map(rs.map((r) => [r, r.items.filter((i) => matches(i, ts) && inFilter(r, i))]));
-    const avoid = new Map(rs.map((r) => [r, r.avoid.filter((a) => matches(a, ts) && inFilter(r, a))]));
+    const items = new Map(rs.map((r) => [r, r.items.filter((i) => matches(i, ts) && inFilter(r, i) && inCourse(i))]));
+    const avoid = new Map(rs.map((r) => [r, r.avoid.filter((a) => matches(a, ts) && inFilter(r, a) && inCourse(a))]));
     return { q, rs, ts, note, multi, items, avoid };
   }
   function renderList() {
@@ -802,7 +821,7 @@
     let usuals = "", usualsN = 0;
     if (!$("q").value.trim() && filter.kind === "all") {
       for (const r of rs) {
-        const fav = r.items.filter((i) => favs.has(favKey(r, i)) && visible(kindOf(i)));
+        const fav = r.items.filter((i) => favs.has(favKey(r, i)) && visible(kindOf(i)) && inCourse(i));
         if (!fav.length) continue;
         usualsN += fav.length;
         usuals += (multi ? '<div class="sub-h">' + esc(r.name) + "</div>" : "") + '<div class="card">' + fav.map((i) => rowHtml(r, i, false)).join("") + "</div>";
@@ -835,6 +854,7 @@
     else if (q) empty = 'No items with no gluten ingredients match "' + esc(q) + '".' +
       (glutenHits ? " " + glutenHits + (glutenHits === 1 ? " match is" : " matches are") + " on the Avoid list" + (visible("gluten") ? " below." : ". Tap Avoid above to see " + (glutenHits === 1 ? "it." : "them.")) : "");
     if (!visible("straight") || !visible("change")) empty += " Some items are hidden by the buttons above.";
+    if (courseNote()) empty += " Showing " + (effCourse() === "food" ? "food" : "drinks") + " only: tap All for everything.";
     $("list").innerHTML = (filter.kind === "fav" ? favShareBar() : "") + (html ? usuals + html : '<p class="empty">' + empty + "</p>" + emptyExtras($("q").value));
     sayCount("list");
 
@@ -870,7 +890,7 @@
     $("avoidWrap").hidden = $("avoidHead").hidden = !avoidHtml;
     $("avoid").innerHTML = avoidHtml;
     // folded until wanted: it opens by itself while searching or when the Avoid button is chosen, and a tap on it overrides that
-    $("avoidTitle").textContent = "Avoid: contains or may contain gluten, or not suitable for coeliacs" + (glutenHits ? " (" + glutenHits + ")" : "");
+    $("avoidTitle").textContent = "Avoid: contains or may contain gluten, or not suitable for coeliacs" + (glutenHits ? " (" + glutenHits + ")" : "") + courseNote();
     $("avoidWrap").open = avoidUser !== null ? avoidUser : !!($("q").value.trim() || pick.gluten);
     return shown;
   }
@@ -985,22 +1005,23 @@
     const opt = (id, name, line, meta, stale, logo, fresh) =>
       '<button type="button" class="pick-opt" data-r="' + esc(id) + '" aria-pressed="' + (region === UK && selected === id) + '">' + logo + '<span class="po-main"><b>' +
       esc(name) + "</b><span>" + esc(line) + "</span></span>" + (stale ? '<span class="tag t-swap">Out of date</span>' : fresh ? '<span class="tag t-any">New</span>' : '<span class="po-meta">' + esc(meta) + "</span>") + "</button>";
-    const total = data.restaurants.reduce((n, r) => n + r.stats.items, 0);
+    const rs = data.restaurants, sum = (k) => rs.some((r) => r.stats[k] == null) ? null : rs.reduce((n, r) => n + r.stats[k], 0);
+    const total = countText({ stats: { items: sum("items"), food: sum("food"), drinks: sum("drinks") } }); // split, as for one restaurant
     const as = areas();
     const lineOf = (r, withArea) => [r.id === last ? "Last used" : "", r.type, withArea ? r.area : "", guideLine(r)].filter(Boolean).join(" · ");
-    const one = (r, withArea) => opt(r.id, r.name, lineOf(r, withArea), r.stats.items + " items", isStale(r), logoHtml(r.name, r.logo), isNew(r));
+    const one = (r, withArea) => opt(r.id, r.name, lineOf(r, withArea), countText(r), isStale(r), logoHtml(r.name, r.logo), isNew(r));
     const grouped = as.length > 1
       ? as.map((a) => '<div class="sub-h">' + esc(a) + "</div>" + chooserOrder(data.restaurants.filter((r) => r.area === a)).map((r) => one(r, false)).join("")).join("") +
-        chooserOrder(data.restaurants.filter((r) => !r.area)).map((r) => opt(r.id, r.name, r.type, r.stats.items + " items", isStale(r), logoHtml(r.name, r.logo), isNew(r))).join("")
+        chooserOrder(data.restaurants.filter((r) => !r.area)).map((r) => opt(r.id, r.name, r.type, countText(r), isStale(r), logoHtml(r.name, r.logo), isNew(r))).join("")
       : chooserOrder(data.restaurants).map((r) => one(r, true)).join("");
     // the chains within a kilometre, while the look-around's answer is fresh: nearest first, with distance and hours
     const near = nearAnswer();
     const nearGroup = near ? '<div class="sub-h">Near you</div>' + near.rows.slice(0, 3).map((x) => {
       const r = byId(x.rid);
-      return r ? opt(r.id, r.name, [metres(x.km), openText(x.hours), x.where].filter(Boolean).join(" · "), r.stats.items + " items", isStale(r), logoHtml(r.name, r.logo), isNew(r)) : "";
+      return r ? opt(r.id, r.name, [metres(x.km), openText(x.hours), x.where].filter(Boolean).join(" · "), countText(r), isStale(r), logoHtml(r.name, r.logo), isNew(r)) : "";
     }).join("") : "";
     // the cities are in their own sections (the switch above), so this lists the restaurants only
-    const all = opt(ALL, "All restaurants", "Search and browse everything", total + " items", false, logoHtml("All restaurants", "icons/icon-192.png"));
+    const all = opt(ALL, "All restaurants", "Search and browse everything", total, false, logoHtml("All restaurants", "icons/icon-192.png"));
     $("pickList").innerHTML = nearGroup + '<div class="sub-h">' + (welcomeNow ? "Choose where" : "Chains") + "</div>" + all +
       (welcomeNow ? '<div class="sub-h">Or one restaurant</div>' : "") + grouped +
       '<p class="pick-note">Missing a restaurant? Ask for it under Add a menu.</p><p class="pick-share">' + addMenuLink + "</p>";
@@ -2573,6 +2594,7 @@
       return;
     }
     if (!visible(kindOf(found))) { pick = { straight: false, change: false, gluten: false }; store.set(PICK_KEY, JSON.stringify(pick)); }
+    if (!inCourse(found)) { course = "all"; store.set(COURSE_KEY, course); } // a linked item in the other half still opens
     if (!r.items.includes(found)) avoidUser = true;
     render();
     const row = [...document.querySelectorAll("#list .row, #avoid .row")].find((d) => d.dataset.slug === sl);
@@ -2862,7 +2884,9 @@
     }
     if (!data) return;
     if (kind === "restaurant") { select(value); return; }
-    filter = value ? { kind, value } : { kind };
+    // All clears the food or drinks choice too; Food or Drinks shows that half from its start
+    if (kind === "all" || kind === "course") { course = kind === "course" ? value : "all"; store.set(COURSE_KEY, course); }
+    filter = kind === "course" ? { kind: "all" } : value ? { kind, value } : { kind };
     renderChips();
     renderStatus();
     renderList();

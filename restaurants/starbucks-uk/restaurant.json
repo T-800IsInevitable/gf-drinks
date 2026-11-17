@@ -21,5 +21,6 @@
     "The drinks guide lists ingredients only. It says nothing about which drinks may contain traces of gluten.",
     "The food guide names two products as gluten free: a granola bar made with oats, and colas made with barley malt. They're on the Avoid list here because the guide lists oats and barley as gluten cereals.",
     "Food handled by baristas may come into contact with gluten, and the food guide says there's no guarantee any item is allergen free."
-  ]
+  ],
+  "courses": {"drinks": ["Seasonal", "Espresso", "Mocha & Chocolate", "Hot Teas", "Iced Teas & Starbucks Refresha® Drink", "Iced Coffee", "Protein Beverages", "Frappuccino® Blended Beverage", "Syrups, Drizzles & Cream Cold Foams", "Reserve"], "food": ["Breakfast", "Snack Pot & Dessert", "Seasonal food", "Bakery", "Sandwiches & Toasties"], "addons": ["Syrups, Drizzles & Cream Cold Foams"], "mixed": ["Chocolate, Snacks & Bottled Drinks"]}
 }

@@ -21,5 +21,6 @@
     "A bullet in the guide means an item may contain that cereal; those items are on the Avoid list here, with the reason.",
     "The guide says hot and iced drinks can't be guaranteed allergen-free because of shared equipment.",
     "Branded products: the guide says their allergen details are on the packaging or the supplier's website."
-  ]
+  ],
+  "courses": {"drinks": ["Hot Drinks", "Speciality Drinks", "Iced Drinks", "Iced Speciality Drinks", "Syrups", "Greggs Own Label Cold Drinks"], "food": ["Breakfast", "Hot Food", "Dip Pots", "Extras", "Yoghurt", "Greggs Fruit Pots", "Snacking Pot", "Sweet Treats", "Dipping Sauces", "Soup", "Greggs Own Label Crisps", "Bread & Rolls", "Savouries & Bakes", "Breakfast Baguettes with Spread", "Breakfast Rolls with Spread", "Breakfast Box", "Pastries", "Porridge", "Baguettes", "Bread Packs", "Flatbreads", "Oval Bites", "Stotties", "Rolls", "Toasties", "Pasta", "Salads", "Pizzas", "Hot Sweet", "Hot", "Hot Pasta Boxes"], "addons": ["Syrups", "Extras", "Dip Pots", "Dipping Sauces"], "items": {"Extras|Cream": "drink", "Extras|Hot Chocolate Powder": "drink"}}
 }
