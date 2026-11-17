@@ -220,7 +220,7 @@ Detail that only one kind of task needs. `CLAUDE.md` holds the rules and points 
 - `tools/ui_check.py` drives the app in Playwright at iPhone size, light and dark. `tests/` has unit tests.
 - `.github/workflows/checks.yml` runs all of it on pull requests. It has no `paths-ignore`, because a required check that's skipped blocks merging.
 - `.github/workflows/publish.yml` builds, checks and deploys to GitHub Pages on every push to `main` (pushes touching only `inbox/` are ignored).
-- `publish.yml` and `checks.yml` share the steps in `.github/actions/build-check` (a composite action, so the job names the branch protection needs don't change). The test browsers are cached by Playwright version.
+- `publish.yml` and `checks.yml` share the steps in `.github/actions/build-check` (a composite action, so the job names the branch protection needs don't change). The test browsers are cached by Playwright version for the pull request checks. Publishing restores no cache (pip's or the browsers', `published: "true"`): any job on `main` can write a cache entry, the guide watch's PDF-reading job included, so a cached browser could otherwise change the site that goes live. It installs its own browsers and saves them for the checks.
 - `guide-reminders.yml` opens an issue for guides ending within three weeks.
 - `guide-watch.yml` runs weekly (`tools/watch_guides.py`):
   - it checks each restaurant's `watch` page for a guide PDF it hasn't seen (by sha256, `guides/archive/` included);

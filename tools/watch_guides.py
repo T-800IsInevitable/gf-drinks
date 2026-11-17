@@ -319,10 +319,19 @@ def from_plan(e, plan_dir):
             "changed": e.get("changed"), "crash": None if e.get("crash") is None else str(e["crash"])}
 
 
+def source(url, page):
+    """Where a guide came from, as a pull request or issue shows it: a link only on the restaurant's own site (the page
+    in this checkout's restaurant.json). Elsewhere, such as a file host, it's text that can't be clicked, since the
+    address came from the step that read other sites' files."""
+    if urllib.parse.urlsplit(str(url)).hostname == urllib.parse.urlsplit(str(page)).hostname:
+        return link(url)
+    return f"`{quoted(url)}`, on another site"
+
+
 def pr_body(r, changed):
     lines = [f"**{r['name']}** has a new allergen guide on its website ({r['page']}).", ""]
     for u in r["new"]:
-        lines.append(f"- New: `{u['name']}` (as published: {link(u['url'])})")
+        lines.append(f"- New: `{u['name']}` (as published: {source(u['url'], r['page'])})")
         for old in u.get("replaces", []):
             lines.append(f"  - It replaces `{quoted(old)}`, which moves to `guides/archive/`.")
         if u.get("unreadable"):
@@ -409,7 +418,7 @@ def manual_issue(r):
     names = ", ".join(u["name"] for u in r["new"])
     return (f"Guide watch: new {r['name']} guide ({names})",
             f"**{r['name']}** links a guide the app hasn't seen before:\n\n"
-            + "\n".join(f"- `{u['name']}`: {link(u['url'])}" for u in r["new"]) +
+            + "\n".join(f"- `{u['name']}`: {source(u['url'], r['page'])}" for u in r["new"]) +
             f"\n\nIts menu is kept by hand, so read the guide and update `{folder}menu.csv` and the dates in "
             f"`{folder}restaurant.json`, adding the PDF to `{folder}guides/`. If it isn't actually newer, close this issue.\n\n"
             + WORKFLOW)

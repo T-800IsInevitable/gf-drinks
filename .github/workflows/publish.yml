@@ -39,6 +39,7 @@ jobs:
       - uses: ./.github/actions/build-check
         with:
           release-base: ${{ github.event_name == 'push' && github.event.before || '' }}
+          published: "true"  # restores no cache (see the action)
 
       # every UK branch of the chains, from OpenStreetMap, for the map and Near me: asked on the Monday run (and by
       # hand); a push publishes the live list again while it's under a week old. A busy or broken answer keeps the live

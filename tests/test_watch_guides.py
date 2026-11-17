@@ -258,8 +258,12 @@ class Checking(Site):
                                                                    "unreadable": "see [here](https://evil.test) @someone"}], "problems": ["Couldn't open [x](https://evil.test) @someone"]}
         self.assertIn("`see [here](https://evil.test) @someone`", w.pr_body(r2, ""))
         self.assertIn("- `Couldn't open [x](https://evil.test) @someone`", w.problem_issue(r2)[1])
-        title, body = w.manual_issue({"name": "Knoops", "id": "knoops-uk", "new": [{"name": "K.pdf", "url": "https://k.test/k.pdf"}]})
+        title, body = w.manual_issue({"name": "Knoops", "id": "knoops-uk", "page": "https://k.test/p", "new": [{"name": "K.pdf", "url": "https://k.test/k.pdf"}]})
         self.assertIn("- `K.pdf`: <https://k.test/k.pdf>", body)
+        # an address on another site than the restaurant's page is shown as text that can't be clicked
+        r3 = {**r, "new": [{"name": "A.pdf", "url": "https://files.test/Allergen_Guide.pdf"}]}
+        self.assertIn("(as published: `https://files.test/Allergen_Guide.pdf`, on another site)", w.pr_body(r3, ""))
+        self.assertNotIn("<https://files.test", w.pr_body(r3, ""))
 
     def test_problems(self):
         folder = self.restaurant("pret-uk", [PRET], "Allergen_Guide")
@@ -518,6 +522,16 @@ class TheWorkflowKeepsTheTokenAwayFromThePDFs(unittest.TestCase):
         self.assertIn("--propose", propose)
         for reader in ("requirements", "pip install", "fetch_previous", "--plan"):
             self.assertNotIn(reader, propose)
+
+    def test_the_job_that_publishes_restores_no_cache(self):
+        # any job on main can write a cache entry, the guide watch's reading job included (through the artifact token)
+        action = (ROOT / ".github" / "actions" / "build-check" / "action.yml").read_text(encoding="utf-8")
+        publish = (ROOT / ".github" / "workflows" / "publish.yml").read_text(encoding="utf-8")
+        self.assertIn('published: "true"', publish)
+        self.assertIn("cache: ${{ inputs.published != 'true' && 'pip' || '' }}", action)
+        restore = action.split("- uses: actions/cache@")[1].split("\n    - ")[0]
+        self.assertIn("if: inputs.published != 'true'", restore)
+        self.assertNotIn("actions/cache/restore", action)
 
 
 if __name__ == "__main__":
