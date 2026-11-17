@@ -44,6 +44,13 @@ class Push(unittest.TestCase):
         self.assertIn(MSG["body"], body)
         self.assertTrue(out["notifications"][0]["renotify"])
 
+    def test_a_favourite_moved_to_another_section_or_recased_is_still_named(self):
+        # the new guide moved it ("Hot drinks" before) and wrote it in other capitals: still the same favourite
+        out = run(["pret-uk|Winter drinks|Oat  Latte"])
+        self.assertTrue(out["notifications"][0]["body"].startswith("A favourite now contains gluten: Oat latte. "), out)
+        # another restaurant's item of the same name is not
+        self.assertFalse(run(["starbucks-uk|Hot drinks|Oat latte"])["notifications"][0]["body"].startswith("A favourite"))
+
     def test_a_tap_opens_the_app_at_the_restaurant(self):
         out = run([])
         self.assertEqual(out["opened"], "https://example.test/gf-drinks/#pret-uk")

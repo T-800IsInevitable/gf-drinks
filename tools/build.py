@@ -126,18 +126,21 @@ def apply_config(data, config, rid):
         data["stats"]["ingredients"] = ingredients
 
 
-# a mixed section ("Chocolate, Snacks & Bottled Drinks") is sorted by the first of these words in each name
+# a mixed section ("Chocolate, Snacks & Bottled Drinks") is sorted by these words in each name: a drink word makes it a
+# drink, a food word food, and both ("Chocolate Milkshake") both halves, so it's never hidden from either
 DRINK_WORDS = (r"juice|drink|shot|smoothie|water|vitwater|tea|lemonade|cola|latte|macchiato|espresso|coffee|cappuccino|americano|"
                r"flat white|mocha|chai|frappe|milkshake|hot chocolate|milk(?!\s+chocolate)")
 FOOD_WORDS = r"crisps|popcorn|cheese|chocolate|coin|panettone|bar|waffles?|biscuits?|cookie|shortbread|straw|sandwich"
-COURSE_WORD = re.compile(rf"\b(?:({DRINK_WORDS})|({FOOD_WORDS}))\b", re.I)
+DRINK_WORD = re.compile(rf"\b(?:{DRINK_WORDS})\b", re.I)
+FOOD_WORD = re.compile(rf"\b(?:{FOOD_WORDS})\b", re.I)
 
 
 def set_courses(data, config, rid):
     """Food or drink for every row, so the app shows a restaurant's food and drinks apart, with a count of each.
     restaurant.json "courses": {"drinks": [sections], "food": [sections], "addons": [sections], "mixed": [sections],
     "items": {"Section|Name": "food" or "drink"}}. A section in neither list (a new guide's seasonal section, say) shows
-    under both Food and Drinks and warns, so it's never hidden from either half; with no courses setting, all is food.
+    under both Food and Drinks and warns, so it's never hidden from either half; with no courses setting, every section
+    does (a new restaurant, until it gets one).
     Add-ons (syrups, toppings, milks, sauces) go with what they're added to and aren't counted as things to order.
     A section named there that the guide doesn't have only warns, because seasonal sections come and go."""
     cfg = config.get("courses") or {}
@@ -150,7 +153,7 @@ def set_courses(data, config, rid):
     have = {r["section"] for r in rows}
     for gone in sorted((drinks | food | addons | mixed) - have) + sorted(set(named) - {f"{r['section']}|{r['name']}" for r in rows}):
         print(f"  WARNING: {rid}/restaurant.json courses names {gone!r}, which this guide doesn't have")
-    unnamed = sorted(have - drinks - food - mixed) if cfg else []
+    unnamed = sorted(have - drinks - food - mixed)
     for s in unnamed:
         print(f"  WARNING: {rid}: {s!r} isn't named as food or drinks in restaurant.json courses, so it shows under both. "
               "Add it to one of them")
@@ -158,11 +161,12 @@ def set_courses(data, config, rid):
         if f"{r['section']}|{r['name']}" in named:
             r["course"] = named[f"{r['section']}|{r['name']}"]
         elif r["section"] in mixed:
-            m = COURSE_WORD.search(r["name"])
-            if not m:
+            # food words are looked for once the drink words are taken out, so "Hot Chocolate" is a drink only
+            drink, food_word = DRINK_WORD.search(r["name"]), FOOD_WORD.search(DRINK_WORD.sub(" ", r["name"]))
+            if not drink and not food_word:
                 raise SystemExit(f"ERROR: {rid}: can't tell whether {r['name']!r} in {r['section']!r} is food or a drink. "
                                  "Add a word for it to DRINK_WORDS or FOOD_WORDS in tools/build.py.")
-            r["course"] = "drink" if m.group(1) else "food"
+            r["course"] = "both" if drink and food_word else "drink" if drink else "food"
         else:
             r["course"] = "drink" if r["section"] in drinks else "both" if r["section"] in unnamed else "food"
         if r["section"] in addons:

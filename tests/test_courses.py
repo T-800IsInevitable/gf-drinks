@@ -34,7 +34,7 @@ class Courses(unittest.TestCase):
     def test_a_mixed_section_is_sorted_by_the_first_food_or_drink_word(self):
         names = {"Kettle Lightly Salted Crisps": "food", "Cloudy Apple Juice": "drink", "One Water (Still/ Sparkling)": "drink",
                  "Starbucks® Chocolate Gold Coin": "food", "Ginger shot": "drink", "Karma Organic Cola": "drink",
-                 "Starbucks® Iced Gingerbread Cookie - Bearista or Latte": "food", "Strawberry and Watermelon Vitwater": "drink",
+                 "Starbucks® Iced Gingerbread Cookie - Bearista or Latte": "both", "Strawberry and Watermelon Vitwater": "drink",
                  "Starbucks Tripleshot™ Espresso": "drink", "Peach Iced Tea": "drink"}
         d = menu([{"name": n, "section": "Snacks & Bottled Drinks"} for n in names])
         build.set_courses(d, CONFIG, "x")
@@ -53,7 +53,9 @@ class Courses(unittest.TestCase):
 
     def test_more_drink_and_food_words(self):
         names = {"Cappuccino": "drink", "Flat White": "drink", "Americano Black": "drink", "Little Sausage Sandwich": "food",
-                 "Hot Chocolate": "drink", "Milk Chocolate Buttons": "food", "Semi-skimmed Milk": "drink"}
+                 "Hot Chocolate": "drink", "Milk Chocolate Buttons": "food", "Semi-skimmed Milk": "drink",
+                 # a drink named after a food shows under both halves, so it's never hidden from Drinks
+                 "Chocolate Milkshake": "both", "Cookie Frappe": "both"}
         d = menu([{"name": n, "section": "Snacks & Bottled Drinks"} for n in names])
         build.set_courses(d, CONFIG, "x")
         self.assertEqual({i["name"]: i["course"] for i in d["items"]}, names)
@@ -68,10 +70,14 @@ class Courses(unittest.TestCase):
         self.assertIn("Winter Warmers", " ".join(str(c) for c in out.call_args_list))
         self.assertEqual((d["stats"]["food"], d["stats"]["drinks"]), (2, 1))  # counted in each half it shows in
 
-    def test_no_setting_means_all_food_and_a_gone_section_only_warns(self):
-        d = menu([{"name": "Burger", "section": "Burgers"}])
-        build.set_courses(d, {}, "x")
-        self.assertEqual((d["items"][0]["course"], d["stats"]["food"], d["stats"]["drinks"]), ("food", 1, 0))
+    def test_no_setting_means_both_halves_and_a_gone_section_only_warns(self):
+        # a new restaurant added without a courses setting: nothing hidden from either half until it gets one
+        d = menu([{"name": "Flat White", "section": "Coffee"}], [{"name": "Oat Latte", "section": "Coffee", "gluten": ["OAT"]}])
+        with mock.patch("builtins.print") as out:
+            build.set_courses(d, {}, "x")
+        self.assertEqual([r["course"] for r in d["items"] + d["avoid"]], ["both", "both"])
+        self.assertEqual((d["stats"]["food"], d["stats"]["drinks"]), (1, 1))
+        self.assertIn("Coffee", " ".join(str(c) for c in out.call_args_list))
         build.set_courses(menu([{"name": "Burger", "section": "Burgers"}]), {"courses": {"drinks": ["Festive"]}}, "x")  # no stop
 
 
