@@ -62,7 +62,7 @@ def waiting():
     out = []
     for path in (listed or "").splitlines():
         folder = path.split("/", 1)[1]
-        if folder.lower() == "readme.md" or folder == REQUESTS:
+        if folder == REQUESTS:  # files (README.md) aren't listed: ls-tree -d
             continue
         meta = read_json(f"{path}/upload.json")
         out.append({"folder": clean_name(folder), "restaurant": clean(meta.get("restaurant")), "area": clean(meta.get("area"))})

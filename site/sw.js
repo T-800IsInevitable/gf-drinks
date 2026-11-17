@@ -128,8 +128,9 @@ self.addEventListener("push", (e) => {
   try { msg = e.data ? e.data.json() : {}; } catch (err) { msg = { body: e.data ? e.data.text() : "" }; }
   e.waitUntil((async () => {
     // the push carries the key each favourite was saved under (tools/push.py), so it's matched on restaurant, section and
-    // name, ignoring only capitals and spacing: the same name in another section is another item
-    const same = (k) => String(k).toLowerCase().replace(/\s+/g, " ").split("|").map((s) => s.trim()).join("|");
+    // name, ignoring only capitals and spacing: the same name in another section is another item. A favourite whose
+    // section an earlier guide renamed, with the app not opened since, isn't named here; the app warns when it opens
+    const same = (k) => String(k).toLowerCase().replace(/\s+/g, " ");
     const favs = new Set((await favsSaved()).map(same));
     const hit = (msg.nowAvoid || []).filter((k) => favs.has(same(k))).map((k) => k.split("|").slice(2).join("|"));
     let body = msg.body || "New menus are in.";

@@ -1,8 +1,9 @@
 """Tests for tools/changes.py. Run: python -m unittest discover -s tests"""
 import sys
 import unittest
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 import changes  # noqa: E402
@@ -34,6 +35,22 @@ class Compare(unittest.TestCase):
         self.assertEqual(c["nowAvoid"][0]["gluten"], ["WHEAT"])
         self.assertEqual(c["date"], "2026-10-01")
         self.assertEqual(c["since"], "a.pdf guide")
+
+    def test_the_date_noticed_is_the_uk_date(self):
+        # 23:30 UTC on 1 July is 00:30 on 2 July in the UK: the runner's own clock would say the 1st
+        class Late(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return datetime(2026, 7, 1, 23, 30, tzinfo=timezone.utc).astimezone(tz)
+        with mock.patch.object(changes, "datetime", Late):
+            c = changes.compare(menu("a.pdf", [ok("Latte")]), menu("b.pdf", avoid=[bad("Latte")]))
+        self.assertEqual(c["date"], "2026-07-02")
+
+    def test_no_time_zone_data_falls_back_to_the_machines_date(self):
+        # a Windows Python without the tzdata package mustn't stop the build
+        with mock.patch.object(changes, "ZoneInfo", side_effect=changes.ZoneInfoNotFoundError("Europe/London")):
+            c = changes.compare(menu("a.pdf", [ok("Latte")]), menu("b.pdf", avoid=[bad("Latte")]))
+        self.assertEqual(c["date"], date.today().isoformat())
 
     def test_item_no_longer_to_avoid(self):
         c = changes.compare(menu("a.pdf", avoid=[bad("Mocha")]), menu("b.pdf", [ok("Mocha")]))
