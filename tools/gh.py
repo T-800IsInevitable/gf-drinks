@@ -25,8 +25,9 @@ def request(method, path, body=None, accept="application/vnd.github+json"):
 
 def quoted(text):
     """Text from another site (a reader's message, a dish's name, build output) as it goes into a pull request or an
-    issue: no backticks, so it can't end a code span or a code fence and turn into markdown, links or instructions."""
-    return str(text).replace("`", "'")
+    issue: no backticks and no blank lines, so it can't end a code span or a code fence and turn into markdown, links
+    or instructions."""
+    return re.sub(r"\n\s*\n", "\n", str(text)).replace("`", "'")
 
 
 def link(url):

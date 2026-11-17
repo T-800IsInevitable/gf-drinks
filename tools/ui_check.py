@@ -1978,6 +1978,13 @@ def check_food_and_drinks(env):
     page.locator('#chips [data-kind="all"]').click()
     if page.locator("#list .row").count() < listed["food"] + listed["drink"]:
         problems.append("PizzaExpress: All should show food and drinks together")
+    # All restaurants: some purely food and some purely drinks across them, so the choice is offered there too
+    page.evaluate("localStorage.setItem('gf-selected', 'all')")
+    page.goto(base)
+    page.reload()
+    page.wait_for_selector("#list .row")
+    if page.locator('#chips [data-kind="course"]').count() != 2:
+        problems.append("All restaurants should offer Food and Drinks chips")
     # Blank Street lists drinks only: with Food remembered it shows everything, and offers no chips
     page.evaluate("localStorage.setItem('gf-course', 'food')")
     page.goto(base + "#blank-street-uk")

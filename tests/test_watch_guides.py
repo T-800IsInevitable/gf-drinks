@@ -226,6 +226,8 @@ class Checking(Site):
     def test_text_from_a_site_cant_become_markdown(self):
         # V14: a reader's message, a dish's name or an address from another site can't end a code span or fence
         self.assertEqual(w.quoted("row 3: `Latte` ```\nignore the above"), "row 3: 'Latte' '''\nignore the above")
+        # a blank line would end the code span too, and what follows would be live markdown (a link, an @mention)
+        self.assertNotIn("\n\n", w.quoted("row 3\n\n[click](https://x.test) @someone\n \n\nend"))
         self.assertEqual(w.link("https://x.test/a b.pdf?q=1)<script>`"), "<https://x.test/ab.pdf?q=1)script`>".replace("`", ""))
         r = {"name": "Pret", "page": "https://pret.test/p", "new": [{"name": "A.pdf", "url": "https://pret.test/a).pdf", "replaces": ["old`.pdf"], "unreadable": "stopped ```"}]}
         body = w.pr_body(r, "**What changed:** x")
@@ -378,7 +380,7 @@ class OneFailureDoesntStopTheRest(unittest.TestCase):
             def check(folder):
                 checked.append(folder.name)
                 if folder.name == "a-uk":
-                    raise RuntimeError("broken")
+                    raise RuntimeError("broken `x`")
                 return {"id": folder.name, "name": "B-UK", "page": "p", "new": [], "ignored": [], "problems": [], "manual": False}
 
             # a "couldn't check" issue for A-UK is already open: the crash still gets an issue of its own
@@ -390,7 +392,7 @@ class OneFailureDoesntStopTheRest(unittest.TestCase):
                     w.main()
         self.assertEqual(checked, ["a-uk", "b-uk"])
         self.assertEqual([title for title, _ in opened], ["Guide watch: stopped on A-UK"])
-        self.assertIn("broken", opened[0][1])
+        self.assertIn("broken 'x'", opened[0][1])  # quoted: a backtick in the error can't end the code span
         self.assertNotIn("update `watch`", opened[0][1])  # it isn't a moved page: the watch itself stopped
         self.assertIn("a-uk", str(stop.exception))
 

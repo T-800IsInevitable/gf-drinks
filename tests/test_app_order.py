@@ -109,6 +109,19 @@ process.stdout.write(JSON.stringify(rows.map((a) => [avoidTag(a), avoidWhy(a)]))
                              env={**os.environ, "TZ": "Europe/London"})
         self.assertEqual(out.stdout, "2026-07-02")
 
+    def test_food_and_drinks_chips_need_things_to_order_of_each(self):
+        # a syrup (add-on) or a bun (part of a dish) isn't something to order on its own, so it can't earn a chip
+        code = source("hasOnly") + """
+const rs = JSON.parse(process.argv[1]);
+process.stdout.write(JSON.stringify([hasOnly(rs, "food"), hasOnly(rs, "drink")]));
+"""
+        rs = [{"items": [{"course": "drink"}, {"course": "food", "addon": True}, {"course": "food", "role": "part"}]}]
+        run = lambda x: json.loads(subprocess.run([NODE, "-e", code, json.dumps(x)], capture_output=True, text=True,
+                                                  encoding="utf-8", check=True).stdout)
+        self.assertEqual(run(rs), [False, True])
+        rs[0]["items"].append({"course": "food"})
+        self.assertEqual(run(rs), [True, True])
+
     def test_the_app_check_py_and_hand_kept_menus_know_the_same_orders(self):
         # an order one of them knows and another doesn't is listed by the build but refused or mis-shown elsewhere
         import sys

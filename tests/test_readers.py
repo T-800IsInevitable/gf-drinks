@@ -402,8 +402,10 @@ class Nandos(unittest.TestCase):
     def test_every_avoid_row_keeps_what_nandos_says_about_the_dish(self):
         # a dish page's second line ("Only in Gatwick") is shown however the dish came to be on the Avoid list
         _, avoid, _ = self.build({"variant": "Only in Gatwick", "notes": {"gluten": "Seasoning contains barley malt vinegar."}},
-                                 {"variant": "Only in Gatwick", "ingredients": "Wheat flour, water."})
-        for name in ("Dish x0", "Dish x1"):
+                                 {"variant": "Only in Gatwick", "ingredients": "Wheat flour, water."},
+                                 {"variant": "Only in Gatwick", "mayContain": ["gluten"]},
+                                 {"variant": "Only in Gatwick", "contains": ["gluten"], "summary": "Contains gluten."})
+        for name in ("Dish x0", "Dish x1", "Dish x2", "Dish x3"):
             self.assertIn('Nando\'s says: "Only in Gatwick"', avoid[name].get("info", ""), name)
 
     def test_too_few_dishes_or_a_dish_listed_twice_stops_the_build(self):
