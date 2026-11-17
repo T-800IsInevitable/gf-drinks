@@ -32,6 +32,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import changes  # noqa: E402
 from check_release import app_number  # noqa: E402
 
 try:
@@ -80,7 +81,12 @@ def plan(previous=ROOT / ".previous", data=SITE / "data"):
         guide = (r.get("guide") or {}).get("title") or ""
         what = counts(c) if was else f"{(r.get('stats') or {}).get('items', 0)} items with no gluten ingredients"
         news.append(f"{r['name']}: {guide + ' guide' if guide and guide != 'Allergen guide' else 'new guide'}" + (f": {what}" if what else ""))
-        keys += [f"{r['id']}|{x.get('section', '')}|{x.get('name', '')}" for x in (c or {}).get("nowAvoid") or []]
+        # the key a favourite was saved under is the live item's (its section and spelling then), found the way the
+        # comparison found it; the phone matches it ignoring only capitals and spacing (site/sw.js)
+        live = changes._index((read(previous / "r" / f"{r['id']}.json") or {}).get("items", [])) if was else ({}, {})
+        for x in (c or {}).get("nowAvoid") or []:
+            o = changes._find(x, live) or x
+            keys.append(f"{r['id']}|{o.get('section', '')}|{o.get('name', '')}")
     if not news:
         return None
     body = "; ".join(news[:MOST]) + (f"; and {len(news) - MOST} more" if len(news) > MOST else "") + "."
