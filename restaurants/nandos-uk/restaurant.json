@@ -29,5 +29,5 @@
     "Nando's says it handles many allergens in its kitchens and can't guarantee any dish is allergen free.",
     "The dish pages list allergens by recipe. They don't say how food is cooked, such as shared grills or fryers."
   ],
-  "courses": {"drinks": ["Drinks"], "addons": ["Extras & Garnish", "Spices & Sauces"], "items": {"Nandinos|Kids Pip Organic": "drink", "Nandinos|Semi-skimmed Milk": "drink"}}
+  "courses": {"drinks": ["Drinks"], "food": ["Extras & Garnish", "Sides, Extras & Garnish", "Spices & Sauces", "Chicken", "Sides", "Starters", "Nandinos", "Desserts", "Salads & Bowls", "Sweet Treats", "The Classics", "Burgers, Pittas, Wraps", "Eggs", "Breakfast Rolls", "The Works"], "addons": ["Extras & Garnish", "Spices & Sauces"], "items": {"Nandinos|Kids Pip Organic": "drink", "Nandinos|Semi-skimmed Milk": "drink"}}
 }

@@ -135,26 +135,25 @@ COURSE_WORD = re.compile(rf"\b(?:({DRINK_WORDS})|({FOOD_WORDS}))\b", re.I)
 
 def set_courses(data, config, rid):
     """Food or drink for every row, so the app shows a restaurant's food and drinks apart, with a count of each.
-    restaurant.json "courses": {"drinks": [sections], "addons": [sections], "mixed": [sections]}; any other section is
-    food. Add-ons (syrups, toppings, milks, sauces) go with what they're added to and aren't counted as things to order.
+    restaurant.json "courses": {"drinks": [sections], "food": [sections], "addons": [sections], "mixed": [sections],
+    "items": {"Section|Name": "food" or "drink"}}. A section in neither list (a new guide's seasonal section, say) shows
+    under both Food and Drinks and warns, so it's never hidden from either half; with no courses setting, all is food.
+    Add-ons (syrups, toppings, milks, sauces) go with what they're added to and aren't counted as things to order.
     A section named there that the guide doesn't have only warns, because seasonal sections come and go."""
     cfg = config.get("courses") or {}
-    drinks, addons, mixed = (set(cfg.get(k) or []) for k in ("drinks", "addons", "mixed"))
+    drinks, food, addons, mixed = (set(cfg.get(k) or []) for k in ("drinks", "food", "addons", "mixed"))
     named = cfg.get("items") or {}  # "Section|Name": "food" or "drink", for an item its section's rule gets wrong
     for key, value in named.items():
         if value not in ("food", "drink"):
             raise SystemExit(f"ERROR: {rid}/restaurant.json courses.items {key!r} is {value!r}; it must be \"food\" or \"drink\"")
     rows = data["items"] + data["avoid"]
     have = {r["section"] for r in rows}
-    for gone in sorted((drinks | addons | mixed) - have) + sorted(set(named) - {f"{r['section']}|{r['name']}" for r in rows}):
+    for gone in sorted((drinks | food | addons | mixed) - have) + sorted(set(named) - {f"{r['section']}|{r['name']}" for r in rows}):
         print(f"  WARNING: {rid}/restaurant.json courses names {gone!r}, which this guide doesn't have")
-    # a section left as food whose names are mostly drinks (a new guide's seasonal drinks): say so in the build summary
-    for s in sorted(have - drinks - mixed):
-        names = [r["name"] for r in rows if r["section"] == s]
-        drinky = sum(bool((m := COURSE_WORD.search(n)) and m.group(1)) for n in names)
-        if drinky * 2 > len(names):
-            print(f"  WARNING: {rid}: {s!r} counts as food, but {drinky} of its {len(names)} names look like drinks. "
-                  "If it's drinks, add it to courses in restaurant.json")
+    unnamed = sorted(have - drinks - food - mixed) if cfg else []
+    for s in unnamed:
+        print(f"  WARNING: {rid}: {s!r} isn't named as food or drinks in restaurant.json courses, so it shows under both. "
+              "Add it to one of them")
     for r in rows:
         if f"{r['section']}|{r['name']}" in named:
             r["course"] = named[f"{r['section']}|{r['name']}"]
@@ -165,12 +164,12 @@ def set_courses(data, config, rid):
                                  "Add a word for it to DRINK_WORDS or FOOD_WORDS in tools/build.py.")
             r["course"] = "drink" if m.group(1) else "food"
         else:
-            r["course"] = "drink" if r["section"] in drinks else "food"
+            r["course"] = "drink" if r["section"] in drinks else "both" if r["section"] in unnamed else "food"
         if r["section"] in addons:
             r["addon"] = True
     things = [i for i in data["items"] if not i.get("role") and not i.get("addon")]  # things to order, as the app counts them
-    data["stats"]["food"] = sum(i["course"] == "food" for i in things)
-    data["stats"]["drinks"] = sum(i["course"] == "drink" for i in things)
+    data["stats"]["food"] = sum(i["course"] in ("food", "both") for i in things)  # "both" counts in each half it shows in
+    data["stats"]["drinks"] = sum(i["course"] in ("drink", "both") for i in things)
 
 
 def build_one(folder):

@@ -449,7 +449,7 @@
   const effCourse = () => (course === "all" || !data || !courseCount(scope(), "food") || !courseCount(scope(), "drink") ? "all" : course);
   // while searching, everything is searched: the switch hides with the tips
   // a row with no course (a menu saved by an older release) shows whichever half is chosen: it's never hidden
-  const inCourse = (i) => effCourse() === "all" || !!$("q").value.trim() || !i.course || i.course === effCourse();
+  const inCourse = (i) => effCourse() === "all" || !!$("q").value.trim() || !i.course || i.course === "both" || i.course === effCourse();
   const courseNote = () => (effCourse() === "all" || $("q").value.trim() ? "" : effCourse() === "food" ? " (food only)" : " (drinks only)");
   // the chooser's count for a restaurant: food and drinks apart, from menus that say which is which
   const countText = (r) => (r.stats.food == null ? r.stats.items + " items"

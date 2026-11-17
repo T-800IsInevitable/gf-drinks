@@ -1985,6 +1985,14 @@ def check_food_and_drinks(env):
     bs = menu_of("blank-street-uk")
     if page.locator('#chips [data-kind="course"]').count() or count("gluten") != len(bs["avoid"]):
         problems.append("Blank Street lists drinks only, so it should offer no chips and show its whole Avoid list")
+    # a remembered value that isn't food or drink (a corrupted or renamed one) shows everything
+    page.evaluate("localStorage.setItem('gf-course', 'drinks')")
+    page.goto(base + "#pizza-express-uk")
+    page.reload()
+    page.wait_for_selector("#list .row")
+    if count("gluten") != len(menu["avoid"]):
+        problems.append(f"PizzaExpress: with a stored choice of 'drinks' (not one the app knows), {count('gluten')} of its "
+                        f"{len(menu['avoid'])} Avoid rows show")
     ctx.close()
     # a menu with no food or drink data (an older saved copy): All with Drinks chosen still shows all of it
     old = {k: v for k, v in menu_of("greggs-uk").items() if k != "stats"}

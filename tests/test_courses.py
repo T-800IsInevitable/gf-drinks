@@ -10,7 +10,8 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 import build  # noqa: E402
 
-CONFIG = {"courses": {"drinks": ["Coffee", "Syrups"], "addons": ["Syrups", "Dips"], "mixed": ["Snacks & Bottled Drinks"]}}
+CONFIG = {"courses": {"drinks": ["Coffee", "Syrups"], "food": ["Breakfast", "Dips"], "addons": ["Syrups", "Dips"],
+                     "mixed": ["Snacks & Bottled Drinks"]}}
 
 
 def menu(items, avoid=()):
@@ -44,7 +45,7 @@ class Courses(unittest.TestCase):
             build.set_courses(menu([{"name": "Mystery Thing", "section": "Snacks & Bottled Drinks"}]), CONFIG, "x")
 
     def test_a_named_item_overrides_its_section(self):
-        cfg = {"courses": {"items": {"Extras|Whipped Cream": "drink", "Kids|Semi-skimmed Milk": "drink"}}}
+        cfg = {"courses": {"food": ["Extras", "Kids"], "items": {"Extras|Whipped Cream": "drink", "Kids|Semi-skimmed Milk": "drink"}}}
         d = menu([{"name": "Whipped Cream", "section": "Extras"}, {"name": "Jam", "section": "Extras"},
                   {"name": "Semi-skimmed Milk", "section": "Kids"}])
         build.set_courses(d, cfg, "x")
@@ -57,12 +58,15 @@ class Courses(unittest.TestCase):
         build.set_courses(d, CONFIG, "x")
         self.assertEqual({i["name"]: i["course"] for i in d["items"]}, names)
 
-    def test_a_section_left_as_food_that_looks_like_drinks_warns(self):
-        # a new guide's drinks section the setting doesn't name would land under Food: the build says so
-        d = menu([{"name": n, "section": "Winter Warmers"} for n in ("Gingerbread Latte", "Toffee Mocha", "Spiced Tea")])
+    def test_a_section_in_neither_list_shows_under_both_and_warns(self):
+        # a new guide's section the setting doesn't name (seasonal drinks, say) is never hidden from either half
+        d = menu([{"name": "Gingerbread Frappuccino", "section": "Winter Warmers"}, {"name": "Toast", "section": "Breakfast"}],
+                 [{"name": "Matcha Cookie Latte", "section": "Winter Warmers", "gluten": ["WHEAT"]}])
         with mock.patch("builtins.print") as out:
             build.set_courses(d, CONFIG, "x")
+        self.assertEqual([r["course"] for r in d["items"] + d["avoid"]], ["both", "food", "both"])
         self.assertIn("Winter Warmers", " ".join(str(c) for c in out.call_args_list))
+        self.assertEqual((d["stats"]["food"], d["stats"]["drinks"]), (2, 1))  # counted in each half it shows in
 
     def test_no_setting_means_all_food_and_a_gone_section_only_warns(self):
         d = menu([{"name": "Burger", "section": "Burgers"}])

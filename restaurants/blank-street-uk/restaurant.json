@@ -27,5 +27,5 @@
     "The guide has no date. The app uses the season in its file name and the date the PDF was made.",
     "Coconut drink is listed as an ingredient, but no drink is listed with it, so the guide doesn't say whether a coconut milk drink may contain oat."
   ],
-  "courses": {"drinks": ["Coffee", "Not Coffee & Teas", "Cold Brew", "Custom", "Ingredients", "Matchas / Hojichas", "House Lattes"], "addons": ["Custom"]}
+  "courses": {"drinks": ["Coffee", "Not Coffee & Teas", "Cold Brew", "Custom", "Ingredients", "Matchas / Hojichas", "House Lattes"], "food": ["Signature Ice Cream", "Pastries: London Stores", "Manchester Pastries & Savouries", "Birmingham Pastries & Savouries", "Scotland Pastries & Sweets", "Leeds Pastries & Sweets", "Cambridge Pastries & Sweets", "Bristol Pastries & Sweets", "Brighton Pastries & Sweets", "Liverpool Pastries & Sweets"], "addons": ["Custom"]}
 }

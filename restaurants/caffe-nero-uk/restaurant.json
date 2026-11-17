@@ -26,5 +26,5 @@
     "Some extras, sauces and syrups are only in the guide's allergen table, which shows allergens but not ingredients.",
     "The guide says it can't guarantee an allergen free environment because equipment is shared."
   ],
-  "courses": {"drinks": ["Syrups", "Festive", "Hot Coffee", "Iced Coffee", "Hot Chocolate", "Matcha", "Luxury & Chai", "Frappe", "Flavoured Iced Latte", "Luxury Frappe", "Milkshakes", "Boosters & Over Ice"], "addons": ["Extras", "Syrups"], "items": {"Extras|Marshmallows": "drink", "Extras|Chocolate Curls": "drink", "Extras|Plant Based Creamy Topping": "drink", "Extras|Whipped Cream": "drink"}}
+  "courses": {"drinks": ["Syrups", "Festive", "Hot Coffee", "Iced Coffee", "Hot Chocolate", "Matcha", "Luxury & Chai", "Frappe", "Flavoured Iced Latte", "Luxury Frappe", "Milkshakes", "Boosters & Over Ice"], "food": ["Extras", "Pastries", "Buns", "Muffins & Scones", "Porridge", "Cakes & Slices", "Loaf Cakes", "Traybakes", "Cookies", "Desserts", "Savoury Pastries & Rolls", "Nero Deli", "Panini", "Tostati", "Breakfast Rolls", "Sandwiches", "Focaccia", "Wraps", "Salad", "Soups", "Biscuits & Snacks", "Crisps", "Popcorn", "Yogurts & Granola Pot", "Fruit Pots"], "addons": ["Extras", "Syrups"], "items": {"Extras|Marshmallows": "drink", "Extras|Chocolate Curls": "drink", "Extras|Plant Based Creamy Topping": "drink", "Extras|Whipped Cream": "drink"}}
 }

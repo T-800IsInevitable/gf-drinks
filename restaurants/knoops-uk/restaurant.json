@@ -34,5 +34,5 @@
     "The guide marks the cannoli as containing no gluten cereals. Cannoli shells are usually made with wheat flour, so check in store (this is the app's caution, not Knoops' words).",
     "The guide lists chocolates and milks separately, not finished drinks, so it doesn't say how each drink is made."
   ],
-  "courses": {"drinks": ["Hot chocolate", "Milks and cream", "Sauces and ice cream", "To take home"], "addons": ["Milks and cream", "Sauces and ice cream"]}
+  "courses": {"drinks": ["Hot chocolate", "Milks and cream", "Sauces and ice cream", "To take home"], "food": ["Bakery"], "addons": ["Milks and cream", "Sauces and ice cream"]}
 }
