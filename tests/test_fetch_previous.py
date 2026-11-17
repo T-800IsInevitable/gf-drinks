@@ -42,6 +42,24 @@ class FetchPrevious(unittest.TestCase):
                 with self.assertRaises(SystemExit):
                     fetch_previous.main()
 
+    def test_a_passing_fault_is_tried_once_more(self):
+        """A brief 503 from Pages stopped a publish: each download is tried once more after a pause, and a fault
+        that lasts still stops the build. A 404 isn't retried (for the index it means the first deploy)."""
+        res = mock.MagicMock()
+        res.__enter__.return_value.read.return_value = b"ok"
+        e503 = urllib.error.HTTPError("u", 503, "Service Unavailable", {}, None)
+        e404 = urllib.error.HTTPError("u", 404, "Not Found", {}, None)
+        for answers, want in (([e503, res], b"ok"), ([TimeoutError("slow"), res], b"ok"), ([e503, e503], e503),
+                              ([e404, res], e404), ([urllib.error.URLError("no connection")] * 2, urllib.error.URLError)):
+            with self.subTest(answers=answers), mock.patch.object(fetch_previous, "RETRY_AFTER", 0), \
+                    mock.patch.object(fetch_previous.urllib.request, "urlopen", side_effect=answers) as opened:
+                if isinstance(want, bytes):
+                    self.assertEqual(fetch_previous.get("https://x.test/a.json"), want)
+                else:
+                    with self.assertRaises(want if isinstance(want, type) else type(want)):
+                        fetch_previous.get("https://x.test/a.json")
+                self.assertEqual(opened.call_count, 1 if want is e404 else 2)
+
 
 if __name__ == "__main__":
     unittest.main()

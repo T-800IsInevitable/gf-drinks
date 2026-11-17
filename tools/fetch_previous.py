@@ -16,6 +16,7 @@ Usage:
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -28,9 +29,23 @@ OUT = ROOT / ".previous"
 LIVE = "https://t-800isinevitable.github.io/gf-drinks/"
 
 
-def get(url):
-    with urllib.request.urlopen(urllib.request.Request(url, headers={"Cache-Control": "no-cache"}), timeout=30) as res:
-        return res.read()
+RETRY_AFTER = 15  # seconds before the one retry
+
+
+def get(url, retry=True):
+    """One file from the live site. A passing fault (a 503 or 429 from Pages, no answer, a timeout) is tried once more
+    after a pause before the build stops on it; a 404 and other refusals aren't."""
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers={"Cache-Control": "no-cache"}), timeout=30) as res:
+            return res.read()
+    except urllib.error.HTTPError as e:
+        if not (retry and (e.code == 429 or e.code >= 500)):
+            raise
+    except (urllib.error.URLError, TimeoutError):
+        if not retry:
+            raise
+    time.sleep(RETRY_AFTER)
+    return get(url, retry=False)
 
 
 def main():
