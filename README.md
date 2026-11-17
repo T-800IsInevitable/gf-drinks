@@ -228,6 +228,7 @@ Detail that only one kind of task needs. `CLAUDE.md` holds the rules and points 
   - if so it opens a pull request (old guide moved to `guides/archive/`), then dispatches `checks.yml` on it, since a pull request opened with `GITHUB_TOKEN` doesn't trigger workflows;
   - blocked or changed pages, guides linked over plain http, and new guides for `manual_csv` restaurants, open issues;
   - it identifies itself honestly and never tries to get round a site's blocking.
+  - it runs as two jobs, so the token that can push never sits beside a PDF from another site: `fetch` (no permissions, no stored git credentials) reads the pages and PDFs, builds each new guide and saves a plan (`--plan`); `propose` (the write token, no PDF reader installed) opens the pull requests and issues from it (`--propose`), after checking the plan against its own checkout: a real restaurant, its own name and page, new PDFs under plain new names, and replaced guides that are in use.
 - `keep-alive.yml` re-enables the scheduled workflows monthly through the API (GitHub switches them off after 60 days with no activity). It commits nothing, so it works with `main` protected. The daily scan also checks their state (step 0 of `SCAN_INSTRUCTIONS.md`).
 - The tools that open issues and pull requests share `tools/gh.py`.
 

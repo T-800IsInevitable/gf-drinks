@@ -101,7 +101,12 @@ class FindingLinks(unittest.TestCase):
     def test_file_name(self):
         self.assertEqual(w.file_name("https://x.example/f/AUT%2026_UK_AllergenBook_CORE_FOOD_v04.pdf?v=3"),
                          "AUT_26_UK_AllergenBook_CORE_FOOD_v04.pdf")
-        self.assertEqual(w.file_name("https://x.example/f/Guide%20(final).PDF"), "Guide_final.PDF")
+        self.assertEqual(w.file_name("https://x.example/f/Guide%20(final).PDF"), "Guide_final.pdf")
+        # every name it makes is one the step with the token accepts (no dot or dash first, .pdf in small letters)
+        for url, want in (("https://x.example/.hidden.pdf", "hidden.pdf"), ("https://x.example/-guide.pdf", "guide.pdf"),
+                          ("https://x.example/%E3%82%A2.pdf", "guide.pdf"), ("https://x.example/", "guide.pdf")):
+            self.assertEqual(w.file_name(url), want)
+            self.assertTrue(w.GUIDE_NAME.match(want))
 
     def test_every_watched_restaurant(self):
         for f in sorted((ROOT / "restaurants").glob("*/restaurant.json")):
@@ -236,10 +241,12 @@ class Checking(Site):
         # a failed build's log keeps its lines inside its fence, and none can close the fence
         failed = mock.Mock(returncode=1, stdout="ERROR: row 3 ```\n[click](https://x.test)", stderr="")
         with mock.patch.object(w.subprocess, "run", return_value=failed):
-            text = w.what_changed("x")
+            text = w.changed_text(w.what_changed("x"))
         self.assertEqual(text.count("```"), 2)
         self.assertIn("```\nERROR: row 3 '''\n[click](https://x.test)\n```", text)
         self.assertEqual(w.link("https://x.test/a b.pdf?q=1)<script>`"), "<https://x.test/ab.pdf?q=1)script`>".replace("`", ""))
+        # a control character would end the autolink, leaving the rest as live markdown (a link, an @mention)
+        self.assertEqual(w.link("https://p.test/a\x01[Merge](https://e.test) @x\x7f.pdf"), "<https://p.test/a[Merge](https://e.test)@x.pdf>")
         r = {"name": "Pret", "page": "https://pret.test/p", "new": [{"name": "A.pdf", "url": "https://pret.test/a).pdf", "replaces": ["old`.pdf"], "unreadable": "stopped ```"}]}
         body = w.pr_body(r, "**What changed:** x")
         self.assertIn("(as published: <https://pret.test/a).pdf>)", body)
@@ -325,17 +332,26 @@ class Proposing(Site):
         api, api_url = serve(FakeGitHub)
         self.addCleanup(lambda: (api.shutdown(), api.server_close()))
         env = {"GITHUB_API_URL": api_url, "GITHUB_REPOSITORY": "o/r", "GITHUB_TOKEN": "t"}
-        with mock.patch.object(w, "ROOT", self.repo), mock.patch.object(w, "what_changed", lambda rid: "**What changed:** stub."), \
-                mock.patch.dict(os.environ, env), mock.patch.object(sys, "argv", ["watch_guides.py", "--github"]):
-            w.main()
-            w.main()  # the next week: the pull request and the issue are already open, so nothing new is opened
+        plan = self.tmp / "plan"
+        built = []
+        with mock.patch.object(w, "ROOT", self.repo), mock.patch.dict(os.environ, env), \
+                mock.patch.object(w, "what_changed", lambda rid: built.append(sorted(p.name for p in (self.repo / "restaurants" / rid / "guides").rglob("*.pdf"))) or {"summary": "stub."}):
+            for _ in range(2):  # the next week: the pull request and the issue are already open, so nothing new is opened
+                with mock.patch.object(sys, "argv", ["watch_guides.py", "--plan", str(plan)]):
+                    w.main()
+                with mock.patch.object(sys, "argv", ["watch_guides.py", "--propose", str(plan)]):
+                    w.main()
+        # the plan's build saw the folder as the pull request will have it, and left it as it was
+        self.assertEqual(built[0], ["AUT_26_UK_AllergenBook_CORE_BEVERAGE_v04.pdf", "AUT_26_UK_AllergenBook_CORE_FOOD_v04.pdf",
+                                    "SUM2_26_UK_AllergenBook_CORE_BEVERAGE_v06.pdf"])
+        self.assertFalse((self.repo / "restaurants" / "starbucks-uk" / "guides" / "archive").exists())
 
         self.assertEqual(len(FakeGitHub.pulls), 1)
         pr = FakeGitHub.pulls[0]
         self.assertTrue(pr["head"].startswith("guide-watch/starbucks-uk-"))
         self.assertEqual(pr["base"], "main")
         self.assertIn("It replaces `SUM2_26_UK_AllergenBook_CORE_BEVERAGE_v06.pdf`, which moves to `guides/archive/`", pr["body"])
-        self.assertIn("**What changed:** stub.", pr["body"])
+        self.assertIn("**What changed, from the build:** `stub.`.", pr["body"])
         dispatches = [c for c in FakeGitHub.calls if c[1].endswith("/checks.yml/dispatches")]
         self.assertEqual([c[2] for c in dispatches], [{"ref": pr["head"]}])
         self.assertEqual([i["title"] for i in FakeGitHub.issues], ["Guide watch: couldn't check Pret A Manger"])
@@ -394,18 +410,114 @@ class OneFailureDoesntStopTheRest(unittest.TestCase):
                     raise RuntimeError("broken `x`")
                 return {"id": folder.name, "name": "B-UK", "page": "p", "new": [], "ignored": [], "problems": [], "manual": False}
 
-            # a "couldn't check" issue for A-UK is already open: the crash still gets an issue of its own
+            # a "couldn't check" issue for A-UK is already open: the crash still gets an issue of its own, opened by the
+            # step with the token, and that step fails the run
+            plan = Path(tmp) / "plan"
             with mock.patch.object(w, "ROOT", Path(tmp)), mock.patch.object(w, "check", check), \
                     mock.patch.object(w, "open_issues", lambda: {"Guide watch: couldn't check A-UK"}), \
                     mock.patch.object(w, "issue", lambda title, body, existing: None if title in existing else opened.append((title, body))), \
-                    mock.patch.object(sys, "argv", ["watch_guides.py", "--github"]), mock.patch("builtins.print"):
-                with self.assertRaises(SystemExit) as stop:
+                    mock.patch("builtins.print"):
+                with mock.patch.object(sys, "argv", ["watch_guides.py", "--plan", str(plan)]):
+                    w.main()  # the plan's step finishes, so the next one can report what it found
+                with mock.patch.object(sys, "argv", ["watch_guides.py", "--propose", str(plan)]), self.assertRaises(SystemExit) as stop:
                     w.main()
         self.assertEqual(checked, ["a-uk", "b-uk"])
         self.assertEqual([title for title, _ in opened], ["Guide watch: stopped on A-UK"])
         self.assertIn("broken 'x'", opened[0][1])  # quoted: a backtick in the error can't end the code span
         self.assertNotIn("update `watch`", opened[0][1])  # it isn't a moved page: the watch itself stopped
+        # what changed comes from the step that read the PDF: quoted here, and a plan that isn't shaped right says nothing
+        self.assertIn("`Bun (Food)`", w.changed_text({"summary": "1 now to avoid", "nowAvoid": ["Bun (Food)"]}))
+        self.assertIn("`[x](https://e.test) '''`", w.changed_text({"summary": "[x](https://e.test) ```"}))
+        self.assertIn("see the **Menu build** summary", w.changed_text("**anything** at all"))
         self.assertIn("a-uk", str(stop.exception))
+
+
+class ThePlanIsCheckedBeforeUse(Site):
+    """V14: the step with the token acts only on what this checkout agrees with, since the plan's step read PDFs from
+    other sites and could have been made to write anything."""
+
+    def setUp(self):
+        super().setUp()
+        self.repo = self.tmp / "repo"
+        self.restaurant("pret-uk", [PRET], "Allergen_Guide", base=self.repo / "restaurants")
+        self.plan = self.tmp / "plan"
+        (self.plan / "pret-uk").mkdir(parents=True)
+        (self.plan / "pret-uk" / "New.pdf").write_bytes(b"%PDF-1.7 new")
+
+    def entry(self, **change):
+        new = {"name": "New.pdf", "url": "https://pret.test/c/Allergen_Guide_New.pdf", "replaces": [PRET.name], **change.pop("new", {})}
+        return {"id": "pret-uk", "problems": [], "changed": {"summary": "x"}, "new": [new], **change}
+
+    def propose(self, *entries):
+        (self.plan / "plan.json").write_text(json.dumps(list(entries)), encoding="utf-8")
+        proposed, opened = [], []
+        nothing_read = mock.Mock(side_effect=AssertionError("the step with the token read a site or a PDF"))
+        with mock.patch.object(w, "ROOT", self.repo), mock.patch.object(w, "propose", proposed.append), \
+                mock.patch.object(w, "open_issues", set), mock.patch.object(w, "issue", lambda t, b, e: opened.append(t)), \
+                mock.patch.multiple(w, check=nothing_read, get=nothing_read, picks=nothing_read, what_changed=nothing_read, trial_build=nothing_read), \
+                mock.patch.object(sys, "argv", ["watch_guides.py", "--propose", str(self.plan)]), mock.patch("builtins.print"):
+            try:
+                w.main()
+                stopped = None
+            except SystemExit as e:
+                stopped = str(e)
+        return proposed, opened, stopped
+
+    def test_a_good_plan_is_proposed_with_this_checkouts_own_name_and_page(self):
+        proposed, _, stopped = self.propose(self.entry(name="Evil", page="https://evil.test"))
+        self.assertIsNone(stopped)
+        r = proposed[0]
+        self.assertEqual((r["name"], r["page"]), ("Pret A Manger", f"{self.url}/pret-uk/allergens"))
+        self.assertEqual((r["new"][0]["body"], r["new"][0]["replaces"]), (b"%PDF-1.7 new", [PRET.name]))
+
+    def test_anything_this_checkout_doesnt_agree_with_is_refused(self):
+        # each file exists and starts like a PDF, so only the rule under test can refuse it
+        (self.plan / "pret-uk" / "notpdf.pdf").write_bytes(b"<html>")
+        (self.plan / "pret-uk" / "same.pdf").write_bytes(PRET.read_bytes())
+        for name in (".hidden.pdf", PRET.name, "../restaurant.json"):
+            (self.plan / "pret-uk" / name).write_bytes(b"%PDF-1.7 " + name.encode())
+        for bad in (self.entry(id="../../etc"), self.entry(id="no-such-uk"),
+                    self.entry(new={"name": "../restaurant.json"}), self.entry(new={"name": ".hidden.pdf"}),
+                    self.entry(new={"name": PRET.name}),  # a guide it already has
+                    self.entry(new={"name": "notpdf.pdf"}), self.entry(new={"name": "same.pdf"}),
+                    self.entry(new={"replaces": ["../../site/app.js"]}), self.entry(new={"url": "javascript:alert(1)"}),
+                    # an address the page check wouldn't have downloaded: not a PDF, or not the restaurant's guide link
+                    self.entry(new={"url": "https://pret.test/Allergen_Guide.html"}), self.entry(new={"url": "https://evil.test/phish.pdf"})):
+            proposed, opened, stopped = self.propose(bad)
+            self.assertEqual(proposed, [], bad)
+            self.assertTrue(stopped, bad)  # the run fails, so the refusal is seen
+            # a restaurant here gets an issue with its own name; a name that isn't one here gets nothing posted
+            self.assertEqual(opened, ["Guide watch: stopped on Pret A Manger"] if bad["id"] == "pret-uk" else [], bad)
+
+    def test_a_restaurant_twice_or_a_plan_that_isnt_a_list_is_refused(self):
+        proposed, _, stopped = self.propose(self.entry(), self.entry())
+        self.assertEqual(len(proposed), 1)
+        self.assertIn("pret-uk", stopped)
+        (self.plan / "plan.json").write_text("{}", encoding="utf-8")
+        with mock.patch.object(w, "ROOT", self.repo), mock.patch.object(w, "open_issues", set), \
+                mock.patch.object(sys, "argv", ["watch_guides.py", "--propose", str(self.plan)]), mock.patch("builtins.print"):
+            with self.assertRaises(SystemExit):
+                w.main()
+
+    def test_a_bad_entry_doesnt_stop_a_good_one(self):
+        proposed, _, stopped = self.propose(self.entry(id="no-such-uk"), self.entry())
+        self.assertEqual([r["id"] for r in proposed], ["pret-uk"])
+        self.assertIn("no-such-uk", stopped)
+
+
+class TheWorkflowKeepsTheTokenAwayFromThePDFs(unittest.TestCase):
+    def test_the_job_that_reads_sites_has_no_token_and_the_one_with_it_reads_no_pdf(self):
+        text = (ROOT / ".github" / "workflows" / "guide-watch.yml").read_text(encoding="utf-8")
+        head, jobs = text.split("\njobs:\n")
+        fetch, propose = jobs.split("\n  propose:\n")
+        self.assertIn("\npermissions: {}\n", head)
+        self.assertIn("    permissions: {}\n", fetch)
+        self.assertIn("persist-credentials: false", fetch)
+        self.assertNotIn("secrets.", fetch)
+        self.assertIn("--plan", fetch)
+        self.assertIn("--propose", propose)
+        for reader in ("requirements", "pip install", "fetch_previous", "--plan"):
+            self.assertNotIn(reader, propose)
 
 
 if __name__ == "__main__":
