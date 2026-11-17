@@ -84,9 +84,11 @@ def newest_by(folder, version_of, keep=None, what="version", pattern="*.pdf"):
 
 
 def one_of_each(ok, avoid, warnings):
-    """The same item twice in a section (name in any case): keep the first copy, and never let a copy with no gluten
-    hide one that names it."""
+    """The same item twice in a section (name in any case): keep one copy, and never let a copy with no gluten hide one
+    that names it, nor a copy "as it comes" hide one that says to ask for a change (the stricter listed copy is kept)."""
     key = lambda i: (i["section"], i["name"].lower())
+    strict = lambda i: (["asis", "any", "except", "swap", "modify"].index(i["order"]) if i.get("order") in
+                        ("asis", "any", "except", "swap", "modify") else 5, len(i.get("not") or []))
     gluten = {key(a) for a in avoid}
     out = []
     for rows in (ok, avoid):
@@ -96,9 +98,14 @@ def one_of_each(ok, avoid, warnings):
             if rows is ok and k in gluten:
                 warnings.append(f"{i['name']}: listed twice in {i['section']}, once naming gluten; put on the Avoid list")
             elif k in seen:
-                warnings.append(f"{i['name']}: listed twice in {i['section']}; kept the first")
                 if rows is avoid:  # the copy kept says every cereal either copy names
+                    warnings.append(f"{i['name']}: listed twice in {i['section']}; kept the first")
                     seen[k]["gluten"] = sorted(set(seen[k].get("gluten") or []) | set(i.get("gluten") or []))
+                elif strict(i) > strict(seen[k]):
+                    warnings.append(f"{i['name']}: listed twice in {i['section']}; kept the copy that asks for more")
+                    kept[kept.index(seen[k])] = seen[k] = i
+                else:
+                    warnings.append(f"{i['name']}: listed twice in {i['section']}; kept the first")
             else:
                 seen[k] = i
                 kept.append(i)

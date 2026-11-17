@@ -175,6 +175,20 @@ class Repeats(unittest.TestCase):
                                        [{"section": "Hot Dogs", "name": "Hot Dog", "gluten": ["WHEAT"]}], [])
         self.assertEqual((len(ok), len(avoid)), (1, 1))
 
+    def test_one_of_each_keeps_the_stricter_of_two_listed_copies(self):
+        # Five Guys: a copy "as it comes" mustn't hide one that says to ask for a change, whichever comes first
+        for first, second in (("asis", "modify"), ("modify", "asis")):
+            rows = [{"section": "S", "name": "Shake", "order": first}, {"section": "S", "name": "Shake", "order": second}]
+            for r in rows:
+                if r["order"] == "modify":
+                    r["note"] = "Not at breakfast time"
+            ok, _ = common.one_of_each(rows, [], [])
+            self.assertEqual([(i["order"], i.get("note")) for i in ok], [("modify", "Not at breakfast time")], first)
+        # of two "except" copies, the one that leaves out more
+        rows = [{"section": "S", "name": "Latte", "order": "except", "not": ["oat"]},
+                {"section": "S", "name": "Latte", "order": "except", "not": ["oat", "soya"]}]
+        self.assertEqual(common.one_of_each(rows, [], [])[0][0]["not"], ["oat", "soya"])
+
     def test_one_of_each_keeps_every_cereal_of_two_avoid_copies(self):
         _, avoid = common.one_of_each([], [{"section": "S", "name": "Bun", "gluten": ["PREPARATION"]},
                                            {"section": "S", "name": "Bun", "gluten": ["WHEAT"]}], [])
