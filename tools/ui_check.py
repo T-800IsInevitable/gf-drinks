@@ -2752,6 +2752,38 @@ def check_f12(env):
         problems.append(f"since you last looked: after Dismiss the note is {'still there' if page.locator('#news').is_visible() else 'gone'}, and the phone's copy is {base_now!r}")
     ctx.close()
 
+    # an item listed when you last looked that's now the app's own doubt (Check in store, no gluten named) is said to be
+    # now to check in store, as the Avoid list says, not to contain gluten
+    doubted = next(((rid, a) for rid in ids for a in menu_of(rid)["avoid"] if a.get("tag") == "Check in store" and not a.get("gluten")), None)
+    if doubted:
+        rid, a = doubted
+        older = trim(menu_of(rid))
+        older["source"], older["guide"] = "an-older-guide.pdf", {"title": "Older menu"}
+        older["avoid"] = [x for x in older["avoid"] if (x["name"], x["section"]) != (a["name"], a["section"])]
+        older["items"].append({"name": a["name"], "section": a["section"], "order": "asis"})
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1');"
+                            "localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-changes-seen', '[]');"
+                            f"localStorage.setItem('gf-looked', JSON.stringify({{{json.dumps(rid)}: {json.dumps(older)}}})); }}")
+        page = ctx.new_page()
+        page.goto(base + f"#{rid}")
+        page.wait_for_selector("#list .row")
+        note = page.locator("#news .news-row").first.inner_text() if page.locator("#news .news-row").count() else ""
+        if "1 now to check in store" not in note or "now contain gluten" in note:
+            problems.append(f"{rid}: the note for {a['name']!r}, now the app's doubt, says {note!r}")
+        page.locator("#q").fill(a["name"])
+        avoid_row = page.locator("#avoid .row", has=page.locator(".nm", has_text=a["name"])).first
+        if not avoid_row.count() or "Now to check in store" not in avoid_row.inner_text():
+            problems.append(f"{rid}: {a['name']!r} on the Avoid list isn't marked 'Now to check in store'")
+        page.locator("#q").fill("")
+        page.locator("#news [data-news]").first.click()
+        page.wait_for_selector("#changes[open]")
+        body = page.locator("#changesBody").inner_text().lower()
+        if "now to check in store (1)" not in body:  # the guide's own list may still have real gluten changes
+            problems.append(f"{rid}: What changed doesn't list {a['name']!r} as now to check in store")
+        page.keyboard.press("Escape")
+        ctx.close()
+
     # 4. updating from an older app: the menus already on the phone become what you last looked at, with no false alarm
     ctx = browser.new_context(color_scheme="light", **IPHONE)
     ctx.add_init_script("localStorage.setItem('gf-selected', 'all')")
