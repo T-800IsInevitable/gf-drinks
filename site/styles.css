@@ -340,7 +340,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 .pick-opt { flex-wrap: wrap; }
 .po-main { display: flex; flex-direction: column; min-width: min(8rem, 100%); flex: 1; overflow-wrap: anywhere; }
 .po-main span { font-size: 0.8125rem; color: var(--muted); }
-.po-meta { font-size: 0.8125rem; color: var(--muted); white-space: nowrap; }
+.po-meta { font-size: 0.8125rem; color: var(--muted); } /* wraps only at " · ": "Food 104" keeps together (app.js countText) */
 .pick-note { font-size: 0.8125rem; color: var(--muted); margin: 4px 2px 0; }
 /* a UK city's chains, as compact rows like the chooser's */
 .chains-here { gap: 6px; }

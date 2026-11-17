@@ -1917,7 +1917,7 @@ def check_s1(env):
     if any(h.startswith("Your usuals") for h in page.locator("#list .group-h").all_inner_texts()):
         problems.append("Starbucks: Your usuals still shows while searching")
     page.locator("#q").fill("")
-    page.locator("#chips [data-kind]").nth(2).click()  # a section chip
+    page.locator('#chips [data-kind="section"]').first.click()  # a section chip (Food and Drinks come before them)
     if any(h.startswith("Your usuals") for h in page.locator("#list .group-h").all_inner_texts()):
         problems.append("Starbucks: Your usuals shows on a section chip")
     page.goto(base)
@@ -1928,6 +1928,48 @@ def check_s1(env):
     if not page.locator("#list .group-h").first.inner_text().startswith("Your usuals") or names != ["Pret A Manger", "Starbucks"]:
         problems.append(f"All: Your usuals should list favourites first, grouped by restaurant ({names}, {subs})")
     print(f"your usuals: {len(favs)} favourites first on a restaurant and on All, hidden while searching")
+    ctx.close()
+    return problems
+
+
+def check_food_and_drinks(env):
+    """Food and Drinks chips: each shows only its half of the menu, with its own sections and counts; All shows both;
+    a search covers everything; a restaurant with only one of the two has no such chips. Counts come from the built menu."""
+    base, browser = env.base, env.browser
+    problems = []
+    menu = menu_of("pizza-express-uk")
+    want = {"food": menu["stats"]["food"], "drink": menu["stats"]["drinks"]}
+    courses = {"food": {i["section"] for i in menu["items"] if i["course"] == "food"},
+               "drink": {i["section"] for i in menu["items"] if i["course"] == "drink"}}
+    ctx = browser.new_context(color_scheme="light", **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-intro-seen', JSON.stringify(['all', 'pizza-express-uk', 'five-guys-uk']));")
+    page = ctx.new_page()
+    page.goto(base + "#pizza-express-uk")
+    page.wait_for_selector("#list .row")
+    labels = page.locator("#chips button").all_inner_texts()[:3]
+    if labels != ["All", f"Food {want['food']}", f"Drinks {want['drink']}"]:
+        problems.append(f"PizzaExpress: the chips start {labels}, expected All, Food {want['food']}, Drinks {want['drink']}")
+    for k, other in (("food", "drink"), ("drink", "food")):
+        page.locator(f'#chips [data-kind="course"][data-value="{k}"]').click()
+        heads = {h.split("\n")[0].strip() for h in page.locator("#list .group-h").all_inner_texts()} - {"Your usuals"}
+        # by their own buttons: "Needs a change" hides when it has nothing (no drink at PizzaExpress needs one)
+        shown = sum(int(page.locator(f'#status [data-k="{s}"] .cnt').inner_text()) for s in ("straight", "change")
+                    if page.locator(f'#status [data-k="{s}"]').count())
+        wrong = sorted(h for h in heads if h not in courses[k])
+        if wrong or shown != want[k]:
+            problems.append(f"PizzaExpress {k}: sections {wrong} don't belong, or {shown} listed (expected {want[k]})")
+    page.locator("#q").fill("pizza")
+    if page.locator('#chips [data-kind="course"]').first.is_visible() or page.locator("#list .row").count() <= 20:
+        problems.append("PizzaExpress: a search on Drinks should hide the chips and cover the food too")
+    page.locator("#q").fill("")
+    page.locator('#chips [data-kind="all"]').click()
+    if page.locator("#list .row").count() < want["food"] + want["drink"]:
+        problems.append("PizzaExpress: All should show food and drinks together")
+    page.goto(base + "#five-guys-uk")
+    page.wait_for_selector("#list .row")
+    if page.locator('#chips [data-kind="course"]').count():
+        problems.append("Five Guys has only food, so it shouldn't offer Food and Drinks chips")
+    print(f"food and drinks: PizzaExpress splits into {want['food']} food and {want['drink']} drinks, search covers both, Five Guys has none")
     ctx.close()
     return problems
 
@@ -4398,6 +4440,7 @@ CHECKS = [
     ("u12", check_u12),
     ("u13", check_u13),
     ("s1", check_s1),
+    ("food_and_drinks", check_food_and_drinks),
     ("f1", check_f1),
     ("f4", check_f4),
     ("f6", check_f6),
