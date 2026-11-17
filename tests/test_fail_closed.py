@@ -175,10 +175,39 @@ class Repeats(unittest.TestCase):
                                        [{"section": "Hot Dogs", "name": "Hot Dog", "gluten": ["WHEAT"]}], [])
         self.assertEqual((len(ok), len(avoid)), (1, 1))
 
-    def test_one_of_each_keeps_every_cereal_of_two_avoid_copies(self):
+    def test_two_listed_copies_ordered_differently_are_checked_in_store(self):
+        # neither copy can be trusted to stand for the other: each pair, either way round, goes to Avoid
+        pairs = [({"order": "asis"}, {"order": "modify", "note": "Not at breakfast time"}),  # Five Guys
+                 ({"order": "except", "ok": ["dairy", "soya"], "not": ["oat"]},  # soya fine in one, gluten in the other
+                  {"order": "except", "ok": ["dairy", "oat"], "not": ["soya"]}),
+                 ({"order": "except", "ok": ["dairy"], "not": ["oat"]}, {"order": "except", "ok": ["dairy"], "not": ["oat", "soya"]})]
+        for a, b in pairs:
+            for first, second in ((a, b), (b, a)):
+                rows = [{"section": "S", "name": "Latte", "pages": [1], **first}, {"section": "S", "name": "latte", "pages": [2], **second}]
+                ok, avoid = common.one_of_each(rows, [], [])
+                self.assertEqual(ok, [], first)
+                self.assertEqual([(x["name"], x["gluten"], x["tag"]) for x in avoid], [("Latte", [], "Check in store")], first)
+                self.assertFalse(set(common.ORDER_FIELDS) & set(avoid[0]), first)  # nothing that explains it as fine
+        # the same instructions twice (milks in another order, another page) is one listed copy
+        rows = [{"section": "S", "name": "Latte", "order": "any", "ok": ["dairy", "oat"], "pages": [1]},
+                {"section": "S", "name": "Latte", "order": "any", "ok": ["oat", "dairy"], "pages": [2]}]
+        self.assertEqual(common.one_of_each(rows, [], []), ([rows[0]], []))
+
+    def test_one_of_each_keeps_every_cereal_and_reason_of_two_avoid_copies(self):
         _, avoid = common.one_of_each([], [{"section": "S", "name": "Bun", "gluten": ["PREPARATION"]},
                                            {"section": "S", "name": "Bun", "gluten": ["WHEAT"]}], [])
         self.assertEqual([a["gluten"] for a in avoid], [["PREPARATION", "WHEAT"]])
+        # a "may contain" copy mustn't speak for one that contains wheat
+        _, avoid = common.one_of_each([], [
+            {"section": "S", "name": "Bun", "gluten": ["OAT"], "tag": "May contain gluten", "reason": "May contain oat."},
+            {"section": "S", "name": "Bun", "gluten": ["WHEAT"], "reason": "Contains wheat."}], [])
+        self.assertEqual([(a["gluten"], a.get("tag"), a["reason"]) for a in avoid],
+                         [(["OAT", "WHEAT"], None, "May contain oat. Contains wheat.")])
+        # nor when the other copy gives no reason of its own (a Five Guys dot row)
+        _, avoid = common.one_of_each([], [
+            {"section": "S", "name": "Bun", "gluten": ["OAT"], "tag": "May contain gluten", "reason": "May contain oat."},
+            {"section": "S", "name": "Bun", "gluten": ["WHEAT"]}], [])
+        self.assertEqual(avoid[0]["reason"], "May contain oat. Every version contains wheat.")
 
     def test_five_guys_and_caffe_nero_use_one_of_each(self):
         # the readers themselves, fed a clean copy and a gluten copy of one item, list it only under Avoid
@@ -202,6 +231,16 @@ class Repeats(unittest.TestCase):
                 mock.patch.multiple(caffe_nero_uk_pdf, MIN_FOOD=0, MIN_DRINKS=0):
             out = caffe_nero_uk_pdf.build("x", {})
         self.assertEqual(([i["name"] for i in out["items"]], [a["name"] for a in out["avoid"]]), ([], ["Lemon Slice"]))
+
+        bs = [{"page": 1, "section": "Coffee", "name": "Latte", "text": "With DAIRY: Milk, coffee. With OAT: Oat drink, coffee."},
+              {"page": 2, "section": "Coffee", "name": "Latte", "text": "With DAIRY: Milk, coffee, WHEAT. With OAT: Oat drink, coffee, WHEAT."}]
+        with mock.patch.object(blank_street_uk_pdf, "newest_pdf", lambda folder: Path("g.pdf")), \
+                mock.patch.object(blank_street_uk_pdf.pdfplumber, "open", mock.MagicMock()), \
+                mock.patch.object(blank_street_uk_pdf, "guide_info", lambda pdf, p: {"title": "x", "runs": None, "version": "2026-01-01"}), \
+                mock.patch.object(blank_street_uk_pdf, "products", lambda pdf: iter(bs)), \
+                mock.patch.object(blank_street_uk_pdf, "MIN_ROWS", 0):
+            out = blank_street_uk_pdf.build("x", {})
+        self.assertEqual(([i["name"] for i in out["items"]], [a["name"] for a in out["avoid"]]), ([], ["Latte"]))
 
     def test_one_of_each_moves_a_clean_copy_off_the_list(self):
         ok = [{"section": "Shakes", "name": "Shake"}, {"section": "Shakes", "name": "Malt"}, {"section": "Shakes", "name": "malt"}]

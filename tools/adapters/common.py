@@ -83,27 +83,53 @@ def newest_by(folder, version_of, keep=None, what="version", pattern="*.pdf"):
     return dated[-1][2]
 
 
+ORDER_FIELDS = ("order", "ok", "not", "standard", "standardFrom", "note")
+
+
 def one_of_each(ok, avoid, warnings):
-    """The same item twice in a section (name in any case): keep the first copy, and never let a copy with no gluten
-    hide one that names it."""
+    """The same item twice in a section (name in any case): keep one copy. A copy with no gluten never hides one that
+    names it, and two listed copies that say to order it differently go on the Avoid list to check in store: no merge
+    of two sets of instructions is safe (one copy's fine milk can be the other's gluten one)."""
     key = lambda i: (i["section"], i["name"].lower())
+    says = lambda i: [sorted(v) if isinstance(v, list) else v for v in (i.get(f) for f in ORDER_FIELDS)]
     gluten = {key(a) for a in avoid}
-    out = []
-    for rows in (ok, avoid):
-        seen, kept = {}, []
-        for i in rows:
-            k = key(i)
-            if rows is ok and k in gluten:
-                warnings.append(f"{i['name']}: listed twice in {i['section']}, once naming gluten; put on the Avoid list")
-            elif k in seen:
-                warnings.append(f"{i['name']}: listed twice in {i['section']}; kept the first")
-                if rows is avoid:  # the copy kept says every cereal either copy names
-                    seen[k]["gluten"] = sorted(set(seen[k].get("gluten") or []) | set(i.get("gluten") or []))
-            else:
-                seen[k] = i
-                kept.append(i)
-        out.append(kept)
-    return out
+    seen, listed, unsure = {}, [], {}
+    for i in ok:
+        k = key(i)
+        if k in gluten:
+            warnings.append(f"{i['name']}: listed twice in {i['section']}, once naming gluten; put on the Avoid list")
+        elif k in unsure:
+            pass
+        elif k not in seen:
+            seen[k] = i
+            listed.append(i)
+        elif says(i) != says(seen[k]):
+            warnings.append(f"{i['name']}: listed twice in {i['section']}, ordered differently; put on the Avoid list")
+            listed.remove(seen[k])
+            unsure[k] = {**{f: v for f, v in seen[k].items() if f not in ORDER_FIELDS + ("decided", "info", "role")},
+                         "gluten": [], "tag": "Check in store",
+                         "reason": "Note from this app: the guide lists this twice with different ways to order it, so check in store."}
+        else:
+            warnings.append(f"{i['name']}: listed twice in {i['section']}; kept the first")
+    seen, kept = {}, []
+    for a in avoid + list(unsure.values()):
+        k = key(a)
+        if k not in seen:
+            seen[k] = dict(a)
+            kept.append(seen[k])
+            continue
+        # the copy kept names every cereal either copy names, says both reasons, and drops a tag they disagree on
+        warnings.append(f"{a['name']}: listed twice in {a['section']}; Avoid copies merged")
+        s = seen[k]
+        # a copy with no reason says what the app would show for it (avoidWhy), so the other's can't stand alone
+        why = lambda x: x.get("reason") or ("Every version contains " + " and ".join(x["gluten"]).lower() + "."
+                                            if x.get("gluten") else "The guide lists gluten.")
+        if why(a) != why(s):
+            s["reason"] = why(s) + " " + why(a)
+        s["gluten"] = sorted(set(s.get("gluten") or []) | set(a.get("gluten") or []))
+        if s.get("tag") != a.get("tag"):
+            s.pop("tag", None)
+    return listed, kept
 
 
 def result(source, guide, rule, items, avoid, warnings, notices=(), rows=None, sections=None):

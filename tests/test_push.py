@@ -143,6 +143,16 @@ class Plan(unittest.TestCase):
         self.assertEqual(m["badge"], 1)
         self.assertNotIn("gluten free", m["body"])
 
+    def test_a_now_to_avoid_key_is_the_one_the_favourite_was_saved_under(self):
+        # the favourite was saved from the live menu: the old item's section and spelling, not the new guide's
+        old = restaurant("pret-uk", "Pret A Manger", "pret-sep.pdf")
+        old["items"] = [{"section": "Hot Drinks", "name": "Oat Latte", "order": "asis"}]
+        self.write(self.prev, [old])
+        changes = {"nowAvoid": [{"section": "Winter drinks", "name": "Oat latte"}, {"section": "Food", "name": "Granola pot"}],
+                   "added": [], "nowOk": [], "changed": [], "removed": []}
+        self.write(self.data, [restaurant("pret-uk", "Pret A Manger", "pret-nov.pdf", changes=changes)])
+        self.assertEqual(push.plan(self.prev, self.data)["nowAvoid"], ["pret-uk|Hot Drinks|Oat Latte", "pret-uk|Food|Granola pot"])
+
     def test_several_new_guides_and_a_new_restaurant(self):
         self.write(self.prev, [restaurant(f"r{n}", f"Chain {n}", f"g{n}.pdf") for n in range(4)])
         new = [restaurant(f"r{n}", f"Chain {n}", f"g{n}-new.pdf", changes={"added": [{"section": "s", "name": "x"}]}, title="Allergen guide") for n in range(4)]
@@ -192,6 +202,10 @@ class Send(unittest.TestCase):
             with self.assertRaises(SystemExit) as stop:
                 push.subscriptions(json.dumps(one) + "\n" + bad)
             self.assertIn("line 2", str(stop.exception))
+        # the whole secret as one list: every entry must be a phone, a list inside the list included
+        for bad in ([one, "x"], [[one]]):
+            with self.assertRaises(SystemExit, msg=bad):
+                push.subscriptions(json.dumps(bad))
 
     def test_sent_gone_and_failed(self):
         class Gone(Exception):

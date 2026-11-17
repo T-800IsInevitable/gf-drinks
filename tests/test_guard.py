@@ -98,6 +98,11 @@ class HandKeptAvoidSetting(unittest.TestCase):
         self.assertIn("remove avoidDropOk", why)  # a hand-kept menu's source rarely changes, so it would stay switched off
         self.assertNotIn("merged first", why)
 
+    def test_a_head_restaurant_json_that_isnt_an_object_is_refused_with_a_message(self):
+        for head in (["reader", "manual_csv"], "text", None):
+            why = guard.avoid_ok_changed("knoops-uk", {"reader": "manual_csv"}, head)
+            self.assertTrue(why and "isn't a JSON object" in why[0], head)
+
     def test_a_scan_is_refused_while_main_still_switches_the_guard_off(self):
         # main's avoidDropOk already names the menu's source (menu.csv when the guide names none): a scan that changes
         # nothing in restaurant.json would drop Avoid rows unchecked

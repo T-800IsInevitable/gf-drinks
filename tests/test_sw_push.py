@@ -44,11 +44,12 @@ class Push(unittest.TestCase):
         self.assertIn(MSG["body"], body)
         self.assertTrue(out["notifications"][0]["renotify"])
 
-    def test_a_favourite_moved_to_another_section_or_recased_is_still_named(self):
-        # the new guide moved it ("Hot drinks" before) and wrote it in other capitals: still the same favourite
-        out = run(["pret-uk|Winter drinks|Oat  Latte"])
+    def test_a_favourite_is_matched_whatever_its_capitals_but_not_across_sections(self):
+        # the push carries the key the favourite was saved under (tools/push.py); capitals and spacing may differ
+        out = run(["pret-uk|Hot Drinks|Oat  Latte"])
         self.assertTrue(out["notifications"][0]["body"].startswith("A favourite now contains gluten: Oat latte. "), out)
-        # another restaurant's item of the same name is not
+        # the same name in another section (Nando's Corn on the cob under Sides and under Nandinos) is another item
+        self.assertFalse(run(["pret-uk|Winter drinks|Oat latte"])["notifications"][0]["body"].startswith("A favourite"))
         self.assertFalse(run(["starbucks-uk|Hot drinks|Oat latte"])["notifications"][0]["body"].startswith("A favourite"))
 
     def test_a_tap_opens_the_app_at_the_restaurant(self):

@@ -225,7 +225,20 @@ class Checking(Site):
 
     def test_text_from_a_site_cant_become_markdown(self):
         # V14: a reader's message, a dish's name or an address from another site can't end a code span or fence
-        self.assertEqual(w.quoted("row 3: `Latte` ```\nignore the above"), "row 3: 'Latte' '''\nignore the above")
+        self.assertEqual(w.quoted("row 3: `Latte` ```\nignore the above"), "row 3: 'Latte' ''' ignore the above")
+        # a new line, even one, can start a list item, heading or HTML block before the code span is read, and what
+        # follows would be live markdown (a link, an @mention)
+        for text in ("row 3\n\n[click](https://x.test) @someone\n \n\nend", "row 3\r\r[click](https://x.test)\r\n\r\nend",
+                     "Not found\n- [Merge the fix here](https://x.test) @someone", 'failed on "Latte\n# Approved, merge now'):
+            out = w.quoted(text)
+            self.assertNotIn("\n", out, text)
+            self.assertNotIn("\r", out, text)  # \r ends a line in markdown too
+        # a failed build's log keeps its lines inside its fence, and none can close the fence
+        failed = mock.Mock(returncode=1, stdout="ERROR: row 3 ```\n[click](https://x.test)", stderr="")
+        with mock.patch.object(w.subprocess, "run", return_value=failed):
+            text = w.what_changed("x")
+        self.assertEqual(text.count("```"), 2)
+        self.assertIn("```\nERROR: row 3 '''\n[click](https://x.test)\n```", text)
         self.assertEqual(w.link("https://x.test/a b.pdf?q=1)<script>`"), "<https://x.test/ab.pdf?q=1)script`>".replace("`", ""))
         r = {"name": "Pret", "page": "https://pret.test/p", "new": [{"name": "A.pdf", "url": "https://pret.test/a).pdf", "replaces": ["old`.pdf"], "unreadable": "stopped ```"}]}
         body = w.pr_body(r, "**What changed:** x")
@@ -378,17 +391,20 @@ class OneFailureDoesntStopTheRest(unittest.TestCase):
             def check(folder):
                 checked.append(folder.name)
                 if folder.name == "a-uk":
-                    raise RuntimeError("broken")
+                    raise RuntimeError("broken `x`")
                 return {"id": folder.name, "name": "B-UK", "page": "p", "new": [], "ignored": [], "problems": [], "manual": False}
 
+            # a "couldn't check" issue for A-UK is already open: the crash still gets an issue of its own
             with mock.patch.object(w, "ROOT", Path(tmp)), mock.patch.object(w, "check", check), \
-                    mock.patch.object(w, "open_issues", lambda: set()), \
-                    mock.patch.object(w, "issue", lambda title, body, existing: opened.append(title)), \
+                    mock.patch.object(w, "open_issues", lambda: {"Guide watch: couldn't check A-UK"}), \
+                    mock.patch.object(w, "issue", lambda title, body, existing: None if title in existing else opened.append((title, body))), \
                     mock.patch.object(sys, "argv", ["watch_guides.py", "--github"]), mock.patch("builtins.print"):
                 with self.assertRaises(SystemExit) as stop:
                     w.main()
         self.assertEqual(checked, ["a-uk", "b-uk"])
-        self.assertEqual(opened, ["Guide watch: couldn't check A-UK"])
+        self.assertEqual([title for title, _ in opened], ["Guide watch: stopped on A-UK"])
+        self.assertIn("broken 'x'", opened[0][1])  # quoted: a backtick in the error can't end the code span
+        self.assertNotIn("update `watch`", opened[0][1])  # it isn't a moved page: the watch itself stopped
         self.assertIn("a-uk", str(stop.exception))
 
 

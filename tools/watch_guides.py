@@ -222,11 +222,11 @@ def what_changed(rid):
     """Build this restaurant with the new guide and say what changed since the live menu (tools/changes.py)."""
     run = subprocess.run([sys.executable, str(ROOT / "tools" / "build.py"), rid], cwd=ROOT, capture_output=True, text=True)
     if run.returncode:
-        tail = "\n".join((run.stdout + run.stderr).strip().splitlines()[-15:])
+        tail = "\n".join(quoted(x) for x in (run.stdout + run.stderr).strip().splitlines()[-15:])  # lines, inside a fence
         return ("**The build couldn't read it**, so the checks will fail and the live menus stay as they are until the reader "
                 "is updated for it. That fix (the reader, its snapshot, or `avoidDropOk` in `restaurant.json`) goes in a pull "
                 "request of your own, merged first: the guard lets this branch change only the guides. Then re-run this "
-                f"pull request's checks.\n\n```\n{quoted(tail)}\n```")
+                f"pull request's checks.\n\n```\n{tail}\n```")
     built = json.loads((ROOT / "site" / "data" / "r" / f"{rid}.json").read_text(encoding="utf-8"))
     c = built.get("changes")
     # dish names come from the PDF: in code spans, where nothing in them can become a link, a mention or emphasis
@@ -311,6 +311,16 @@ def problem_issue(r):
             "Close this issue once it's sorted; it opens again if the next check fails too.\n\n" + WORKFLOW)
 
 
+def crash_issue(name, page, what):
+    """The watch itself stopped on a restaurant (a reader that failed, a refused pull request): its own title, so an
+    open "couldn't check" issue for the same restaurant doesn't swallow it, and its own advice."""
+    return (f"Guide watch: stopped on {name}",
+            f"The weekly guide watch stopped while checking **{name}** ({page}):\n\n- `{quoted(what)}`\n\nThe other "
+            "restaurants were still checked. This is the watch's own failure, not a moved page: read the run's log (the "
+            "Actions tab) and fix the cause, or look for a new guide by hand until it's fixed. Close this issue once "
+            "it's sorted; it opens again if the next run stops too.\n\n" + WORKFLOW)
+
+
 def manual_issue(r):
     folder = f"restaurants/{r['id']}/"
     names = ", ".join(u["name"] for u in r["new"])
@@ -344,9 +354,7 @@ def main():
             if args.github:
                 try:
                     config = json.loads((folder / "restaurant.json").read_text(encoding="utf-8"))
-                    issue(*problem_issue({"id": folder.name, "name": config.get("name", folder.name),
-                                          "page": (config.get("watch") or {}).get("page", ""),
-                                          "problems": [f"The guide watch stopped on it: {what}"]}), existing)
+                    issue(*crash_issue(config.get("name", folder.name), (config.get("watch") or {}).get("page", ""), what), existing)
                 except Exception as e2:  # the issue itself failed: the run's own failure still reports it
                     print(f"  couldn't open an issue for it ({why(e2)})")
     if failed:

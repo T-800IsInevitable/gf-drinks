@@ -76,7 +76,28 @@ process.stdout.write(JSON.stringify(menus.map((r) => [safeMenu(r), safeMenu(r) =
         # nothing in What changed may still call a moved item fine, new or ordered differently
         self.assertEqual((moved["changes"]["nowOk"], moved["changes"]["added"]), ([], []))
         self.assertEqual(moved["changes"]["changed"], [{"name": "Latte", "section": "S"}])
+        self.assertEqual(moved["changes"]["newAvoid"], 1)  # Odd milk was new, and is new on the Avoid list
+        # Mystery was listed before, ordered differently: it's on the Avoid list now, with no gluten named
+        self.assertEqual(moved["changes"]["nowAvoid"], [{"name": "Mystery", "section": "S", "gluten": []}])
         self.assertTrue(untouched)  # a menu with nothing unknown is passed through as it is
+
+    def test_split_check_lists_the_apps_own_doubts_as_now_to_check_in_store(self):
+        # both What changed lists (since you last looked, and the guide's own) go through splitCheck, so they say the same
+        code = source("splitCheck") + """
+const [r, c] = JSON.parse(process.argv[1]);
+process.stdout.write(JSON.stringify([splitCheck(r, c), splitCheck(r, splitCheck(r, c)), splitCheck(r, null)]));
+"""
+        r = {"avoid": [{"name": "Mystery", "section": "S", "gluten": [], "tag": "Check in store"},
+                       {"name": "Bun", "section": "S", "gluten": ["WHEAT"]},
+                       # "Check in store" with a cereal named is a guide's gluten, not only the app's doubt
+                       {"name": "Pie", "section": "S", "gluten": ["WHEAT"], "tag": "Check in store"}]}
+        c = {"nowAvoid": [{"name": n, "section": "S", "gluten": []} for n in ("Mystery", "Bun", "Pie")], "changed": []}
+        out = subprocess.run([NODE, "-e", code, json.dumps([r, c])], capture_output=True, text=True, encoding="utf-8", check=True)
+        once, twice, none = json.loads(out.stdout)
+        self.assertEqual([x["name"] for x in once["nowAvoid"]], ["Bun", "Pie"])
+        self.assertEqual([x["name"] for x in once["nowCheck"]], ["Mystery"])
+        self.assertEqual(twice, once)  # a list already split keeps what it had
+        self.assertIsNone(none)
 
     def test_every_menu_is_shown_through_safe_menu_and_saved_as_published(self):
         # both ways a menu comes in: the copy saved on the phone at startup, and a fresh load
@@ -108,6 +129,29 @@ process.stdout.write(JSON.stringify(rows.map((a) => [avoidTag(a), avoidWhy(a)]))
         out = subprocess.run([NODE, "-e", code], capture_output=True, text=True, encoding="utf-8", check=True,
                              env={**os.environ, "TZ": "Europe/London"})
         self.assertEqual(out.stdout, "2026-07-02")
+
+    def test_food_and_drinks_chips_need_things_to_order_of_each(self):
+        # a syrup (add-on) or a bun (part of a dish) isn't something to order on its own, so it can't earn a chip
+        code = source("hasOnly") + """
+const rs = JSON.parse(process.argv[1]);
+process.stdout.write(JSON.stringify([hasOnly(rs, "food"), hasOnly(rs, "drink")]));
+"""
+        rs = [{"items": [{"course": "drink"}, {"course": "food", "addon": True}, {"course": "food", "role": "part"}]}]
+        run = lambda x: json.loads(subprocess.run([NODE, "-e", code, json.dumps(x)], capture_output=True, text=True,
+                                                  encoding="utf-8", check=True).stdout)
+        self.assertEqual(run(rs), [False, True])
+        rs[0]["items"].append({"course": "food"})
+        self.assertEqual(run(rs), [True, True])
+
+    def test_the_app_check_py_and_hand_kept_menus_know_the_same_orders(self):
+        # an order one of them knows and another doesn't is listed by the build but refused or mis-shown elsewhere
+        import sys
+        sys.path.insert(0, str(ROOT / "tools"))
+        import check
+        from adapters import manual_csv
+        app = set(json.loads(source("ORDERS").split("=", 1)[1].strip().rstrip(";")))
+        self.assertEqual(app, set(check.ORDERS))
+        self.assertEqual(app, manual_csv.ORDERS - {"avoid", "doubt"})  # those two are Avoid rows, which carry no order
 
     def test_the_known_orders_read_as_before(self):
         out = self.run_js([{"order": "asis"}, {"order": "except", "ok": ["soya"], "not": ["oat"]},

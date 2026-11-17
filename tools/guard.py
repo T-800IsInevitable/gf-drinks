@@ -181,7 +181,9 @@ def avoid_ok_changed(rid, base, head):
     build's Avoid guard (tools/build.py avoid_drop) for the very menu it brings. The build accepts a drop when
     avoidDropOk equals the menu's source (adapters/manual_csv.py: guide.source, else the file's name, menu.csv), so
     renaming the source to match an avoidDropOk already on main counts as switching the guard off too."""
-    base, head = base or {}, head or {}
+    if not isinstance(head, dict):  # a list or text where the settings should be: refused with a message, not a crash
+        return [f"restaurants/{rid}/restaurant.json at the pull request's head isn't a JSON object"]
+    base = base or {}
     # the source rule below is manual_csv's, so which reader builds it may not change here either
     if any(base.get(k) != head.get(k) for k in ("reader", "readers")):
         return [f"a scan/ pull request for {rid} may not change which reader builds it (reader or readers in "

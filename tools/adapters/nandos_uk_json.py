@@ -80,6 +80,7 @@ def build(folder, config):
         seen.add(key)
         item = {"name": name, "section": section, "sub": None, "pages": []}
         info = [f"Nando's says: \"{other}\"" if other else None]
+        said_info = {"info": " ".join(x for x in info if x)} if any(info) else {}  # on every Avoid row, however it got there
         note = (d.get("notes") or {}).get("gluten")
         codes = sorted({cereal_code(c) for c in CEREAL.findall(d.get("ingredients") or "")})
         cereals = [cereal_word(c) for c in codes]
@@ -89,20 +90,18 @@ def build(folder, config):
             warnings.append(f"{d['name']}: the allergen table and the line above it disagree about gluten; treated as containing gluten")
         if "gluten" in d["contains"] or said:
             reason = quoted(note) if note else "Nando's lists gluten."
-            avoid.append({**item, "gluten": codes or ["GLUTEN"], "reason": reason,
-                          **({"info": " ".join(x for x in info if x)} if any(info) else {})})
+            avoid.append({**item, "gluten": codes or ["GLUTEN"], "reason": reason, **said_info})
         elif "gluten" in d["mayContain"]:
             reason = quoted(note, "Nando's says it may contain gluten") if note else "Nando's says it may contain gluten."
-            avoid.append({**item, "gluten": ["GLUTEN"], "reason": reason, "tag": "May contain gluten",
-                          **({"info": " ".join(x for x in info if x)} if any(info) else {})})
+            avoid.append({**item, "gluten": ["GLUTEN"], "reason": reason, "tag": "May contain gluten", **said_info})
         elif cereals:
             warnings.append(f"{d['name']}: no gluten marked but the ingredients name {cereals}; treated as containing gluten")
-            avoid.append({**item, "gluten": codes, "reason": "The ingredients name " + " and ".join(cereals) + ".",
+            avoid.append({**item, **said_info, "gluten": codes, "reason": "The ingredients name " + " and ".join(cereals) + ".",
                           "decided": "Nando's allergen table marks no gluten but the ingredients name a gluten cereal, so the app treats it "
                                      "as containing gluten."})
         elif note and CEREAL.search(note):  # Nando's own words name the cereal, though nothing else does
             warnings.append(f"{d['name']}: no gluten marked but Nando's note names a gluten cereal; treated as containing gluten")
-            avoid.append({**item, "gluten": sorted({cereal_code(c) for c in CEREAL.findall(note)}), "reason": quoted(note),
+            avoid.append({**item, **said_info, "gluten": sorted({cereal_code(c) for c in CEREAL.findall(note)}), "reason": quoted(note),
                           "decided": "Nando's allergen table marks no gluten but its own note names a gluten cereal, so the app treats "
                                      "it as containing gluten."})
         else:

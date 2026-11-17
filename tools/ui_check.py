@@ -1940,9 +1940,10 @@ def check_food_and_drinks(env):
     base, browser = env.base, env.browser
     problems = []
     menu = menu_of("pizza-express-uk")
-    listed = {k: sum(1 for i in menu["items"] if i["course"] == k and i.get("role") != "ingredient") for k in ("food", "drink")}
-    avoided = {k: sum(1 for a in menu["avoid"] if a["course"] == k) for k in ("food", "drink")}
-    sections = {k: {i["section"] for i in menu["items"] if i["course"] == k} for k in ("food", "drink")}
+    half = lambda row, k: row["course"] in (k, "both")  # a row in neither list shows under both halves
+    listed = {k: sum(1 for i in menu["items"] if half(i, k) and i.get("role") != "ingredient") for k in ("food", "drink")}
+    avoided = {k: sum(1 for a in menu["avoid"] if half(a, k)) for k in ("food", "drink")}
+    sections = {k: {i["section"] for i in menu["items"] if half(i, k)} for k in ("food", "drink")}
     ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
     ctx.add_init_script("localStorage.setItem('gf-intro-seen', JSON.stringify(['all', 'pizza-express-uk', 'blank-street-uk', 'greggs-uk']));")
     page = ctx.new_page()
@@ -1977,6 +1978,13 @@ def check_food_and_drinks(env):
     page.locator('#chips [data-kind="all"]').click()
     if page.locator("#list .row").count() < listed["food"] + listed["drink"]:
         problems.append("PizzaExpress: All should show food and drinks together")
+    # All restaurants: some purely food and some purely drinks across them, so the choice is offered there too
+    page.evaluate("localStorage.setItem('gf-selected', 'all')")
+    page.goto(base)
+    page.reload()
+    page.wait_for_selector("#list .row")
+    if page.locator('#chips [data-kind="course"]').count() != 2:
+        problems.append("All restaurants should offer Food and Drinks chips")
     # Blank Street lists drinks only: with Food remembered it shows everything, and offers no chips
     page.evaluate("localStorage.setItem('gf-course', 'food')")
     page.goto(base + "#blank-street-uk")
@@ -2011,8 +2019,52 @@ def check_food_and_drinks(env):
         return h && h.nextElementSibling ? h.nextElementSibling.querySelectorAll('.row').length : 0; }""")
     if greggs_avoid != len(old["avoid"]):
         problems.append(f"Greggs from an older saved copy: {greggs_avoid} of its {len(old['avoid'])} Avoid rows show with Drinks chosen")
+    ctx.close()
+    # a menu whose rows all show under both (a new restaurant not yet sorted): no choice offered, nothing said to be "only"
+    unsorted = menu_of("pizza-express-uk")
+    for row in unsorted["items"] + unsorted["avoid"]:
+        row["course"] = "both"
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-intro-seen', JSON.stringify(['all', 'pizza-express-uk'])); localStorage.setItem('gf-course', 'food');")
+    ctx.route("**/data/r/pizza-express-uk.json", lambda route: route.fulfill(content_type="application/json", body=json.dumps(unsorted)))
+    page = ctx.new_page()
+    page.goto(base + "#pizza-express-uk")
+    page.wait_for_selector("#list .row")
+    if page.locator('#chips [data-kind="course"]').count() or "only" in page.locator("#avoidTitle").inner_text():
+        problems.append("PizzaExpress with every row under both: it should offer no Food and Drinks chips and say nothing is 'only'")
     print(f"food and drinks: PizzaExpress {listed['food']} food and {listed['drink']} drinks listed, Avoid split too; "
           "links, search, one-sided and older menus show everything")
+    ctx.close()
+    return problems
+
+
+def check_avoid_rows_without_a_list(env):
+    """An Avoid row with a reason but no gluten list (check.py allows one), or an empty list, still draws: tag "Avoid",
+    its reason or "The guide lists gluten.", and no error (avoidTag and avoidWhy in app.js)."""
+    base, browser = env.base, env.browser
+    problems = []
+    menu = menu_of("pizza-express-uk")
+    menu["avoid"][0] = {k: v for k, v in menu["avoid"][0].items() if k not in ("gluten", "tag")} | {"reason": "Made with beer batter."}
+    menu["avoid"][1] = {k: v for k, v in menu["avoid"][1].items() if k not in ("reason", "tag")} | {"gluten": []}
+    names = [menu["avoid"][0]["name"], menu["avoid"][1]["name"]]
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-intro-seen', JSON.stringify(['all', 'pizza-express-uk']));")
+    ctx.route("**/data/r/pizza-express-uk.json", lambda route: route.fulfill(content_type="application/json", body=json.dumps(menu)))
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base + "#pizza-express-uk")
+    page.wait_for_selector("#list .row")
+    page.locator("#avoidWrap").evaluate("el => el.open = true")
+    for name, why in zip(names, ("Made with beer batter.", "The guide lists gluten.")):
+        row = page.locator("#avoid .row", has=page.locator(".nm", has_text=name)).first
+        tag = row.locator(".tag").inner_text() if row.count() else None
+        row.evaluate("el => el.open = true") if row.count() else None
+        text = row.inner_text() if row.count() else ""
+        if tag != "Avoid" or why not in text:
+            problems.append(f"Avoid row {name!r} with no gluten list: tag {tag!r}, text {text[:80]!r}")
+    problems += [f"Avoid rows without a list: {e}" for e in errors]
+    print(f"avoid rows without a list: {len(names)} drawn with 'Avoid' and their reason, {len(errors)} errors")
     ctx.close()
     return problems
 
@@ -2699,6 +2751,38 @@ def check_f12(env):
     if page.locator("#news").is_visible() or base_now != sb_now["source"]:
         problems.append(f"since you last looked: after Dismiss the note is {'still there' if page.locator('#news').is_visible() else 'gone'}, and the phone's copy is {base_now!r}")
     ctx.close()
+
+    # an item listed when you last looked that's now the app's own doubt (Check in store, no gluten named) is said to be
+    # now to check in store, as the Avoid list says, not to contain gluten
+    doubted = next(((rid, a) for rid in ids for a in menu_of(rid)["avoid"] if a.get("tag") == "Check in store" and not a.get("gluten")), None)
+    if doubted:
+        rid, a = doubted
+        older = trim(menu_of(rid))
+        older["source"], older["guide"] = "an-older-guide.pdf", {"title": "Older menu"}
+        older["avoid"] = [x for x in older["avoid"] if (x["name"], x["section"]) != (a["name"], a["section"])]
+        older["items"].append({"name": a["name"], "section": a["section"], "order": "asis"})
+        ctx = browser.new_context(color_scheme="light", **IPHONE)
+        ctx.add_init_script("if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1');"
+                            "localStorage.setItem('gf-selected', 'all'); localStorage.setItem('gf-changes-seen', '[]');"
+                            f"localStorage.setItem('gf-looked', JSON.stringify({{{json.dumps(rid)}: {json.dumps(older)}}})); }}")
+        page = ctx.new_page()
+        page.goto(base + f"#{rid}")
+        page.wait_for_selector("#list .row")
+        note = page.locator("#news .news-row").first.inner_text() if page.locator("#news .news-row").count() else ""
+        if "1 now to check in store" not in note or "now contain gluten" in note:
+            problems.append(f"{rid}: the note for {a['name']!r}, now the app's doubt, says {note!r}")
+        page.locator("#q").fill(a["name"])
+        avoid_row = page.locator("#avoid .row", has=page.locator(".nm", has_text=a["name"])).first
+        if not avoid_row.count() or "Now to check in store" not in avoid_row.inner_text():
+            problems.append(f"{rid}: {a['name']!r} on the Avoid list isn't marked 'Now to check in store'")
+        page.locator("#q").fill("")
+        page.locator("#news [data-news]").first.click()
+        page.wait_for_selector("#changes[open]")
+        body = page.locator("#changesBody").inner_text().lower()
+        if "now to check in store (1)" not in body:  # the guide's own list may still have real gluten changes
+            problems.append(f"{rid}: What changed doesn't list {a['name']!r} as now to check in store")
+        page.keyboard.press("Escape")
+        ctx.close()
 
     # 4. updating from an older app: the menus already on the phone become what you last looked at, with no false alarm
     ctx = browser.new_context(color_scheme="light", **IPHONE)
@@ -4484,6 +4568,7 @@ CHECKS = [
     ("u13", check_u13),
     ("s1", check_s1),
     ("food_and_drinks", check_food_and_drinks),
+    ("avoid_rows_without_a_list", check_avoid_rows_without_a_list),
     ("f1", check_f1),
     ("f4", check_f4),
     ("f6", check_f6),

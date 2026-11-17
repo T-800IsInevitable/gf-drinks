@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pdfplumber
 
-from .common import CEREAL, CEREAL_CAPS as CONTAINS, CEREAL_WORDS, cereal_code as cereal, clean, newest_by, result
+from .common import CEREAL, CEREAL_CAPS as CONTAINS, CEREAL_WORDS, cereal_code as cereal, clean, newest_by, one_of_each, result
 
 MAY = re.compile(rf"\b({CEREAL_WORDS}|cereals)\b", re.I)
 VERSION = re.compile(r"With\s+(\w+)\s*:", re.I)
@@ -162,6 +162,7 @@ def build(folder, config):
         if note:
             item["info"] = note
         (ok if kind == "ok" else avoid).append(item)
+    ok, avoid = one_of_each(ok, avoid, warnings)  # as the other readers: no copy of a product hides a stricter one
     return result(pdf_path.name, info,
                   "Blank Street: excludes anything whose ingredients list wheat, oats, barley, rye, spelt, kamut, gluten or malt, "
                   "or whose 'May Contain' line names oats, gluten or cereals containing gluten.", ok, avoid, warnings, rows=len(rows))

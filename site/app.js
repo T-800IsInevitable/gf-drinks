@@ -2,7 +2,7 @@
   "use strict";
   // The release. tools/check.py holds it equal to the service worker's cache number (site/sw.js), and the pull request
   // check makes sure it goes up whenever the app's code changes, so phones notice the new code.
-  const APP_VERSION = 48;
+  const APP_VERSION = 49;
   document.documentElement.dataset.version = APP_VERSION;
   // Inside another site's page (there's no server, so no header can refuse that), the app shows nothing but a line
   // saying to open it directly: nothing here should be tapped through someone else's page.
@@ -134,12 +134,26 @@
     // the build's What changed was worked out from the menu as published: nothing may still call a moved item fine or new
     const moved = new Set(odd.map((i) => i.section + "|" + i.name));
     const keep = (list) => (list || []).filter((c) => !moved.has(c.section + "|" + c.name));
-    const changes = r.changes && { ...r.changes, nowOk: keep(r.changes.nowOk), changed: keep(r.changes.changed), added: keep(r.changes.added) };
+    // a moved new item is a new Avoid item, and a moved one that was listed before is now on the Avoid list (splitCheck
+    // then lists it as now to check in store, not as now containing gluten)
+    const added = keep(r.changes && r.changes.added);
+    const changes = r.changes && { ...r.changes, nowOk: keep(r.changes.nowOk), changed: keep(r.changes.changed), added,
+      nowAvoid: (r.changes.nowAvoid || []).concat((r.changes.changed || []).filter((c) => moved.has(c.section + "|" + c.name))
+        .map((c) => ({ name: c.name, section: c.section, gluten: [] }))),
+      newAvoid: (r.changes.newAvoid || 0) + (r.changes.added || []).length - added.length };
     return { ...r, stats, ...(changes ? { changes } : {}), items: r.items.filter((i) => ORDERS.includes(i.order)), avoid: (r.avoid || []).concat(odd.map(asAvoid)) };
   }
   // the menus as the app shows them; the published copy (raw) is what's saved, so a later release that knows the order
   // starts again from the real menu rather than from this app's move
-  const shown = (menus) => menus && { ...menus, restaurants: menus.restaurants.map(safeMenu) };
+  const shown = (menus) => menus && { ...menus, restaurants: menus.restaurants.map(safeMenu).map((r) => r.changes ? { ...r, changes: splitCheck(r, r.changes) } : r) };
+  // an item now on the Avoid list as the app's own doubt ("Check in store", no gluten named) is "now to check in store"
+  // in What changed, as the Avoid list says, not "now contains gluten". Both lists go through this, so they agree.
+  function splitCheck(r, c) {
+    if (!c) return c;
+    const doubt = new Set((r.avoid || []).filter((a) => a.tag === "Check in store" && !(a.gluten && a.gluten.length)).map((a) => a.section + "|" + a.name));
+    const isDoubt = (x) => doubt.has(x.section + "|" + x.name);
+    return { ...c, nowAvoid: (c.nowAvoid || []).filter((x) => !isDoubt(x)), nowCheck: (c.nowCheck || []).concat((c.nowAvoid || []).filter(isDoubt)) };
+  }
 
   // ---------- helpers ----------
   const byId = (id) => data && data.restaurants.find((r) => r.id === id);
@@ -237,11 +251,11 @@
     if (!base || base.source === r.source || typeof self.gfCompare !== "function") return null;
     const hit = sinceCache.get(r);
     if (hit && hit.base === base) return hit.c;
-    const c = self.gfCompare(base, r);
+    const c = splitCheck(r, self.gfCompare(base, r));
     sinceCache.set(r, { base, c });
     return c;
   }
-  const KINDS = ["nowAvoid", "nowOk", "changed", "added", "removed"];
+  const KINDS = ["nowAvoid", "nowCheck", "nowOk", "changed", "added", "removed"];
   const namesIn = (c, k) => (c[k] || []).map((x) => x.section + "|" + x.name).sort().join("\n");
   // the two lists start from the same guide and say the same: show one. Otherwise both show, so nothing is hidden.
   const agree = (a, b) => !!(a && b && a.sinceSource === b.sinceSource && KINDS.every((k) => namesIn(a, k) === namesIn(b, k)));
@@ -255,7 +269,7 @@
       // since you last looked first; the guide's own list fills in the rest (an item can only be marked once)
       for (const [c, own] of [[mine, true], [r.changes, false]]) {
         if (!c) continue;
-        for (const kind of ["added", "changed", "nowOk", "nowAvoid"]) {
+        for (const kind of ["added", "changed", "nowOk", "nowAvoid", "nowCheck"]) {
           (c[kind] || []).forEach((x) => { const k = x.section + "|" + x.name; if (!map.has(k)) map.set(k, { kind, ...x, since: c.since, own }); });
         }
       }
@@ -265,12 +279,13 @@
     return m.map.get(i.section + "|" + i.name) || null;
   }
   const howText = (r, h) => tagFor(r, h)[1] + (h.order === "modify" ? ": " + h.note : "");
-  const CHG_LABEL = { added: "New", changed: "Order changed", nowOk: "No longer to avoid", nowAvoid: "Now contains gluten" };
+  const CHG_LABEL = { added: "New", changed: "Order changed", nowOk: "No longer to avoid", nowAvoid: "Now contains gluten", nowCheck: "Now to check in store" };
   function changeNote(r, c) {
     const since = "the " + esc(c.since) + " guide" + (c.own ? " you last looked at" : "");
     if (c.kind === "added") return "<div class=\"chg-note\"><b>New</b> since " + since + ".</div>";
     if (c.kind === "nowOk") return "<div class=\"chg-note\"><b>No longer to avoid.</b> It was on the Avoid list in " + since + ".</div>";
     if (c.kind === "nowAvoid") return "<div class=\"chg-note bad\"><b>Now contains gluten.</b> It had no gluten ingredients in " + since + ".</div>";
+    if (c.kind === "nowCheck") return "<div class=\"chg-note bad\"><b>Now to check in store.</b> It had no gluten ingredients in " + since + ".</div>";
     return "<div class=\"chg-note\"><b>Ordered differently since " + since + ":</b> it was " + esc(howText(r, c.was)) + ".</div>";
   }
   const chev = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -445,8 +460,11 @@
   // (Five Guys) shows everything
   const COURSE_KEY = "gf-course";
   let course = ["food", "drink"].includes(store.get(COURSE_KEY)) ? store.get(COURSE_KEY) : "all"; // anything else shows all
-  const courseCount = (rs, k) => rs.reduce((n, r) => n + ((r.stats || {})[k === "food" ? "food" : "drinks"] || 0), 0);
-  const effCourse = () => (course === "all" || !data || !courseCount(scope(), "food") || !courseCount(scope(), "drink") ? "all" : course);
+  // the choice only applies where it narrows something: some listed items purely food and some purely drinks (a menu
+  // whose rows all show under both, such as a new restaurant not yet sorted, or an older saved copy, offers no choice)
+  // things to order of that kind, counted as build.py counts them: an add-on or part of a dish doesn't count
+  const hasOnly = (rs, k) => rs.some((r) => r.items.some((i) => i.course === k && !i.role && !i.addon));
+  const effCourse = () => (course === "all" || !data || !hasOnly(scope(), "food") || !hasOnly(scope(), "drink") ? "all" : course);
   // while searching, everything is searched: the switch hides with the tips
   // a row with no course (a menu saved by an older release) shows whichever half is chosen: it's never hidden
   const inCourse = (i) => effCourse() === "all" || !!$("q").value.trim() || !i.course || i.course === "both" || i.course === effCourse();
@@ -498,7 +516,7 @@
     // Food and Drinks follow All; the one chosen stays marked while a section of it is picked. No numbers on them: the
     // status buttons below give the counts for what's shown, add-ons included (the chooser's headline counts leave those out)
     const on = effCourse();
-    const courseChips = courseCount(scope(), "food") && courseCount(scope(), "drink") ? [["food", "Food"], ["drink", "Drinks"]].map(([k, label]) =>
+    const courseChips = hasOnly(scope(), "food") && hasOnly(scope(), "drink") ? [["food", "Food"], ["drink", "Drinks"]].map(([k, label]) =>
       '<button type="button" class="hide-searching" data-kind="course" data-value="' + k + '" aria-pressed="' + (on === k) + '">' + label + "</button>").join("") : "";
     // on a restaurant's page the order builder is a chip after Favourites: it costs no height above the menu
     const r = byId(selected);
@@ -627,7 +645,7 @@
   $("stale").addEventListener("click", (e) => { const go = e.target.closest("[data-gotorest]"); if (go) select(go.dataset.gotorest); });
 
   const seen = () => new Set(JSON.parse(store.get(SEEN_KEY) || "[]"));
-  const counts = (c) => [["nowAvoid", "now contain gluten"], ["nowOk", "no longer to avoid"], ["changed", "ordered differently"],
+  const counts = (c) => [["nowAvoid", "now contain gluten"], ["nowCheck", "now to check in store"], ["nowOk", "no longer to avoid"], ["changed", "ordered differently"],
     ["added", "new"], ["removed", "gone"]].filter(([k]) => (c[k] || []).length).map(([k, l]) => c[k].length + " " + l);
   // what the note says: what changed since you last looked if anything did, else the guide's own list until dismissed
   function newsFor(r, s) {
@@ -674,7 +692,7 @@
       esc(r.stats.items) + ' items with no gluten ingredients.</p><p class="news-btns">' +
       (selected === ALL ? '<button type="button" class="pill-btn" data-gotorest="' + esc(r.id) + '">Open</button>' : "") +
       '<button type="button" class="link-btn" data-seen-new="' + esc(r.id) + '">Dismiss</button></p></div>').join("") +
-      news.map(([r, c]) => '<div class="news-row' + (c.nowAvoid.length ? " bad" : "") + '"><p><b>' + esc(r.name) +
+      news.map(([r, c]) => '<div class="news-row' + (c.nowAvoid.length || (c.nowCheck || []).length ? " bad" : "") + '"><p><b>' + esc(r.name) +
       (skipped(r, c) ? " has new guides.</b> Since the " + esc(c.since) + " guide you last looked at: " : " has a new guide.</b> Since " + esc(c.since) + ": ") +
       esc(counts(c).join(", ")) + "." + esc(favLine(r, c)) + '</p><p class="news-btns">' +
       '<button type="button" class="pill-btn" data-news="' + esc(r.id) + '">See what changed</button>' +
@@ -707,6 +725,7 @@
       arr.map((x) => "<li><b>" + esc(x.name) + "</b> <span class=\"muted\">" + esc(shortSection(x.section)) + "</span>" + (fn ? fn(x) : "") + "</li>").join("") + "</ul>" : "";
     const part = (c, intro) => '<p class="muted">' + intro + "</p>" +
       list("Now contain gluten", c.nowAvoid, (x) => x.gluten && x.gluten.length ? ": " + esc(x.gluten.map(cap).join(" & ")) : "", "bad") +
+      list("Now to check in store", c.nowCheck, null, "bad") +
       list("Ordered differently", c.changed, (x) => ": was " + esc(howText(r, x.was)) + ", now " + esc(howText(r, x.now))) +
       list("No longer to avoid", c.nowOk) + list("New", c.added) +
       list("Gone from the guide", c.removed) +
@@ -773,8 +792,8 @@
   }
 
   // Under a search that found nothing here: matches elsewhere (other restaurants, other cities, the UK menus), and a way to send a menu
-  function elsewhere(raw) {
-    const ts = terms(raw);
+  function elsewhere(typed) {
+    const ts = terms(typed);
     if (!ts.length) return "";
     const btn = (to, n, text) => n ? '<button type="button" class="link-btn" data-elsewhere="' + esc(to) + '">' + n + " " + text + " &rsaquo;</button>" : "";
     let out = "";
@@ -794,7 +813,7 @@
     return out;
   }
   const addMenuLink = '<button type="button" class="link-btn" data-addmenu>A place not here? Ask for it &rsaquo;</button>';
-  const emptyExtras = (raw) => raw.trim() ? '<div class="empty-links">' + elsewhere(raw) + addMenuLink + "</div>" : "";
+  const emptyExtras = (typed) => typed.trim() ? '<div class="empty-links">' + elsewhere(typed) + addMenuLink + "</div>" : "";
   // What the search box and the chip leave to show: the restaurants in scope, and each one's matching items and
   // Avoid rows (the status buttons are applied by the callers, so the counts on them can be worked out here too).
   function visibleRows() {
@@ -3019,10 +3038,10 @@
   });
   const hashText = () => { try { return decodeURIComponent(location.hash.slice(1)); } catch (e) { return ""; } };
   window.addEventListener("hashchange", () => {
-    const raw = hashText();
-    if (raw.startsWith("favs=")) { importCode = raw.slice(5); history.replaceState(null, "", location.pathname); maybeImport(); return; }
-    if (raw.startsWith("request=")) { history.replaceState(null, "", location.pathname); openRequestFrom(raw.slice(8)); return; }
-    const [id, item] = raw.split("/");
+    const h = hashText();
+    if (h.startsWith("favs=")) { importCode = h.slice(5); history.replaceState(null, "", location.pathname); maybeImport(); return; }
+    if (h.startsWith("request=")) { history.replaceState(null, "", location.pathname); openRequestFrom(h.slice(8)); return; }
+    const [id, item] = h.split("/");
     if (cities[id]) { if (id !== region) setRegion(id); }
     else if (data && id && byId(id)) { if (item) showItem(id, item); else if (id !== selected || region !== UK) select(id); }
   });

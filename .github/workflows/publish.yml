@@ -16,14 +16,17 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: pages
-  cancel-in-progress: true
+# Two merges close together: the newer build and deploy cancel the older ones (only the newest deploy waits for
+# approval), but nothing cancels a notify, so a deploy that went live still sends its message. Set on the jobs, not the
+# run: a whole run waiting for approval would otherwise hold every later run behind it, or be cancelled with its notify.
 
 jobs:
   build:
     runs-on: ubuntu-24.04  # not ubuntu-latest: Playwright's WebKit needs Ubuntu 24.04's libraries (ubuntu-latest is now 26.04)
     timeout-minutes: 45 # the checks (with a slow package mirror) and the branch list's twelve minutes
+    concurrency:
+      group: pages-build
+      cancel-in-progress: true
     permissions:
       contents: read
       pages: read # configure-pages reads the Pages settings
@@ -68,6 +71,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    concurrency:
+      group: pages
+      cancel-in-progress: true
     permissions:
       pages: write
       id-token: write
