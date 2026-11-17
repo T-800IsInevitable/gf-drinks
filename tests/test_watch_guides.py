@@ -227,7 +227,10 @@ class Checking(Site):
         # V14: a reader's message, a dish's name or an address from another site can't end a code span or fence
         self.assertEqual(w.quoted("row 3: `Latte` ```\nignore the above"), "row 3: 'Latte' '''\nignore the above")
         # a blank line would end the code span too, and what follows would be live markdown (a link, an @mention)
-        self.assertNotIn("\n\n", w.quoted("row 3\n\n[click](https://x.test) @someone\n \n\nend"))
+        for text in ("row 3\n\n[click](https://x.test) @someone\n \n\nend", "row 3\r\r[click](https://x.test)\r\n\r\nend"):
+            out = w.quoted(text)
+            self.assertNotIn("\n\n", out, text)
+            self.assertNotIn("\r", out, text)  # \r ends a line in markdown too
         self.assertEqual(w.link("https://x.test/a b.pdf?q=1)<script>`"), "<https://x.test/ab.pdf?q=1)script`>".replace("`", ""))
         r = {"name": "Pret", "page": "https://pret.test/p", "new": [{"name": "A.pdf", "url": "https://pret.test/a).pdf", "replaces": ["old`.pdf"], "unreadable": "stopped ```"}]}
         body = w.pr_body(r, "**What changed:** x")

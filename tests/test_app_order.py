@@ -76,6 +76,7 @@ process.stdout.write(JSON.stringify(menus.map((r) => [safeMenu(r), safeMenu(r) =
         # nothing in What changed may still call a moved item fine, new or ordered differently
         self.assertEqual((moved["changes"]["nowOk"], moved["changes"]["added"]), ([], []))
         self.assertEqual(moved["changes"]["changed"], [{"name": "Latte", "section": "S"}])
+        self.assertEqual(moved["changes"]["newAvoid"], 1)  # Odd milk was new, and is new on the Avoid list
         self.assertTrue(untouched)  # a menu with nothing unknown is passed through as it is
 
     def test_every_menu_is_shown_through_safe_menu_and_saved_as_published(self):

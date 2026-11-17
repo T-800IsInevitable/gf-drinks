@@ -27,7 +27,8 @@ def quoted(text):
     """Text from another site (a reader's message, a dish's name, build output) as it goes into a pull request or an
     issue: no backticks and no blank lines, so it can't end a code span or a code fence and turn into markdown, links
     or instructions."""
-    return re.sub(r"\n\s*\n", "\n", str(text)).replace("`", "'")
+    lines = re.sub(r"\r\n?", "\n", str(text))  # markdown ends a line at \r too, so "\r\r" is a blank line
+    return re.sub(r"\n\s*\n", "\n", lines).replace("`", "'")
 
 
 def link(url):

@@ -134,7 +134,10 @@
     // the build's What changed was worked out from the menu as published: nothing may still call a moved item fine or new
     const moved = new Set(odd.map((i) => i.section + "|" + i.name));
     const keep = (list) => (list || []).filter((c) => !moved.has(c.section + "|" + c.name));
-    const changes = r.changes && { ...r.changes, nowOk: keep(r.changes.nowOk), changed: keep(r.changes.changed), added: keep(r.changes.added) };
+    // a moved new item is a new Avoid item; a moved changed one isn't listed as "now contains gluten", which it may not
+    const added = keep(r.changes && r.changes.added);
+    const changes = r.changes && { ...r.changes, nowOk: keep(r.changes.nowOk), changed: keep(r.changes.changed), added,
+      newAvoid: (r.changes.newAvoid || 0) + (r.changes.added || []).length - added.length };
     return { ...r, stats, ...(changes ? { changes } : {}), items: r.items.filter((i) => ORDERS.includes(i.order)), avoid: (r.avoid || []).concat(odd.map(asAvoid)) };
   }
   // the menus as the app shows them; the published copy (raw) is what's saved, so a later release that knows the order
@@ -776,8 +779,8 @@
   }
 
   // Under a search that found nothing here: matches elsewhere (other restaurants, other cities, the UK menus), and a way to send a menu
-  function elsewhere(raw) {
-    const ts = terms(raw);
+  function elsewhere(typed) {
+    const ts = terms(typed);
     if (!ts.length) return "";
     const btn = (to, n, text) => n ? '<button type="button" class="link-btn" data-elsewhere="' + esc(to) + '">' + n + " " + text + " &rsaquo;</button>" : "";
     let out = "";
@@ -797,7 +800,7 @@
     return out;
   }
   const addMenuLink = '<button type="button" class="link-btn" data-addmenu>A place not here? Ask for it &rsaquo;</button>';
-  const emptyExtras = (raw) => raw.trim() ? '<div class="empty-links">' + elsewhere(raw) + addMenuLink + "</div>" : "";
+  const emptyExtras = (typed) => typed.trim() ? '<div class="empty-links">' + elsewhere(typed) + addMenuLink + "</div>" : "";
   // What the search box and the chip leave to show: the restaurants in scope, and each one's matching items and
   // Avoid rows (the status buttons are applied by the callers, so the counts on them can be worked out here too).
   function visibleRows() {
@@ -3022,10 +3025,10 @@
   });
   const hashText = () => { try { return decodeURIComponent(location.hash.slice(1)); } catch (e) { return ""; } };
   window.addEventListener("hashchange", () => {
-    const raw = hashText();
-    if (raw.startsWith("favs=")) { importCode = raw.slice(5); history.replaceState(null, "", location.pathname); maybeImport(); return; }
-    if (raw.startsWith("request=")) { history.replaceState(null, "", location.pathname); openRequestFrom(raw.slice(8)); return; }
-    const [id, item] = raw.split("/");
+    const h = hashText();
+    if (h.startsWith("favs=")) { importCode = h.slice(5); history.replaceState(null, "", location.pathname); maybeImport(); return; }
+    if (h.startsWith("request=")) { history.replaceState(null, "", location.pathname); openRequestFrom(h.slice(8)); return; }
+    const [id, item] = h.split("/");
     if (cities[id]) { if (id !== region) setRegion(id); }
     else if (data && id && byId(id)) { if (item) showItem(id, item); else if (id !== selected || region !== UK) select(id); }
   });
