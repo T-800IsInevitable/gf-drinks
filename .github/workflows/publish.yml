@@ -16,9 +16,11 @@ on:
 permissions:
   contents: read
 
+# a second merge waits for the run in progress rather than cancelling it, so a deployed run still sends its notification;
+# a newer waiting run replaces an older waiting one, so the newest merge is still the one that goes live
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
