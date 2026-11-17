@@ -104,6 +104,18 @@ class UploadNotice(unittest.TestCase):
         self.upload("2026-11-03T1500-pho-london", {"restaurant": "Pho", "area": "London"})
         self.assertEqual(self.run_notice(), ["Upload waiting: 2026-11-03T1012-cafe-berlin", "Upload waiting: 2026-11-03T1500-pho-london"])
 
+    def test_a_stray_file_in_the_inbox_isnt_an_upload(self):
+        self.upload("2026-11-03T1012-cafe-berlin", {"restaurant": "Cafe", "area": "Berlin"})
+        self.git("switch", "-q", "uploads")
+        for name in (".gitkeep", "notes.txt"):
+            (self.repo / "inbox" / name).write_text("x", encoding="utf-8")
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "stray files")
+        self.git("push", "-q", "origin", "uploads")
+        self.git("switch", "-q", "main")
+        self.git("fetch", "-q", "origin", "uploads")
+        self.assertEqual(self.run_notice(), ["Upload waiting: 2026-11-03T1012-cafe-berlin"])
+
     def test_an_outsiders_issue_with_the_same_title_doesnt_block_it(self):
         # anyone can open an issue on a public repository: only the workflow's own count as already opened
         FakeGitHub.issues.append({"title": "Upload waiting: 2026-11-03T1012-cafe-berlin", "user": {"login": "someone"}})

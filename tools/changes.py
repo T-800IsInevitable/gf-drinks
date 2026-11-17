@@ -10,7 +10,8 @@ guide arrives.
 Items are matched by section and name, then by name alone (sections are
 sometimes renamed between editions).
 """
-from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 def _norm(s):
@@ -56,7 +57,7 @@ def compare(prev, new, today=None):
         return prev.get("changes")
     old_ok, old_avoid = _index(prev.get("items", [])), _index(prev.get("avoid", []))
     new_ok, new_avoid = _index(new.get("items", [])), _index(new.get("avoid", []))
-    out = {"since": guide_label(prev), "sinceSource": prev.get("source"), "date": (today or date.today()).isoformat(),
+    out = {"since": guide_label(prev), "sinceSource": prev.get("source"), "date": (today or datetime.now(ZoneInfo("Europe/London")).date()).isoformat(),  # UK, not the runner's UTC
            "nowAvoid": [], "nowOk": [], "changed": [], "added": [], "removed": [], "newAvoid": 0}
     for i in new.get("items", []):
         was = _find(i, old_ok)

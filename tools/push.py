@@ -90,7 +90,7 @@ def plan(previous=ROOT / ".previous", data=SITE / "data"):
     if not news:
         return None
     body = "; ".join(news[:MOST]) + (f"; and {len(news) - MOST} more" if len(news) > MOST else "") + "."
-    url = "#" + new_index["restaurants"][0]["id"] if len(news) == 1 and len(new_index["restaurants"]) else ""
+    url = ""
     if len(news) == 1:
         url = "#" + next(r["id"] for r in new_index["restaurants"] if news[0].startswith(r["name"] + ":"))
     # a tag of its own: iPhones replace a notification with the same tag silently (no banner), so one still in the

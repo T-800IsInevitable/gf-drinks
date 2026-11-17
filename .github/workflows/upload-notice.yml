@@ -1,10 +1,11 @@
 name: Upload notice
 
 # Every 15 minutes, open an issue ("Upload waiting: <folder>") for each menu
-# uploaded to inbox/ on the uploads branch (tools/upload_notice.py). The Claude
-# scan routine starts on that issue, so a menu is scanned within minutes rather
-# than at the next daily run. It runs here, on main, because a workflow
-# triggered by a push to uploads would use the old copy of itself on that branch.
+# uploaded to inbox/ on the uploads branch (tools/upload_notice.py), so an
+# upload waiting shows in the issues. The Claude scan routine picks it up on its
+# own schedule: an issue opened by a workflow doesn't start a routine. It runs
+# here, on main, because a workflow triggered by a push to uploads would use the
+# old copy of itself on that branch.
 on:
   schedule:
     - cron: "*/15 * * * *"

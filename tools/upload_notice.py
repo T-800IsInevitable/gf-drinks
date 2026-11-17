@@ -58,7 +58,7 @@ def read_json(path):
 
 def waiting():
     """The upload folders on the uploads branch, each with the restaurant and area its upload.json names."""
-    listed = git("ls-tree", "--name-only", BRANCH, "inbox/")
+    listed = git("ls-tree", "-d", "--name-only", BRANCH, "inbox/")  # folders only: a stray file isn't an upload
     out = []
     for path in (listed or "").splitlines():
         folder = path.split("/", 1)[1]
