@@ -10,6 +10,12 @@ inputs:
     description: The git ref to compare app code with for the release-number check; empty skips that check.
     required: false
     default: ""
+  published:
+    description: >
+      "true" when this job's output goes live. Then it restores no cache: any job on main can write a cache entry,
+      the guide watch's PDF reading included, so a browser or package from the cache could change the published site.
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -17,7 +23,7 @@ runs:
     - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: "3.12"
-        cache: pip
+        cache: ${{ inputs.published != 'true' && 'pip' || '' }}
         cache-dependency-path: tools/requirements-lock.txt
 
     # every package by its hash (tools/*-lock.txt, from uv pip compile), so a tampered release can't get in. The build
@@ -61,6 +67,7 @@ runs:
       run: echo "version=$(python -m playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
 
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      if: inputs.published != 'true'
       id: browsers
       with:
         path: ~/.cache/ms-playwright
@@ -70,6 +77,14 @@ runs:
       if: steps.browsers.outputs.cache-hit != 'true'
       shell: bash
       run: python -m playwright install chromium webkit
+
+    # publishing installs its own browsers, then saves them for the pull request checks (a key already saved is kept)
+    - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      if: inputs.published == 'true'
+      continue-on-error: true
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
 
     # Ubuntu's Azure package mirror sometimes crawls (a 24-minute install of WebKit's libraries). Give it eight minutes,
     # then switch the runner to Ubuntu's own archive and try once more, rather than sit until the job's timeout.

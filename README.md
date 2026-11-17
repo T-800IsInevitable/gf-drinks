@@ -220,7 +220,7 @@ Detail that only one kind of task needs. `CLAUDE.md` holds the rules and points 
 - `tools/ui_check.py` drives the app in Playwright at iPhone size, light and dark. `tests/` has unit tests.
 - `.github/workflows/checks.yml` runs all of it on pull requests. It has no `paths-ignore`, because a required check that's skipped blocks merging.
 - `.github/workflows/publish.yml` builds, checks and deploys to GitHub Pages on every push to `main` (pushes touching only `inbox/` are ignored).
-- `publish.yml` and `checks.yml` share the steps in `.github/actions/build-check` (a composite action, so the job names the branch protection needs don't change). The test browsers are cached by Playwright version.
+- `publish.yml` and `checks.yml` share the steps in `.github/actions/build-check` (a composite action, so the job names the branch protection needs don't change). The test browsers are cached by Playwright version for the pull request checks. Publishing restores no cache (pip's or the browsers', `published: "true"`): any job on `main` can write a cache entry, the guide watch's PDF-reading job included, so a cached browser could otherwise change the site that goes live. It installs its own browsers and saves them for the checks.
 - `guide-reminders.yml` opens an issue for guides ending within three weeks.
 - `guide-watch.yml` runs weekly (`tools/watch_guides.py`):
   - it checks each restaurant's `watch` page for a guide PDF it hasn't seen (by sha256, `guides/archive/` included);
@@ -228,6 +228,7 @@ Detail that only one kind of task needs. `CLAUDE.md` holds the rules and points 
   - if so it opens a pull request (old guide moved to `guides/archive/`), then dispatches `checks.yml` on it, since a pull request opened with `GITHUB_TOKEN` doesn't trigger workflows;
   - blocked or changed pages, guides linked over plain http, and new guides for `manual_csv` restaurants, open issues;
   - it identifies itself honestly and never tries to get round a site's blocking.
+  - it runs as two jobs, so the token that can push never sits beside a PDF from another site: `fetch` (no permissions, no stored git credentials) reads the pages and PDFs, builds each new guide and saves a plan (`--plan`); `propose` (the write token, no PDF reader installed) opens the pull requests and issues from it (`--propose`), after checking the plan against its own checkout: a real restaurant, its own name and page, new PDFs under plain new names, and replaced guides that are in use.
 - `keep-alive.yml` re-enables the scheduled workflows monthly through the API (GitHub switches them off after 60 days with no activity). It commits nothing, so it works with `main` protected. The daily scan also checks their state (step 0 of `SCAN_INSTRUCTIONS.md`).
 - The tools that open issues and pull requests share `tools/gh.py`.
 

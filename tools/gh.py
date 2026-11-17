@@ -31,8 +31,9 @@ def quoted(text):
 
 
 def link(url):
-    """An address from another site as a plain autolink (<https://…>): nothing in it can become markdown."""
-    return "<" + re.sub(r"[\s<>`]", "", str(url)) + ">"
+    """An address from another site as a plain autolink (<https://…>): nothing in it can become markdown. A control
+    character would stop it being an autolink, and the rest would then be read as markdown, so those go too."""
+    return "<" + re.sub(r"[\x00-\x20\x7f\s<>`]", "", str(url)) + ">"
 
 
 BOT = "github-actions[bot]"
