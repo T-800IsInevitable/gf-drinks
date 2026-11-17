@@ -2031,6 +2031,37 @@ def check_food_and_drinks(env):
     return problems
 
 
+def check_avoid_rows_without_a_list(env):
+    """An Avoid row with a reason but no gluten list (check.py allows one), or an empty list, still draws: tag "Avoid",
+    its reason or "The guide lists gluten.", and no error (avoidTag and avoidWhy in app.js)."""
+    base, browser = env.base, env.browser
+    problems = []
+    menu = menu_of("pizza-express-uk")
+    menu["avoid"][0] = {k: v for k, v in menu["avoid"][0].items() if k not in ("gluten", "tag")} | {"reason": "Made with beer batter."}
+    menu["avoid"][1] = {k: v for k, v in menu["avoid"][1].items() if k not in ("reason", "tag")} | {"gluten": []}
+    names = [menu["avoid"][0]["name"], menu["avoid"][1]["name"]]
+    ctx = browser.new_context(color_scheme="light", service_workers="block", **IPHONE)
+    ctx.add_init_script("localStorage.setItem('gf-intro-seen', JSON.stringify(['all', 'pizza-express-uk']));")
+    ctx.route("**/data/r/pizza-express-uk.json", lambda route: route.fulfill(content_type="application/json", body=json.dumps(menu)))
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base + "#pizza-express-uk")
+    page.wait_for_selector("#list .row")
+    page.locator("#avoidWrap").evaluate("el => el.open = true")
+    for name, why in zip(names, ("Made with beer batter.", "The guide lists gluten.")):
+        row = page.locator("#avoid .row", has=page.locator(".nm", has_text=name)).first
+        tag = row.locator(".tag").inner_text() if row.count() else None
+        row.evaluate("el => el.open = true") if row.count() else None
+        text = row.inner_text() if row.count() else ""
+        if tag != "Avoid" or why not in text:
+            problems.append(f"Avoid row {name!r} with no gluten list: tag {tag!r}, text {text[:80]!r}")
+    problems += [f"Avoid rows without a list: {e}" for e in errors]
+    print(f"avoid rows without a list: {len(names)} drawn with 'Avoid' and their reason, {len(errors)} errors")
+    ctx.close()
+    return problems
+
+
 def check_f1(env):
     base, browser = env.base, env.browser
     problems = []
@@ -4498,6 +4529,7 @@ CHECKS = [
     ("u13", check_u13),
     ("s1", check_s1),
     ("food_and_drinks", check_food_and_drinks),
+    ("avoid_rows_without_a_list", check_avoid_rows_without_a_list),
     ("f1", check_f1),
     ("f4", check_f4),
     ("f6", check_f6),

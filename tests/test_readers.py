@@ -119,11 +119,17 @@ class EndDates(unittest.TestCase):
         for reader, kind in ((starbucks_uk_pdf, "Beverages"), (starbucks_uk_food_pdf, "Food")):
             info = reader.guide_info(fake_pdf(cover.format(kind, "November 2026 - January 2027")))
             self.assertEqual(info["runs"], "November 2026 to January 2027", kind)
+            self.assertEqual(info["title"], f"Holiday 2026 {kind}", kind)  # each reader takes its own guide's title
             self.assertEqual(info["version"], "2026-10-26")
             self.assertEqual(build.end_date(info["runs"]), "2027-01-31")
             info = reader.guide_info(fake_pdf(cover.format(kind, "September – November 2026")))
             self.assertEqual(info["runs"], "September to November 2026", kind)
             self.assertIsNone(reader.guide_info(fake_pdf(cover.format(kind, "All year")))["runs"])
+        # the drinks reader doesn't take the food guide's title, nor the other way round
+        self.assertIsNone(starbucks_uk_pdf.guide_info(fake_pdf(cover.format("Food", "All year")))["title"])
+        self.assertIsNone(starbucks_uk_food_pdf.guide_info(fake_pdf(cover.format("Beverages", "All year")))["title"])
+        # the kind is a whole word: "Foodservice" on a cover isn't the food guide's title
+        self.assertIsNone(starbucks_uk_food_pdf.guide_info(fake_pdf(cover.format("Foodservice", "All year")))["title"])
 
 
 class Merge(unittest.TestCase):

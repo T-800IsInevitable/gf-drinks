@@ -77,5 +77,28 @@ class AllergenTableCrossCheck(unittest.TestCase):
         self.assertTrue(any("Lemon Slice" in w for w in warnings) and any("Apple Pie" in w for w in warnings))
 
 
+class Likeness(unittest.TestCase):
+    """How surely an allergen-table name and a food page's name are one product: an exact name wins, a close spelling
+    counts, and one word inside another only counts within its own section ("Cinnamon" isn't the "Cinnamon Bun")."""
+
+    def test_exact_close_and_one_word(self):
+        self.assertEqual(nero.likeness("Lemon Slice", "lemon slice", False), 10)
+        self.assertGreater(nero.likeness("Banan and Walnut Loaf Cake", "Banana and Walnut Loaf Cake", False), 0)
+        self.assertEqual(nero.likeness("Cinnamon", "Cinnamon Bun", False), 0)
+        self.assertGreater(nero.likeness("Cinnamon", "Cinnamon Bun", True), 0)
+        self.assertEqual(nero.likeness("Carrot Cake", "Chocolate Brownie", True), 0)
+
+    def test_a_close_match_is_logged_and_an_item_only_in_the_table_is_left_alone(self):
+        food = [(1, "Cakes", "Banana and Walnut Loaf Cake", "sugar, butter (MILK)")]
+        grid = [("CAKES", "Banan and Walnut Loaf Cake", True, 2), ("SAUCES", "Caramel Sauce", False, 2),
+                ("SAUCES", "Caramel Sauce Drizzle", True, 2)]
+        ok, avoid, warnings = AllergenTableCrossCheck.build(AllergenTableCrossCheck(), food, grid)
+        self.assertIn("Banana and Walnut Loaf Cake", avoid)  # matched despite the typo, and the table marks gluten
+        self.assertTrue(any("read as 'Banana and Walnut Loaf Cake'" in w for w in warnings), warnings)
+        # an item only the table lists isn't matched by a later table row: each stands on its own
+        self.assertIn("Caramel Sauce", ok)
+        self.assertIn("Caramel Sauce Drizzle", avoid)
+
+
 if __name__ == "__main__":
     unittest.main()
