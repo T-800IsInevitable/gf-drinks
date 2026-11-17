@@ -25,5 +25,6 @@
     "The guide says it lists oats as an allergen even when they're gluten free oats, and that those products may not suit people with coeliac disease because of in-store handling.",
     "Some extras, sauces and syrups are only in the guide's allergen table, which shows allergens but not ingredients.",
     "The guide says it can't guarantee an allergen free environment because equipment is shared."
-  ]
+  ],
+  "courses": {"drinks": ["Syrups", "Festive", "Hot Coffee", "Iced Coffee", "Hot Chocolate", "Matcha", "Luxury & Chai", "Frappe", "Flavoured Iced Latte", "Luxury Frappe", "Milkshakes", "Boosters & Over Ice"], "addons": ["Extras", "Syrups"]}
 }

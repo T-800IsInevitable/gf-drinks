@@ -126,6 +126,38 @@ def apply_config(data, config, rid):
         data["stats"]["ingredients"] = ingredients
 
 
+# a mixed section ("Chocolate, Snacks & Bottled Drinks") is sorted by the first of these words in each name
+DRINK_WORDS = r"juice|drink|shot|smoothie|water|vitwater|tea|lemonade|cola|latte|macchiato|espresso|coffee"
+FOOD_WORDS = r"crisps|popcorn|cheese|chocolate|coin|panettone|bar|waffles?|biscuits?|cookie|shortbread|straw"
+COURSE_WORD = re.compile(rf"\b(?:({DRINK_WORDS})|({FOOD_WORDS}))\b", re.I)
+
+
+def set_courses(data, config, rid):
+    """Food or drink for every row, so the app shows a restaurant's food and drinks apart, with a count of each.
+    restaurant.json "courses": {"drinks": [sections], "addons": [sections], "mixed": [sections]}; any other section is
+    food. Add-ons (syrups, toppings, milks, sauces) go with what they're added to and aren't counted as things to order.
+    A section named there that the guide doesn't have only warns, because seasonal sections come and go."""
+    cfg = config.get("courses") or {}
+    drinks, addons, mixed = (set(cfg.get(k) or []) for k in ("drinks", "addons", "mixed"))
+    have = {r["section"] for r in data["items"] + data["avoid"]}
+    for gone in sorted((drinks | addons | mixed) - have):
+        print(f"  WARNING: {rid}/restaurant.json courses names {gone!r}, which this guide doesn't have")
+    for r in data["items"] + data["avoid"]:
+        if r["section"] in mixed:
+            m = COURSE_WORD.search(r["name"])
+            if not m:
+                raise SystemExit(f"ERROR: {rid}: can't tell whether {r['name']!r} in {r['section']!r} is food or a drink. "
+                                 "Add a word for it to DRINK_WORDS or FOOD_WORDS in tools/build.py.")
+            r["course"] = "drink" if m.group(1) else "food"
+        else:
+            r["course"] = "drink" if r["section"] in drinks else "food"
+        if r["section"] in addons:
+            r["addon"] = True
+    things = [i for i in data["items"] if not i.get("role") and not i.get("addon")]  # things to order, as the app counts them
+    data["stats"]["food"] = sum(i["course"] == "food" for i in things)
+    data["stats"]["drinks"] = sum(i["course"] == "drink" for i in things)
+
+
 def build_one(folder):
     config = json.loads((folder / "restaurant.json").read_text(encoding="utf-8"))
     readers = config.get("readers") or ([config["reader"]] if config.get("reader") else [])
@@ -142,6 +174,7 @@ def build_one(folder):
         parts.append(part)
     data = merge(parts)
     apply_config(data, config, folder.name)
+    set_courses(data, config, folder.name)
     # "order": the order builder's words and which sections come first (parts of dishes). A section it names that
     # the guide no longer has stops the build, like a role that matches nothing.
     order = config.get("order")

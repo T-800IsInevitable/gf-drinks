@@ -26,5 +26,6 @@
     "Blank Street doesn't call anything gluten free. The guide has no general allergen statement, only a 'May Contain' line for each item.",
     "The guide has no date. The app uses the season in its file name and the date the PDF was made.",
     "Coconut drink is listed as an ingredient, but no drink is listed with it, so the guide doesn't say whether a coconut milk drink may contain oat."
-  ]
+  ],
+  "courses": {"drinks": ["Coffee", "Not Coffee & Teas", "Cold Brew", "Custom", "Ingredients", "Matchas / Hojichas", "House Lattes"], "addons": ["Custom"]}
 }

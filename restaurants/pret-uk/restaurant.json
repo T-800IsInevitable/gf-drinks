@@ -20,5 +20,6 @@
     "Pret doesn't call any item gluten free. This app lists items with no gluten cereal ticked.",
     "A tick means a product contains an allergen. There's no column for 'may contain' or traces.",
     "Branded products (packaged snacks and drinks made by other companies) aren't listed. Check the packet."
-  ]
+  ],
+  "courses": {"drinks": ["Cold Drinks", "Barista Prepared Drinks"]}
 }
