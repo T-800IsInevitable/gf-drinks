@@ -5,7 +5,7 @@
 // Nothing waits for them: the app shows the menus saved on the phone meanwhile. They're checked, not downloaded afresh,
 // so a file that hasn't changed comes back as "not modified". The guides (PDFs) and map tiles are never saved here:
 // a guide is fetched when it's opened, and the tile provider's rules forbid keeping tiles.
-const CACHE = "gf-menus-v47";
+const CACHE = "gf-menus-v48";
 const SHELL = ["./", "index.html", "styles.css", "theme.js", "compare.js", "app.js", "manifest.webmanifest",
   "vendor/leaflet/leaflet.js", "vendor/leaflet/leaflet.css",
   "data/restaurants.json", "phrases.json", "cities.json", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/favicon.png"];
@@ -127,8 +127,11 @@ self.addEventListener("push", (e) => {
   let msg = {};
   try { msg = e.data ? e.data.json() : {}; } catch (err) { msg = { body: e.data ? e.data.text() : "" }; }
   e.waitUntil((async () => {
-    const favs = new Set(await favsSaved());
-    const hit = (msg.nowAvoid || []).filter((k) => favs.has(k)).map((k) => k.split("|").slice(2).join("|"));
+    // matched by restaurant and name, whatever the section or the capitals: a new guide can move or recase an item, and
+    // the comparison that found it (tools/changes.py) already treats it as the same one
+    const same = (k) => { const p = String(k).split("|"); return p[0] + "|" + p.slice(2).join("|").toLowerCase().replace(/\s+/g, " ").trim(); };
+    const favs = new Set((await favsSaved()).map(same));
+    const hit = (msg.nowAvoid || []).filter((k) => favs.has(same(k))).map((k) => k.split("|").slice(2).join("|"));
     let body = msg.body || "New menus are in.";
     if (hit.length) body = "A favourite now contains gluten: " + hit.slice(0, 3).join(", ") + (hit.length > 3 ? " and " + (hit.length - 3) + " more" : "") + ". " + body;
     // the badge counts new guides; a release announcement carries none ("Update N is live!", tag gf-update)
