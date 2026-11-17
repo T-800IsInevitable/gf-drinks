@@ -26,5 +26,5 @@
     "Some extras, sauces and syrups are only in the guide's allergen table, which shows allergens but not ingredients.",
     "The guide says it can't guarantee an allergen free environment because equipment is shared."
   ],
-  "courses": {"drinks": ["Syrups", "Festive", "Hot Coffee", "Iced Coffee", "Hot Chocolate", "Matcha", "Luxury & Chai", "Frappe", "Flavoured Iced Latte", "Luxury Frappe", "Milkshakes", "Boosters & Over Ice"], "addons": ["Extras", "Syrups"]}
+  "courses": {"drinks": ["Syrups", "Festive", "Hot Coffee", "Iced Coffee", "Hot Chocolate", "Matcha", "Luxury & Chai", "Frappe", "Flavoured Iced Latte", "Luxury Frappe", "Milkshakes", "Boosters & Over Ice"], "addons": ["Extras", "Syrups"], "items": {"Extras|Marshmallows": "drink", "Extras|Chocolate Curls": "drink", "Extras|Plant Based Creamy Topping": "drink", "Extras|Whipped Cream": "drink"}}
 }

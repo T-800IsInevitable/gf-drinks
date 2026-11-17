@@ -444,11 +444,13 @@
   // remembered on this phone; menus saved by an older release carry no course, and a restaurant with only one of the two
   // (Five Guys) shows everything
   const COURSE_KEY = "gf-course";
-  let course = store.get(COURSE_KEY) || "all";
+  let course = ["food", "drink"].includes(store.get(COURSE_KEY)) ? store.get(COURSE_KEY) : "all"; // anything else shows all
   const courseCount = (rs, k) => rs.reduce((n, r) => n + ((r.stats || {})[k === "food" ? "food" : "drinks"] || 0), 0);
   const effCourse = () => (course === "all" || !data || !courseCount(scope(), "food") || !courseCount(scope(), "drink") ? "all" : course);
   // while searching, everything is searched: the switch hides with the tips
-  const inCourse = (i) => effCourse() === "all" || !!$("q").value.trim() || (i.course || "food") === effCourse();
+  // a row with no course (a menu saved by an older release) shows whichever half is chosen: it's never hidden
+  const inCourse = (i) => effCourse() === "all" || !!$("q").value.trim() || !i.course || i.course === effCourse();
+  const courseNote = () => (effCourse() === "all" || $("q").value.trim() ? "" : effCourse() === "food" ? " (food only)" : " (drinks only)");
   // the chooser's count for a restaurant: food and drinks apart, from menus that say which is which
   const countText = (r) => (r.stats.food == null ? r.stats.items + " items"
     : [r.stats.food ? "Food " + r.stats.food : "", r.stats.drinks ? "Drinks " + r.stats.drinks : ""].filter(Boolean).join(" · ") || r.stats.items + " items");
@@ -493,11 +495,11 @@
         .forEach((s) => chips.push({ kind: "section", value: s, label: shortSection(s) }));
     }
     if (!chips.some((c) => sameFilter(c, filter))) filter = { kind: "all" };
-    // Food and Drinks follow All, with their counts; the one chosen stays marked while a section of it is picked
-    const food = courseCount(scope(), "food"), drink = courseCount(scope(), "drink"), on = effCourse();
-    const courseChips = food && drink ? [["food", "Food", food], ["drink", "Drinks", drink]].map(([k, label, n]) =>
-      '<button type="button" class="hide-searching" data-kind="course" data-value="' + k + '" aria-pressed="' + (on === k) + '">' +
-      label + " " + esc(String(n)) + "</button>").join("") : "";
+    // Food and Drinks follow All; the one chosen stays marked while a section of it is picked. No numbers on them: the
+    // status buttons below give the counts for what's shown, add-ons included (the chooser's headline counts leave those out)
+    const on = effCourse();
+    const courseChips = courseCount(scope(), "food") && courseCount(scope(), "drink") ? [["food", "Food"], ["drink", "Drinks"]].map(([k, label]) =>
+      '<button type="button" class="hide-searching" data-kind="course" data-value="' + k + '" aria-pressed="' + (on === k) + '">' + label + "</button>").join("") : "";
     // on a restaurant's page the order builder is a chip after Favourites: it costs no height above the menu
     const r = byId(selected);
     // "Near me" (which chains are within a kilometre) sits after Favourites on every page; with the look-around switched
@@ -852,6 +854,7 @@
     else if (q) empty = 'No items with no gluten ingredients match "' + esc(q) + '".' +
       (glutenHits ? " " + glutenHits + (glutenHits === 1 ? " match is" : " matches are") + " on the Avoid list" + (visible("gluten") ? " below." : ". Tap Avoid above to see " + (glutenHits === 1 ? "it." : "them.")) : "");
     if (!visible("straight") || !visible("change")) empty += " Some items are hidden by the buttons above.";
+    if (courseNote()) empty += " Showing " + (effCourse() === "food" ? "food" : "drinks") + " only: tap All for everything.";
     $("list").innerHTML = (filter.kind === "fav" ? favShareBar() : "") + (html ? usuals + html : '<p class="empty">' + empty + "</p>" + emptyExtras($("q").value));
     sayCount("list");
 
@@ -887,7 +890,7 @@
     $("avoidWrap").hidden = $("avoidHead").hidden = !avoidHtml;
     $("avoid").innerHTML = avoidHtml;
     // folded until wanted: it opens by itself while searching or when the Avoid button is chosen, and a tap on it overrides that
-    $("avoidTitle").textContent = "Avoid: contains or may contain gluten, or not suitable for coeliacs" + (glutenHits ? " (" + glutenHits + ")" : "");
+    $("avoidTitle").textContent = "Avoid: contains or may contain gluten, or not suitable for coeliacs" + (glutenHits ? " (" + glutenHits + ")" : "") + courseNote();
     $("avoidWrap").open = avoidUser !== null ? avoidUser : !!($("q").value.trim() || pick.gluten);
     return shown;
   }
@@ -2591,6 +2594,7 @@
       return;
     }
     if (!visible(kindOf(found))) { pick = { straight: false, change: false, gluten: false }; store.set(PICK_KEY, JSON.stringify(pick)); }
+    if (!inCourse(found)) { course = "all"; store.set(COURSE_KEY, course); } // a linked item in the other half still opens
     if (!r.items.includes(found)) avoidUser = true;
     render();
     const row = [...document.querySelectorAll("#list .row, #avoid .row")].find((d) => d.dataset.slug === sl);

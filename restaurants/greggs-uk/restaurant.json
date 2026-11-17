@@ -22,5 +22,5 @@
     "The guide says hot and iced drinks can't be guaranteed allergen-free because of shared equipment.",
     "Branded products: the guide says their allergen details are on the packaging or the supplier's website."
   ],
-  "courses": {"drinks": ["Hot Drinks", "Speciality Drinks", "Iced Drinks", "Iced Speciality Drinks", "Syrups", "Greggs Own Label Cold Drinks"], "addons": ["Syrups", "Extras", "Dip Pots", "Dipping Sauces"]}
+  "courses": {"drinks": ["Hot Drinks", "Speciality Drinks", "Iced Drinks", "Iced Speciality Drinks", "Syrups", "Greggs Own Label Cold Drinks"], "addons": ["Syrups", "Extras", "Dip Pots", "Dipping Sauces"], "items": {"Extras|Cream": "drink", "Extras|Hot Chocolate Powder": "drink"}}
 }

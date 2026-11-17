@@ -27,5 +27,5 @@
     "An asterisk in the guide means an ingredient is made where gluten is present; those items are on the Avoid list here.",
     "Create Your Own and Duo Romana: the guide says it can't guarantee any allergen or dietary requirements for them."
   ],
-  "courses": {"drinks": ["Piccolo Drinks", "Cocktails", "Gin", "Champagne & Prosecco", "White Wine", "Red Wine", "Rosé Wine", "Sparkles & Juices", "Soft Drinks", "Spirits & Liqueurs", "Beer & Cider", "Coffee & Tea", "Ingredients - Drinks", "Breakfast drinks"]}
+  "courses": {"drinks": ["Piccolo Drinks", "Cocktails", "Gin", "Champagne & Prosecco", "White Wine", "Red Wine", "Rosé Wine", "Sparkles & Juices", "Soft Drinks", "Spirits & Liqueurs", "Beer & Cider", "Coffee & Tea", "Ingredients - Drinks", "Breakfast drinks"], "items": {"Dolcetti (Not Including Drinks)|Caffè Reale": "drink"}}
 }

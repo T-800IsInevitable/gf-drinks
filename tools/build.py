@@ -127,8 +127,9 @@ def apply_config(data, config, rid):
 
 
 # a mixed section ("Chocolate, Snacks & Bottled Drinks") is sorted by the first of these words in each name
-DRINK_WORDS = r"juice|drink|shot|smoothie|water|vitwater|tea|lemonade|cola|latte|macchiato|espresso|coffee"
-FOOD_WORDS = r"crisps|popcorn|cheese|chocolate|coin|panettone|bar|waffles?|biscuits?|cookie|shortbread|straw"
+DRINK_WORDS = (r"juice|drink|shot|smoothie|water|vitwater|tea|lemonade|cola|latte|macchiato|espresso|coffee|cappuccino|americano|"
+               r"flat white|mocha|chai|frappe|milkshake|hot chocolate|milk(?!\s+chocolate)")
+FOOD_WORDS = r"crisps|popcorn|cheese|chocolate|coin|panettone|bar|waffles?|biscuits?|cookie|shortbread|straw|sandwich"
 COURSE_WORD = re.compile(rf"\b(?:({DRINK_WORDS})|({FOOD_WORDS}))\b", re.I)
 
 
@@ -139,11 +140,25 @@ def set_courses(data, config, rid):
     A section named there that the guide doesn't have only warns, because seasonal sections come and go."""
     cfg = config.get("courses") or {}
     drinks, addons, mixed = (set(cfg.get(k) or []) for k in ("drinks", "addons", "mixed"))
-    have = {r["section"] for r in data["items"] + data["avoid"]}
-    for gone in sorted((drinks | addons | mixed) - have):
+    named = cfg.get("items") or {}  # "Section|Name": "food" or "drink", for an item its section's rule gets wrong
+    for key, value in named.items():
+        if value not in ("food", "drink"):
+            raise SystemExit(f"ERROR: {rid}/restaurant.json courses.items {key!r} is {value!r}; it must be \"food\" or \"drink\"")
+    rows = data["items"] + data["avoid"]
+    have = {r["section"] for r in rows}
+    for gone in sorted((drinks | addons | mixed) - have) + sorted(set(named) - {f"{r['section']}|{r['name']}" for r in rows}):
         print(f"  WARNING: {rid}/restaurant.json courses names {gone!r}, which this guide doesn't have")
-    for r in data["items"] + data["avoid"]:
-        if r["section"] in mixed:
+    # a section left as food whose names are mostly drinks (a new guide's seasonal drinks): say so in the build summary
+    for s in sorted(have - drinks - mixed):
+        names = [r["name"] for r in rows if r["section"] == s]
+        drinky = sum(bool((m := COURSE_WORD.search(n)) and m.group(1)) for n in names)
+        if drinky * 2 > len(names):
+            print(f"  WARNING: {rid}: {s!r} counts as food, but {drinky} of its {len(names)} names look like drinks. "
+                  "If it's drinks, add it to courses in restaurant.json")
+    for r in rows:
+        if f"{r['section']}|{r['name']}" in named:
+            r["course"] = named[f"{r['section']}|{r['name']}"]
+        elif r["section"] in mixed:
             m = COURSE_WORD.search(r["name"])
             if not m:
                 raise SystemExit(f"ERROR: {rid}: can't tell whether {r['name']!r} in {r['section']!r} is food or a drink. "
