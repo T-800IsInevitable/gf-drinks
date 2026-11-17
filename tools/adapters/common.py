@@ -83,14 +83,27 @@ def newest_by(folder, version_of, keep=None, what="version", pattern="*.pdf"):
     return dated[-1][2]
 
 
+def mixed_milks(bad):
+    """A drink with gluten in only some of its milk versions can be ordered with another milk only when that gluten is
+    oat: an oat drink is the one milk that carries a cereal. Wheat, barley or malt in some versions and not others is a
+    guide, or a reading of it, that disagrees with itself, which counts as gluten (CLAUDE.md). bad: the cereal words of
+    each version with gluten. Returns the Avoid row's gluten and reason when it can't be ordered away, else None."""
+    codes = sorted({cereal_code(str(g)) for gl in bad for g in gl})
+    others = [c for c in codes if c != "OAT"]
+    if not others:
+        return None
+    return {"gluten": codes, "reason": "Note from this app: the guide lists " + " and ".join(cereal_word(c) for c in others)
+            + " for some milks and not others, so every version is on the Avoid list."}
+
+
 ORDER_FIELDS = ("order", "ok", "not", "standard", "standardFrom", "note")
 
 
 def one_of_each(ok, avoid, warnings):
-    """The same item twice in a section (name in any case): keep one copy. A copy with no gluten never hides one that
+    """The same item twice in a section and sub-heading (name in any case): keep one copy. A copy with no gluten never hides one that
     names it, and two listed copies that say to order it differently go on the Avoid list to check in store: no merge
     of two sets of instructions is safe (one copy's fine milk can be the other's gluten one)."""
-    key = lambda i: (i["section"], i["name"].lower())
+    key = lambda i: (i["section"], i.get("sub") or "", i["name"].lower())
     says = lambda i: [sorted(v) if isinstance(v, list) else v for v in (i.get(f) for f in ORDER_FIELDS)]
     gluten = {key(a) for a in avoid}
     seen, listed, unsure = {}, [], {}

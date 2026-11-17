@@ -97,6 +97,14 @@ class MenuRules(unittest.TestCase):
         self.assertEqual(len(errors), 1, errors)
         self.assertIn("carries a way to order it", errors[0])
 
+    def test_two_listed_rows_with_one_section_and_name_fail(self):
+        # under two sub-headings: the app keys staff cards and favourites by section and name, so one shows the other's
+        two = [{"name": "Pho Bo", "section": "Pho", "sub": "Kids", "order": "asis"},
+               {"name": "Pho Bo", "section": "Pho", "sub": "Adults", "order": "modify", "note": "Without the noodles"}]
+        errors = menu_errors(menu(items=two, stats={"rows": 3, "items": 2, "avoid": 1}))
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("listed twice under one section", errors[0])
+
     def test_an_empty_avoid_list_fails(self):
         errors = menu_errors(menu(avoid=[], stats={"rows": 1, "items": 1, "avoid": 0}))
         self.assertEqual(errors, ["x: nothing on the Avoid list"])

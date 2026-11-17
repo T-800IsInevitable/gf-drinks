@@ -21,7 +21,7 @@ from pathlib import Path
 import pdfplumber
 
 from . import notices
-from .common import cereal_word, clean, newest_by, result
+from .common import cereal_word, clean, newest_by, one_of_each, result
 
 TICK, BULLET = "\u2713", "\uf09f"
 CEREALS = {"Wheat": "WHEAT", "Rye": "RYE", "Barley": "BARLEY", "Oats": "OAT", "Spelt (Wheat)": "SPELT", "Kamut (Wheat)": "KAMUT"}
@@ -243,21 +243,12 @@ def build(folder, config):
                                   "pages": [n["page"]], "pagesTotal": 1})
     if len(found) < MIN_ROWS:
         raise SystemExit(f"ERROR: {pdf_path.name} doesn't look like Greggs' allergen guide ({len(found)} products). Menu not updated.")
-    seen = {}
     for r in found:
         kind, item = classify(r, warnings)
         if item["name"].lower() in changed and "allergen update" not in (item.get("info") or ""):
             item["info"] = ((item.get("info") + " ") if item.get("info") else "") + "The guide lists an allergen update for this item."
-        key = (item["section"], item["name"].lower())
-        if key in seen:  # the same product twice in a section: keep one, and never let a duplicate hide gluten
-            prev_kind, prev = seen[key]
-            if prev_kind == "ok" and kind == "avoid":
-                ok.remove(prev)
-                avoid.append(item)
-                seen[key] = (kind, item)
-            continue
-        seen[key] = (kind, item)
         (ok if kind == "ok" else avoid).append(item)
+    ok, avoid = one_of_each(ok, avoid, warnings)  # a product twice in a section: no copy hides a stricter one
     return result(pdf_path.name, info,
                   "Greggs: excludes anything the guide marks as containing, or maybe containing, wheat, rye, barley, oats, spelt or kamut.",
                   ok, avoid, warnings, guide_notices, rows=len(found))

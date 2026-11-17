@@ -20,7 +20,7 @@ from pathlib import Path
 import pdfplumber
 
 from . import notices
-from .common import CEREAL, CEREAL_CAPS as GLUTEN, cereal_code, cereal_word, newest_by, result
+from .common import CEREAL, CEREAL_CAPS as GLUTEN, cereal_code, cereal_word, mixed_milks, newest_by, result
 from .common import clean as _clean
 
 MILK_SUFFIX = re.compile(r"^(.*?)\s+[-–]\s+(.*\b(?:milk|drink))\s*(\(standard build\))?$", re.I)
@@ -191,6 +191,10 @@ def group(rows):
             common = set.intersection(*(set(v["gluten"]) for v in bad))
             item["gluten"] = sorted(common or {g for v in bad for g in v["gluten"]})
             avoid.append(item)
+            continue
+        mixed = mixed_milks([v["gluten"] for v in bad])  # only an oat drink is a milk to order away
+        if mixed:
+            avoid.append({**item, **mixed})
             continue
         milks = [v for v in vs if v["milk"]]
         if not milks:

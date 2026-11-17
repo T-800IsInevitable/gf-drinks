@@ -175,6 +175,15 @@ def check_restaurant(r, err):
         if k in seen_words and seen_words[k] != i["name"]:
             err(f"{rid}: {seen_words[k]!r} and {i['name']!r} look like one item split in two")
         seen_words.setdefault(k, i["name"])
+    # two listed rows with one section and name, under different sub-headings: the app keys favourites, staff cards and the
+    # order builder by section and name, so one row's card would show for the other
+    listed = {}
+    for i in d["items"]:
+        listed.setdefault((i["section"], " ".join(i["name"].lower().split())), []).append(i["name"])
+    twice = sorted(f"{names[0]!r} in {s}" for (s, _), names in listed.items() if len(names) > 1)
+    if twice:
+        err(f"{rid}: listed twice under one section ({', '.join(twice)}); the app can't tell the two apart. Rename one "
+            "with \"rename\" in restaurant.json")
     names = {(i["section"], i["name"]) for i in d["items"]}
     clash = names & {(a["section"], a["name"]) for a in d["avoid"]}
     if clash:

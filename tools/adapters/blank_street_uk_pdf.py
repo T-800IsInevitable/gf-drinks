@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pdfplumber
 
-from .common import CEREAL, CEREAL_CAPS as CONTAINS, CEREAL_WORDS, cereal_code as cereal, clean, newest_by, one_of_each, result
+from .common import CEREAL, CEREAL_CAPS as CONTAINS, CEREAL_WORDS, cereal_code as cereal, clean, mixed_milks, newest_by, one_of_each, result
 
 MAY = re.compile(rf"\b({CEREAL_WORDS}|cereals)\b", re.I)
 VERSION = re.compile(r"With\s+(\w+)\s*:", re.I)
@@ -134,6 +134,9 @@ def classify(p, warnings):
         if not all_contain:
             out["tag"] = "May contain gluten"
         return "avoid", out
+    mixed = mixed_milks([v["has"] + v["may"] for v in vs if v not in good])  # only an oat drink is a milk to order away
+    if mixed:
+        return "avoid", {**item, **mixed}
     milks = [v for v in vs if v["milk"]]
     if not milks:
         return "ok", {**item, "order": "asis"}

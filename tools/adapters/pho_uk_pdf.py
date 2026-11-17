@@ -25,7 +25,7 @@ from pathlib import Path
 import pdfplumber
 
 from . import notices
-from .common import CEREAL, MONTHS, cereal_code, cereal_word, clean, newest_by, result
+from .common import CEREAL, MONTHS, cereal_code, cereal_word, clean, newest_by, one_of_each, result
 
 RED = (0.02, 1.0, 0.85, 0.06)
 PINK = (0.004, 0.21, 0.178, 0.013)
@@ -262,6 +262,7 @@ def build(folder, config):
         kind, item = classify(r, config, warnings)
         if kind != "note":
             (ok if kind == "ok" else avoid).append(item)
+    ok, avoid = one_of_each(ok, avoid, warnings)  # a dish twice under one heading: no copy hides a stricter one
     return result(pdf_path.name, info,
                   "Pho: excludes anything with a mark or a cereal named in the guide's gluten column, unless the guide says the gluten can be removed.",
                   ok, avoid, warnings, guide_notices, rows=len(rows))

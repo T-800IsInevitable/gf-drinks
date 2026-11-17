@@ -22,7 +22,7 @@ from pathlib import Path
 import pdfplumber
 
 from . import notices
-from .common import newest_by, result
+from .common import newest_by, one_of_each, result
 from .starbucks_uk_pdf import clean, is_food_guide, read_gluten
 from .starbucks_uk_pdf import guide_info as drinks_guide_info
 
@@ -128,17 +128,8 @@ def build(folder, config):
         intro = [n for n in range(2, table[0]) if n not in table]
         regions = {n: [(0, pdf.pages[n - 1].height - 60, pdf.pages[n - 1].width, pdf.pages[n - 1].height)] for n in table}
         guide_notices = notices.collect(pdf, intro, regions=regions)
-    ok, avoid, seen = [], [], set()
+    ok, avoid = [], []
     for r in rows:
-        key = (r["section"], r["name"])
-        if key in seen:  # the same product listed twice: keep the first, but never let a duplicate hide gluten
-            prev = next(x for x in ok + avoid if (x["section"], x["name"]) == key)
-            if r["gluten"] and prev in ok:
-                ok.remove(prev)
-                prev.pop("order", None)  # before the copy: an Avoid row carries no way to order it
-                avoid.append({**prev, "gluten": r["gluten"]})
-            continue
-        seen.add(key)
         item = {"name": r["name"], "section": r["section"], "sub": r["sub"], "pages": [r["page"]]}
         if r["decided"]:
             item["decided"] = r["decided"]
@@ -146,5 +137,6 @@ def build(folder, config):
             avoid.append({**item, "gluten": r["gluten"]})
         else:
             ok.append({**item, "order": "asis"})
+    ok, avoid = one_of_each(ok, avoid, warnings)  # a product listed twice: no copy hides a stricter one
     return result(pdf_path.name, info, "Food: excludes anything listing wheat, oats, barley, rye, spelt, kamut, gluten or malt.",
                   ok, avoid, warnings, guide_notices, rows=len(rows))

@@ -24,7 +24,7 @@ from pathlib import Path
 import pdfplumber
 
 from . import notices
-from .common import MONTHS, clean, newest_by, result
+from .common import MONTHS, clean, mixed_milks, newest_by, result
 
 TICK = ""
 GLUTEN_COLS = {"Barley": "BARLEY", "Kamut": "KAMUT", "Oats": "OAT", "Rye": "RYE", "Spelt": "SPELT", "Wheat": "WHEAT"}
@@ -196,6 +196,10 @@ def group(rows, warnings=None):
             common = set.intersection(*(set(v["gluten"]) for v in bad))
             d["gluten"] = sorted(common or {g for v in bad for g in v["gluten"]})
             avoid.append(d)
+            continue
+        mixed = mixed_milks([v["gluten"] for v in bad])  # only an oat drink is a milk to order away
+        if mixed:
+            avoid.append({**d, **mixed})
             continue
         milks = [v for v in vs if v["milk"]]
         if not milks or len(vs) == 1:
