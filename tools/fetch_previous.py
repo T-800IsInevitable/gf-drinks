@@ -3,11 +3,12 @@
 Download the menus that are live now into .previous/, so build.py can say
 what changed when a restaurant's guide is updated (see tools/changes.py).
 
-A 404 for the index means the site is up with nothing published yet (the
-very first deploy): that's not an error, the build simply has nothing to
-compare with. Any other failure (no connection, a timeout, the site
-returning an error) stops the build instead of publishing silently with
-every restaurant's change marks dropped: see assessment finding X4.
+Any failure (no connection, a timeout, the site returning an error, a 404)
+stops the build instead of publishing silently with every restaurant's change
+marks dropped (assessment finding X4), and with the build's guard against a
+reader going blind switched off (build.py avoid_drop, which needs the live
+menus). The very first publish has nothing live to compare with: set
+GF_FIRST_DEPLOY=1 for it, and a 404 for the index is then allowed.
 
 Usage:
   python tools/fetch_previous.py [site-url]
@@ -53,12 +54,15 @@ def main():
     try:
         index = json.loads(get(base + "data/restaurants.json"))
     except Exception as e:
-        if isinstance(e, urllib.error.HTTPError) and e.code == 404:  # the site is up; first deploy, nothing to compare with yet
+        missing = isinstance(e, urllib.error.HTTPError) and e.code == 404
+        # a 404 is the first deploy only when it says so: a moved or switched-off site must not skip the guard
+        if missing and os.environ.get("GF_FIRST_DEPLOY") == "1":
             print(f"No live menus to compare with (first deploy: {e}).")
             return
         raise SystemExit(f"ERROR: couldn't download the live menus to compare with ({e}). Not publishing: "
-                          "a failed download must not wipe every restaurant's change marks. Retry, or pass "
-                          "a different --previous DIR to tools/build.py to publish anyway.")
+                          "a failed download must not wipe every restaurant's change marks or skip the check on them. "
+                          + ("If this is the very first publish, set GF_FIRST_DEPLOY=1. " if missing else "")
+                          + "Retry, or pass a different --previous DIR to tools/build.py to publish anyway.")
     (OUT / "r").mkdir(parents=True, exist_ok=True)
     (OUT / "restaurants.json").write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
     # the live release number, so tools/push.py can announce a new one; not worth stopping the build for

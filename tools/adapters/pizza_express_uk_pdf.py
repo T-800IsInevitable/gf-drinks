@@ -21,7 +21,7 @@ from pathlib import Path
 import pdfplumber
 
 from . import notices
-from .common import CEREAL, MONTHS, cereal_code, cereal_word, clean, newest_by, result
+from .common import CEREAL, MONTHS, cereal_code, cereal_word, clean, newest_by, one_of_each, result
 
 TICK = "\u2713"
 MIN_ROWS = 200
@@ -259,20 +259,12 @@ def build(folder, config):
         guide_notices = notices.collect(pdf, intro)
     if len(found) < MIN_ROWS:
         raise SystemExit(f"ERROR: {pdf_path.name} doesn't look like PizzaExpress's allergen guide ({len(found)} rows). Menu not updated.")
-    seen = set()
     for r in found:
         extra = ['The guide says breakfast is at "Selected Restaurants Only".'] if r["breakfast"] else []
         kind, item = classify(r, extra, warnings)
-        key = (item["section"], item["name"].lower())
-        if key in seen:
-            warnings.append(f"p.{r['page']} {item['name']}: listed twice in {item['section']}")
-            prev = next(i for i in ok + avoid if (i["section"], i["name"].lower()) == key)
-            if kind == "avoid" and prev in ok:  # never let a duplicate hide gluten
-                ok.remove(prev)
-                avoid.append(item)
-            continue
-        seen.add(key)
         (ok if kind == "ok" else avoid).append(item)
+    # a dish twice in a section: no copy hides a stricter one, and two that say to order it differently are checked in store
+    ok, avoid = one_of_each(ok, avoid, warnings)
     plain = lambda n: re.sub(r"[^a-z]", "", n.lower())
     dishes = {plain(i["name"]) for i in ok + avoid if "ingredients" not in i["section"].lower()}
     for i in ok + avoid:

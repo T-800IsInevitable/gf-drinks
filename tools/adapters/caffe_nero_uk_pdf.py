@@ -22,7 +22,7 @@ from pathlib import Path
 import pdfplumber
 
 from . import notices
-from .common import CEREAL, cereal_code, cereal_word, clean, newest_by, one_of_each, result
+from .common import CEREAL, cereal_code, cereal_word, clean, mixed_milks, newest_by, one_of_each, result
 
 DRINK_GLUTEN = re.compile(r"^(WHEAT|RYE|BARLEY|OATS?|SPELT|KAMUT|MALT|GLUTEN|CEREALS?)$")
 ALLERGENS = {"MILK", "SOYA", "ALMONDS", "NUTS", "NONE", "EGG", "EGGS", "PEANUTS", "FISH", "CELERY", "MUSTARD", "LUPIN",
@@ -391,6 +391,10 @@ def build(folder, config):
         if not good:
             avoid.append({**item, "gluten": sorted({x for gl in vs.values() for x in gl}),
                           "reason": "Every version lists " + " and ".join(sorted({x.lower() for gl in vs.values() for x in gl})) + "."})
+            continue
+        mixed = mixed_milks([vs[v] for v in bad])  # only an oat drink is a milk to order away
+        if mixed:
+            avoid.append({**item, **mixed})
             continue
         out = {**item, "ok": good, "not": bad, "order": "except" if bad else "any"}
         if g["standard"] in vs:

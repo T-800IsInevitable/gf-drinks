@@ -11,10 +11,16 @@ import fetch_previous  # noqa: E402
 
 
 class FetchPrevious(unittest.TestCase):
-    def test_404_is_treated_as_the_first_deploy(self):
-        """The site is up but nothing has been published yet: not an error."""
-        with mock.patch.object(fetch_previous, "get", side_effect=urllib.error.HTTPError("u", 404, "Not Found", {}, None)):
-            fetch_previous.main()  # must not raise
+    def test_404_is_the_first_deploy_only_when_it_says_so(self):
+        """Nothing published yet is fine for the very first publish (GF_FIRST_DEPLOY=1). Otherwise a 404 is a moved or
+        switched-off site, which must not skip the build's check on the live menus."""
+        e404 = urllib.error.HTTPError("u", 404, "Not Found", {}, None)
+        with mock.patch.object(fetch_previous, "get", side_effect=e404), mock.patch.object(sys, "argv", ["fetch_previous.py"]):
+            with mock.patch.dict(fetch_previous.os.environ, {"GF_FIRST_DEPLOY": "1"}):
+                fetch_previous.main()  # must not raise
+            with mock.patch.dict(fetch_previous.os.environ, {}, clear=True), self.assertRaises(SystemExit) as stop:
+                fetch_previous.main()
+            self.assertIn("GF_FIRST_DEPLOY=1", str(stop.exception))
 
     def test_one_menu_failing_stops_the_build_too(self):
         """The index arrives but one restaurant's menu doesn't: that restaurant would otherwise publish with no

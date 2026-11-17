@@ -211,7 +211,7 @@ Detail that only one kind of task needs. `CLAUDE.md` holds the rules and points 
 - `tools/fetch_previous.py` downloads the live menus into `.previous/`. `tools/changes.py` then records what changed in each new guide ("changes"), carried forward until the next guide.
 - The app shows it as a dismissable "what's new" banner, plus a lasting "What changed" link in Warnings and Help.
 - The app warns about favourites that are now to avoid or gone: in full on that restaurant's own page and on All, and as a short line elsewhere.
-- A download failure in `fetch_previous.py` stops the build (`SystemExit`) rather than publishing with every restaurant's changes silently dropped. A 404 (nothing published yet) is treated as the first deploy, not a failure.
+- A download failure in `fetch_previous.py` stops the build (`SystemExit`) rather than publishing with every restaurant's changes silently dropped. A 404 stops it too, so a moved or switched-off site can't skip the check on the live menus; for the very first publish, set `GF_FIRST_DEPLOY=1`.
 - `site/compare.js` is a line-for-line port of `compare()` in `tools/changes.py`. `tests/test_changes_js.py` runs both side by side (Node) on the real Starbucks summer and autumn drinks guides and on made-up older versions of every menu (`tests/fixtures/changes/`). Refresh the `menu-*.json` fixtures when a reader changes a lot.
 
 ### Checks and workflows

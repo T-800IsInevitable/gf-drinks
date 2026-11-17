@@ -12,9 +12,11 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "tools"))
 import build  # noqa: E402
-from adapters import blank_street_uk_pdf, caffe_nero_uk_pdf, common, five_guys_uk_pdf, greggs_uk_pdf, pret_uk_pdf, starbucks_uk_pdf  # noqa: E402
+from adapters import (blank_street_uk_pdf, caffe_nero_uk_pdf, common, five_guys_uk_pdf, greggs_uk_pdf, pizza_express_uk_pdf,  # noqa: E402
+                      pret_uk_pdf, starbucks_uk_pdf)
 from adapters.common import CEREAL, CEREAL_CAPS, cereal_code  # noqa: E402
 from adapters.pret_uk_pdf import TICK, odd_mark  # noqa: E402
 
@@ -249,6 +251,101 @@ class Repeats(unittest.TestCase):
         ok, avoid = common.one_of_each(ok, avoid, warnings)
         self.assertEqual(([i["name"] for i in ok], [a["name"] for a in avoid]), (["Malt"], ["Shake"]))
         self.assertEqual(len(warnings), 2)
+
+    def test_one_of_each_keeps_two_sub_headings_apart(self):
+        # Pho lists the same dish under two sub-headings of one section: two rows, not one merged away
+        avoid = [{"section": "Bun", "sub": "Kids", "name": "Spring roll", "gluten": ["WHEAT"]},
+                 {"section": "Bun", "sub": "Adults", "name": "Spring roll", "gluten": ["WHEAT"]}]
+        self.assertEqual(len(common.one_of_each([], avoid, [])[1]), 2)
+
+    def test_every_reader_sorts_out_an_item_listed_twice(self):
+        # a safety fix once reached only some readers: each one's build goes through one_of_each, or merges or stops on
+        # a second copy itself (named here, with how)
+        own = {"pret_uk_pdf": "rows of one name are one drink's versions", "starbucks_uk_pdf": "rows of one name are one drink's versions",
+               "nandos_uk_json": "stops the build on a second copy"}
+        for f in sorted((ROOT / "tools" / "adapters").glob("*.py")):
+            text = f.read_text(encoding="utf-8")
+            if "def build(" in text and f.stem not in own:
+                self.assertIn("one_of_each(", text, f.stem)
+
+    def test_pizza_express_two_copies_ordered_differently_are_checked_in_store(self):
+        # the second Margherita needs a gluten-free base: the plain first copy mustn't stand for it
+        base = {"page": 5, "section": "Pizzas", "name": "Margherita", "gluten_words": "", "across": "", "note": ""}
+        plain = {**base, "marks": {"coeliacs": {"tick"}}}
+        gf_base = {**base, "marks": {"gluten": {"tick"}}, "gluten_words": "Wheat", "note": "Suitable for coeliacs on a gluten-free base"}
+        filler = [{**base, "name": f"Dish {n}", "marks": {"coeliacs": {"tick"}}} for n in range(pizza_express_uk_pdf.MIN_ROWS)]
+
+        def rows(page, n, section, warnings):
+            if n == 1:
+                yield from [plain, gf_base] + filler
+            return section
+        page = mock.Mock()
+        page.extract_text.return_value = "DOES IT CONTAIN"
+        pdf = mock.MagicMock()
+        pdf.__enter__.return_value.pages = [page, page, page]
+        with mock.patch.object(pizza_express_uk_pdf, "rows", rows), \
+                mock.patch.object(pizza_express_uk_pdf, "newest_pdf", lambda folder: Path("x.pdf")), \
+                mock.patch.object(pizza_express_uk_pdf.pdfplumber, "open", lambda p: pdf), \
+                mock.patch.object(pizza_express_uk_pdf, "guide_info", lambda pdf: {"title": "x", "runs": None, "version": "2026-09-01"}), \
+                mock.patch.object(pizza_express_uk_pdf.notices, "collect", lambda pdf, pages: []):
+            out = pizza_express_uk_pdf.build(".", {})
+        self.assertNotIn("Margherita", [i["name"] for i in out["items"]])
+        self.assertEqual([a.get("tag") for a in out["avoid"] if a["name"] == "Margherita"], ["Check in store"])
+
+
+class MixedMilks(unittest.TestCase):
+    """Wheat, barley or malt in some milk versions and not others is a guide that disagrees with itself: Avoid, not
+    "any milk except". Only an oat drink is a milk to order away."""
+    row = {"section": "Frappuccino", "sub": None, "page": 9}
+
+    def check(self, kind, item):
+        self.assertEqual(kind, "avoid", item)
+        self.assertNotIn("order", item)
+        self.assertTrue(item["reason"].startswith("Note from this app: the guide lists "), item)
+        self.assertIn("some milks and not others", item["reason"])
+
+    def test_the_rule(self):
+        self.assertIsNone(common.mixed_milks([["OAT"], ["OATS"]]))  # an oat drink: order it with another milk
+        self.assertEqual(common.mixed_milks([["WHEAT"], ["OAT"]])["gluten"], ["OAT", "WHEAT"])
+        self.assertIn("wheat for some milks", common.mixed_milks([["WHEAT"]])["reason"])
+        self.assertIn("gluten for some milks", common.mixed_milks([["GLUTEN"]])["reason"])
+
+    def test_starbucks_and_pret(self):
+        for reader, rows in (
+                (starbucks_uk_pdf, [("Cookie Crumble Frappuccino - whole milk", []), ("Cookie Crumble Frappuccino - skimmed milk", ["WHEAT"]),
+                                    ("Cookie Crumble Frappuccino - soya drink", ["WHEAT"])]),
+                (pret_uk_pdf, [("Cookie Latte Semi Skimmed milk", []), ("Cookie Latte Whole milk", ["BARLEY"])])):
+            ok, avoid = reader.group([{**self.row, "name": n, "gluten": g} for n, g in rows])
+            self.assertEqual(ok, [], reader.__name__)
+            self.check("avoid", avoid[0])
+        # an oat difference is still a drink to order with another milk
+        ok, avoid = starbucks_uk_pdf.group([{**self.row, "name": "Latte - whole milk", "gluten": []},
+                                            {**self.row, "name": "Latte - oat drink", "gluten": ["OAT"]}])
+        self.assertEqual(([i["order"] for i in ok], avoid), (["except"], []))
+
+    def test_blank_street(self):
+        kind, item = blank_street_uk_pdf.classify({"page": 1, "section": "Coffee", "name": "Cookie Latte",
+                                                   "text": "With DAIRY: Espresso, MILK | With COCONUT: Espresso, coconut drink, WHEAT cookie"}, [])
+        self.check(kind, item)
+        kind, item = blank_street_uk_pdf.classify({"page": 1, "section": "Coffee", "name": "Latte",
+                                                   "text": "With DAIRY: Espresso, MILK | With OAT: Espresso, OAT drink"}, [])
+        self.assertEqual((kind, item.get("order")), ("ok", "except"))
+
+    def test_caffe_nero(self):
+        drinks = [{"page": 2, "table": (2, 0), "section": "Coffee", "name": n, "standard": None, "gluten": g}
+                  for n, g in (("Cookie Latte - Semi-Skimmed", []), ("Cookie Latte - Soya", ["WHEAT"]))]
+        pdf = mock.MagicMock()
+        pdf.__enter__.return_value.pages = [object()]
+        with mock.patch.object(caffe_nero_uk_pdf, "newest_pdf", lambda folder: Path("g.pdf")), \
+                mock.patch.object(caffe_nero_uk_pdf.pdfplumber, "open", lambda p: pdf), \
+                mock.patch.object(caffe_nero_uk_pdf, "kind_of", lambda page: "drinks"), \
+                mock.patch.object(caffe_nero_uk_pdf, "drink_rows", lambda page, n: iter(drinks)), \
+                mock.patch.object(caffe_nero_uk_pdf, "page_notices", lambda pdf, pages: []), \
+                mock.patch.object(caffe_nero_uk_pdf, "guide_info", lambda pdf: {"title": "x", "runs": None, "version": "2026-01-01"}), \
+                mock.patch.multiple(caffe_nero_uk_pdf, MIN_FOOD=0, MIN_DRINKS=0):
+            out = caffe_nero_uk_pdf.build("x", {})
+        self.assertEqual(out["items"], [])
+        self.check("avoid", out["avoid"][0])
 
 
 class BlankStreetLowerCase(unittest.TestCase):

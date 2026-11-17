@@ -32,7 +32,7 @@ recipe changes, nutrition notes) go in restaurant.json under "notices" as
 import csv
 from pathlib import Path
 
-from .common import CEREAL, result
+from .common import CEREAL, one_of_each, result
 
 ORDERS = {"asis", "any", "except", "swap", "modify", "avoid", "doubt"}
 
@@ -91,6 +91,7 @@ def build(folder, config):
                     raise SystemExit(f"ERROR: {path.name} line {n} ({name}): 'modify' needs a 'note'")
                 item["note"] = row["note"]
             items.append(item)
+    items, avoid = one_of_each(items, avoid, warnings)  # a row twice in a section: no copy hides a stricter one
     if not items and not avoid:
         raise SystemExit(f"ERROR: {path} has no rows")
     guide = config.get("guide", {})
