@@ -381,14 +381,17 @@ class OneFailureDoesntStopTheRest(unittest.TestCase):
                     raise RuntimeError("broken")
                 return {"id": folder.name, "name": "B-UK", "page": "p", "new": [], "ignored": [], "problems": [], "manual": False}
 
+            # a "couldn't check" issue for A-UK is already open: the crash still gets an issue of its own
             with mock.patch.object(w, "ROOT", Path(tmp)), mock.patch.object(w, "check", check), \
-                    mock.patch.object(w, "open_issues", lambda: set()), \
-                    mock.patch.object(w, "issue", lambda title, body, existing: opened.append(title)), \
+                    mock.patch.object(w, "open_issues", lambda: {"Guide watch: couldn't check A-UK"}), \
+                    mock.patch.object(w, "issue", lambda title, body, existing: None if title in existing else opened.append((title, body))), \
                     mock.patch.object(sys, "argv", ["watch_guides.py", "--github"]), mock.patch("builtins.print"):
                 with self.assertRaises(SystemExit) as stop:
                     w.main()
         self.assertEqual(checked, ["a-uk", "b-uk"])
-        self.assertEqual(opened, ["Guide watch: couldn't check A-UK"])
+        self.assertEqual([title for title, _ in opened], ["Guide watch: stopped on A-UK"])
+        self.assertIn("broken", opened[0][1])
+        self.assertNotIn("update `watch`", opened[0][1])  # it isn't a moved page: the watch itself stopped
         self.assertIn("a-uk", str(stop.exception))
 
 
