@@ -109,6 +109,16 @@ process.stdout.write(JSON.stringify(rows.map((a) => [avoidTag(a), avoidWhy(a)]))
                              env={**os.environ, "TZ": "Europe/London"})
         self.assertEqual(out.stdout, "2026-07-02")
 
+    def test_the_app_check_py_and_hand_kept_menus_know_the_same_orders(self):
+        # an order one of them knows and another doesn't is listed by the build but refused or mis-shown elsewhere
+        import sys
+        sys.path.insert(0, str(ROOT / "tools"))
+        import check
+        from adapters import manual_csv
+        app = set(json.loads(source("ORDERS").split("=", 1)[1].strip().rstrip(";")))
+        self.assertEqual(app, set(check.ORDERS))
+        self.assertEqual(app, manual_csv.ORDERS - {"avoid", "doubt"})  # those two are Avoid rows, which carry no order
+
     def test_the_known_orders_read_as_before(self):
         out = self.run_js([{"order": "asis"}, {"order": "except", "ok": ["soya"], "not": ["oat"]},
                            {"order": "modify", "note": "No croutons"}])
