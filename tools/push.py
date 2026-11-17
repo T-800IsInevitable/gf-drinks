@@ -197,9 +197,16 @@ def subscriptions(text):
     text = (text or "").strip()
     if not text:
         return []
+    # each phone is one object; a line holding a list (a phone added under a list written on one line) is unpacked, and
+    # anything else stops here, before any phone is sent to, rather than part-way through sending
+    def phones(v, where):
+        for s in v if isinstance(v, list) else [v]:
+            if not isinstance(s, dict):
+                raise SystemExit(f"ERROR: PUSH_SUBSCRIPTIONS {where} isn't a phone's subscription (it should start with "
+                                 f"{{\"endpoint\": and end with }})")
+        return v if isinstance(v, list) else [v]
     try:
-        d = loads_lenient(text)
-        return d if isinstance(d, list) else [d]
+        return phones(loads_lenient(text), "entry")
     except ValueError:
         out = []
         for n, line in enumerate(text.splitlines(), 1):
@@ -207,9 +214,10 @@ def subscriptions(text):
             if not line or line.startswith("#"):
                 continue
             try:
-                out.append(loads_lenient(line))
+                v = loads_lenient(line)
             except ValueError:
                 raise SystemExit(f"ERROR: PUSH_SUBSCRIPTIONS line {n} isn't JSON (it should start with {{\"endpoint\": and end with }})")
+            out += phones(v, f"line {n}")
         return out
 
 

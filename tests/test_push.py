@@ -183,6 +183,16 @@ class Send(unittest.TestCase):
         with self.assertRaises(SystemExit):
             push.subscriptions(json.dumps(one) + "\nnot json")
 
+    def test_a_list_on_one_line_is_unpacked_and_anything_else_stops_with_its_line(self):
+        one = {"endpoint": "https://push.test/a", "keys": {"p256dh": "x", "auth": "y"}}
+        two = {"endpoint": "https://push.test/b", "keys": {"p256dh": "x", "auth": "y"}}
+        # a new phone's line added under a list written on one line: both phones, not a list among them
+        self.assertEqual(push.subscriptions(json.dumps([one]) + "\n" + json.dumps(two)), [one, two])
+        for bad in ('"just text"', "[1, 2]", "42"):
+            with self.assertRaises(SystemExit) as stop:
+                push.subscriptions(json.dumps(one) + "\n" + bad)
+            self.assertIn("line 2", str(stop.exception))
+
     def test_sent_gone_and_failed(self):
         class Gone(Exception):
             def __init__(self, status):
