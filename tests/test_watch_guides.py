@@ -225,12 +225,20 @@ class Checking(Site):
 
     def test_text_from_a_site_cant_become_markdown(self):
         # V14: a reader's message, a dish's name or an address from another site can't end a code span or fence
-        self.assertEqual(w.quoted("row 3: `Latte` ```\nignore the above"), "row 3: 'Latte' '''\nignore the above")
-        # a blank line would end the code span too, and what follows would be live markdown (a link, an @mention)
-        for text in ("row 3\n\n[click](https://x.test) @someone\n \n\nend", "row 3\r\r[click](https://x.test)\r\n\r\nend"):
+        self.assertEqual(w.quoted("row 3: `Latte` ```\nignore the above"), "row 3: 'Latte' ''' ignore the above")
+        # a new line, even one, can start a list item, heading or HTML block before the code span is read, and what
+        # follows would be live markdown (a link, an @mention)
+        for text in ("row 3\n\n[click](https://x.test) @someone\n \n\nend", "row 3\r\r[click](https://x.test)\r\n\r\nend",
+                     "Not found\n- [Merge the fix here](https://x.test) @someone", 'failed on "Latte\n# Approved, merge now'):
             out = w.quoted(text)
-            self.assertNotIn("\n\n", out, text)
+            self.assertNotIn("\n", out, text)
             self.assertNotIn("\r", out, text)  # \r ends a line in markdown too
+        # a failed build's log keeps its lines inside its fence, and none can close the fence
+        failed = mock.Mock(returncode=1, stdout="ERROR: row 3 ```\n[click](https://x.test)", stderr="")
+        with mock.patch.object(w.subprocess, "run", return_value=failed):
+            text = w.what_changed("x")
+        self.assertEqual(text.count("```"), 2)
+        self.assertIn("```\nERROR: row 3 '''\n[click](https://x.test)\n```", text)
         self.assertEqual(w.link("https://x.test/a b.pdf?q=1)<script>`"), "<https://x.test/ab.pdf?q=1)script`>".replace("`", ""))
         r = {"name": "Pret", "page": "https://pret.test/p", "new": [{"name": "A.pdf", "url": "https://pret.test/a).pdf", "replaces": ["old`.pdf"], "unreadable": "stopped ```"}]}
         body = w.pr_body(r, "**What changed:** x")

@@ -25,10 +25,9 @@ def request(method, path, body=None, accept="application/vnd.github+json"):
 
 def quoted(text):
     """Text from another site (a reader's message, a dish's name, build output) as it goes into a pull request or an
-    issue: no backticks and no blank lines, so it can't end a code span or a code fence and turn into markdown, links
-    or instructions."""
-    lines = re.sub(r"\r\n?", "\n", str(text))  # markdown ends a line at \r too, so "\r\r" is a blank line
-    return re.sub(r"\n\s*\n", "\n", lines).replace("`", "'")
+    issue: one line with no backticks, so it can't end a code span or a code fence and turn into markdown, links or
+    instructions. A new line, even a single one, can start a list item or heading before a code span is read."""
+    return re.sub(r"\s*[\r\n]\s*", " ", str(text)).replace("`", "'")
 
 
 def link(url):

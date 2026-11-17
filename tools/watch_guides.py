@@ -222,11 +222,11 @@ def what_changed(rid):
     """Build this restaurant with the new guide and say what changed since the live menu (tools/changes.py)."""
     run = subprocess.run([sys.executable, str(ROOT / "tools" / "build.py"), rid], cwd=ROOT, capture_output=True, text=True)
     if run.returncode:
-        tail = "\n".join((run.stdout + run.stderr).strip().splitlines()[-15:])
+        tail = "\n".join(quoted(x) for x in (run.stdout + run.stderr).strip().splitlines()[-15:])  # lines, inside a fence
         return ("**The build couldn't read it**, so the checks will fail and the live menus stay as they are until the reader "
                 "is updated for it. That fix (the reader, its snapshot, or `avoidDropOk` in `restaurant.json`) goes in a pull "
                 "request of your own, merged first: the guard lets this branch change only the guides. Then re-run this "
-                f"pull request's checks.\n\n```\n{quoted(tail)}\n```")
+                f"pull request's checks.\n\n```\n{tail}\n```")
     built = json.loads((ROOT / "site" / "data" / "r" / f"{rid}.json").read_text(encoding="utf-8"))
     c = built.get("changes")
     # dish names come from the PDF: in code spans, where nothing in them can become a link, a mention or emphasis

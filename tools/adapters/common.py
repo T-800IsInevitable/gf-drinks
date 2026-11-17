@@ -121,9 +121,12 @@ def one_of_each(ok, avoid, warnings):
         # the copy kept names every cereal either copy names, says both reasons, and drops a tag they disagree on
         warnings.append(f"{a['name']}: listed twice in {a['section']}; Avoid copies merged")
         s = seen[k]
+        # a copy with no reason says what the app would show for it (avoidWhy), so the other's can't stand alone
+        why = lambda x: x.get("reason") or ("Every version contains " + " and ".join(x["gluten"]).lower() + "."
+                                            if x.get("gluten") else "The guide lists gluten.")
+        if why(a) != why(s):
+            s["reason"] = why(s) + " " + why(a)
         s["gluten"] = sorted(set(s.get("gluten") or []) | set(a.get("gluten") or []))
-        if a.get("reason") and a["reason"] != s.get("reason"):
-            s["reason"] = " ".join(x for x in (s.get("reason"), a["reason"]) if x)
         if s.get("tag") != a.get("tag"):
             s.pop("tag", None)
     return listed, kept

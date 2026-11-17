@@ -203,6 +203,11 @@ class Repeats(unittest.TestCase):
             {"section": "S", "name": "Bun", "gluten": ["WHEAT"], "reason": "Contains wheat."}], [])
         self.assertEqual([(a["gluten"], a.get("tag"), a["reason"]) for a in avoid],
                          [(["OAT", "WHEAT"], None, "May contain oat. Contains wheat.")])
+        # nor when the other copy gives no reason of its own (a Five Guys dot row)
+        _, avoid = common.one_of_each([], [
+            {"section": "S", "name": "Bun", "gluten": ["OAT"], "tag": "May contain gluten", "reason": "May contain oat."},
+            {"section": "S", "name": "Bun", "gluten": ["WHEAT"]}], [])
+        self.assertEqual(avoid[0]["reason"], "May contain oat. Every version contains wheat.")
 
     def test_five_guys_and_caffe_nero_use_one_of_each(self):
         # the readers themselves, fed a clean copy and a gluten copy of one item, list it only under Avoid
