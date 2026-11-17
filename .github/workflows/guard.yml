@@ -7,8 +7,8 @@ name: Guard pull request
 #    files, and a pull request carrying one of their commits must be on such a branch (tools/guard.py). A scan/ branch
 #    for a restaurant a reader already builds may add only guides and source files; a city/ or recheck/ branch may
 #    change only the city it names.
-#  - Its menus and cities are built and checked with main's tools/build.py and tools/check.py, and none of those
-#    files may be a symbolic link or a submodule.
+#  - Its menus and cities are built and checked with main's tools/build.py and tools/check.py, against the live menus
+#    (so the Avoid-drop guard runs), and none of those files may be a symbolic link or a submodule.
 # The token reads only, and no secret is used here. main requires this check (job "guard") to pass.
 on:
   pull_request_target:
@@ -57,5 +57,8 @@ jobs:
           fi
           rm -rf restaurants
           git checkout FETCH_HEAD -- restaurants site/cities.json
+          # the live menus, so main's Avoid-drop guard (tools/build.py avoid_drop) judges the pull request's menus; without
+          # them it has nothing to compare and is skipped, leaving only checks.yml's run of the pull request's own tools
+          python tools/fetch_previous.py
           python tools/build.py
           python tools/check.py
