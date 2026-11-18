@@ -10,9 +10,12 @@ name: Guard pull request
 #  - Its menus and cities are built and checked with main's tools/build.py and tools/check.py, against the live menus
 #    (so the Avoid-drop guard runs), and none of those files may be a symbolic link or a submodule.
 # The token reads only, and no secret is used here. main requires this check (job "guard") to pass.
+# pull_request_target runs the copy of this file on the pull request's base branch, so only a pull request into main
+# is judged by main's rules: any other base fails the first step, and "edited" re-runs the guard when the base is
+# changed (to main, say), so a green result from another branch's copy can't be carried across.
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
@@ -23,6 +26,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # the base branch's name goes in through the environment, never into the script's text
+      - name: The pull request is into main
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          if [ "$BASE_REF" != "main" ]; then
+            echo "GUARD: this pull request is into $BASE_REF, not main. Only pull requests into main are judged and merged here: change its base branch to main"
+            exit 1
+          fi
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false

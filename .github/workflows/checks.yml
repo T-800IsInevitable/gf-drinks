@@ -5,9 +5,13 @@ name: Check pull request
 # check to pass, so it runs on every pull request (no paths-ignore: a skipped
 # required check would block merging). The guide watch starts it by hand
 # (workflow_dispatch) on the pull requests it opens, because a pull request
-# opened with the workflow's own token doesn't start it.
+# opened with the workflow's own token doesn't start it. "edited" re-runs it when
+# the base branch is changed, so it's judged against the new base; it runs on
+# every edit, with no "if" to skip the others, because a skipped required check
+# counts as passed and would hide an earlier failure.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
 permissions:

@@ -354,5 +354,30 @@ class OneCity(unittest.TestCase):
             cities.assert_not_called()
 
 
+class OnlyIntoMain(unittest.TestCase):
+    """pull_request_target runs the base branch's copy of guard.yml, so a pull request into another branch must fail it,
+    and changing the base (an "edited" event) must re-run both required checks."""
+    WORKFLOWS = Path(__file__).resolve().parent.parent / ".github" / "workflows"
+
+    def read(self, name):
+        return (self.WORKFLOWS / name).read_text(encoding="utf-8")
+
+    def test_both_checks_run_again_when_the_pull_request_is_edited(self):
+        self.assertIn("  pull_request_target:\n    types: [opened, synchronize, reopened, edited]\n", self.read("guard.yml"))
+        checks = self.read("checks.yml")
+        self.assertIn("  pull_request:\n    types: [opened, synchronize, reopened, edited]\n", checks)
+        # a skipped required check counts as passed, so neither may skip the edits it doesn't care about
+        for text in (checks, self.read("guard.yml")):
+            self.assertNotRegex(text.split("\njobs:\n")[1], r"\n    if:")
+
+    def test_the_first_step_refuses_any_base_but_main(self):
+        steps = self.read("guard.yml").split("\n    steps:\n")[1].split("\n      - ")
+        first = next(s for s in steps if not s.lstrip().startswith("#"))  # a comment above a step isn't a step
+        self.assertIn("BASE_REF: ${{ github.event.pull_request.base.ref }}", first)
+        self.assertIn('if [ "$BASE_REF" != "main" ]; then', first)
+        self.assertIn("exit 1", first)
+        self.assertNotIn("${{", first.split("run: |")[1])  # the name goes in through the environment only
+
+
 if __name__ == "__main__":
     unittest.main()
