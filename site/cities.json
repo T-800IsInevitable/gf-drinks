@@ -5,7 +5,7 @@
     "flag": "🇩🇪",
     "language": "de",
     "timeZone": "Europe/Berlin",
-    "checked": "2026-10-25",
+    "checked": "2026-11-25",
     "recheckDays": 90,
     "bounds": {
       "lat": [
@@ -62,13 +62,13 @@
             "lat": 52.51047,
             "lon": 13.46834,
             "hours": [
-              "09:30–14:30",
-              "09:30–14:30",
-              "09:30–14:30",
-              "09:30–14:30",
-              "09:30–18:30",
-              "09:00–16:00",
-              "09:00–16:00"
+              "09:30–16:30",
+              "09:30–16:30",
+              "09:30–16:30",
+              "09:30–16:30",
+              "09:30–16:30",
+              "09:30–16:30",
+              "09:30–16:30"
             ]
           },
           {
@@ -77,13 +77,13 @@
             "lat": 52.50936,
             "lon": 13.29682,
             "hours": [
-              "09:30–14:30",
-              "09:30–14:30",
-              "09:30–14:30",
-              "09:30–14:30",
-              "09:30–18:30",
-              "09:00–16:00",
-              "09:00–16:00"
+              "09:30–16:30",
+              "09:30–16:30",
+              "09:30–16:30",
+              "09:30–16:30",
+              "09:30–16:30",
+              "09:30–16:30",
+              "09:30–16:30"
             ]
           }
         ],
@@ -131,8 +131,7 @@
         "status": "confirmed",
         "notes": [
           "Its website lists both shops but not their opening hours."
-        ],
-        "checked": "2026-10-26"
+        ]
       },
       {
         "name": "PURE NOGLUTEN",
@@ -202,8 +201,8 @@
         "caution": "Its breakfast menu offers oat milk (\"Hafer (glutenfrei)\"), porridge and muesli. Ask which items contain oats.",
         "flag": "Has oats: ask",
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/jute-baeckerei",
-        "status": "confirmed",
-        "checked": "2026-10-26"
+        "status": "unconfirmed",
+        "statusNote": "Its website didn't load when re-checked on 2026-11-25, so its claim and opening times weren't re-confirmed. The coeliac society's list still shows it."
       },
       {
         "name": "Café Prana",
@@ -258,8 +257,7 @@
         "flag": "Has oats: ask",
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/easypeasy",
         "status": "unconfirmed",
-        "statusNote": "Its website blocked the app's check again, so its opening times weren't confirmed.",
-        "checked": "2026-10-26"
+        "statusNote": "Its website blocked the app's check again, so its opening times weren't confirmed."
       },
       {
         "name": "Café Velicious",
@@ -312,8 +310,7 @@
         "listed": "Bakes only gluten free: cakes, tarts, ice cream, sandwiches and some soups. The owner has coeliac disease.",
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/prettyhill",
         "status": "unconfirmed",
-        "statusNote": "It has no website, only Instagram, so its opening times weren't confirmed.",
-        "checked": "2026-10-26"
+        "statusNote": "It has no website, only Instagram, so its opening times weren't confirmed."
       },
       {
         "name": "Sinless Cakes",
@@ -387,38 +384,6 @@
         "status": "confirmed"
       },
       {
-        "name": "Soul Kitchen House",
-        "section": "Restaurants",
-        "claim": "place-all",
-        "type": "Vegan restaurant",
-        "locations": [
-          {
-            "area": "Friedrichshain",
-            "address": "Sonntagstraße 25, 10245 Berlin",
-            "note": "Near Ostkreuz station",
-            "lat": 52.50647,
-            "lon": 13.46515,
-            "hours": [
-              "",
-              "",
-              "",
-              "18:00–22:00",
-              "18:00–22:00",
-              "18:00–22:00",
-              ""
-            ]
-          }
-        ],
-        "url": "https://www.soulkitchenhouse.berlin/",
-        "says": {
-          "text": "Dedicated Gluten-Free Kitchen · Celiac-Safe · Allergy-Friendly",
-          "lang": "en"
-        },
-        "listed": "All dishes are vegan and gluten free. Asked by the support groups, it said the whole kitchen uses only gluten free products.",
-        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/soul-kitchen-house",
-        "status": "confirmed"
-      },
-      {
         "name": "Trattoria Senza",
         "section": "Restaurants",
         "claim": "place-all",
@@ -456,6 +421,35 @@
         "status": "confirmed"
       },
       {
+        "name": "The Crazy Little Greek",
+        "section": "Restaurants",
+        "claim": "place-all",
+        "type": "Greek restaurant, vegan",
+        "locations": [
+          {
+            "area": "Mitte",
+            "address": "Koppenplatz 1, 10115 Berlin",
+            "lat": 52.52751,
+            "lon": 13.39809
+          }
+        ],
+        "url": "https://www.thecrazylittlegreek.de/",
+        "says": {
+          "text": "100% VEGAN. 100% GLUTEN-FREI. 100% GREEK.",
+          "lang": "de",
+          "en": "100% vegan. 100% gluten free. 100% Greek."
+        },
+        "listed": "All dishes are vegan, lactose free and gluten free.",
+        "caution": "Its drinks menu also lists ordinary beers, including a wheat beer, next to one beer it labels gluten free. Ask before ordering a beer.",
+        "flag": "Serves beer: ask",
+        "notes": [
+          "Its website also says the German Coeliac Society (DZG) has certified it.",
+          "Its website doesn't list opening times. Book by phone or email."
+        ],
+        "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/crazy-little-greek",
+        "status": "confirmed"
+      },
+      {
         "name": "Tapiocaria",
         "section": "Restaurants",
         "claim": "list-all",
@@ -472,8 +466,8 @@
               "18:00–23:00",
               "18:00–23:00",
               "18:00–23:00",
-              "12:00–23:00",
-              "12:00–21:00"
+              "18:00–23:00",
+              "17:00–22:00"
             ],
             "hoursNote": "Its website lists opening times for Wednesday to Sunday only, so Monday and Tuesday show as closed"
           }
@@ -486,8 +480,7 @@
           "Book through its website."
         ],
         "listPage": "https://www.berlin-glutenfrei.de/glutenfrei-berlin-restaurants/tapiocaria",
-        "status": "confirmed",
-        "checked": "2026-10-26"
+        "status": "confirmed"
       },
       {
         "name": "Zeus Pizzeria",
