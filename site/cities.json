@@ -535,7 +535,7 @@
     "flag": "🇳🇱",
     "language": "nl",
     "timeZone": "Europe/Amsterdam",
-    "checked": "2026-10-26",
+    "checked": "2026-11-26",
     "recheckDays": 90,
     "bounds": {
       "lat": [
@@ -599,9 +599,9 @@
         ],
         "url": "https://www.craft-amsterdam.nl/",
         "says": {
-          "text": "Je vindt onze 100% glutenvrije bakkerijen midden in de gezellige Pijp in Amsterdam",
+          "text": "Alles met liefde gemaakt en altijd 100% glutenvrij.",
           "lang": "nl",
-          "en": "You'll find our 100% gluten free bakeries in the middle of lively De Pijp in Amsterdam"
+          "en": "Everything made with love and always 100% gluten free."
         },
         "notes": [
           "It's on the Dutch Coeliac Society's list of places with its Zorgeloos Glutenvrij mark. The society says it checks them before they get the mark and then again, unannounced.",
@@ -658,9 +658,9 @@
               "17:00–23:00",
               "17:00–23:00",
               "17:00–23:00",
-              "09:30–23:00",
-              "09:30–23:00",
-              "09:30–23:00"
+              "10:00–23:00",
+              "10:00–23:00",
+              "10:00–23:00"
             ],
             "hoursNote": "Closed 31 December and 1 January."
           }
